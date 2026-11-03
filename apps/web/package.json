@@ -1,0 +1,37 @@
+{
+  "name": "@schelf/web",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "wrangler dev",
+    "deploy": "vite build && wrangler deploy",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@better-auth/passkey": "1.7.15",
+    "@cf-wasm/og": "0.5.0",
+    "@schelf/protocol": "workspace:*",
+    "better-auth": "1.7.15"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261103.1",
+    "@lucide/svelte": "1.67.0",
+    "@sveltejs/adapter-cloudflare": "8.0.2",
+    "@sveltejs/kit": "3.1.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tailwindcss/vite": "4.3.4",
+    "markdown-it": "15.0.3",
+    "shiki": "4.6.0",
+    "svelte": "5.57.3",
+    "svelte-check": "4.7.8",
+    "tailwindcss": "4.3.4",
+    "typescript": "6.0.3",
+    "vite": "8.3.5",
+    "wrangler": "4.156.2"
+  }
+}

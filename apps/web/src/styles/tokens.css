@@ -1,0 +1,50 @@
+@theme {
+  --font-sans: "Open Runde", "Open Runde Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Maple Mono NF", ui-monospace, monospace;
+  --container-page: 76rem;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-raised: var(--raised);
+  --color-well: var(--well);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-hairline: var(--hairline);
+  --color-glass: var(--glass);
+  --color-danger: var(--danger);
+  --color-caution: var(--caution);
+  --color-scrim: var(--scrim);
+  --shadow-float: var(--float-shadow);
+  --radius-group: 18px;
+  --radius-tile: 22px;
+}
+
+:root {
+  color-scheme: light dark;
+  --canvas: light-dark(#fcf9f3, #12110e);
+  --raised: light-dark(#ffffff, #1d1b17);
+  --well: light-dark(#ebe8e2, #2c2a25);
+  --ink: light-dark(#1d1b17, #ece9e3);
+  --ink-soft: light-dark(#4a463e, #cbc6bd);
+  --ink-muted: light-dark(#6f6b62, #a29d93);
+  --accent: light-dark(#725b2d, #ddc393);
+  --accent-ink: light-dark(#ffffff, #402d00);
+  --danger: light-dark(#a8402b, #f2967f);
+  --caution: light-dark(#8a5a00, #e8b65a);
+  --hairline: color-mix(in oklab, var(--ink) 9%, transparent);
+  --glass: color-mix(in oklab, var(--canvas) 72%, transparent);
+  --scrim: light-dark(rgb(29 27 23 / 0.28), rgb(0 0 0 / 0.55));
+  --float-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 18px 48px -16px light-dark(rgb(29 27 23 / 0.28), rgb(0 0 0 / 0.7));
+}
+
+:root[data-scheme="light"] {
+  color-scheme: light;
+}
+
+:root[data-scheme="dark"] {
+  color-scheme: dark;
+}

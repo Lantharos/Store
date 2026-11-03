@@ -1,0 +1,11 @@
+{
+  "extends": "$app/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "types": ["$app/types", "@cloudflare/workers-types"]
+  },
+  "include": ["src", "*.ts"]
+}
