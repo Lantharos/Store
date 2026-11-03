@@ -4,6 +4,7 @@
   import { untrack } from "svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
+  import { categoryLabel } from "../../store/categories.ts"
   import Segmented from "../../ui/fields/Segmented.svelte"
 
   let {
@@ -70,7 +71,7 @@
         <div class="min-w-0 flex-1">
           <p class="truncate text-xl leading-tight font-semibold tracking-[-0.02em]">{text.name || "Your app's name"}</p>
           <p class="truncate text-[13px] text-ink-soft">{text.summary || "A short line about what it does"}</p>
-          <p class="truncate text-[12px] text-ink-muted">{developer}{meta.categories[0] ? ` · ${meta.categories[0]}` : ""}</p>
+          <p class="truncate text-[12px] text-ink-muted">{developer}{meta.categories[0] ? ` · ${categoryLabel(meta.categories[0])}` : ""}</p>
         </div>
       </div>
       <span class="button button-sm button-primary pointer-events-none w-full">

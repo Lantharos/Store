@@ -1,5 +1,6 @@
 <script lang="ts">
   import Mail from "@lucide/svelte/icons/mail"
+  import { onMount } from "svelte"
   import Passkeys from "#lib/dashboard/account/Passkeys.svelte"
   import { auth } from "#lib/dashboard/api/auth.ts"
   import { api } from "#lib/dashboard/api/client.ts"
@@ -18,7 +19,7 @@
 
   async function acceptAgreement() {
     try {
-      await api.post(endpoints.account, {
+      await api.post(endpoints.developer, {
         name: developer.name,
         kind: developer.kind,
         agreement: account.agreement.current,
@@ -29,6 +30,11 @@
       toasts.error(error)
     }
   }
+
+  onMount(() => {
+    if (account.github && !developer.github_login)
+      void api.post(endpoints.githubLogin).then(() => session.load())
+  })
 
   async function linkGitHub() {
     await auth.linkSocial({ provider: "github", callbackURL: `${location.origin}/dashboard/account` })

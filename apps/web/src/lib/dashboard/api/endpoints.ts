@@ -2,6 +2,8 @@ const app = (id: string) => `/apps/${encodeURIComponent(id)}`
 
 export const endpoints = {
   account: "/account",
+  developer: "/account/developer",
+  githubLogin: "/account/github",
   apps: "/apps",
   namespaces: "/namespaces",
   namespace: (prefix: string) => `/namespaces/${encodeURIComponent(prefix)}`,

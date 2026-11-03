@@ -1,7 +1,29 @@
 import type { CatalogEntry } from "@schelf/protocol"
 
+const LABELS: Record<string, string> = {
+  AudioVideo: "Music and video",
+  Audio: "Music",
+  Video: "Video",
+  Development: "Developer tools",
+  Education: "Education",
+  Game: "Games",
+  Graphics: "Graphics and photos",
+  Network: "Internet",
+  Office: "Productivity",
+  Science: "Science",
+  Settings: "Settings",
+  System: "System",
+  Utility: "Utilities",
+  Finance: "Finance",
+  Weather: "Weather",
+}
+
+export const CATEGORY_CHOICES = Object.keys(LABELS)
+
+export const categoryLabel = (name: string) => LABELS[name] ?? name.replace(/([a-z])([A-Z])/g, "$1 $2")
+
 export const categorySlug = (name: string) =>
-  name
+  categoryLabel(name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
@@ -22,19 +44,3 @@ export function inCategory(apps: CatalogEntry[], slug: string) {
     (app) => app.kind === "app" && app.categories.some((name) => categorySlug(name) === slug),
   )
 }
-
-export const CATEGORY_CHOICES = [
-  "Productivity",
-  "Photos and video",
-  "Music and audio",
-  "Graphics and design",
-  "Developer tools",
-  "Communication",
-  "Education",
-  "Science",
-  "Finance",
-  "Games",
-  "Utilities",
-  "Weather",
-  "System",
-]

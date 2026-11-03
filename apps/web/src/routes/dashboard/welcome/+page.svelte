@@ -20,7 +20,7 @@
     busy = true
     error = null
     try {
-      await api.post<Developer>(endpoints.account, { name, kind, agreement: AGREEMENT_VERSION })
+      await api.post<Developer>(endpoints.developer, { name, kind, agreement: AGREEMENT_VERSION })
       await session.load()
       await goto("/dashboard/apps/new")
     } catch (failure) {

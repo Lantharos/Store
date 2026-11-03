@@ -28,6 +28,22 @@ export const siteSchema = {
   ],
 }
 
+const SCHEMA_CATEGORIES: Record<string, string> = {
+  AudioVideo: "MultimediaApplication",
+  Audio: "MultimediaApplication",
+  Video: "MultimediaApplication",
+  Development: "DeveloperApplication",
+  Education: "EducationalApplication",
+  Game: "GameApplication",
+  Graphics: "DesignApplication",
+  Network: "CommunicationApplication",
+  Office: "BusinessApplication",
+  Finance: "FinanceApplication",
+}
+
+const schemaCategory = (categories: string[]) =>
+  categories.map((name) => SCHEMA_CATEGORIES[name]).find(Boolean) ?? "UtilitiesApplication"
+
 const OPERATING_SYSTEMS: [string, string][] = [
   ["windows", "Windows"],
   ["macos", "macOS"],
@@ -47,8 +63,7 @@ export function appSchema(app: AppIndex, path: string, installs: number) {
     url: `${STORE_ORIGIN}${path}`,
     image: app.icon ?? undefined,
     screenshot: app.screenshots.map((shot) => shot.url),
-    applicationCategory:
-      app.kind === "extension" ? "UtilitiesApplication" : (app.categories[0] ?? "Application"),
+    applicationCategory: app.kind === "extension" ? "UtilitiesApplication" : schemaCategory(app.categories),
     operatingSystem: OPERATING_SYSTEMS.filter(([key]) => platforms.has(key))
       .map(([, name]) => name)
       .join(", "),

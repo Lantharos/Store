@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    type CreateApp,
-    createApp,
-    type DashboardApp,
-    type Namespace,
-    type SetupFiles as Setup,
-  } from "@schelf/protocol"
+  import { type AppSettings, type CreateApp, createApp, type Namespace } from "@schelf/protocol"
   import CodeBlock from "#lib/code/CodeBlock.svelte"
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
@@ -26,7 +20,7 @@
   let idReady = $state(false)
   let busy = $state(false)
   let error = $state<string | null>(null)
-  let created = $state<{ app: DashboardApp; setup: Setup } | null>(null)
+  let created = $state<AppSettings | null>(null)
   let form = $state<CreateApp>({
     kind: "app",
     format: "sabine",
@@ -57,7 +51,7 @@
     busy = true
     error = null
     try {
-      created = await api.post<{ app: DashboardApp; setup: Setup }>(endpoints.apps, parsed.data)
+      created = await api.post<AppSettings>(endpoints.apps, parsed.data)
       await session.refreshApps()
       step = 3
     } catch (failure) {

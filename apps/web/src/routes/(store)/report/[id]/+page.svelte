@@ -74,7 +74,7 @@
               role="radio"
               aria-checked={kind === option.value}
               onclick={() => (kind = option.value)}
-              class="rounded-2xl p-4 text-left transition-[background-color,box-shadow] {kind === option.value
+              class="flex flex-col justify-start rounded-2xl p-4 text-left transition-[background-color,box-shadow] {kind === option.value
                 ? 'bg-raised shadow-[0_0_0_2px_var(--accent)]'
                 : 'bg-well hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]'}"
             >

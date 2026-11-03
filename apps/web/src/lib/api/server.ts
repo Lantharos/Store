@@ -33,3 +33,11 @@ export async function post(path: string, body: unknown) {
     body: JSON.stringify(body),
   })
 }
+
+export async function media(url: string) {
+  const response = await env.API.fetch(url)
+  if (!response.ok) return null
+  const type = response.headers.get("content-type") ?? "application/octet-stream"
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  return `data:${type};base64,${bytes.toBase64()}`
+}

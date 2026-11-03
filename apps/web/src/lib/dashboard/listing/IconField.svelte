@@ -18,7 +18,7 @@
     }
     busy = true
     try {
-      icon = (await api.upload<{ icon: string }>(endpoints.icon(appId), file)).icon
+      icon = (await api.upload<{ url: string }>(endpoints.icon(appId), file, "PUT")).url
       toasts.show("Icon updated")
     } catch (error) {
       toasts.error(error)
@@ -35,7 +35,7 @@
   </div>
   <div>
     <button type="button" class="button button-sm button-quiet" onclick={() => picker?.click()} disabled={busy}>Replace icon</button>
-    <p class="mt-1.5 text-[13px] text-ink-muted">SVG, or a square PNG of at least 512 pixels.</p>
+    <p class="mt-1.5 text-[13px] text-ink-muted">A square SVG, or a square PNG of at least 512 pixels.</p>
   </div>
   <input bind:this={picker} type="file" accept="image/svg+xml,image/png" hidden onchange={(event) => upload(event.currentTarget.files?.[0])} />
 </div>

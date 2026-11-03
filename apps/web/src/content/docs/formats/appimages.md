@@ -15,7 +15,7 @@ bunx schelf init
 finds your AppImage build, sets `format = "appimage"` in `schelf.toml`, and writes a workflow that publishes the AppImages you attach to each GitHub release:
 
 ```yaml
-- uses: Lantharos/schelf-store/publish@v1
+- uses: Lantharos/Store/publish@v1
   with:
     release-assets: "*.AppImage"
 ```

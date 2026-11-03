@@ -1,13 +1,13 @@
 ---
 
 title: The publish action
-description: Lantharos/schelf-store/publish, the GitHub Action that sends a release to Schelf.
+description: Lantharos/Store/publish, the GitHub Action that sends a release to Schelf.
 ---
 
 The publish action runs at the end of your release workflow. It asks GitHub for a token that proves who it is, records a build attestation for every file, uploads the files and starts the checks.
 
 ```yaml
-- uses: Lantharos/schelf-store/publish@v1
+- uses: Lantharos/Store/publish@v1
   with:
     files: dist/**
 ```
@@ -66,7 +66,7 @@ jobs:
           pattern: release-*
           path: dist
           merge-multiple: true
-      - uses: Lantharos/schelf-store/publish@v1
+      - uses: Lantharos/Store/publish@v1
         with:
           files: dist/**
 ```

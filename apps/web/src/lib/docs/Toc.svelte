@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Heading } from "../content/markdown.ts"
+  import type { Heading } from "../content/page.ts"
 
   let { headings }: { headings: Heading[] } = $props()
   let active = $state<string | null>(null)

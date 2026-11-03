@@ -3,6 +3,7 @@
   import { plural } from "#lib/format.ts"
   import Meta from "#lib/seo/Meta.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
+  import { categoryLabel } from "#lib/store/categories.ts"
 
   let { data } = $props()
 </script>
@@ -16,7 +17,7 @@
       <li class="enter" style:--order={index}>
         <a href="/categories/{category.slug}" class="group flex h-full flex-col rounded-tile bg-well p-6 transition-colors hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]">
           <div class="flex items-baseline justify-between gap-3">
-            <h2 class="text-xl font-semibold">{category.name}</h2>
+            <h2 class="text-xl font-semibold">{categoryLabel(category.name)}</h2>
             <ArrowRight class="size-4 -translate-x-1 text-ink-muted opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100" />
           </div>
           <p class="mt-0.5 text-[15px] text-ink-muted">{plural(category.count, "app")}</p>

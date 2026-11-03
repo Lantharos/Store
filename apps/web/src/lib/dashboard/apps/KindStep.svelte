@@ -35,7 +35,7 @@
         role="radio"
         aria-checked={chosen}
         onclick={() => ((kind = choice.kind), (format = choice.format))}
-        class="rounded-2xl p-4 text-left transition-[background-color,box-shadow] {chosen ? 'bg-raised shadow-[0_0_0_2px_var(--accent)]' : 'bg-well hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]'}"
+        class="flex flex-col justify-start rounded-2xl p-4 text-left transition-[background-color,box-shadow] {chosen ? 'bg-raised shadow-[0_0_0_2px_var(--accent)]' : 'bg-well hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]'}"
       >
         <span class="block font-medium">{choice.title}</span>
         <span class="mt-1 block text-[13px] leading-relaxed text-ink-muted">{choice.text}</span>

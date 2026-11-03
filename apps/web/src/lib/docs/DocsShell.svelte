@@ -3,7 +3,7 @@
   import ArrowRight from "@lucide/svelte/icons/arrow-right"
   import ChevronDown from "@lucide/svelte/icons/chevron-down"
   import { page as current } from "$app/state"
-  import type { Page } from "../content/markdown.ts"
+  import type { Page } from "../content/page.ts"
   import { DOC_SECTIONS, docHref } from "./nav.ts"
   import Toc from "./Toc.svelte"
 

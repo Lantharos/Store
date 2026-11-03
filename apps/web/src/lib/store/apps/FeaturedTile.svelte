@@ -35,7 +35,9 @@
       <h2 class="font-semibold leading-tight tracking-[-0.02em] {large ? 'text-[28px]' : 'text-xl'}">{app.name}</h2>
       <p class="mt-1 text-(--tile-soft) {large ? '' : 'text-[15px]'}">{app.summary}</p>
     </div>
-    <span class="button shrink-0 bg-(--tile-button) text-(--tile-button-ink) {large ? '' : 'button-sm'}">Get</span>
+    {#if Object.keys(app.platforms).length}
+      <span class="button shrink-0 bg-(--tile-button) text-(--tile-button-ink) {large ? '' : 'button-sm'}">Get</span>
+    {/if}
   </div>
   {#if large && screenshot}
     <img
@@ -45,8 +47,20 @@
       fetchpriority="high"
       class="shot mt-8 w-full translate-y-3 rounded-b-none transition-transform duration-(--spring-smooth-duration) ease-(--spring-smooth) group-hover:translate-y-1"
     />
-  {:else if blurb}
-    <p class="mt-auto max-w-sm pt-6 text-[15px] leading-relaxed text-(--tile-soft)">{blurb}</p>
+  {:else}
+    <div class="mt-auto flex min-h-28 items-end gap-5 pt-5">
+      {#if blurb}
+        <p class="line-clamp-4 flex-1 text-[15px] leading-relaxed text-(--tile-soft) {screenshot ? 'sm:max-w-[48%] lg:max-w-[46%]' : 'max-w-sm'}">{blurb}</p>
+      {/if}
+      {#if screenshot}
+        <img
+          src={screenshot}
+          alt=""
+          loading="eager"
+          class="shot pointer-events-none absolute -right-10 -bottom-12 hidden w-[52%] transition-transform duration-(--spring-smooth-duration) ease-(--spring-smooth) group-hover:-translate-y-1.5 sm:block"
+        />
+      {/if}
+    </div>
   {/if}
 </a>
 

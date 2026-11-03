@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { categoryHref } from "../categories.ts"
+  import { categoryHref, categoryLabel } from "../categories.ts"
 
   let {
     categories,
@@ -17,7 +17,7 @@
       {@const active = current === category.name}
       <li>
         <a href={categoryHref(category.name)} aria-current={active ? "page" : undefined} class="button button-sm {active ? 'button-ink' : 'button-quiet'}">
-          {category.name}
+          {categoryLabel(category.name)}
         </a>
       </li>
     {/each}

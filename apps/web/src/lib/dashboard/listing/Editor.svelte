@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AppSettings, ListingMeta, ListingText } from "@schelf/protocol"
   import { untrack } from "svelte"
-  import { CATEGORY_CHOICES } from "../../store/categories.ts"
+  import { CATEGORY_CHOICES, categoryLabel } from "../../store/categories.ts"
   import ColorField from "../../ui/fields/ColorField.svelte"
   import Field from "../../ui/fields/Field.svelte"
   import Select from "../../ui/fields/Select.svelte"
@@ -133,7 +133,7 @@
           {#each [...new Set([...settings.meta.categories, ...CATEGORY_CHOICES])] as name (name)}
             {@const chosen = meta.categories.includes(name)}
             <button type="button" aria-pressed={chosen} onclick={() => toggleCategory(name)} disabled={!chosen && meta.categories.length >= MAX_CATEGORIES} class="button button-sm {chosen ? 'button-ink' : 'button-quiet'}">
-              {name}
+              {categoryLabel(name)}
             </button>
           {/each}
         </div>

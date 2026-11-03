@@ -1,17 +1,8 @@
-import { renderPage } from "./markdown.ts"
+import type { Page } from "./page.ts"
 
-const sources = import.meta.glob<string>("/src/content/docs/**/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-})
+const sources = import.meta.glob<Page>("/src/content/docs/**/*.md", { import: "default", eager: true })
 
-const pages = new Map(
-  Object.entries(sources).map(([path, source]) => {
-    const slug = path.slice(path.lastIndexOf("/") + 1, -3)
-    return [slug, renderPage(slug, source)]
-  }),
-)
+const pages = new Map(Object.values(sources).map((page) => [page.slug, page]))
 
 export const docPage = (slug: string) => pages.get(slug)
 

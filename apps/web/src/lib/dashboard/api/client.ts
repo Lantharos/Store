@@ -32,5 +32,6 @@ export const api = {
   put: <T>(path: string, body: unknown) => send<T>("PUT", path, JSON.stringify(body), "application/json"),
   patch: <T>(path: string, body: unknown) => send<T>("PATCH", path, JSON.stringify(body), "application/json"),
   delete: <T = void>(path: string) => send<T>("DELETE", path),
-  upload: <T>(path: string, file: File) => send<T>("POST", path, file, file.type),
+  upload: <T>(path: string, file: File, method: "POST" | "PUT" = "POST") =>
+    send<T>(method, path, file, file.type),
 }

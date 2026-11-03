@@ -17,7 +17,12 @@
   let busy = $state(false)
   let open = $state<string | null>(null)
 
-  const PROOFS = { github: "GitHub sign-in", dns: "DNS record", "well-known": "File on your site" } as const
+  const PROOFS = {
+    github: "GitHub sign-in",
+    dns: "DNS record",
+    "well-known": "File on your site",
+    manual: "Schelf",
+  } as const
 
   async function claim(event: SubmitEvent) {
     event.preventDefault()

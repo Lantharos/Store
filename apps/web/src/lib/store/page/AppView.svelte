@@ -4,7 +4,7 @@
   import { pickArtifact } from "../../system/artifacts.ts"
   import type { System } from "../../system/detect.ts"
   import AppIcon from "../apps/AppIcon.svelte"
-  import { categoryHref } from "../categories.ts"
+  import { categoryHref, categoryLabel } from "../categories.ts"
   import Download from "./Download.svelte"
   import Facts from "./Facts.svelte"
   import OtherSystems from "./OtherSystems.svelte"
@@ -45,7 +45,7 @@
         <p class="mt-1.5 text-[15px] text-ink-muted">
           <a href="/developers/{app.developer.slug}" class="hover:text-ink">{app.developer.name}</a>
           {#each app.categories.slice(0, 1) as category (category)}
-            · <a href={extension ? "/extensions" : categoryHref(category)} class="hover:text-ink">{category}</a>
+            · <a href={extension ? "/extensions" : categoryHref(category)} class="hover:text-ink">{categoryLabel(category)}</a>
           {/each}
           {#if app.distribution === "open"}· Free and open source{/if}
         </p>
@@ -82,13 +82,6 @@
     <aside class="space-y-8">
       {#if latest}<Permissions permissions={latest.permissions} {extension} />{/if}
       <Facts {app} {installs} />
-      <p class="text-[13px] leading-relaxed text-ink-muted">
-        {#if extension}
-          {listing.name} updates through Schelf on Luft. Each update is checked by a person before it reaches you.
-        {:else}
-          {listing.name} keeps itself up to date. Each update is checked by a person before it reaches you.
-        {/if}
-      </p>
       <a href="/report/{app.id}" class="inline-flex items-center gap-2 text-[13px] text-ink-muted hover:text-ink">
         <Flag class="size-3.5" />
         Report a problem with this {extension ? "extension" : "app"}

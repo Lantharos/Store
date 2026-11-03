@@ -36,8 +36,10 @@
     <dt class="text-ink-muted">Source</dt>
     <dd class="min-w-0"><a href={app.repository} class="link block truncate" rel="nofollow">{repository}</a></dd>
   {/if}
-  <dt class="text-ink-muted">Installs</dt>
-  <dd>{count(installs.total)}<span class="text-ink-muted">{" · "}{count(installs.last_30_days)} this month</span></dd>
+  {#if installs.total}
+    <dt class="text-ink-muted">Installs</dt>
+    <dd>{count(installs.total)}<span class="text-ink-muted">{" · "}{count(installs.last_30_days)} this month</span></dd>
+  {/if}
   {#if systems.length}
     <dt class="text-ink-muted">Systems</dt>
     <dd>{systems.join(", ")}</dd>

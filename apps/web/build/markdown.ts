@@ -1,22 +1,11 @@
 import MarkdownIt from "markdown-it"
 import { createCssVariablesTheme, createHighlighter } from "shiki"
+import type { Heading, Page } from "../src/lib/content/page.ts"
 
-export interface Heading {
-  id: string
-  text: string
-}
-
-export interface Page {
-  slug: string
-  title: string
-  description: string
-  html: string
-  headings: Heading[]
-}
 
 const theme = createCssVariablesTheme({ name: "schelf", variablePrefix: "--shiki-" })
 const LANGUAGES = { sh: "shellscript", toml: "toml", yaml: "yaml", ts: "typescript", json: "json" } as const
-const highlighter = await createHighlighter({ themes: [theme], langs: Object.values(LANGUAGES) })
+const highlighter = createHighlighter({ themes: [theme], langs: Object.values(LANGUAGES) })
 
 const slugify = (text: string) =>
   text
@@ -25,16 +14,14 @@ const slugify = (text: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
 
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true,
-  highlight(code, lang) {
+const markdown = new MarkdownIt({ html: false, linkify: true, typographer: true })
+
+function highlightWith(instance: Awaited<typeof highlighter>) {
+  return (code: string, lang: string) => {
     const language = LANGUAGES[lang as keyof typeof LANGUAGES]
-    if (!language) return ""
-    return highlighter.codeToHtml(code.trimEnd(), { lang: language, theme: "schelf" })
-  },
-})
+    return language ? instance.codeToHtml(code.trimEnd(), { lang: language, theme: "schelf" }) : ""
+  }
+}
 
 const fence = markdown.renderer.rules.fence!
 markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
@@ -44,9 +31,10 @@ markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
   return `<div class="code-block" data-lang="${markdown.utils.escapeHtml(token.info)}">${html}<button type="button" class="copy" data-copy="${code}" aria-label="Copy">Copy</button></div>`
 }
 
-const FRONTMATTER = /^---\ntitle: (.+)\ndescription: (.+)\n---\n/
+const FRONTMATTER = /^---\n+title: (.+)\ndescription: (.+)\n---\n/
 
-export function renderPage(slug: string, source: string): Page {
+export async function renderPage(slug: string, source: string): Promise<Page> {
+  markdown.options.highlight = highlightWith(await highlighter)
   const match = FRONTMATTER.exec(source)
   if (!match) throw new Error(`${slug}.md needs to start with a title and a description`)
   const headings: Heading[] = []

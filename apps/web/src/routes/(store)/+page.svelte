@@ -4,7 +4,6 @@
   import CategoryLinks from "#lib/store/apps/CategoryLinks.svelte"
   import FeaturedTile from "#lib/store/apps/FeaturedTile.svelte"
   import { categoryHref } from "#lib/store/categories.ts"
-  import Trust from "#lib/store/home/Trust.svelte"
 
   let { data } = $props()
   const [lead, ...rest] = $derived(data.hero)
@@ -26,7 +25,7 @@
       {#if rest.length}
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 lg:gap-5">
           {#each rest as tile, index (tile.app.id)}
-            <FeaturedTile app={tile.app} brand={tile.brand} blurb={tile.blurb} screenshot={null} order={index + 1} />
+            <FeaturedTile app={tile.app} brand={tile.brand} blurb={tile.blurb} screenshot={tile.screenshot} order={index + 1} />
           {/each}
         </div>
       {/if}
@@ -46,7 +45,7 @@
         {/if}
       </div>
       <div class="mt-3">
-        <AppGrid apps={section.apps.slice(0, 9)} />
+        <AppGrid apps={section.apps.slice(0, 9)} soon={!section.waiting} />
       </div>
     </section>
   {:else}
@@ -56,5 +55,4 @@
     </section>
   {/each}
 
-  <Trust />
 </div>

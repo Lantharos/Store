@@ -10,7 +10,7 @@ If a release has a bug that's worse than the one before it, roll it back from th
 
 - People who haven't updated stay where they are.
 - People who already have it are offered the previous version. Sabine apps keep it locally, and Schelf keeps the last AppImage, so going back is instant.
-- If the previous version isn't safe either, for example after a security fix, choose **Don't offer the previous version**. People stay put and get your next fix as soon as it's approved.
+- If the previous version isn't safe either, for example after a security fix, don't roll back: publish the fix and [release it to everyone](/docs/rollouts) once it's approved.
 
 Publish the fix as a new release with a higher version. It goes through review like any update, and you can [release it to everyone](/docs/rollouts) at once.
 

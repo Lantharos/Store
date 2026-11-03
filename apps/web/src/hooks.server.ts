@@ -1,13 +1,14 @@
 import { waitUntil } from "cloudflare:workers"
 import type { Handle } from "@sveltejs/kit/hooks"
 import { detect, systemKey } from "#lib/system/detect.ts"
-import { building } from "$app/env"
+import { building, version } from "$app/env"
 
 const UNCACHED = /^\/(dashboard|api)(\/|$)/
 
 function cacheKey(url: URL, key: string) {
   const keyed = new URL(url)
   keyed.searchParams.set("system", key)
+  keyed.searchParams.set("build", version)
   return new Request(keyed)
 }
 

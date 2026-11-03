@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { ReleaseDetail, RolloutRequest } from "@schelf/protocol"
-  import Checkbox from "../../ui/fields/Checkbox.svelte"
   import Slider from "../../ui/fields/Slider.svelte"
   import Confirm from "../../ui/overlay/Confirm.svelte"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
@@ -24,7 +23,6 @@
   let releasing = $state(false)
   let rolling = $state(false)
   let percent = $state(50)
-  let unsafe = $state(false)
   const live = $derived(release.status === "live")
   const by = $derived(everyoneBy(release))
 
@@ -72,7 +70,7 @@
       <button type="button" class="button button-sm button-quiet" onclick={() => (releasing = true)}>Release to everyone</button>
     {/if}
     {#if previous}
-      <button type="button" class="button button-sm button-quiet" onclick={() => ((unsafe = false), (rolling = true))}>Roll back to {previous}</button>
+      <button type="button" class="button button-sm button-quiet" onclick={() => (rolling = true)}>Roll back to {previous}</button>
     {/if}
   </div>
 </div>
@@ -103,12 +101,9 @@
   title="Roll back to {previous}?"
   confirm="Roll back"
   danger
-  onconfirm={() => send({ action: "rollback", unsafe }, { status: "withdrawn" })}
+  onconfirm={() => send({ action: "rollback" }, { status: "withdrawn" })}
 >
   <p>{release.version} is withdrawn. People who haven't updated stay where they are, and people who have it are offered {previous}.</p>
-  <div class="mt-4">
-    <Checkbox bind:checked={unsafe}>Don't offer {previous}: it isn't safe either. People stay put and get your next fix.</Checkbox>
-  </div>
 </Confirm>
 
 <style>
