@@ -35,29 +35,31 @@
   }
 </script>
 
-<ul class="divide-y divide-hairline">
-  {#each verification.domains as domain (domain.name)}
-    <li class="flex items-center gap-3 py-3">
-      {#if domain.proof}
-        <CircleCheck class="size-[18px] shrink-0 text-accent" />
-      {:else}
-        <CircleDashed class="size-[18px] shrink-0 text-ink-muted" />
-      {/if}
-      <div class="min-w-0 flex-1">
-        <p class="truncate font-medium">{domain.name}</p>
-        <p class="text-[13px] text-ink-muted">{domain.proof ? PROOFS[domain.proof] : "Not proven yet"}</p>
-      </div>
-      {#if editable}
-        <button type="button" class="button size-8 p-0 text-ink-muted hover:bg-well hover:text-ink" aria-label="Remove {domain.name}" onclick={() => flow.save({ domains: names.filter((name) => name !== domain.name) })}>
-          <X class="size-4" />
-        </button>
-      {/if}
-    </li>
-  {/each}
-</ul>
+{#if names.length}
+  <ul class="divide-y divide-hairline">
+    {#each verification.domains as domain (domain.name)}
+      <li class="flex items-center gap-3 py-3">
+        {#if domain.proof}
+          <CircleCheck class="size-[18px] shrink-0 text-accent" />
+        {:else}
+          <CircleDashed class="size-[18px] shrink-0 text-ink-muted" />
+        {/if}
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-medium">{domain.name}</p>
+          <p class="text-[13px] text-ink-muted">{domain.proof ? PROOFS[domain.proof] : "Not proven yet"}</p>
+        </div>
+        {#if editable}
+          <button type="button" class="button size-8 p-0 text-ink-muted hover:bg-well hover:text-ink" aria-label="Remove {domain.name}" onclick={() => flow.save({ domains: names.filter((name) => name !== domain.name) })}>
+            <X class="size-4" />
+          </button>
+        {/if}
+      </li>
+    {/each}
+  </ul>
+{/if}
 
 {#if editable && names.length < MAX_DOMAINS}
-  <form class="mt-3 flex gap-2" onsubmit={add}>
+  <form class="flex gap-2" onsubmit={add}>
     <input bind:value={adding} class="field" placeholder="example.com" aria-label="Add a domain" autocomplete="off" spellcheck="false" />
     <button class="button button-quiet shrink-0" disabled={!adding.trim() || flow.busy !== null}>Add</button>
   </form>
