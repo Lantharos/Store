@@ -17,6 +17,7 @@ export const endpoints = {
   declineInvite: (invite: string) => `/invites/${invite}/decline`,
   apps: (id: string) => `${publisher(id)}/apps`,
   projects: (id: string) => `${publisher(id)}/apps/projects`,
+  deletedProjects: (id: string) => `${publisher(id)}/apps/deleted`,
   namespaces: (id: string) => `${publisher(id)}/namespaces`,
   namespace: (id: string, prefix: string) => `${publisher(id)}/namespaces/${encodeURIComponent(prefix)}`,
   verifyNamespace: (id: string, prefix: string) =>
@@ -51,4 +52,5 @@ export const endpoints = {
   channel: (id: string, channel: string) => `${app(id)}/channels/${channel}`,
   promote: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}/promote`,
   uploads: (id: string) => `${app(id)}/uploads`,
+  restore: (id: string) => `${app(id)}/restore`,
 }

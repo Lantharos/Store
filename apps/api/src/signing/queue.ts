@@ -16,7 +16,7 @@ export async function resignEverything() {
   const apps = await db
     .select({ id: schema.app.id })
     .from(schema.app)
-    .where(inArray(schema.app.status, ["published", "delisted", "pulled"]))
+    .where(inArray(schema.app.status, ["published", "delisted", "pulled", "deleted"]))
   for (let start = 0; start < apps.length; start += QUEUE_BATCH)
     await resign(
       ...apps.slice(start, start + QUEUE_BATCH).map((app) => ({ type: "app" as const, id: app.id })),
@@ -40,7 +40,7 @@ export async function resignPublisher(publisherId: string) {
     .where(
       and(
         eq(schema.app.publisherId, publisherId),
-        inArray(schema.app.status, ["published", "delisted", "pulled"]),
+        inArray(schema.app.status, ["published", "delisted", "pulled", "deleted"]),
       ),
     )
   if (apps.length)

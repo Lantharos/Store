@@ -1,4 +1,5 @@
 import type { Updater } from "@schelf/protocol"
+import type { Language } from "../../code/highlight.ts"
 
 export const FRAMEWORKS: { updater: Updater; title: string; text: string }[] = [
   { updater: "sabine", title: "Sabine", text: "Sabine's own updates, signed by Schelf." },
@@ -8,6 +9,22 @@ export const FRAMEWORKS: { updater: Updater; title: string; text: string }[] = [
 
 export const frameworkName = (updater: Updater | null) =>
   updater ? FRAMEWORKS.find((framework) => framework.updater === updater)!.title : "Downloads only"
+
+export function feedSetup(updater: Updater, feed: string): { file: string; lang: Language; code: string } {
+  if (updater === "sabine")
+    return { file: "Sabine.toml", lang: "toml", code: '[updates]\nprovider = "schelf"' }
+  if (updater === "electron")
+    return {
+      file: "electron-builder.yml",
+      lang: "yaml",
+      code: `publish:\n  provider: generic\n  url: ${feed}`,
+    }
+  return {
+    file: "tauri.conf.json",
+    lang: "json",
+    code: `"plugins": {\n  "updater": {\n    "endpoints": ["${feed}"],\n    "pubkey": "your updater public key"\n  }\n}`,
+  }
+}
 
 export function bridgeAdvice(from: Updater) {
   if (from === "electron")

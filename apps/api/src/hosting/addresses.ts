@@ -34,10 +34,10 @@ export function projectSummary(
   }
 }
 
-function feed(app: Addressed, updater: Updater, base: string) {
-  if (updater === "sabine") return { name: "Sabine", url: `${env.DOWNLOAD_URL}/sabine/${app.id}/stable.json` }
-  if (updater === "electron") return { name: "electron-updater", url: base }
-  return { name: "Tauri", url: `${base}/tauri.json` }
+function feedUrl(app: Addressed, updater: Updater, base: string) {
+  if (updater === "sabine") return `${env.DOWNLOAD_URL}/sabine/${app.id}/stable.json`
+  if (updater === "electron") return base
+  return `${base}/tauri.json`
 }
 
 export function projectLinks(app: Addressed, publisherSlug: string, updaters: Updater[]): Links {
@@ -47,6 +47,6 @@ export function projectLinks(app: Addressed, publisherSlug: string, updaters: Up
     latest: `${base}/latest`,
     json: `${base}/latest.json`,
     embed: `<a href="${base}/latest" data-schelf="${publisherSlug}/${app.slug}">Download</a>\n<script src="${env.DOWNLOAD_URL}/embed.js" async></script>`,
-    feeds: updaters.map((updater) => feed(app, updater, base)),
+    feeds: updaters.map((updater) => ({ updater, url: feedUrl(app, updater, base) })),
   }
 }

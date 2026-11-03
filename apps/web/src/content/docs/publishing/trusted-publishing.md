@@ -10,7 +10,7 @@ There are no keys to keep, rotate or lose, and nothing to paste into your reposi
 
 ## Setting one up
 
-`schelf init` adds one for you. To add or change one by hand, open your app in the dashboard and go to **Publishing**. You need:
+`schelf init` adds one for you. To add or change one by hand, open your app in the dashboard and go to its **Settings**. You need:
 
 | Field       | Example                              |
 | ----------- | ------------------------------------ |
@@ -44,4 +44,4 @@ If you set an environment, only jobs that run in it can publish. Add required re
 
 ## Publishing from somewhere else
 
-For other CI or your own computer, create a token in **Publishing** and use [`schelf publish`](/docs/cli). A token is scoped to one app, shown once, expires after a year and can be revoked at any time. Releases sent with a token are marked “uploaded by the developer” instead of “built on GitHub”, and reviewers see the difference.
+For other CI or your own computer, create a token in the app's **Settings** and use [`schelf publish`](/docs/cli). A token is scoped to one app, shown once, expires after a year and can be revoked at any time. Releases sent with a token are marked “uploaded by the developer” instead of “built on GitHub”, and reviewers see the difference.

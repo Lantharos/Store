@@ -1,4 +1,4 @@
-import { FORMATS, UPDATERS, VISIBILITIES } from "@schelf/protocol"
+import { APP_STATUSES, FORMATS, UPDATERS, VISIBILITIES } from "@schelf/protocol"
 import { sql } from "drizzle-orm"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { createdAt } from "./columns.ts"
@@ -36,15 +36,16 @@ export const app = sqliteTable(
     distribution: text("distribution", { enum: ["open", "proprietary"] })
       .notNull()
       .default("open"),
-    status: text("status", { enum: ["draft", "in-review", "published", "delisted", "pulled"] })
-      .notNull()
-      .default("draft"),
+    status: text("status", { enum: APP_STATUSES }).notNull().default("draft"),
     visibility: text("visibility", { enum: VISIBILITIES }).notNull().default("listed"),
     pageIndexed: integer("page_indexed", { mode: "boolean" }).notNull().default(false),
     latestFollowsRollout: integer("latest_follows_rollout", { mode: "boolean" }).notNull().default(false),
     updater: text("updater", { enum: UPDATERS }),
     listingRequestedAt: integer("listing_requested_at", { mode: "timestamp_ms" }),
     listingItem: text("listing_item"),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+    statusBeforeDelete: text("status_before_delete", { enum: APP_STATUSES }),
+    purgedAt: integer("purged_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
   },
   (table) => [

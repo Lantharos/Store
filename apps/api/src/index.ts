@@ -8,6 +8,7 @@ import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { pruneChannels } from "./hosting/channels.ts"
+import { purgeDeleted } from "./hosting/deletion.ts"
 import { errorResponse, fail } from "./lib/http.ts"
 import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
@@ -65,7 +66,12 @@ export default {
       ])
       return
     }
-    await Promise.all([rollUpDownloads(), recheckNamespaces(), resign({ type: "revocations" })])
+    await Promise.all([
+      rollUpDownloads(),
+      recheckNamespaces(),
+      purgeDeleted(),
+      resign({ type: "revocations" }),
+    ])
   },
   queue: (batch) => signQueued(batch as MessageBatch<SigningJob>),
   email: receiveMail,

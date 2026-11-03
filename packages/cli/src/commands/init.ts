@@ -7,6 +7,7 @@ import { type Args, apiOrigin, flag } from "../args.ts"
 import { detectProject, type Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
 import { defaultBranch, repositoryRoot } from "../project/git.ts"
+import { sourceOf } from "../project/source.ts"
 import { plannedFiles, sabineVersion, writePlanned } from "../setup/files.ts"
 import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
@@ -107,6 +108,7 @@ export async function init(args: Args) {
     ...identity,
     kind: project.kind,
     format: project.format,
+    ...sourceOf(project.licence),
     repository,
     workflow: SCHELF_WORKFLOW,
   })

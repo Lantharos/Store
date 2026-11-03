@@ -35,7 +35,7 @@ git commit -m "Publish on Schelf"
 git push
 ```
 
-That's the setup. Prefer clicking? Everything `schelf init` does can be done from the [dashboard](/dashboard/apps/new), which shows you the same two files to copy.
+That's the setup. Prefer clicking? Everything `schelf init` does can be done from the [dashboard](/dashboard/projects/new), which shows you the same two files to copy.
 
 ## Your first release
 

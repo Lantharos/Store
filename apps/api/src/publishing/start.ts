@@ -101,6 +101,7 @@ export function dashboardUrl(app: string, release: string) {
 
 export async function publishable(app: AppRow) {
   if (app.status === "pulled") fail(403, `${app.id} was pulled from the store`)
+  if (app.status === "deleted") fail(403, `${app.id} was deleted by its publisher`)
   const owner = await db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) })
   if (owner?.status !== "active") fail(403, `${owner?.name ?? "This publisher"} can't publish right now`)
   if (!(await acceptingSubmissions())) fail(503, "schelf.store isn't taking new releases for a little while")

@@ -31,16 +31,16 @@ Mail to the store's addresses arrives through Cloudflare Email Routing, with a r
 
 Set with `wrangler secret put <name>`.
 
-| Secret | What it is |
-| --- | --- |
-| `BETTER_AUTH_SECRET` | Random string for sessions. |
-| `UPLOAD_SECRET` | Random string that signs upload tokens. |
-| `STORE_SIGNING_KEY` | The store signing key (Ed25519 seed, base64). Its public half must be in `trust/v1/store-keys.json`. |
-| `SEALING_KEY` | 32 random bytes in base64 that seal store keys made for a rotation. |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app for signing in, callback `https://schelf.store/api/auth/callback/github`. |
-| `GITHUB_TOKEN` | Fine-grained token with Contents read and write on Lantharos/Store, to start the checks workflow. Without it releases go straight to review. |
-| `ANALYTICS_TOKEN` | API token with Account Analytics Read, for the nightly download counts. |
-| `PULT_KEY` | The `schelf` project's Pult key. Without it nothing reaches Pult. |
+| Secret                                     | What it is                                                                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`                       | Random string for sessions.                                                                                                                  |
+| `UPLOAD_SECRET`                            | Random string that signs upload tokens.                                                                                                      |
+| `STORE_SIGNING_KEY`                        | The store signing key (Ed25519 seed, base64). Its public half must be in `trust/v1/store-keys.json`.                                         |
+| `SEALING_KEY`                              | 32 random bytes in base64 that seal store keys made for a rotation.                                                                          |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app for signing in, callback `https://schelf.store/api/auth/callback/github`.                                                   |
+| `GITHUB_TOKEN`                             | Fine-grained token with Contents read and write on Lantharos/Store, to start the checks workflow. Without it releases go straight to review. |
+| `ANALYTICS_TOKEN`                          | API token with Account Analytics Read, for the nightly download counts.                                                                      |
+| `PULT_KEY`                                 | The `schelf` project's Pult key. Without it nothing reaches Pult.                                                                            |
 
 ## Store keys
 

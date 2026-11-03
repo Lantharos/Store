@@ -2,7 +2,7 @@ import { z } from "zod"
 import { listingText, type Screenshot } from "../files/app.ts"
 import type { Permissions } from "../permissions.ts"
 import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
-import { projectSlug, type Visibility } from "../projects.ts"
+import { projectSlug, type Visibility, visibility } from "../projects.ts"
 import {
   type AppStatus,
   type CheckResult,
@@ -12,6 +12,7 @@ import {
   type Updater,
   updater,
 } from "../releases.ts"
+import { SCHELF_WORKFLOW } from "../setup.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
 export const PROOF_METHODS = ["dns", "well-known", "github"] as const
@@ -58,29 +59,34 @@ export interface DashboardApp {
   installs_7d: number
 }
 
-export const createApp = z.object({
-  id: appId,
-  kind,
-  format,
-  repository: z.string().regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "A repository is owner/name"),
-  workflow: z.string().default(".github/workflows/schelf.yml"),
-  environment: z.string().max(100).optional(),
-  name: z.string().trim().min(1).max(60),
-  summary: z.string().trim().min(1).max(120),
-})
-export type CreateApp = z.infer<typeof createApp>
+const repositoryName = z.string().regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "A repository is owner/name")
+const workflowPath = z
+  .string()
+  .regex(/^\.github\/workflows\/[A-Za-z0-9._-]+\.ya?ml$/, "A workflow lives in .github/workflows")
 
-export const createProject = z.object({
+const newProjectBase = z.object({
   name: z.string().trim().min(1).max(60),
-  slug: projectSlug.min(1),
+  summary: z.string().trim().max(120).default(""),
   distribution,
   licence: z.string().trim().max(100).optional(),
-  repository: z
-    .string()
-    .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "A repository is owner/name")
-    .optional(),
+  repository: repositoryName.optional(),
+  workflow: workflowPath.default(SCHELF_WORKFLOW),
+  environment: z.string().trim().max(100).optional(),
 })
-export type CreateProject = z.infer<typeof createProject>
+
+export const createApp = newProjectBase.extend({
+  id: appId,
+  kind,
+  format: format.exclude(["files"]),
+  visibility: visibility.default("listed"),
+})
+export type CreateApp = z.input<typeof createApp>
+
+export const createProject = newProjectBase.extend({
+  slug: projectSlug.min(1),
+  updater: updater.exclude(["sabine"]).optional(),
+})
+export type CreateProject = z.input<typeof createProject>
 
 export const updateHosting = z.object({
   slug: projectSlug.min(1).optional(),
@@ -96,7 +102,20 @@ export interface Links {
   latest: string
   json: string
   embed: string
-  feeds: { name: string; url: string }[]
+  feeds: { updater: Updater; url: string }[]
+}
+
+export interface DeletedProject {
+  id: string
+  restorable_until: string | null
+}
+
+export interface RestorableProject {
+  id: string
+  name: string
+  kind: z.infer<typeof kind>
+  deleted_at: string
+  restorable_until: string
 }
 
 export interface Channel {
@@ -216,8 +235,8 @@ const refPattern = z
   .regex(/^refs\/(heads|tags)\/\S+$/, "A ref looks like refs/heads/main or refs/tags/*")
 
 export const addTrustedPublisher = z.object({
-  repository: z.string().regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/),
-  workflow: z.string().regex(/^\.github\/workflows\/[A-Za-z0-9._-]+\.ya?ml$/),
+  repository: repositoryName,
+  workflow: workflowPath,
   environment: z.string().max(100).optional(),
   ref: refPattern.optional(),
 })

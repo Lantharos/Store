@@ -101,7 +101,8 @@ export async function serveProject(request: Request, segments: string[]) {
     !project ||
     project.status === "draft" ||
     project.status === "in-review" ||
-    project.status === "delisted"
+    project.status === "delisted" ||
+    project.status === "deleted"
   )
     return notFound("There's no project here")
   if (project.status === "pulled") return text("This project was pulled from Schelf", 410)

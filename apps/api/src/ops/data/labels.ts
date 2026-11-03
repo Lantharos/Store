@@ -15,6 +15,7 @@ export const APP_STATUS: Record<AppStatus, string> = {
   published: "Published",
   delisted: "Delisted",
   pulled: "Pulled",
+  deleted: "Deleted by the publisher",
 }
 
 export const APP_KIND = { app: "App", extension: "Luft extension" } as const

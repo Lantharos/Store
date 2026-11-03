@@ -8,7 +8,7 @@ import { loadApps } from "./records.ts"
 import { writeFeed, writeSigned } from "./write.ts"
 
 const REVOCATION_SERIAL = "revocations.serial"
-const INDEXED_APP_STATUSES = new Set(["published", "delisted", "pulled"])
+const INDEXED_APP_STATUSES = new Set(["published", "delisted", "pulled", "deleted"])
 
 export async function rebuildApp(id: string) {
   const app = await db.query.app.findFirst({ where: eq(schema.app.id, id) })
@@ -17,10 +17,20 @@ export async function rebuildApp(id: string) {
     return
   }
   const [record] = await loadApps([app])
+  if (app.status === "deleted") {
+    await writeSigned(paths.app(id), appIndex({ ...record!, releases: [] }))
+    await removeSabineFeeds(id)
+    return
+  }
   await writeSigned(paths.app(id), appIndex(record!))
   const key = await signingKey()
   for (const [channel, feed] of sabineFeeds(record!))
     await writeFeed(paths.sabine(id, channel), await signSabineFeed(key, feed))
+}
+
+async function removeSabineFeeds(id: string) {
+  const feeds = await env.BUCKET.list({ prefix: `sabine/${id}/` })
+  if (feeds.objects.length) await env.BUCKET.delete(feeds.objects.map((object) => object.key))
 }
 
 export async function rebuildCatalog() {

@@ -1,4 +1,6 @@
+import { exports } from "cloudflare:workers"
 import { DEFAULT_LOCALE, type Format, sha256Hex, TOKEN_PREFIX, utf8 } from "@schelf/protocol"
+import { expect } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
 
@@ -61,4 +63,40 @@ export function schelfToml(appId: string, format = "appimage") {
 
 export function bytesOf(text: string) {
   return utf8(text)
+}
+
+const DEV = "https://schelf.store/api/v1/dev"
+
+export interface Person {
+  id: string
+  email: string
+  call: (method: string, path: string, body?: unknown) => Promise<Response>
+}
+
+export async function person(name: string, existing?: string): Promise<Person> {
+  const id = existing ?? randomId()
+  const token = randomId(32)
+  const email = `${name.toLowerCase()}-${id}@example.com`
+  const session = db
+    .insert(schema.session)
+    .values({ id: randomId(), token, userId: id, expiresAt: new Date(Date.now() + 3_600_000) })
+  if (existing) await session
+  else await db.batch([db.insert(schema.user).values({ id, name, email, emailVerified: true }), session])
+  return {
+    id,
+    email,
+    call: (method, path, body) =>
+      exports.default.fetch(
+        new Request(`${DEV}${path}`, {
+          method,
+          headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        }),
+      ),
+  }
+}
+
+export async function json<T>(response: Response) {
+  expect(response.status).toBeLessThan(300)
+  return (await response.json()) as T
 }

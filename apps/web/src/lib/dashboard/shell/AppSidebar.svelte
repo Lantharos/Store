@@ -47,7 +47,7 @@
     {#if session.can("apps")}
     <a
       href="/dashboard/projects/new"
-      aria-current={path === "/dashboard/projects/new" || path === "/dashboard/apps/new" ? "page" : undefined}
+      aria-current={path === "/dashboard/projects/new" ? "page" : undefined}
       class="flex items-center gap-3 rounded-xl px-2 py-1.5 text-ink-muted transition-colors hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink"
     >
       <span class="grid size-7 place-items-center rounded-[22%] bg-well"><Plus class="size-4" /></span>

@@ -12,7 +12,7 @@ Open the project and choose **Upload**. Drop the files in; Schelf reads each one
 
 ## With a token
 
-Make a token under **Publishing** on the project. Tokens are for one project, last a year, and can be revoked at any time. Then:
+Make a token in the project's **Settings**. Tokens are for one project, last a year, and can be revoked at any time. Then:
 
 ```sh
 SCHELF_TOKEN=schelf_… bunx schelf publish --version 1.4.0 dist/*

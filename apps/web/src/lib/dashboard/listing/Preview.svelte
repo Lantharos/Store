@@ -2,13 +2,14 @@
   import Download from "@lucide/svelte/icons/download"
   import type { DashboardScreenshot, ListingMeta, ListingText } from "@schelf/protocol"
   import { API_BASE, type AppPage } from "@schelf/protocol"
-  import { untrack } from "svelte"
+  import { onMount, untrack } from "svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
   import ExtensionArt from "../../store/apps/ExtensionArt.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
   import { categoryLabel } from "../../store/categories.ts"
   import ExtensionPermissions from "../../store/page/ExtensionPermissions.svelte"
   import { type ExtensionGrant, extensionGrants } from "../../store/page/extension.ts"
+  import { scheme as dashboardScheme } from "../../theme/scheme.svelte.ts"
   import Segmented from "../../ui/fields/Segmented.svelte"
 
   let {
@@ -41,7 +42,10 @@
   })
 
   let system = $state<System>(untrack(() => (extension ? "luft" : "windows")))
-  let scheme = $state<"light" | "dark">("light")
+  let override = $state<{ chosen: "light" | "dark"; over: "light" | "dark" } | null>(null)
+  const scheme = $derived(override?.over === dashboardScheme.shown ? override.chosen : dashboardScheme.shown)
+
+  onMount(() => dashboardScheme.load())
 
   const BUTTONS: Record<System, string> = {
     windows: "Download for Windows",
@@ -75,7 +79,7 @@
         ]}
       />
     {/if}
-    <Segmented bind:value={scheme} label="Appearance" size="sm" options={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} />
+    <Segmented value={scheme} label="Appearance" size="sm" options={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} onchange={(chosen) => (override = { chosen, over: dashboardScheme.shown })} />
   </div>
 
   <div data-scheme={scheme} class="overflow-hidden rounded-2xl bg-canvas text-ink shadow-float ring-1 ring-hairline">

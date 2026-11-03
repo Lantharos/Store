@@ -52,6 +52,7 @@ export type ArtifactKind = z.infer<typeof artifactKind>
 
 export const DISTRIBUTIONS = ["open", "proprietary"] as const
 export const distribution = z.enum(DISTRIBUTIONS)
+export type Distribution = z.infer<typeof distribution>
 
 export const ACCESS = ["full", "limited"] as const
 export const access = z.enum(ACCESS)

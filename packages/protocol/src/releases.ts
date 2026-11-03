@@ -17,7 +17,7 @@ export type ReleaseStatus = z.infer<typeof releaseStatus>
 
 export const SHIPPED_STATUSES = ["rolling-out", "live"] as const satisfies ReleaseStatus[]
 
-export const APP_STATUSES = ["draft", "in-review", "published", "delisted", "pulled"] as const
+export const APP_STATUSES = ["draft", "in-review", "published", "delisted", "pulled", "deleted"] as const
 export const appStatus = z.enum(APP_STATUSES)
 export type AppStatus = z.infer<typeof appStatus>
 

@@ -8,7 +8,7 @@ Copies of your app that are already installed only understand the updater they w
 
 ## How it works
 
-On the project's **Links** tab, under **How it updates**, choose **Change how this app updates** and pick the new framework. From then on, you ship two things, in either order:
+On the project's **Updates** tab, choose **Change** next to how it updates, pick the new framework, and Schelf walks you through what happens next. From then on, you ship two things, in either order:
 
 1. **The first release built with the new framework.** Publish it as usual. Download links and the new feed serve it straight away.
 2. **A bridge.** One last release built the old way, whose only job is to install the new build and hand over. Publish it with `bridge: true` in the publish action, `schelf publish --bridge`, or by turning on **This is the bridge** when you upload.

@@ -6,8 +6,9 @@
     text,
     label = "Copy",
     compact = false,
+    primary = false,
     class: className = "",
-  }: { text: string; label?: string; compact?: boolean; class?: string } = $props()
+  }: { text: string; label?: string; compact?: boolean; primary?: boolean; class?: string } = $props()
   let copied = $state(false)
   let timer: ReturnType<typeof setTimeout>
 
@@ -24,10 +25,10 @@
   onclick={copy}
   aria-label={copied ? "Copied" : label}
   title={compact ? label : undefined}
-  class="button button-sm button-quiet shrink-0 {compact ? 'w-8 px-0' : ''} {className}"
+  class="button shrink-0 {primary ? 'button-primary' : 'button-sm button-quiet'} {compact ? 'w-8 px-0' : ''} {className}"
 >
   {#if copied}
-    <Check class="size-3.5 text-accent" strokeWidth={2.5} />
+    <Check class="size-3.5 {primary ? '' : 'text-accent'}" strokeWidth={2.5} />
     {#if !compact}Copied{/if}
   {:else}
     <Copy class="size-3.5" />

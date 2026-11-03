@@ -1,6 +1,6 @@
 <script lang="ts">
   import { appSettings } from "#lib/dashboard/apps/context.ts"
-  import UploadForm from "#lib/dashboard/hosting/UploadForm.svelte"
+  import UploadForm from "#lib/dashboard/upload/UploadForm.svelte"
   import { goto } from "$app/navigation"
 
   const settings = $derived(appSettings()())
@@ -27,7 +27,7 @@
     </section>
     <section class="rounded-group bg-raised p-5 sm:p-6">
       <h2 class="font-semibold">From a terminal</h2>
-      <p class="mt-1 text-[15px] leading-relaxed text-ink-muted">Make a token under Publishing, then run schelf publish with the files.</p>
+      <p class="mt-1 text-[15px] leading-relaxed text-ink-muted">Make a token in <a href="/dashboard/apps/{app.id}/settings" class="link">Settings</a>, then run schelf publish with the files.</p>
     </section>
   </aside>
 </div>

@@ -1,48 +1,9 @@
-import { exports } from "cloudflare:workers"
 import { type Account, AGREEMENT_VERSION, type DashboardPublisher, type Members } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
-import { randomId } from "../src/lib/ids.ts"
 import { releaseOwnerships } from "../src/publishers/ownership.ts"
-import { publisherWithApp } from "./fixtures.ts"
-
-const DEV = "https://schelf.store/api/v1/dev"
-
-interface Person {
-  id: string
-  email: string
-  call: (method: string, path: string, body?: unknown) => Promise<Response>
-}
-
-async function person(name: string): Promise<Person> {
-  const id = randomId()
-  const token = randomId(32)
-  const email = `${name.toLowerCase()}-${id}@example.com`
-  await db.batch([
-    db.insert(schema.user).values({ id, name, email, emailVerified: true }),
-    db
-      .insert(schema.session)
-      .values({ id: randomId(), token, userId: id, expiresAt: new Date(Date.now() + 3_600_000) }),
-  ])
-  return {
-    id,
-    email,
-    call: (method, path, body) =>
-      exports.default.fetch(
-        new Request(`${DEV}${path}`, {
-          method,
-          headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-          body: body === undefined ? undefined : JSON.stringify(body),
-        }),
-      ),
-  }
-}
-
-async function json<T>(response: Response) {
-  expect(response.status).toBeLessThan(300)
-  return (await response.json()) as T
-}
+import { json, type Person, person, publisherWithApp } from "./fixtures.ts"
 
 async function join(owner: Person, org: string, member: Person, role: "admin" | "developer" | "owner") {
   await json(await owner.call("POST", `/publishers/${org}/invites`, { email: member.email, role }))

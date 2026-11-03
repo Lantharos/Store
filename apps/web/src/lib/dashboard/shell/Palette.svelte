@@ -7,6 +7,7 @@
   import { scheme } from "../../theme/scheme.svelte.ts"
   import Dialog from "../../ui/overlay/Dialog.svelte"
   import { session } from "../api/session.svelte.ts"
+  import { projectTabs } from "../apps/tabs.ts"
   import {
     accountSections,
     publisherSections,
@@ -44,27 +45,16 @@
       run: go(`/dashboard/apps/${app.id}`),
     }))
     const sections = currentApp
-      ? [
-          ["Releases", ""],
-          ["Listing", "/listing"],
-          ["Publishing", "/publishing"],
-          ["Stats", "/stats"],
-        ].map(([label, suffix]) => ({
-          id: `section:${label}`,
-          label: `${label}`,
+      ? projectTabs(currentApp.kind).map((tab) => ({
+          id: `section:${tab.label}`,
+          label: tab.label,
           hint: currentApp.name,
           group: currentApp.name,
-          run: go(`/dashboard/apps/${currentApp.id}${suffix}`),
+          run: go(`/dashboard/apps/${currentApp.id}${tab.path}`),
         }))
       : []
     const pages: Command[] = [
       { id: "new-project", label: "New project", group: "Go to", run: go("/dashboard/projects/new") },
-      {
-        id: "new",
-        label: "Add an app for Luft and the store",
-        group: "Go to",
-        run: go("/dashboard/apps/new"),
-      },
       { id: "settings", label: "Settings", group: "Go to", run: go(settingsHref("profile")) },
       {
         id: "organisation",

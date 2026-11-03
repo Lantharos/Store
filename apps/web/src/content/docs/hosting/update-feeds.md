@@ -4,7 +4,7 @@ title: Update feeds
 description: Point your app's own updater at Schelf. Sabine, electron-updater and Tauri's updater are supported.
 ---
 
-Choose the updater on the project's **Links** tab, under **How it updates**. Schelf then serves its feed from the project's releases, following the [rollout](/docs/rollouts), and the feed's address is shown there.
+The project's **Updates** tab shows which updater it uses, its feed's address and the lines to add to your app. Schelf serves the feed from the project's releases, following the [rollout](/docs/rollouts).
 
 | Updater          | Feed                                                                                                         | Signed by                                                 |
 | ---------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |

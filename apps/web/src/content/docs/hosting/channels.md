@@ -26,4 +26,4 @@ When a beta is ready, open it in the dashboard and choose **Promote** with the c
 
 ## Keeping old releases
 
-Nightly keeps its last 10 releases; older ones are removed, files and all. You can change how many each channel keeps on the project's **Links** tab. Stable keeps everything.
+Nightly keeps its last 10 releases; older ones are removed, files and all. You can change how many each channel keeps on the project's **Updates** tab. Stable keeps everything.

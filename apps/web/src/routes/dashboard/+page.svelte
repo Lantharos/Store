@@ -2,6 +2,7 @@
   import ArrowRight from "@lucide/svelte/icons/arrow-right"
   import Plus from "@lucide/svelte/icons/plus"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import Restorable from "#lib/dashboard/project/Restorable.svelte"
   import PendingInvites from "#lib/dashboard/publishers/PendingInvites.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "#lib/dashboard/releases/status.ts"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
@@ -19,7 +20,6 @@
 <PageHeader title={session.publisher?.kind === "person" ? "Your projects" : `${session.publisher?.name}'s projects`}>
   {#snippet actions()}
     {#if session.can("apps")}
-      <a href="/dashboard/apps/new" class="button button-quiet">Add an app</a>
       <a href="/dashboard/projects/new" class="button button-primary"><Plus class="size-4" />New project</a>
     {/if}
   {/snippet}
@@ -72,16 +72,11 @@
     {/each}
   </ul>
 {:else}
-  <section class="enter mt-8 grid gap-4 lg:grid-cols-2">
-    <div class="rounded-group bg-raised p-7 sm:p-9">
-      <h2 class="text-2xl font-semibold tracking-[-0.02em]">Host your releases</h2>
-      <p class="mt-2 leading-relaxed text-ink-soft">Any app, open or closed source, on any system. Send releases from GitHub Actions or upload them, and point your site's download button at Schelf. It stays unlisted until you ask to list it.</p>
-      {#if session.can("apps")}<a href="/dashboard/projects/new" class="button button-primary mt-6">New project</a>{/if}
-    </div>
-    <div class="rounded-group bg-raised p-7 sm:p-9">
-      <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put an app in the store</h2>
-      <p class="mt-2 leading-relaxed text-ink-soft">Sabine apps, AppImages and Luft extensions, listed in the catalog and the Schelf app on Luft, with a person reviewing every release.</p>
-      {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-quiet mt-6">Add an app</a>{/if}
-    </div>
+  <section class="enter mt-8 rounded-group bg-raised p-7 sm:p-9">
+    <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put your first project on Schelf</h2>
+    <p class="mt-2 max-w-xl leading-relaxed text-ink-soft">An app for Luft and the store, or any app you want download links and updates for, open or closed source. Send releases from GitHub Actions or upload them yourself.</p>
+    {#if session.can("apps")}<a href="/dashboard/projects/new" class="button button-primary mt-6">New project</a>{/if}
   </section>
 {/if}
+
+{#if session.publisher && session.can("apps")}<Restorable publisherId={session.publisher.id} />{/if}

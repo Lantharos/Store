@@ -20,7 +20,7 @@ Links follow the stable channel. Put `@beta` or `@nightly` after the project for
 
 ## Rollouts
 
-A new release [rolls out](/docs/rollouts) over a few days. Until it reaches everyone, the links keep pointing at the release before it, so a bad release never lands on your front page. If you'd rather hand it out as it rolls out, turn on **Download links follow the rollout** on the project's **Links** tab: each request then gets the new release with the rollout's chance.
+A new release [rolls out](/docs/rollouts) over a few days. Until it reaches everyone, the links keep pointing at the release before it, so a bad release never lands on your front page. If you'd rather hand it out as it rolls out, turn on **Links follow the rollout** in the project's **Settings**: each request then gets the new release with the rollout's chance.
 
 ## The JSON
 

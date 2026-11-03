@@ -68,7 +68,7 @@ export async function registerApp(
   account: Dashboard,
   publisher: DashboardPublisher,
   existing: AppSettings | undefined,
-  app: CreateApp,
+  app: CreateApp & { repository: string },
 ) {
   if (!existing) {
     await step(

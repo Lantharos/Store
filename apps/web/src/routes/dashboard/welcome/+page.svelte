@@ -27,7 +27,7 @@
       })
       await session.refreshAccount()
       await session.use(created.id)
-      await goto("/dashboard/apps/new")
+      await goto("/dashboard/projects/new")
     } catch (failure) {
       error = (failure as Error).message
     } finally {

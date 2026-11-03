@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ReleaseSummary, UpdaterSwitch } from "@schelf/protocol"
   import { date } from "../../format.ts"
-  import { frameworkName } from "../hosting/framework.ts"
+  import { frameworkName } from "../updates/framework.ts"
   import { RELEASE_STATUS, TONE_DOT } from "./status.ts"
 
   let {

@@ -28,13 +28,13 @@
 
 <Group
   title="Channels"
-  description="A release goes to stable, or to the channel its version names, like 2.0.0-beta.1 or 2.0.0-nightly.5. Pick one by hand with the channel input of the action or schelf publish --channel."
+  description="A release goes to stable, or to the channel its version names, like 2.0.0-beta.1. To move a shipped release to another channel, open it and choose Promote."
   rows
 >
   {#each settings.channels as channel (channel.name)}
     <Row title={channel.name} description={plural(channel.releases, "release")}>
       {#if channel.name !== "stable"}
-        <div class="w-48">
+        <div class="w-56">
           <Select label="How many {channel.name} releases to keep" value={channel.keep === null ? "all" : String(channel.keep)} options={KEEP} onchange={(value) => keep(channel.name, value)} />
         </div>
       {/if}

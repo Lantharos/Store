@@ -7,6 +7,7 @@
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import { provideAppSettings } from "#lib/dashboard/apps/context.ts"
+  import { projectTabs } from "#lib/dashboard/apps/tabs.ts"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
@@ -25,17 +26,19 @@
   })
 
   const base = $derived(`/dashboard/apps/${id}`)
-  const tabs = $derived([
-    {
-      href: base,
-      label: "Releases",
-      active: page.url.pathname === base || page.url.pathname.startsWith(`${base}/releases`),
-    },
-    { href: `${base}/hosting`, label: "Links", active: page.url.pathname === `${base}/hosting` },
-    { href: `${base}/listing`, label: "Listing", active: page.url.pathname === `${base}/listing` },
-    { href: `${base}/publishing`, label: "Publishing", active: page.url.pathname === `${base}/publishing` },
-    { href: `${base}/stats`, label: "Stats", active: page.url.pathname === `${base}/stats` },
-  ])
+  const OVERVIEW_PAGES = ["/releases", "/upload"]
+  const tabs = $derived(
+    settings.data
+      ? projectTabs(settings.data.app.kind).map((tab) => {
+          const href = `${base}${tab.path}`
+          const rest = page.url.pathname.slice(base.length)
+          const active = tab.path
+            ? page.url.pathname === href || page.url.pathname.startsWith(`${href}/`)
+            : rest === "" || OVERVIEW_PAGES.some((path) => rest.startsWith(path))
+          return { href, label: tab.label, active }
+        })
+      : [],
+  )
   const app = $derived(settings.data?.app)
   const storePath = $derived(settings.data ? new URL(settings.data.links.page).pathname : "")
 </script>

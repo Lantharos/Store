@@ -4,6 +4,7 @@ import { inviteRoutes } from "../publishers/invites.ts"
 import { publisherRoutes } from "../publishers/routes.ts"
 import { accountRoutes } from "./account/account.ts"
 import { appRoutes } from "./apps/apps.ts"
+import { deletingRoutes } from "./apps/deleting.ts"
 import { hostingRoutes } from "./apps/hosting.ts"
 import { listingRoutes } from "./apps/listing.ts"
 import { mediaRoutes } from "./apps/media.ts"
@@ -19,6 +20,7 @@ dashboardRoutes.route("/invites", inviteRoutes)
 dashboardRoutes.route("/publishers", publisherRoutes)
 for (const routes of [
   appRoutes,
+  deletingRoutes,
   hostingRoutes,
   listingRoutes,
   mediaRoutes,

@@ -1,5 +1,5 @@
 import { type Ability, can, type Role, splitProjectPath } from "@schelf/protocol"
-import { and, eq } from "drizzle-orm"
+import { and, eq, ne } from "drizzle-orm"
 import { createMiddleware } from "hono/factory"
 import type { Viewer } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
@@ -59,7 +59,7 @@ export async function appAccess(viewer: Viewer, id: string, ability?: Ability) {
       schema.member,
       and(eq(schema.member.publisherId, schema.app.publisherId), eq(schema.member.userId, viewer.id)),
     )
-    .where(appMatching(id))
+    .where(and(appMatching(id), ne(schema.app.status, "deleted")))
   if (!row) fail(404, "You don't have an app with that id")
   if (ability) {
     allow(row.role, ability)
