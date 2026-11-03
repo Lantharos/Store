@@ -20,12 +20,6 @@ const NAME_LIMIT = 60
 const SUMMARY_LIMIT = 120
 const MIN_SCREENSHOTS = 2
 
-function iconOf(project: Project, component?: Component) {
-  if (project.sabine?.icon) return project.sabine.icon
-  const icon = component?.icons.find((candidate) => candidate.kind === "remote") ?? component?.icons[0]
-  return icon?.value
-}
-
 export function readListing(project: Project, extraScreenshots: number): Listing {
   const component = project.appstream?.component
   return {
@@ -34,7 +28,7 @@ export function readListing(project: Project, extraScreenshots: number): Listing
     description: component?.description || undefined,
     developer: component?.developer,
     licence: project.licence,
-    icon: iconOf(project, component),
+    icon: project.icon,
     screenshots: (component?.screenshots.length ?? 0) + extraScreenshots,
     categories: component?.categories ?? [],
     homepage: component?.urls.homepage,

@@ -15,6 +15,7 @@ export interface Project {
   summary?: string
   version?: string
   licence?: string
+  icon?: string
   sabine?: SabineApp
   extension?: ExtensionManifest
   appstream?: { path: string; component: Component }
@@ -76,6 +77,19 @@ async function findLicence(root: string, component?: Component) {
   return cargo ? /^license\s*=\s*"([^"]+)"/m.exec(cargo)?.[1] : undefined
 }
 
+async function findIcon(
+  root: string,
+  id: string | undefined,
+  sabine: SabineApp | undefined,
+  component?: Component,
+) {
+  if (sabine?.icon) return sabine.icon
+  const declared = component?.icons.find((icon) => icon.kind === "remote") ?? component?.icons[0]
+  if (declared) return declared.value
+  if (!id) return undefined
+  return (await findFiles(root, (name) => name === `${id}.svg` || name === `${id}.png`))[0]
+}
+
 export async function detectProject(root: string): Promise<Project> {
   const [sabineText, extensionText, repository] = await Promise.all([
     readOptional(join(root, "Sabine.toml")),
@@ -95,15 +109,17 @@ export async function detectProject(root: string): Promise<Project> {
   const kind: Kind = extension ? "extension" : "app"
   const format: Format = extension ? "luft-extension" : sabine ? "sabine" : "appimage"
   const component = appstream?.component
+  const id = extension?.id ?? sabine?.id ?? component?.id.replace(/\.desktop$/, "")
   return {
     root,
     kind,
     format,
-    id: extension?.id ?? sabine?.id ?? component?.id.replace(/\.desktop$/, ""),
+    id,
     name: extension?.name ?? sabine?.name ?? component?.name.en,
     summary: extension?.summary ?? component?.summary.en,
     version: extension?.version ?? sabine?.version ?? component?.releases[0]?.version,
     licence: await findLicence(root, component),
+    icon: await findIcon(root, id, sabine, component),
     sabine,
     extension,
     appstream,

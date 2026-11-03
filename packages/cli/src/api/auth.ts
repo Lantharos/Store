@@ -60,7 +60,6 @@ export async function signIn(api: string) {
     body: JSON.stringify({ client_id: CLI_CLIENT_ID }),
   })
   const url = code.verification_uri_complete ?? code.verification_uri
-  blank()
   line(`Sign in to Schelf in your browser and check the code matches: ${bold(accent(code.user_code))}`)
   note(url)
   if (interactive) openBrowser(url)

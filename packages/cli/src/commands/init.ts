@@ -15,12 +15,12 @@ import { blank, done, Failure, field, next, note, step, title } from "../ui/outp
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
 
-const FORMAT_NAMES = { sabine: "Sabine app", appimage: "AppImage", "luft-extension": "Luft extension" }
+const FORMAT_NAMES = { sabine: "a Sabine app", appimage: "an AppImage", "luft-extension": "a Luft extension" }
 
 function describe(project: Project) {
   const what = FORMAT_NAMES[project.format]
   return project.found.length
-    ? `Found a ${what} ${muted(`in ${project.found.join(", ")}`)}`
+    ? `Found ${what} ${muted(`in ${project.found.join(", ")}`)}`
     : "Read the project"
 }
 

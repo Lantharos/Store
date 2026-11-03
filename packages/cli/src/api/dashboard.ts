@@ -27,7 +27,7 @@ export function dashboard(api: string, token: string) {
 
   return {
     account: () => get<Account>("/account"),
-    becomeDeveloper: (body: BecomeDeveloper) => post<Account["developer"]>("/developer", body),
+    becomeDeveloper: (body: BecomeDeveloper) => post<Account["developer"]>("/account/developer", body),
     namespaces: () => get<Namespace[]>("/namespaces"),
     claimNamespace: (prefix: string) => post<Namespace>("/namespaces", { prefix }),
     verifyNamespace: (prefix: string, method: ProofMethod) =>
