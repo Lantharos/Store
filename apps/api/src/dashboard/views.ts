@@ -18,8 +18,8 @@ export function namespaceView(row: typeof schema.namespace.$inferSelect): Namesp
     instructions: githubPrefix
       ? null
       : {
-          dns: `Add a TXT record on ${domainOf(row.prefix)} with the value schelf-verify=${row.proofValue}`,
-          well_known: `Serve https://${domainOf(row.prefix)}/.well-known/schelf-store.txt containing ${row.proofValue}`,
+          dns: `schelf-verify=${row.proofValue}`,
+          well_known: `https://${domainOf(row.prefix)}/.well-known/schelf-store.txt`,
         },
   }
 }

@@ -55,8 +55,8 @@
     {#if method === "dns"}
       <p class="text-[15px] leading-relaxed text-ink-soft">Add a TXT record to <span class="font-mono text-[14px] text-ink">{domain}</span> with this value:</p>
       <div class="flex items-center gap-2 rounded-2xl bg-well py-2 pr-2 pl-4">
-        <code class="min-w-0 flex-1 truncate font-mono text-[13px]">{current.instructions?.dns ?? current.token}</code>
-        <CopyButton text={current.instructions?.dns ?? current.token} />
+        <code class="min-w-0 flex-1 truncate font-mono text-[13px]">{current.instructions?.dns}</code>
+        <CopyButton text={current.instructions?.dns ?? ""} />
       </div>
     {:else}
       <p class="text-[15px] leading-relaxed text-ink-soft">Serve this text as the whole file at:</p>
