@@ -1,7 +1,9 @@
-import { env, waitUntil } from "cloudflare:workers"
 import { ROLE_NAMES } from "@schelf/protocol"
 import { sql } from "drizzle-orm"
+import type { Viewer } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
+import { queueNotice } from "../mail/notices/send.ts"
+import { invite as inviteMail } from "../mail/notices/templates/invite.ts"
 import type { PublisherRow } from "./access.ts"
 
 type InviteRow = typeof schema.invite.$inferSelect
@@ -14,21 +16,17 @@ async function recipientOf(invite: InviteRow) {
   return user?.email ?? null
 }
 
-export async function sendInvite(invite: InviteRow, publisher: PublisherRow, from: string) {
+export async function sendInvite(invite: InviteRow, publisher: PublisherRow, inviter: Viewer) {
   const to = await recipientOf(invite)
   if (!to) return
-  const role = ROLE_NAMES[invite.role].label.toLowerCase()
-  waitUntil(
-    env.EMAIL.send({
-      from: env.NOTIFY_FROM,
-      to,
-      subject: `${from} invited you to ${publisher.name} on Schelf`,
-      text: [
-        `${from} invited you to publish apps as ${publisher.name} on schelf.store, as ${role === "admin" ? "an" : "a"} ${role}.`,
-        `Sign in with this address${invite.githubLogin ? ` or with the GitHub account ${invite.githubLogin}` : ""} to join:`,
-        `${env.PUBLIC_URL}/dashboard/invites`,
-        "The invitation works for 14 days. If you weren't expecting it, you can ignore this email.",
-      ].join("\n\n"),
+  queueNotice(
+    to,
+    inviteMail({
+      inviter: { name: inviter.name, email: inviter.email },
+      publisher: publisher.name,
+      role: ROLE_NAMES[invite.role].label,
+      githubLogin: invite.githubLogin,
+      expires: invite.expiresAt,
     }),
   )
 }

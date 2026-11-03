@@ -1,14 +1,8 @@
-import { env, waitUntil } from "cloudflare:workers"
+import { queueNotice } from "../mail/notices/send.ts"
+import { signInCode } from "../mail/notices/templates/codes.ts"
 
 export const CODE_MINUTES = 10
 
 export function sendCode({ email, otp }: { email: string; otp: string }) {
-  waitUntil(
-    env.EMAIL.send({
-      from: env.NOTIFY_FROM,
-      to: email,
-      subject: `${otp} is your Schelf code`,
-      text: `Your code to sign in to schelf.store as ${email}:\n\n${otp}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, you can ignore this email.`,
-    }),
-  )
+  queueNotice(email, signInCode({ email, otp, minutes: CODE_MINUTES }))
 }

@@ -1,12 +1,21 @@
-import { env, waitUntil } from "cloudflare:workers"
+import { waitUntil } from "cloudflare:workers"
+import { DEFAULT_LOCALE, type ReportRequest } from "@schelf/protocol"
+import { and, eq } from "drizzle-orm"
+import { db, schema } from "../db/client.ts"
+import { sendNotice } from "../mail/notices/send.ts"
+import { reportReceived } from "../mail/notices/templates/report.ts"
 
-export function confirmReport(email: string, app: string, id: string) {
-  waitUntil(
-    env.EMAIL.send({
-      from: env.NOTIFY_FROM,
-      to: email,
-      subject: `We received your report about ${app}`,
-      text: `Thanks for telling us. A person will look at your report about ${app} and decide what to do; we'll write to you when they have.\n\nYour reference is ${id}.`,
-    }),
-  )
+async function appName(appId: string) {
+  const listing = await db.query.listing.findFirst({
+    columns: { name: true },
+    where: and(eq(schema.listing.appId, appId), eq(schema.listing.locale, DEFAULT_LOCALE)),
+  })
+  return listing?.name ?? appId
+}
+
+export function confirmReport(
+  email: string,
+  report: { id: string; app: string; kind: ReportRequest["kind"] },
+) {
+  waitUntil(appName(report.app).then((app) => sendNotice(email, reportReceived({ ...report, app }))))
 }

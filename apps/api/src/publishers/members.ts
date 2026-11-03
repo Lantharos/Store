@@ -98,7 +98,7 @@ memberRoutes.post("/invites", async (c) => {
     db.delete(schema.invite).where(and(eq(schema.invite.publisherId, publisher.id), same)),
     db.insert(schema.invite).values(row),
   ])
-  await sendInvite(row, publisher, c.var.viewer.name)
+  await sendInvite(row, publisher, c.var.viewer)
   return c.json(inviteView(row, c.var.viewer.name), 201)
 })
 

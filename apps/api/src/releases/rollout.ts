@@ -5,6 +5,7 @@ import { fail } from "../lib/http.ts"
 import { rolloutsAreFrozen } from "../ops/events.ts"
 import { resign, resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
+import { notifyPublisher } from "./notify.ts"
 
 const CONTROLLABLE = new Set(["rolling-out", "live"])
 
@@ -59,11 +60,11 @@ export async function stepRollouts(now = new Date()) {
   const due = rolling.filter((release) =>
     rolloutDue(release.rolloutPercent, release.rolloutSteppedAt ?? release.approvedAt ?? now, now),
   )
-  for (const release of due)
-    await db
-      .update(schema.release)
-      .set(percentUpdate(nextRolloutStep(release.rolloutPercent), now))
-      .where(eq(schema.release.id, release.id))
+  for (const release of due) {
+    const percent = nextRolloutStep(release.rolloutPercent)
+    await db.update(schema.release).set(percentUpdate(percent, now)).where(eq(schema.release.id, release.id))
+    if (percent === 100) notifyPublisher(release.id, "live")
+  }
   const apps = [...new Set(due.map((release) => release.appId))]
   if (apps.length) await resign(...apps.map((id) => ({ type: "app" as const, id })), { type: "catalog" })
   return due

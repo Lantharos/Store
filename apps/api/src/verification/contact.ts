@@ -1,8 +1,10 @@
-import { env, waitUntil } from "cloudflare:workers"
+import { env } from "cloudflare:workers"
 import { sha256Hex } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
+import { queueNotice } from "../mail/notices/send.ts"
+import { contactCode } from "../mail/notices/templates/codes.ts"
 import type { PublisherRow } from "../publishers/access.ts"
 import type { VerificationRow } from "./facts.ts"
 
@@ -28,14 +30,7 @@ export async function sendContactCode(publisher: PublisherRow, verification: Ver
       contactCodeExpiresAt: new Date(Date.now() + CODE_MINUTES * 60_000),
     })
     .where(eq(schema.publisherVerification.id, verification.id))
-  waitUntil(
-    env.EMAIL.send({
-      from: env.NOTIFY_FROM,
-      to: email,
-      subject: `${code} confirms ${email} for ${publisher.name}`,
-      text: `Enter this code on schelf.store to confirm ${email} as the contact for verifying ${publisher.name}:\n\n${code}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, you can ignore this email.`,
-    }),
-  )
+  queueNotice(email, contactCode({ email, publisher: publisher.name, otp: code, minutes: CODE_MINUTES }))
 }
 
 export async function confirmContactCode(verification: VerificationRow, code: string) {

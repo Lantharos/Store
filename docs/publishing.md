@@ -126,8 +126,8 @@ For local use and other CI, `schelf publish` uses a dashboard token instead of O
 2. **Upload.** The Worker verifies the token, files and attestations, creates the release (`checking`) and stores the files in R2.
 3. **Checks.** Quick checks run in the Worker: id and namespace, version newer than the last, platforms and formats known, listing complete, permissions compared with the last approved release, impersonation. The deeper checks run in this repository's public `checks` workflow, started by the Worker through `repository_dispatch` and reporting back with its own OIDC token: malware scan, unpacking and inspecting each file, the source diff since the last approved tag (for public repositories), licence. A failed check goes back to the developer with the reason, and nothing reaches review.
 4. **Review.** The release goes to the Submissions inbox (first release of an id) or Updates (any later one) in Pult, with the facts. Details in [review](review.md).
-5. **Decision.** Approve signs the release into the index and the update feeds and starts the rollout. Request changes and Reject email the developer with the reason, shown in the dashboard too.
-6. **Rollout.** 10%, 25%, 50%, 100% over three days unless the developer changes it ([trust](trust.md#updates)).
+5. **Decision.** Approve signs the release into the index and the update feeds and starts the rollout. Request changes and Reject email the developer with the reason, shown in the dashboard too. Every email links to the release in the dashboard.
+6. **Rollout.** 10%, 25%, 50%, 100% over three days unless the developer changes it ([trust](trust.md#updates)). Members get an email when it reaches everyone.
 
 ## Paid and closed-source apps, later
 

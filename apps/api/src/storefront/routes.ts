@@ -171,6 +171,6 @@ storefrontRoutes.post("/reports", async (c) => {
     }),
   })
   tellOps({ type: "report", report: id })
-  if (report.email) confirmReport(report.email, report.app, id)
+  if (report.email) confirmReport(report.email, { id, app: report.app, kind: report.kind })
   return c.json({ id } satisfies ReportResponse, 201)
 })
