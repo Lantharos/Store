@@ -11,6 +11,8 @@ import {
   type ReleaseSummary,
   type RolloutRequest,
   type TrustedPublisher,
+  type UpdateListing,
+  type UpdateMeta,
 } from "@schelf/protocol"
 import { request } from "@schelf/publisher"
 
@@ -37,6 +39,18 @@ export function dashboard(api: string, token: string) {
     app: (id: string) => get<AppSettings>(app(id)),
     addPublisher: (id: string, body: { repository: string; workflow: string }) =>
       post<TrustedPublisher>(`${app(id)}/publishers`, body),
+    putListing: (id: string, locale: string, body: UpdateListing) =>
+      request(`${base}${app(id)}/listing/${locale}`, { method: "PUT", token, body: JSON.stringify(body) }),
+    patchMeta: (id: string, body: UpdateMeta) =>
+      request(`${base}${app(id)}/meta`, { method: "PATCH", token, body: JSON.stringify(body) }),
+    putIcon: (id: string, bytes: Uint8Array<ArrayBuffer>) =>
+      request(`${base}${app(id)}/icon`, { method: "PUT", token, body: bytes }),
+    addScreenshot: (id: string, bytes: Uint8Array<ArrayBuffer>, size: { width: number; height: number }) =>
+      request(`${base}${app(id)}/screenshots?width=${size.width}&height=${size.height}`, {
+        method: "POST",
+        token,
+        body: bytes,
+      }),
     releases: (id: string) => get<ReleaseSummary[]>(`${app(id)}/releases`),
     release: (id: string, release: string) => get<ReleaseDetail>(`${app(id)}/releases/${release}`),
     rollout: (id: string, release: string, body: RolloutRequest) =>

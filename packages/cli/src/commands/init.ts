@@ -9,6 +9,7 @@ import { readOptional } from "../project/files.ts"
 import { repositoryRoot } from "../project/git.ts"
 import { plannedFiles, sabineVersion, writePlanned } from "../setup/files.ts"
 import { settleIdentity } from "../setup/identity.ts"
+import { importListing } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
 import { ensureDeveloper, registerApp } from "../setup/register.ts"
 import { blank, done, Failure, field, next, note, step, title } from "../ui/output.ts"
@@ -76,13 +77,14 @@ export async function init(args: Args) {
   const account = dashboard(api, token)
   await ensureDeveloper(api, account, current)
   await ensureNamespace(account, identity.id)
-  await registerApp(account, {
+  const created = await registerApp(account, {
     ...identity,
     kind: project.kind,
     format: project.format,
     repository,
     workflow: SCHELF_WORKFLOW,
   })
+  if (created) await importListing(account, project, identity)
 
   const files = await plannedFiles(root, await setupInput(project, identity.id))
   const replaced = files.filter((file) => file.existing !== undefined && file.path !== "Sabine.toml")

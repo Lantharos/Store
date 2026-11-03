@@ -1,4 +1,3 @@
-import type { Component } from "@schelf/appstream"
 import type { Project } from "../project/detect.ts"
 import type { Issue } from "./issues.ts"
 

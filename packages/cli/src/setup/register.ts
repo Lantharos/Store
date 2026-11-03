@@ -34,7 +34,7 @@ export async function registerApp(account: Dashboard, app: CreateApp) {
     await step(`Registering ${bold(app.id)} with ${app.repository} as its publisher`, () =>
       account.createApp(app),
     )
-    return
+    return true
   }
   const trusted = existing.publishers.some(
     (publisher) =>
@@ -43,9 +43,10 @@ export async function registerApp(account: Dashboard, app: CreateApp) {
   )
   if (trusted) {
     done(`${app.repository} already publishes ${bold(app.id)}`)
-    return
+    return false
   }
   await step(`Trusting ${app.repository} to publish ${bold(app.id)}`, () =>
     account.addPublisher(app.id, { repository: app.repository, workflow: SCHELF_WORKFLOW }),
   )
+  return false
 }
