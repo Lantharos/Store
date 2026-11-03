@@ -668,6 +668,106 @@
       },
       "sla": {}
     },
+    "mail": {
+      "source": "src/ops/define/mail.ts:12",
+      "label": "Mail",
+      "icon": "mail",
+      "resource": null,
+      "layout": "list",
+      "states": [
+        "open",
+        "handled",
+        "spam"
+      ],
+      "closed": [
+        "handled",
+        "spam"
+      ],
+      "reopen": [],
+      "data": {
+        "type": "object",
+        "properties": {
+          "mailbox": {
+            "type": "string",
+            "enum": [
+              "legal",
+              "dmca",
+              "abuse",
+              "security",
+              "privacy",
+              "support",
+              "hello"
+            ]
+          },
+          "from": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "replyTo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mailbox",
+          "from",
+          "name",
+          "replyTo",
+          "subject",
+          "text",
+          "raw"
+        ]
+      },
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
+      "intake": null,
+      "triage": {
+        "instructions": "Each item is an email sent to one of schelf.store's addresses, such as legal, privacy, security or support. schelf.store is an app store for Linux, Windows and macOS. Legal notices, takedown requests and security reports matter even when they're badly written; only close what is plainly unsolicited advertising, phishing or spam.",
+        "questions": {
+          "spam": {
+            "type": "noul",
+            "prompt": "Is this unsolicited advertising, phishing or spam?"
+          }
+        },
+        "rules": [
+          {
+            "name": "Close spam",
+            "live": false,
+            "then": [
+              {
+                "type": "state",
+                "state": "spam"
+              }
+            ]
+          }
+        ]
+      },
+      "reply": true,
+      "hooks": {
+        "state": false
+      },
+      "sla": {
+        "open": 172800000
+      }
+    },
     "reports": {
       "source": "src/ops/define/inboxes.ts:118",
       "label": "Reports",
@@ -1276,5 +1376,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "062e08ead87b"
+  "version": "8ec5bbd7266d"
 }

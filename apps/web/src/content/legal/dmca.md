@@ -8,7 +8,7 @@ If an app on Schelf uses your code, name, logo or other work without permission,
 
 ## Sending a notice
 
-Use **Report a problem** on the app's page and choose “It uses my work”, or write to [legal@schelf.store](mailto:legal@schelf.store). Include:
+Use **Report a problem** on the app's page and choose “It uses my work”, or write to [dmca@schelf.store](mailto:dmca@schelf.store). Include:
 
 1. Your name, address, phone number and email.
 2. The work you own, and where we can see the original.

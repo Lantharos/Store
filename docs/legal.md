@@ -24,7 +24,7 @@ The store hosts and distributes third-party apps, so it is a hosting service and
 
 | Duty | How the store meets it |
 | --- | --- |
-| Single point of contact (Art. 11, 12) | `legal@schelf.store`, listed in the imprint and on a `/legal/contact` page, with the languages it answers in. |
+| Single point of contact (Art. 11, 12) | `legal@schelf.store`, listed in the imprint and on a `/legal/contact` page, with the languages it answers in. Mail to it becomes an item in Pult and gets a short receipt; the other addresses are in [review](review.md#email). |
 | Notice and action (Art. 16) | A report form on every app page and in Schelf. It asks for the reason, an explanation, where exactly, and the reporter's name and email (optional for child abuse material). Each report becomes an item in the Reports inbox in Pult and gets a confirmation email. |
 | Statement of reasons (Art. 17) | When an app or listing is removed, restricted or delisted, the developer gets an email with what was done, why, the facts it relied on, whether it was automated, and how to appeal. The text is generated from the decision in Pult. |
 | Appeals | The developer replies to the statement and it reopens the item in Pult for a human to decide again. |
@@ -33,7 +33,7 @@ The store hosts and distributes third-party apps, so it is a hosting service and
 
 ## Copyright (DMCA and EU)
 
-Repositories are open source, so most copyright problems are trademark-like: someone ships another project's work under their own name. The same report form takes copyright notices, and a separate `/legal/dmca` page lists what a valid DMCA notice needs and names the designated agent. Registering an agent with the US Copyright Office costs $6 every three years and is worth doing for safe-harbour protection, since many developers and users are in the US. A counter-notice path restores an app after 10–14 business days unless the claimant goes to court.
+Repositories are open source, so most copyright problems are trademark-like: someone ships another project's work under their own name. The same report form takes copyright notices, so does `dmca@schelf.store`, and a separate `/legal/dmca` page lists what a valid DMCA notice needs and names the designated agent. Registering an agent with the US Copyright Office costs $6 every three years and is worth doing for safe-harbour protection, since many developers and users are in the US. A counter-notice path restores an app after 10–14 business days unless the claimant goes to court.
 
 ## Licences
 

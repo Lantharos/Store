@@ -1,6 +1,7 @@
 export * from "./apps.ts"
 export * from "./auth.ts"
 export * from "./listings.ts"
+export * from "./mail.ts"
 export * from "./moderation.ts"
 export * from "./publishers.ts"
 export * from "./releases.ts"

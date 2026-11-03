@@ -4,7 +4,7 @@ title: Privacy
 description: What Schelf knows about you, which is very little, and why.
 ---
 
-Last changed on 3 November 2026. Questions go to [legal@schelf.store](mailto:legal@schelf.store).
+Last changed on 3 November 2026. Questions go to [privacy@schelf.store](mailto:privacy@schelf.store).
 
 ## If you install apps
 
@@ -39,4 +39,4 @@ You can delete your account from the dashboard at any time. Your apps are delist
 
 ## Your rights
 
-You can ask us what we have about you, to correct it, to delete it, or to move it elsewhere, by writing to [legal@schelf.store](mailto:legal@schelf.store). You can also complain to your data protection authority.
+You can ask us what we have about you, to correct it, to delete it, or to move it elsewhere, by writing to [privacy@schelf.store](mailto:privacy@schelf.store). You can also complain to your data protection authority.

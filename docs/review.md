@@ -26,6 +26,7 @@ The store is a Pult app like any other, wired the way Pult runs its own back off
 | Inbox    | `reports`          | Notices from users and rights holders (DSA, DMCA, abuse). States: open, actioned, dismissed.          |
 | Inbox    | `claims`           | Disputes over an app id, a name or a namespace.                                                       |
 | Inbox    | `verification`     | Requests for the verified mark. States: open, more requested, approved, rejected.                     |
+| Inbox    | `mail`             | Email to the store's addresses, see [Email](#email). States: open, handled, spam.                     |
 | Page     | `home`             | Queue counts (new apps, updates, reports, verification) and the open items.                           |
 | Flag     | `submissions-open` | Pauses new submissions with a message, for a flood or a holiday.                                      |
 | Flag     | `rollouts-frozen`  | Stops every rollout from advancing, store-wide.                                                       |
@@ -148,6 +149,35 @@ It's a script Claude Code can run on its own when asked "review this app", and a
 7. Deletes the overlay.
 
 Windows builds are reviewed the same way once there's a Windows VM image with Sabine installed; until then the review covers Linux and notes it.
+
+## Email
+
+Mail to schelf.store reaches the api Worker through Cloudflare Email Routing, whose catch-all rule sends every address to it. These addresses take mail; anything else, and the `no-reply@` address the store's own email comes from, is refused with a note saying where to write instead.
+
+| Address                 | For                                                               |
+| ----------------------- | ----------------------------------------------------------------- |
+| `legal@schelf.store`    | The single point of contact: legal notices, authorities, disputes |
+| `dmca@schelf.store`     | Copyright notices and counter-notices                             |
+| `abuse@schelf.store`    | Malware, scams and other abuse                                    |
+| `security@schelf.store` | Vulnerabilities in the store, the Schelf app or the signing chain |
+| `privacy@schelf.store`  | Requests about personal data                                      |
+| `support@schelf.store`  | Help with publishing or the dashboard                             |
+| `hello@schelf.store`    | Anything else                                                     |
+
+Each new conversation becomes one item in the `mail` inbox, tagged with the address it was sent to, with the sender, subject and text as its data and the attachments and the original message (`.eml`) as files. The raw message is also kept in R2 under `mail/`. Mail to `dmca@` and `abuse@` lands here too rather than in `reports`: those items are about one app and can't be answered by email, while a notice by mail often names several things and needs a conversation. Acting on an app is done from the app's own record in Pult.
+
+Replies written in the item's Email tab go out from the address the mail came to, with a reply address of `<address>+<item>@schelf.store` and `In-Reply-To` and `References` pointing at the conversation. An answer to either finds its item again, joins its timeline with its files and reopens it. The store remembers the `Message-ID` of every message in and out, so answers from clients that drop the reply address still thread.
+
+Screening happens before anything is stored:
+
+- Mail failing its sender's DMARC policy is refused. Mail whose SPF fails without a passing DKIM signature is kept in `mail/quarantine/` in R2 and nothing else. Mail with neither a pass nor a failure gets the `unverified` tag. Only the routing server's own `Authentication-Results` header is trusted.
+- One sender can send 10 messages a minute; more are refused.
+- Bulk and machine mail (`Auto-Submitted`, `List-Id`, `List-Unsubscribe`, `Precedence: bulk`, mailer daemons) gets the `automated` tag.
+- Triage closes plain spam as `spam`.
+
+The only automatic reply is a short receipt for a new conversation with `legal@` or `dmca@`, since a notice should be confirmed. It goes only to senders whose mail passed DMARC and isn't automated, and is marked `Auto-Submitted: auto-replied`. Everything else waits for a person.
+
+If Pult can't be reached, the message is still stored, and the Worker sends it on its hourly run.
 
 ## Changes Pult would need
 

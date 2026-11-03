@@ -8,6 +8,7 @@ import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { errorResponse, fail } from "./lib/http.ts"
+import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
 import { backOffice, publishDefinitions } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
@@ -65,4 +66,5 @@ export default {
     await Promise.all([rollUpDownloads(), recheckNamespaces(), resign({ type: "revocations" })])
   },
   queue: (batch) => signQueued(batch as MessageBatch<SigningJob>),
+  email: receiveMail,
 } satisfies ExportedHandler<Env, SigningJob>

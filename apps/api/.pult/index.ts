@@ -8,6 +8,7 @@ const project: Project<never> = {
     "src/ops/define/app.ts": () => import("../src/ops/define/app.ts"),
     "src/ops/define/flags.ts": () => import("../src/ops/define/flags.ts"),
     "src/ops/define/inboxes.ts": () => import("../src/ops/define/inboxes.ts"),
+    "src/ops/define/mail.ts": () => import("../src/ops/define/mail.ts"),
     "src/ops/define/pages.ts": () => import("../src/ops/define/pages.ts"),
     "src/ops/define/publisher.ts": () => import("../src/ops/define/publisher.ts"),
     "src/ops/define/release.ts": () => import("../src/ops/define/release.ts"),
