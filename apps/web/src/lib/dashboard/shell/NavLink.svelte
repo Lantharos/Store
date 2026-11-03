@@ -12,8 +12,8 @@
 <a
   {href}
   aria-current={current ? "page" : undefined}
-  class="flex items-center gap-3 rounded-xl px-2 py-1.5 text-ink-soft transition-colors hover:bg-well/60 hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink"
+  class="flex h-10 items-center gap-3 rounded-xl pr-2 pl-3 text-ink-soft transition-colors hover:bg-well/60 hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink"
 >
-  <span class="grid size-7 shrink-0 place-items-center"><Icon class="size-4" /></span>
+  <Icon class="size-[18px] shrink-0" />
   <span class="truncate">{@render children()}</span>
 </a>

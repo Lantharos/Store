@@ -2,7 +2,6 @@
   import BookOpen from "@lucide/svelte/icons/book-open"
   import Plus from "@lucide/svelte/icons/plus"
   import Search from "@lucide/svelte/icons/search"
-  import Settings from "@lucide/svelte/icons/settings"
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
@@ -10,7 +9,6 @@
   import { session } from "../api/session.svelte.ts"
   import PublisherSwitcher from "../publishers/PublisherSwitcher.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "../releases/status.ts"
-  import { settingsHref } from "../settings/sections.ts"
   import NavLink from "./NavLink.svelte"
   import UserRow from "./UserRow.svelte"
 
@@ -59,7 +57,6 @@
   </nav>
 
   <div class="mt-auto space-y-0.5 pt-6">
-    <NavLink href={settingsHref("profile")} icon={Settings}>Settings</NavLink>
     <NavLink href="/docs" icon={BookOpen}>Docs</NavLink>
     <UserRow />
   </div>

@@ -22,7 +22,7 @@
   <nav aria-label="Settings" class="mt-6 space-y-6">
     {#each groups as group (group.label)}
       <div>
-        <p class="flex h-7 items-center gap-2 px-2 text-[13px] text-ink-muted">
+        <p class="flex h-7 items-center gap-2.5 px-3 text-[13px] text-ink-muted">
           {#if group.publisher}<PublisherMark logo={session.logoOf(publisher)} name={publisher.name} person={publisher.kind === "person" && !publisher.logo} class="size-5 text-[11px]" />{/if}
           <span class="truncate">{group.label}</span>
         </p>
