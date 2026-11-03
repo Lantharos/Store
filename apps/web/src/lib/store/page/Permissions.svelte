@@ -9,7 +9,7 @@
   import type { Permissions } from "@schelf/protocol"
   import { describePermissions, type PermissionIcon } from "./permissions.ts"
 
-  let { permissions, extension = false }: { permissions: Permissions | null; extension?: boolean } = $props()
+  let { permissions }: { permissions: Permissions | null } = $props()
 
   const ICONS = {
     full: ShieldAlert,
@@ -36,7 +36,4 @@
       </li>
     {/each}
   </ul>
-  {#if described.full && !extension}
-    <p class="mt-3 text-[13px] leading-relaxed text-ink-muted">A person at Schelf reads every release before it's here, and can stop it on every computer if it ever misbehaves.</p>
-  {/if}
 </section>

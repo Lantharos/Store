@@ -7,6 +7,7 @@
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { count } from "#lib/format.ts"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
+  import ExtensionArt from "#lib/store/apps/ExtensionArt.svelte"
 
   const attention = $derived(
     session.apps.filter(
@@ -44,14 +45,18 @@
       <li class="enter" style:--order={index}>
         <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_8rem]">
           <span class="flex min-w-0 items-center gap-4">
-            <AppIcon src={app.icon} name={app.name} class="size-11" />
+            {#if app.kind === "extension"}
+              <ExtensionArt art={app.art} icon={app.icon} name={app.name} width={88} class="h-11" />
+            {:else}
+              <AppIcon src={app.icon} name={app.name} class="size-11" />
+            {/if}
             <span class="min-w-0">
               <span class="block truncate font-medium">{app.name}</span>
               <span class="block truncate font-mono text-[13px] text-ink-muted">{app.id}</span>
             </span>
           </span>
           <span class="text-[15px] tabular text-ink-soft max-md:text-right">{app.version ?? "–"}</span>
-          <span class="flex items-center gap-2 text-[15px] text-ink-soft max-md:col-start-1 max-md:pl-15">
+          <span class="flex items-center gap-2 text-[15px] text-ink-soft max-md:col-start-1 {app.kind === 'extension' ? 'max-md:pl-26' : 'max-md:pl-15'}">
             {#if status}
               <span class="size-2 shrink-0 rounded-full {TONE_DOT[status.tone]}"></span><span class="truncate">{status.label}</span>
             {:else}

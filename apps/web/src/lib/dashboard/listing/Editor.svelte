@@ -129,7 +129,12 @@
       </Field>
     </Section>
 
-    <Section title="Pictures" text="Your icon, and screenshots of the app doing what it's for.">
+    <Section
+      title="Pictures"
+      text={settings.app.kind === "extension"
+        ? "Your icon, and screenshots of the extension at work. Lists show the first screenshot cropped to a 2:1 strip from the middle, with your icon in its lower left corner."
+        : "Your icon, and screenshots of the app doing what it's for."}
+    >
       <IconField appId={settings.app.id} bind:icon={meta.icon} name={text.name} />
       <Screenshots appId={settings.app.id} bind:screenshots />
     </Section>

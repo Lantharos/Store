@@ -47,6 +47,7 @@ export function catalogEntry(record: AppRecord): CatalogEntry {
     name: english.name,
     summary: english.summary,
     icon: mediaUrl(record.meta?.iconKey),
+    art: record.app.kind === "extension" ? mediaUrl(record.screenshots[0]?.key) : null,
     categories: record.meta?.categories ?? [],
     publisher: record.publisher,
     platforms,

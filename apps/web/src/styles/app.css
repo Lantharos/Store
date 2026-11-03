@@ -186,6 +186,15 @@
   object-fit: cover;
 }
 
+@utility extension-art {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border-radius: 11% / 22%;
+}
+
 @utility shot {
   border-radius: 14px;
   box-shadow:

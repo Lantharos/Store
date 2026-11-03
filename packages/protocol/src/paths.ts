@@ -25,6 +25,10 @@ export const paths = {
   signature: (key: string) => `${key}.sig`,
 }
 
+export function rasterIcon(icon: string) {
+  return icon.replace(/\.svg$/, ".png")
+}
+
 export function downloadUrl(key: string) {
   return `${DOWNLOAD_ORIGIN}/${key}`
 }

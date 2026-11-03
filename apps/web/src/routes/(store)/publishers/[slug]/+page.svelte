@@ -5,6 +5,7 @@
   import Meta from "#lib/seo/Meta.svelte"
   import { publisherSchema } from "#lib/seo/schema.ts"
   import AppGrid from "#lib/store/apps/AppGrid.svelte"
+  import ExtensionGrid from "#lib/store/apps/ExtensionGrid.svelte"
 
   let { data } = $props()
   const publisher = $derived(data.publisher)
@@ -64,7 +65,7 @@
   {#if extensions.length}
     <section class="mt-12" aria-labelledby="extensions">
       <h2 id="extensions" class="text-xl font-semibold">Luft extensions</h2>
-      <div class="mt-3"><AppGrid apps={extensions} /></div>
+      <div class="mt-4"><ExtensionGrid {extensions} /></div>
     </section>
   {/if}
   {#if !publisher.apps.length}

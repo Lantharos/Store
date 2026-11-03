@@ -5,6 +5,7 @@
   import { pickArtifact } from "../../system/artifacts.ts"
   import type { System } from "../../system/detect.ts"
   import AppIcon from "../apps/AppIcon.svelte"
+  import ExtensionArt from "../apps/ExtensionArt.svelte"
   import { categoryHref, categoryLabel } from "../categories.ts"
   import Download from "./Download.svelte"
   import ExtensionPermissions from "./ExtensionPermissions.svelte"
@@ -43,7 +44,11 @@
 <article class="page">
   <header class="enter mt-6 flex flex-col gap-6 sm:mt-10 sm:flex-row sm:items-center sm:gap-7">
     <div class="flex items-center gap-5 sm:contents">
-      <AppIcon src={app.icon} name={listing.name} eager class="size-20 shadow-[0_10px_30px_-12px_rgb(0_0_0/0.35)] sm:size-32" />
+      {#if extension}
+        <ExtensionArt art={app.screenshots[0]?.url ?? null} icon={app.icon} name={listing.name} width={256} eager class="h-20 shadow-[0_10px_30px_-12px_rgb(0_0_0/0.35)] sm:h-32" />
+      {:else}
+        <AppIcon src={app.icon} name={listing.name} eager class="size-20 shadow-[0_10px_30px_-12px_rgb(0_0_0/0.35)] sm:size-32" />
+      {/if}
       <div class="min-w-0 flex-1">
         <h1 class="text-[32px] leading-none font-semibold tracking-[-0.03em] sm:text-[44px]">{listing.name}</h1>
         <p class="mt-2 text-ink-soft sm:mt-3 sm:text-lg">{listing.summary}</p>
@@ -90,7 +95,7 @@
       {#if extensionAccess}
         <ExtensionPermissions grants={extensionAccess} />
       {:else if latest}
-        <Permissions permissions={latest.permissions} {extension} />
+        <Permissions permissions={latest.permissions} />
       {/if}
       <Facts {app} {installs} />
       <a href="/report/{app.id}" class="inline-flex items-center gap-2 text-[13px] text-ink-muted hover:text-ink">

@@ -6,7 +6,7 @@ import {
   formatFits,
   namespaceCovers,
 } from "@schelf/protocol"
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
@@ -37,7 +37,8 @@ publisherAppRoutes.get("/", async (c) => {
     .leftJoin(schema.listingMeta, eq(schema.listingMeta.appId, schema.app.id))
     .where(eq(schema.app.publisherId, c.var.publisher.id))
   const ids = apps.map((row) => row.app.id)
-  const [releases, installs] = await Promise.all([
+  const extensions = apps.filter((row) => row.app.kind === "extension").map((row) => row.app.id)
+  const [releases, installs, shots] = await Promise.all([
     db
       .select({ appId: schema.release.appId, version: schema.release.version, status: schema.release.status })
       .from(schema.release)
@@ -45,7 +46,15 @@ publisherAppRoutes.get("/", async (c) => {
       .where(eq(schema.app.publisherId, c.var.publisher.id))
       .orderBy(desc(schema.release.createdAt)),
     installsSince(ids, 7),
+    extensions.length
+      ? db
+          .select({ appId: schema.screenshot.appId, key: schema.screenshot.key })
+          .from(schema.screenshot)
+          .where(inArray(schema.screenshot.appId, extensions))
+          .orderBy(desc(schema.screenshot.position))
+      : [],
   ])
+  const artByApp = new Map(shots.map((shot) => [shot.appId, shot.key]))
   const latestByApp = new Map<string, (typeof releases)[number]>()
   for (const release of releases) if (!latestByApp.has(release.appId)) latestByApp.set(release.appId, release)
   return c.json(
@@ -56,6 +65,7 @@ publisherAppRoutes.get("/", async (c) => {
       format: app.format,
       name: name ?? app.id,
       icon: mediaUrl(iconKey),
+      art: mediaUrl(artByApp.get(app.id)),
       status: app.status,
       version: latestByApp.get(app.id)?.version ?? null,
       release_status: latestByApp.get(app.id)?.status ?? null,

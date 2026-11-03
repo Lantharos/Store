@@ -37,6 +37,7 @@ export interface DashboardApp {
   format: z.infer<typeof format>
   name: string
   icon: string | null
+  art: string | null
   status: AppStatus
   version: string | null
   release_status: ReleaseStatus | null

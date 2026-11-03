@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { type QuickCheckInput, quickChecks } from "../src/publishing/quick-checks.ts"
 
-function platformCheck(platforms: string[], helper: boolean) {
+function checks(platforms: string[], helper: boolean, iconKey: string | null = null) {
   const input = {
     app: { id: "com.example.Rain", kind: "extension", format: "luft-extension" },
     release: {
@@ -19,15 +19,20 @@ function platformCheck(platforms: string[], helper: boolean) {
     })),
     attestations: new Map(),
     namespaces: [],
-    listing: [],
-    meta: null,
+    listing: [{ locale: "en", name: "Rain", summary: "Rain over your desktop", description: "Rain." }],
+    meta: { iconKey, categories: [] },
     screenshots: 0,
     lookalikes: [],
   } as unknown as QuickCheckInput
-  return quickChecks(input).find((check) => check.name === "platforms")!
+  return quickChecks(input)
 }
 
-describe("extension platforms", () => {
+const platformCheck = (platforms: string[], helper: boolean) =>
+  checks(platforms, helper).find((check) => check.name === "platforms")!
+const listingCheck = (iconKey: string | null) =>
+  checks(["luft"], false, iconKey).find((check) => check.name === "listing")!
+
+describe("extension checks", () => {
   test("an extension without a helper ships one luft file", () => {
     expect(platformCheck(["luft"], false).status).toBe("passed")
     expect(platformCheck(["luft-x86_64"], false)).toMatchObject({ status: "failed" })
@@ -43,5 +48,10 @@ describe("extension platforms", () => {
       status: "failed",
       summary: "The helper needs a build for luft-aarch64 too",
     })
+  })
+
+  test("an extension can't go to review without an icon", () => {
+    expect(listingCheck(null).status).toBe("failed")
+    expect(listingCheck("media/com.example.Rain/icon.svg").status).toBe("warning")
   })
 })

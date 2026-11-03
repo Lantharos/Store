@@ -9,6 +9,7 @@
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
+  import ExtensionArt from "#lib/store/apps/ExtensionArt.svelte"
   import { page } from "$app/state"
 
   let { children }: { children: Snippet } = $props()
@@ -45,7 +46,11 @@
 {:else}
   <header class="flex flex-col gap-5 sm:flex-row sm:items-center">
     <div class="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
-      <AppIcon src={app.icon} name={app.name} class="size-14 sm:size-16" />
+      {#if app.kind === "extension"}
+        <ExtensionArt art={app.art} icon={app.icon} name={app.name} width={128} class="h-14 sm:h-16" />
+      {:else}
+        <AppIcon src={app.icon} name={app.name} class="size-14 sm:size-16" />
+      {/if}
       <div class="min-w-0">
         <h1 class="truncate text-[26px] leading-tight font-semibold tracking-[-0.02em] sm:text-[30px]">{app.name}</h1>
         <p class="truncate font-mono text-[13px] text-ink-muted">

@@ -49,8 +49,7 @@
   {:else}
     <h1 class="mt-8 text-[28px] font-semibold tracking-[-0.02em] sm:text-[34px]">Report a problem</h1>
     <p class="mt-2 leading-relaxed text-ink-soft">
-      A person reads every report. If something is dangerous, we can stop it from running on every computer within the
-      hour.
+      Tell us what's wrong, and we'll look into it.
     </p>
 
     <form

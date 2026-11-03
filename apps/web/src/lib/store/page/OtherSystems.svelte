@@ -30,8 +30,7 @@
         </div>
       {/each}
       <p class="text-[13px] leading-relaxed text-ink-muted sm:col-span-full">
-        Every file is built from the app's source, checked by a person and signed by Schelf. Apps you download keep
-        themselves up to date.
+        Every file is signed by Schelf.
       </p>
     </div>
   </div>

@@ -1,3 +1,4 @@
+import { rasterIcon } from "@schelf/protocol"
 import { error } from "@sveltejs/kit"
 import { icon, screenshotPng } from "#lib/api/server.ts"
 import { appPage } from "#lib/api/store.ts"
@@ -9,7 +10,7 @@ export async function GET({ params }) {
   const listing = app.listing.en!
   const screenshot = app.screenshots[0]
   const [iconData, shot] = await Promise.all([
-    app.icon && icon(app.icon),
+    app.icon && icon(rasterIcon(app.icon)),
     screenshot && screenshotPng(screenshot.url),
   ])
   return appCard({

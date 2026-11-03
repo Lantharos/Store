@@ -48,7 +48,7 @@ describe("notices", () => {
     expect(message.replyTo).toEqual({ name: "Schelf Support", email: "support@schelf.store" })
   })
 
-  test("link to the release and show the app's icon only when mail clients can draw it", () => {
+  test("link to the release and show the app's icon as a picture mail clients can draw", () => {
     const raster = compose("mira@example.com", releaseMail("approved", release))
     expect(raster.html).toContain(`src="${release.icon}"`)
     expect(raster.html).toContain(`${env.PUBLIC_URL}/dashboard/apps/com.example.Notes/releases/r1`)
@@ -57,7 +57,7 @@ describe("notices", () => {
       "mira@example.com",
       releaseMail("approved", { ...release, icon: "https://dl.schelf.store/x.svg", rolloutPercent: 100 }),
     )
-    expect(vector.html).not.toContain("x.svg")
+    expect(vector.html).toContain(`src="https://dl.schelf.store/x.png"`)
     expect(vector.text).toContain("every device with Notes is offered it now")
   })
 

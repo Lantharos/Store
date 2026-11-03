@@ -8,7 +8,7 @@
 
 <Meta
   title="{data.label} apps · Schelf"
-  description="{data.label} apps for Luft, Linux, Windows and macOS, each one checked by a person before it reaches you."
+  description="{data.label} apps for Luft, Linux, Windows and macOS."
   path="/categories/{data.slug}"
 />
 

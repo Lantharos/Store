@@ -1,6 +1,6 @@
 <script lang="ts">
   import Meta from "#lib/seo/Meta.svelte"
-  import AppGrid from "#lib/store/apps/AppGrid.svelte"
+  import ExtensionGrid from "#lib/store/apps/ExtensionGrid.svelte"
 
   let { data } = $props()
 </script>
@@ -16,12 +16,12 @@
     <h1 class="text-[32px] font-semibold tracking-[-0.03em] sm:text-[40px]">Luft extensions</h1>
     <p class="mt-3 text-lg leading-relaxed text-ink-soft">
       Small additions to Luft's desktop: something on the wallpaper, a quick settings tile, a taskbar item, a search
-      provider. Each one is checked by a person, like every app here, and you can remove it any time.
+      provider. You can remove one any time.
     </p>
   </section>
   <div class="mt-10">
     {#if data.extensions.length}
-      <AppGrid apps={data.extensions} />
+      <ExtensionGrid extensions={data.extensions} />
     {:else}
       <p class="text-ink-soft">The first extensions are on their way.</p>
     {/if}

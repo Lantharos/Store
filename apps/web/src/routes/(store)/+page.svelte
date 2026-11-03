@@ -11,7 +11,7 @@
 
 <Meta
   title="Schelf: apps for Luft, Linux, Windows and macOS"
-  description="Download apps that are checked by a person before they reach you, and keep them up to date without being tracked."
+  description="Download apps for Luft, Linux, Windows and macOS, and keep them up to date."
   path="/"
   schema={data.schema}
 />

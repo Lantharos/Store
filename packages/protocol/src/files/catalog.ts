@@ -22,6 +22,7 @@ export const catalogEntry = z.object({
   name: z.string(),
   summary: z.string(),
   icon: z.string().nullable(),
+  art: z.string().nullable(),
   categories: z.array(z.string()),
   publisher: publisherSummary,
   platforms: z.partialRecord(platform, platformRelease),

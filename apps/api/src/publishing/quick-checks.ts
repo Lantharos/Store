@@ -120,9 +120,11 @@ function attestationCheck({ release, artifacts, attestations }: QuickCheckInput)
   return passed("attestation", "Every file has a build attestation from this repository")
 }
 
-function listingCheck({ listing, meta, screenshots }: QuickCheckInput) {
+function listingCheck({ app, listing, meta, screenshots }: QuickCheckInput) {
   const english = listing.find((entry) => entry.locale === DEFAULT_LOCALE)
   if (!english) return failed("listing", "Add a name and summary in English")
+  if (app.kind === "extension" && !meta?.iconKey)
+    return failed("listing", "Add an icon in the dashboard; every extension has one")
   const missing = [
     !english.description && "a description",
     !meta?.iconKey && "an icon",

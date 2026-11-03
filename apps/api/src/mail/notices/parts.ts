@@ -1,3 +1,4 @@
+import { rasterIcon } from "@schelf/protocol"
 import { colors, FONT } from "./theme.ts"
 
 export interface Part {
@@ -82,11 +83,9 @@ export interface AppSummary {
   icon: string | null
 }
 
-const RASTER_ICON = /\.(png|jpe?g|webp)$/i
-
 function appIcon({ name, icon }: AppSummary) {
-  if (icon && RASTER_ICON.test(icon))
-    return `<img src="${escapeHtml(icon)}" width="48" height="48" alt="" style="display:block;width:48px;height:48px;border-radius:11px;border:0;">`
+  if (icon)
+    return `<img src="${escapeHtml(rasterIcon(icon))}" width="48" height="48" alt="" style="display:block;width:48px;height:48px;border-radius:11px;border:0;">`
   return table(
     `<tr><td class="well ink" width="48" height="48" align="center" bgcolor="${colors.well}" style="width:48px;height:48px;border-radius:11px;background-color:${colors.well};font-family:${FONT};font-size:20px;font-weight:600;color:${colors.ink};">${escapeHtml(name.slice(0, 1).toUpperCase())}</td></tr>`,
   )

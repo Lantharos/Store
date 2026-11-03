@@ -4,6 +4,7 @@ import {
   MAX_ICON_BYTES,
   MAX_SCREENSHOT_BYTES,
   paths,
+  rasterIcon,
   reorderScreenshots,
   screenshotUpload,
   sha256Hex,
@@ -38,18 +39,26 @@ export async function storeImage(
   if (!image) fail(422, allowSvg ? "Upload a PNG, JPEG, WebP or SVG" : "Upload a PNG, JPEG or WebP")
   const key = keyFor(await sha256Hex(bytes), image.extension)
   await env.BUCKET.put(key, bytes, { httpMetadata: { contentType: image.type, cacheControl: IMMUTABLE } })
-  return { key, image }
+  return { key, image, bytes }
+}
+
+async function storeIconPng(svgKey: string, svg: Uint8Array) {
+  const { iconPng } = await import("./icon-png.ts")
+  await env.BUCKET.put(rasterIcon(svgKey), await iconPng(svg), {
+    httpMetadata: { contentType: "image/png", cacheControl: IMMUTABLE },
+  })
 }
 
 mediaRoutes.put("/:id/icon", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
-  const { key, image } = await storeImage(
+  const { key, image, bytes } = await storeImage(
     c.req.raw,
     (hash, extension) => paths.media(app.id, hash, extension),
     MAX_ICON_BYTES,
     true,
   )
   if (image.width !== image.height) fail(422, "Icons are square")
+  if (image.extension === "svg") await storeIconPng(key, bytes)
   await db
     .insert(schema.listingMeta)
     .values({ appId: app.id, iconKey: key })

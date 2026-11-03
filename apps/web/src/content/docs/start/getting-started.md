@@ -4,7 +4,7 @@ title: Getting started
 description: Put your app on Schelf in about five minutes, and ship every release after that with a GitHub release.
 ---
 
-Schelf takes the apps you already build in GitHub Actions and gets them to people: a download page that picks the right file for each visitor, updates that a person checks before they go out, and the Schelf app on Luft. You never hand Schelf a secret, and it never hands you one.
+Schelf takes the apps you already build in GitHub Actions and gets them to people: a download page that picks the right file for each visitor, updates that are reviewed before they go out, and the Schelf app on Luft. You never hand Schelf a secret, and it never hands you one.
 
 ## What you need
 

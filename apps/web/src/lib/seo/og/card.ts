@@ -135,7 +135,7 @@ export function siteCard() {
         h(
           "div",
           { fontSize: 34, color: SOFT, width: 860, lineHeight: 1.35 },
-          "Every release is checked by a person before it reaches you. Nobody is tracked.",
+          "Download apps, and keep them up to date.",
         ),
       ]),
     ],

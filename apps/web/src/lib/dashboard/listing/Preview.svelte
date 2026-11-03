@@ -4,6 +4,7 @@
   import { API_BASE, type AppPage } from "@schelf/protocol"
   import { untrack } from "svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
+  import ExtensionArt from "../../store/apps/ExtensionArt.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
   import { categoryLabel } from "../../store/categories.ts"
   import ExtensionPermissions from "../../store/page/ExtensionPermissions.svelte"
@@ -84,7 +85,11 @@
     </div>
     <div class="space-y-5 p-5">
       <div class="flex items-center gap-4">
-        <AppIcon src={meta.icon} name={text.name || "?"} class="size-14 text-xl" />
+        {#if extension}
+          <ExtensionArt art={screenshots[0]?.url ?? null} icon={meta.icon} name={text.name || "?"} width={112} class="h-14 text-xl" />
+        {:else}
+          <AppIcon src={meta.icon} name={text.name || "?"} class="size-14 text-xl" />
+        {/if}
         <div class="min-w-0 flex-1">
           <p class="truncate text-xl leading-tight font-semibold tracking-[-0.02em]">{text.name || "Your app's name"}</p>
           <p class="truncate text-[13px] text-ink-soft">{text.summary || "A short line about what it does"}</p>
@@ -114,15 +119,23 @@
     </div>
   </div>
 
-  <p class="pt-2 text-[13px] text-ink-muted">When it's featured</p>
-  <div data-scheme={scheme} class="rounded-2xl bg-canvas p-3 ring-1 ring-hairline">
-    <div style={tileStyle(meta.brand_color)} class="flex items-center gap-3 rounded-[16px] bg-(--tile) p-4 text-(--tile-ink)">
-      <AppIcon src={meta.icon} name={text.name || "?"} class="size-10" />
-      <div class="min-w-0 flex-1">
-        <p class="truncate font-semibold">{text.name || "Your app"}</p>
-        <p class="truncate text-[13px] text-(--tile-soft)">{text.summary || "A short line about what it does"}</p>
-      </div>
-      <span class="button button-sm bg-(--tile-button) text-(--tile-button-ink)">Get</span>
+  <p class="pt-2 text-[13px] text-ink-muted">{extension ? "Among other extensions" : "When it's featured"}</p>
+  {#if extension}
+    <div data-scheme={scheme} class="rounded-2xl bg-canvas p-3 text-ink ring-1 ring-hairline">
+      <ExtensionArt art={screenshots[0]?.url ?? null} icon={meta.icon} name={text.name || "?"} width={320} class="w-full" />
+      <p class="mt-2.5 truncate font-semibold">{text.name || "Your extension"}</p>
+      <p class="truncate text-[13px] text-ink-soft">{text.summary || "A short line about what it does"}</p>
     </div>
-  </div>
+  {:else}
+    <div data-scheme={scheme} class="rounded-2xl bg-canvas p-3 ring-1 ring-hairline">
+      <div style={tileStyle(meta.brand_color)} class="flex items-center gap-3 rounded-[16px] bg-(--tile) p-4 text-(--tile-ink)">
+        <AppIcon src={meta.icon} name={text.name || "?"} class="size-10" />
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-semibold">{text.name || "Your app"}</p>
+          <p class="truncate text-[13px] text-(--tile-soft)">{text.summary || "A short line about what it does"}</p>
+        </div>
+        <span class="button button-sm bg-(--tile-button) text-(--tile-button-ink)">Get</span>
+      </div>
+    </div>
+  {/if}
 </div>

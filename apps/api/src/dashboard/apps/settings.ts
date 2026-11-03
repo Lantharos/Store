@@ -38,6 +38,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       format: app.format,
       name: english?.name ?? app.id,
       icon: mediaUrl(meta?.iconKey),
+      art: app.kind === "extension" ? mediaUrl(screenshots[0]?.key) : null,
       status: app.status,
       version: latest?.version ?? null,
       release_status: latest?.status ?? null,
