@@ -1,77 +1,89 @@
-# Schelf and the website
+# Clients and the website
 
-## Schelf
+## The Schelf app on Luft
 
-Schelf already finds, installs and updates apps from Flathub, AppImages, Toolbox command-line tools and system packages, with a `schelf` command that shares its queue. The store becomes one more source in it, built in and trusted through the store's root key compiled into Schelf, so there's no trust dialog for it the way there is for an added RPM repository.
+Schelf is where people get apps on Luft. Its catalog is schelf.store: the store's own apps first, then Flathub and Fedora apps from the store's mirror, so there's something worth installing from day one and the list gets better as developers publish directly. The store's root key is compiled in, so there's no trust dialog for it.
 
-### Where it runs
+One catalog, three ways to install:
 
-| System | Store apps | Other sources | Notes |
-| --- | --- | --- | --- |
-| Luft | Sabine apps, AppImages in Luft's AppImage sandbox | Flathub, Toolbox tools, system packages | First. Schelf is preinstalled. |
-| Other Linux (Fedora, Ubuntu, Arch, …) | Sabine apps, AppImages in bubblewrap | Flathub | Schelf ships as a Sabine bundle (deb, rpm and AppImage); Luft-only pages (Toolbox, system packages, full-access list) are hidden. |
-| Windows | Sabine apps, through Sabine's own service | None | Schelf is a Sabine app, so it's the same code with the Linux sources switched off. |
-| macOS | Sabine apps | None | Later, with notarised builds. |
+| Origin | Installed as | Updated by |
+| --- | --- | --- |
+| Schelf | Sabine apps through Sabine's service with `install_mode = "store"`; AppImages in `~/Applications` in Luft's AppImage sandbox; extensions into Kestrel ([extensions](extensions.md)) | Schelf, from the signed index, following the rollout |
+| Flathub | Flatpak for the user | Flatpak, through Schelf's update check |
+| Fedora | A system package merged over Luft's image | Luft's system updates |
 
-### Installing a store app
+An app that's in more than one place shows once: the store's listing wins over Flathub, and Flathub over Fedora. The Fedora mirror only carries desktop apps that aren't on Flathub. Opening files the Schelf app handles today (`.flatpakref`, `.rpm`, `.AppImage`, `.deb`) and the command line (`schelf install`, Toolbox tools, added RPM repositories) keep working the same way; they just aren't part of browsing.
 
-1. Schelf reads the app's index entry, checks signatures and the revocation list ([trust](trust.md#what-clients-check)).
-2. It shows the permissions in plain words. Apps that declare full access get the same full-access dialog Flatpak apps get on Luft, and on Luft adding them goes through the updater's trusted-apps list with an administrator's password, like it does today.
-3. It downloads the artifact for this platform and checks its hash.
-4. Sabine apps are handed to Sabine's service, registered with `install_mode = "store"`, so Sabine's own updater stays out of the way and Schelf owns updates. AppImages go to `~/Applications` the way Schelf installs them today, with the store's signature recorded next to them so only store-signed updates are accepted.
-5. It records the app, version and agreed permissions locally.
+### The mirror
 
-Updates join Schelf's existing background check (a few minutes after sign-in, then every six hours), read the catalog, and follow the rollout and delta rules in [trust](trust.md#updates).
+A scheduled workflow in this repository (`mirror/`) runs every six hours on GitHub's free runners. It reads Flathub's API and Fedora's AppStream data, applies the quality rules below, ranks what's left, and posts the result to `POST /api/v1/mirror` with its OIDC token. The Worker signs the mirror catalogs and updates search.
 
-### Changes this needs outside this repository
-
-These are proposals; each needs the owner's go-ahead in that project.
-
-| Project | Change |
-| --- | --- |
-| Schelf | The store as a source: catalog sync, search, install, updates, permission and consent screens, revocation enforcement, `schelf:app/<id>` links, `schelf install <id>` resolving to the store first. |
-| Luft AppImage sandbox | Refuse to start an app id or version on the store's revocation list, and record denials for the review command to read. |
-| Sabine | Verify the store's countersignature and the developer key for `install_mode = "store"`; refuse blocked apps at launch on every platform; let a store install use the `archive` artifact kind everywhere so Windows installs need no elevation. Longer term: run Sabine apps under the shared permission format, so they're no longer full access. |
-| Kestrel | Show "This app was stopped by Schelf" with Remove and Details when a blocked app is launched. |
-
-## Search results in Schelf
-
-Store apps come first. Flathub results follow under their own heading, each marked Flathub, after a quality filter. An app that's on both shows once, as the store app.
-
-A Flathub app is **hidden** when any of these is true:
+A Flathub app is **left out** when any of these is true:
 
 | Rule | Why |
 | --- | --- |
-| No release in its AppStream data in the last 24 months, and no commit to its Flathub manifest in the last 12 | Abandoned. |
-| No screenshots | Nobody can tell what it is. |
-| No AppStream data, or no summary or icon | Same. |
-| Marked end-of-life, or `eol-rebase` to another id | The other id shows instead. |
+| No release in its AppStream data in the last 24 months, and no commit to its manifest in the last 12 | Abandoned. |
+| No screenshots, summary or icon | Nobody can tell what it is. |
+| Marked end-of-life, or renamed to another id | The other id shows instead. |
 | A runtime, extension, BaseApp or theme | Not an app. |
 | Fewer than 50 installs in the last month, unless verified | Mostly tests and forks. |
 
-It's **ranked lower** when it's unverified, uses a deprecated runtime, or has had no release in 12 months.
+It's **ranked lower** when it's unverified, uses a deprecated runtime, or has had no release in 12 months. Fedora apps follow the same rules where the data exists, plus: no desktop entry, or a package that only exists as a library.
 
-People can still find a hidden app by typing its exact name or id, under "More from Flathub", with the reason it's hidden. The rules run in Schelf on Flathub's own API data, which it already reads, and the thresholds come from the store's catalog file so they can change without a Schelf release.
+### Installing an app from the store
+
+1. Schelf reads the app's index file and checks its signature and the revocation list ([trust](trust.md#what-clients-check)).
+2. It shows the permissions in plain words. Apps that declare full access get the full-access dialog, and on Luft adding them goes through the trusted-apps list with an administrator's password, as today.
+3. It downloads the artifact for this system and checks its hash.
+4. It installs it as in the table above and records the app, version and agreed permissions locally.
+
+Updates join Schelf's existing background check (a few minutes after sign-in, then every six hours).
+
+## The Schelf app on other Linux systems
+
+The same app, shipped as a Sabine bundle (deb, rpm and AppImage) in phase 3. Store apps and Flathub; Fedora packages and Luft-only pages are hidden. AppImages run in bubblewrap with the same permission declaration.
+
+## Sabine apps on Windows and macOS
+
+No store app. People download the app from its page on schelf.store and it updates itself: Sabine apps published through Schelf set
+
+```toml
+[updates]
+provider = "schelf"
+```
+
+in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<id>/stable.json`, a feed in Sabine's own manifest format signed by the store key, which Sabine has built in. Sabine also checks the store's revocation list and refuses to start a blocked app. The rollout applies: the feed lists the rollout percentage and each device compares it with its own random number.
+
+`schelf init` adds the `[updates]` section for Sabine apps.
 
 ## The website
 
-One Worker serves `schelf.store`, the same way Pult serves its site and console: a SvelteKit app built to static files, with the catalog pages rendered by the Worker from D1 and cached.
+`schelf.store` is one SvelteKit app on Workers, server-rendered so every app page is fast and indexable, with the dashboard as client-rendered routes under `/dashboard`. API calls go to the api Worker through a service binding.
 
 | Address | What |
 | --- | --- |
 | `/` | Featured apps, categories, new and updated. |
-| `/apps/<id>` | One page per app: name, summary, screenshots, description, permissions in plain words, platforms, size, licence and source link, version history with release notes, install counts, the developer, and "Open in Schelf". |
-| `/categories/<name>`, `/search?q=` | Browsing. |
+| `/apps/<id>` | One page per app: name, summary, screenshots, description, permissions in plain words, a download button for the visitor's system, other systems, size, licence and source, version history with notes, install counts, the developer. On Luft the button opens Schelf. |
+| `/categories/<name>`, `/search?q=` | Browsing. Flathub and Fedora apps appear for visitors on Linux, marked with where they come from and with "Open in Schelf"; their pages aren't indexed. |
+| `/extensions`, `/extensions/<id>` | Luft extensions. They never appear in the other lists. |
 | `/developers/<name>` | A developer's apps. |
-| `/<locale>/…` | Every page in each translated locale, with `hreflang` alternates; listings fall back to English. |
-| `/developers` | The developer portal, rendered in the browser: sign in, verify namespaces, connect repositories, edit listings, upload screenshots, manage keys, see releases, review status and stats. |
-| `/legal/…` | Terms, privacy, developer agreement, guidelines, DSA contact, DMCA. |
-| `/report/<id>` | The notice form. |
+| `/dashboard/…` | The developer dashboard. |
+| `/docs/…` | Developer documentation. |
+| `/legal/…`, `/report/<id>` | Terms, privacy, developer agreement, guidelines; the notice form. |
 
-**Open in Schelf** is a `schelf:app/<id>` link. If nothing answers it, the page falls back to instructions for getting Schelf on the visitor's system, detected from the user agent, and a direct download for AppImages on other Linux systems.
+**Downloads.** The button picks the artifact for the visitor's system from the user agent (and client hints for architecture): the installer on Windows, the disk image on macOS, the AppImage or package on other Linux. "Other systems" lists every artifact.
 
-**SEO.** App pages are server-rendered with their own title, description, Open Graph image (rendered from the icon and first screenshot), `SoftwareApplication` structured data, canonical URLs and a sitemap per locale. Apps that are pulled return 410; delisted ones 404.
+**SEO.** App pages have their own title, description, Open Graph image rendered from the icon and first screenshot, `SoftwareApplication` structured data, canonical URLs and a sitemap. Pulled apps return 410; delisted ones 404.
 
-**Translations.** The site's own text is translated like Luft's, with the same tooling. Listings are translated by developers in the portal; the portal offers a machine draft per locale that the developer must review before it's published.
+## The dashboard
 
-The site uses the same fonts, colours and container styles as Luft and Pult.
+Everything a developer does lives here, and every screen answers "where is my release and what do I do next" without reading docs.
+
+| Area | What it shows and does |
+| --- | --- |
+| Apps | Every app and extension with its current version, release state and installs this week. Adding one walks through id, namespace proof, repository and workflow, and shows the exact files to commit. |
+| Releases | A timeline per release: uploaded, each check with its result and detail, review, rollout. Rollout controls (pause, resume, set a percentage, release to everyone, roll back). Failed checks say what to change. |
+| Listing | Edit name, summary, description, categories, screenshots and translations with a live preview of the store page on each system; what came from AppStream is shown as such. |
+| Publishing | Trusted publishers, dashboard tokens, the workflow file to copy. |
+| Stats | Installs and updates by day, version and system. No per-user data exists to show. |
+| Account | Namespaces and their proofs, sign-in methods, the developer agreement, deleting the account. |

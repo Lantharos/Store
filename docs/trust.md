@@ -1,47 +1,44 @@
 # Trust
 
-Who signs what, what each client checks, how permissions reach the user, how updates roll out, and how a bad app is stopped after it's out. The goal: a stolen developer key alone can't ship anything, a compromised store alone can't forge a developer's release, and a malicious app can be stopped on every device within the hour.
+Who signs what, what each client checks, how permissions reach the user, how updates roll out, and how a bad app is stopped after it's out. The goal: nothing reaches anyone without a person's approval, every file can be traced to the run that built it, and a malicious app can be stopped on every device within the hour.
 
 ## Keys
 
 | Key | Held by | Signs | Lifetime |
 | --- | --- | --- | --- |
 | Store root (Ed25519) | The owner, offline in 1Password; never on a server | Store signing keys and their revocation | Years; built into every client |
-| Store signing key (Ed25519) | The Worker, as a secret | Index files, release approvals, the revocation list | One year, rotated with overlap |
-| Developer key (Ed25519) | The developer, as a secret in their repository's CI | Release statements | Until rotated or revoked |
-| Builder identity | GitHub OIDC for the store's builder workflow (Sigstore, keyless) | Build attestations | Per run |
-| Windows Authenticode, Apple Developer ID | The developer, at first | Binaries and installers on those systems | Theirs |
+| Store signing key (Ed25519) | The api Worker, as a secret | Index files, update feeds, the revocation list | One year, rotated with overlap |
+| GitHub OIDC identity | The developer's workflow run | Nothing; it proves which repository, workflow and tag a release came from | Minutes |
+| Build attestation | GitHub (Sigstore, keyless) | Each published file's digest and the run that built it | Permanent, public |
+| Windows Authenticode, Apple Developer ID | The developer | Binaries and installers on those systems | Theirs |
 
-Developer keys are the same kind Sabine already uses for update feeds. For a Sabine app the developer's existing `SABINE_UPDATE_SIGNING_KEY` is their store key; registering it is pasting the public half in the portal.
+There are no developer keys to lose or leak. A release can only come from the workflow the developer registered, and it still needs a person's approval before anyone gets it. A stolen dashboard token can upload a release, but it's marked as uploaded by hand in review, scoped to one app and revocable.
 
 ## What gets signed
 
-A **release statement** is a small JSON document from the developer: app id, version, and either the source commit (built by the store) or the SHA-256 of each artifact (pulled from their release). The store's `publish` action for GitHub Actions writes it and signs it with the developer key in one step; it's an artifact on the GitHub release.
+An **index entry** is the store's signature over a release in `index/v1/apps/<id>.json`: app id, version, artifacts with hashes, the permissions, and where it came from (repository, workflow, commit, run). It's made only when a person approves the release.
 
-An **approval** is the store's signature over the release's entry in `index/v1/apps/<id>.json`: app id, version, artifacts with hashes, the permissions, and the developer key that signed the statement. It's made only when a person approves the release in Pult.
+An **update feed** is the same release in Sabine's update manifest format, signed by the store key, at `sabine/<id>/<channel>.json`. Sabine apps that set `provider = "schelf"` follow it ([clients](clients.md#sabine-apps-on-windows-and-macos)).
 
 ## What clients check
 
-Before installing or updating, Schelf (and Sabine's service on Windows) checks, in order, and refuses on any failure:
+Before installing or updating, the Schelf app and Sabine's updater check, in order, and refuse on any failure:
 
-1. The index file is signed by a store key that the built-in root signed and that isn't revoked or expired.
+1. The file is signed by a store key that the built-in root signed and that isn't revoked or expired.
 2. The revocation list is signed, its serial isn't lower than the last one seen, and it's no more than seven days old (older means the device is offline; installs still work, with a notice).
-3. The release isn't blocked, and neither is its app or its developer key.
-4. The developer's statement is signed by the key the index names for this app, and that key wasn't revoked before the statement's time.
-5. The statement matches: same version, and either the artifact hash it lists or, for store builds, the commit the store's attestation names.
-6. The downloaded file's SHA-256 matches the index.
-7. The permissions in the index are the ones the user agreed to; if they're wider, ask again (see below).
+3. The release isn't blocked, and neither is its app.
+4. The downloaded file's SHA-256 matches the signed entry.
+5. The permissions in the entry are the ones the user agreed to; if they're wider, ask again (see below).
 
-Clients don't verify Sigstore attestations themselves; the builder does, and the store's signature over the index vouches for it. The attestation bundle is published next to each release for anyone who wants to check.
+Clients don't verify Sigstore attestations themselves; the Worker does at upload, and the store's signature vouches for it. The attestations stay public on GitHub for anyone who wants to check.
 
-On Windows and macOS, the operating system then checks the developer's own code signature as usual. Developers bring their own certificates at first; Sabine's release workflow already signs and notarises when they're set. Unsigned Windows builds are allowed and marked "unsigned on Windows" in the listing, since SmartScreen will warn. A store-held Windows certificate under the store's name comes with the company.
+On Windows and macOS, the operating system then checks the developer's own code signature as usual. Unsigned Windows builds are allowed and marked in the listing, since SmartScreen will warn.
 
 ## Rotating keys
 
-- **Developer key, planned:** the developer adds a new key in the portal and signs it with the old one. Releases signed by either are accepted for 30 days, then only the new one.
-- **Developer key, lost:** the developer proves control again (namespace proof and GitHub sign-in) and asks for a reset. It's an item in the Claims inbox, and the new key works after a seven-day wait in which the old key can object by signing a cancellation. Users are told nothing unless a release in that window is approved.
-- **Developer key, stolen:** revoked in Pult with a "compromised since" time. Releases signed after that time are blocked everywhere; releases before stay valid.
-- **Store signing key:** a new one is signed by the root and published in `store-keys.json` a month before the old one expires. If it leaks, the owner signs its revocation with the root, the Worker gets a new key, and the index is re-signed within minutes.
+- **Store signing key:** a new one is signed by the root and published in `store-keys.json` a month before the old one expires. If it leaks, the owner signs its revocation with the root, the Worker gets a new key, and every index file and feed is re-signed within minutes.
+- **Trusted publishers** change in the dashboard; removing one stops new releases from that workflow at once.
+- **Dashboard tokens** are revoked in the dashboard, and expire after a year.
 
 ## Permissions
 
@@ -65,7 +62,7 @@ Rules:
 
 **Rollback.** Rolling back marks the release withdrawn and points the index at the previous one. Devices already on it are offered the previous version (Sabine keeps it locally, AppImages keep the last file), unless the developer marks the old one unsafe, in which case they stay put and get the next fix.
 
-**Deltas.** For each new release the builder makes zstd patches (`--patch-from`, long-distance matching) from the last three approved releases of each platform. The client downloads the patch if it has one of those versions and the patch is under 60% of the full size, rebuilds the file, checks its hash against the index, and falls back to the full download on any mismatch. Sabine apps are mostly web assets and a Rust binary of 20–40 MB, so routine updates should be a few MB.
+**Deltas.** For each new release the checks workflow makes zstd patches (`--patch-from`, long-distance matching) from the last three approved releases of each platform. The client downloads the patch if it has one of those versions and the patch is under 60% of the full size, rebuilds the file, checks its hash against the index, and falls back to the full download on any mismatch. Sabine apps are mostly web assets and a Rust binary of 20–40 MB, so routine updates should be a few MB.
 
 **Channels.** `stable` only at launch. The data model has a channel column for `beta` later.
 
@@ -80,9 +77,6 @@ This is part of the foundation, not a later feature. The revocation list is a si
   "blocked": [
     { "app": "com.example.Bad", "versions": "*", "action": "block", "reason": "malware", "note": "Sends your files to a third party." },
     { "app": "io.github.someone.Tool", "versions": ["2.1.0"], "action": "warn", "reason": "crashes on start" }
-  ],
-  "keys": [
-    { "key": "ed25519:9f2c…", "compromised_since": "2026-10-30T00:00:00Z" }
   ]
 }
 ```
@@ -93,7 +87,6 @@ What happens on the device:
 | --- | --- |
 | `block` | The app can't start: launching it shows why and offers to remove it. Updates and new installs are refused. Its files stay until the user removes them, so nothing they made is lost. |
 | `warn` | It starts after a notice the user can dismiss once per version. |
-| key revoked | Every release signed by that key after `compromised_since` is treated as blocked. |
 
 On Luft, the block is enforced at launch for every format: the AppImage sandbox and the Sabine service both refuse a blocked app id or version, and Schelf's background service keeps the list current. On other Linux systems Schelf enforces it for apps it installed, through the menu entry it wrote. On Windows it's Sabine's service, which launches Sabine apps.
 

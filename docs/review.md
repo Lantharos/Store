@@ -5,9 +5,9 @@ Every new app and every update is decided by a person in Pult. The store gathers
 ## The pieces
 
 ```
-builder (GitHub Actions)          store Worker                        Pult
-  build or verify attestation  →    store facts in D1, files in R2  →   Submissions / Updates inbox
-  scan, inspect, diff               send item with facts            →   triage (Jev) sorts and tags
+publish action → store Worker       checks (GitHub Actions, this repo)  Pult
+  OIDC, files, attestations  →  quick checks, files in R2  →  scan, inspect, diff  →  Submissions / Updates inbox
+                                send item with facts                              →  triage (Jev) sorts and tags
                                     answer actions from Pult        ←   owner approves, rejects, asks
 bun run review <release>  ──→  fetch build, VM, screenshots  ──→  report on the item
 ```
@@ -20,7 +20,7 @@ The store is a Pult app like any other, wired the way Pult runs its own back off
 | --- | --- | --- |
 | Resource | `app` | An app id with its listing, developer, releases, installs and history. Actions below. |
 | Resource | `release` | One version: artifacts, facts, review report, rollout. |
-| Resource | `developer` | An account, its verified namespaces and keys. |
+| Resource | `developer` | An account, its verified namespaces, trusted publishers and tokens. |
 | Inbox | `submissions` | First release of a new app id. States: open, changes requested, approved, rejected. |
 | Inbox | `updates` | Every later release. Same states. |
 | Inbox | `reports` | Notices from users and rights holders (DSA, DMCA, abuse). States: open, actioned, dismissed. |
@@ -40,7 +40,7 @@ Actions, all running in the store:
 | Delist (hide from catalog, installs keep working) | app | confirm |
 | Pull (block from launching, offer removal) | app or release | reauth |
 | Unpull | app or release | reauth |
-| Revoke developer key | developer | reauth |
+| Remove trusted publisher, revoke tokens | developer | reauth |
 | Suspend developer | developer | reauth |
 | Grant namespace manually (after a claim) | developer | confirm |
 | Ask Claude to review | release | none; shows the command to run |
@@ -49,15 +49,15 @@ The owner is the only reviewer today, so nothing needs `approval: true`. When a 
 
 ## The facts
 
-Each submission item carries everything needed to decide without leaving Pult. The builder produces them as one JSON document per release (stored in R2 next to the build, summarised into D1), and the item renders them as blocks.
+Each submission item carries everything needed to decide without leaving Pult. The Worker and the checks workflow produce them as one JSON document per release (stored in R2 next to the build, summarised into D1), and the item renders them as blocks.
 
 | Fact | How it's produced | Shown as |
 | --- | --- | --- |
-| Malware scan | ClamAV with current signatures, plus YARA rules (the store's own set, kept in the builder repository) over every file in every artifact, unpacked. | Clean, or each hit with file and rule. |
+| Malware scan | ClamAV with current signatures, plus YARA rules (the store's own set, kept in `checks/`) over every file in every artifact, unpacked. | Clean, or each hit with file and rule. |
 | Permissions | Declared permissions from the listing, set against what the binary shows: linked libraries, D-Bus names, portals, device paths, URLs and executables it names, `setuid` bits, bundled kernel modules or helpers. Each detected capability maps to a permission. | Table: permission, declared, detected, evidence. Detected-but-undeclared rows first. |
 | Licence | SPDX id from the repository (LICENSE file, `Sabine.toml`, AppStream), checked against the OSI and FSF lists, and against the licences of bundled dependencies where a lockfile says. | Licence, OSI or FSF approved, conflicts. |
 | Listing | Name, summary, description, icon at all sizes, at least two screenshots per platform, categories, homepage, support link, content rating, privacy notes. | Checklist with what's missing. |
-| Build provenance | Built here: commit, builder run, attestation. Pulled: release asset digests, the verified attestation's repository, workflow and commit. Either way, whether the tag is signed and whether the commit is on the default branch. | Fields with links to the run and commit. |
+| Build provenance | Repository, workflow, run, commit and tag from the OIDC token; each file's verified attestation; whether the tag is signed and the commit is on the default branch; or "uploaded by the developer" for token uploads. | Fields with links to the run and commit. |
 | Impersonation | Name distance to the 2,000 most installed apps on the store and Flathub and a list of well-known product names; icon perceptual hash distance to every listed icon; whether the id's namespace is verified for this developer. | Closest matches with scores, both icons side by side. |
 | Repository health | Age, stars, contributors, recent commits, whether the repo is a fork, and whether the developer account is new. | Fields. |
 | Size and platforms | Artifact sizes and platforms built. | Fields. |
@@ -90,7 +90,7 @@ Triage never approves. It declines only obvious junk, and the statement says so.
 
 ### Updates read the source diff
 
-For open-source apps the builder computes the diff between the last approved tag and the new one and turns it into a digest that fits triage's input (about 24,000 characters):
+For public repositories the checks workflow computes the diff between the last approved tag and the new one and turns it into a digest that fits triage's input (about 24,000 characters):
 
 1. Changed files with line counts, grouped as code, build scripts, dependencies, assets.
 2. Dependency changes from lockfiles: added, removed and major version bumps.

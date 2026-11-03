@@ -37,7 +37,7 @@ Repositories are open source, so most copyright problems are trademark-like: som
 
 ## Licences
 
-Open source only at launch means the listing's licence must be an OSI-approved or FSF-free licence, read from the repository and checked by the builder (see [review](review.md#the-facts)). The store redistributes binaries, so it also needs to meet the licence's conditions: GPL apps need a source offer, which the store meets by linking the exact tagged commit on every release page and keeping the source tarball in R2 next to the build.
+Open source only at launch means the listing's licence must be an OSI-approved or FSF-free licence, read from the repository and checked by the checks workflow (see [review](review.md#the-facts)). The store redistributes binaries, so it also needs to meet the licence's conditions: GPL apps need a source offer, which the store meets by linking the exact tagged commit on every release page and keeping the source tarball in R2 next to the build.
 
 ## Later, with paid apps
 
