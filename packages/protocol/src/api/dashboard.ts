@@ -256,6 +256,7 @@ export interface ReleaseSummary {
   channel: string
   tag: string | null
   origin: Origin
+  format: z.infer<typeof format>
   updater: Updater | null
   bridge: boolean
   promoted_from: string | null
@@ -265,6 +266,7 @@ export interface ReleaseSummary {
   platforms: Platform[]
   created_at: string
   approved_at: string | null
+  approved_by: string | null
 }
 
 export type TimelineStep =

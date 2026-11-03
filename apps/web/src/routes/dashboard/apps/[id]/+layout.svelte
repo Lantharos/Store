@@ -1,5 +1,6 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
+  import Upload from "@lucide/svelte/icons/upload"
   import type { AppSettings } from "@schelf/protocol"
   import type { Snippet } from "svelte"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
@@ -30,12 +31,13 @@
       label: "Releases",
       active: page.url.pathname === base || page.url.pathname.startsWith(`${base}/releases`),
     },
+    { href: `${base}/hosting`, label: "Links", active: page.url.pathname === `${base}/hosting` },
     { href: `${base}/listing`, label: "Listing", active: page.url.pathname === `${base}/listing` },
     { href: `${base}/publishing`, label: "Publishing", active: page.url.pathname === `${base}/publishing` },
     { href: `${base}/stats`, label: "Stats", active: page.url.pathname === `${base}/stats` },
   ])
   const app = $derived(settings.data?.app)
-  const storePath = $derived(app ? `/${app.kind === "extension" ? "extensions" : "apps"}/${app.id}` : "")
+  const storePath = $derived(settings.data ? new URL(settings.data.links.page).pathname : "")
 </script>
 
 {#if settings.error && !app}
@@ -54,13 +56,18 @@
       <div class="min-w-0">
         <h1 class="truncate text-[26px] leading-tight font-semibold tracking-[-0.02em] sm:text-[30px]">{app.name}</h1>
         <p class="truncate font-mono text-[13px] text-ink-muted">
-          {app.id}{#if app.repository}<span class="max-sm:hidden">{" · "}github.com/{app.repository}</span>{/if}
+          {app.publisher_slug}/{app.slug}{#if app.visibility === "unlisted"}<span>{" · "}unlisted</span>{/if}{#if app.repository}<span class="max-sm:hidden">{" · "}github.com/{app.repository}</span>{/if}
         </p>
       </div>
     </div>
-    {#if app.status === "published" || app.status === "delisted"}
-      <a href={storePath} target="_blank" class="button button-quiet self-start sm:self-auto">View page<ArrowUpRight class="size-4" /></a>
-    {/if}
+    <div class="flex gap-2 self-start sm:self-auto">
+      {#if session.can("releases") && app.kind !== "extension"}
+        <a href="/dashboard/apps/{app.id}/upload" class="button button-quiet"><Upload class="size-4" />Upload</a>
+      {/if}
+      {#if app.status === "published"}
+        <a href={storePath} target="_blank" class="button button-quiet">View page<ArrowUpRight class="size-4" /></a>
+      {/if}
+    </div>
   </header>
 
   <nav aria-label="{app.name} sections" class="-mx-4 mt-7 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:px-0">

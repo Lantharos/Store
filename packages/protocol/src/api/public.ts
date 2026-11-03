@@ -53,6 +53,7 @@ export interface ProjectSummary {
   slug: string
   listed: boolean
   indexed: boolean
+  updates: boolean
   page: string
   latest: string
 }

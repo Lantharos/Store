@@ -4,6 +4,7 @@
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
   import { appSettings } from "#lib/dashboard/apps/context.ts"
   import FirstRelease from "#lib/dashboard/apps/FirstRelease.svelte"
+  import FirstUpload from "#lib/dashboard/apps/FirstUpload.svelte"
   import NextRelease from "#lib/dashboard/apps/NextRelease.svelte"
   import WhereItGoes from "#lib/dashboard/apps/WhereItGoes.svelte"
   import ReleaseHeader from "#lib/dashboard/releases/ReleaseHeader.svelte"
@@ -33,7 +34,7 @@
 {:else if !releases.data}
   <Loading />
 {:else if !latest}
-  <FirstRelease settings={settings.data!} />
+  {#if app.format === "files"}<FirstUpload settings={settings.data!} />{:else}<FirstRelease settings={settings.data!} />{/if}
 {:else}
   <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
     <div class="min-w-0">
@@ -57,7 +58,7 @@
       {#if releases.data.length > 1}
         <section class="mt-10">
           <h2 class="px-1 font-semibold">Earlier releases</h2>
-          <div class="mt-2.5"><ReleaseList appId={id} releases={releases.data.slice(1)} /></div>
+          <div class="mt-2.5"><ReleaseList appId={id} releases={releases.data.slice(1)} switches={settings.data!.switches} /></div>
         </section>
       {/if}
     </div>

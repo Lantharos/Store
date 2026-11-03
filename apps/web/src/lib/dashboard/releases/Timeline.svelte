@@ -1,7 +1,7 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
   import ChevronDown from "@lucide/svelte/icons/chevron-down"
-  import type { CheckResult, ReleaseDetail } from "@schelf/protocol"
+  import { AUTOMATIC_REVIEWER, type CheckResult, type ReleaseDetail } from "@schelf/protocol"
   import type { Snippet } from "svelte"
   import { ago, list, plural } from "../../format.ts"
   import { PLATFORM_NAMES } from "../../system/artifacts.ts"
@@ -80,7 +80,7 @@
   {/if}
 
   <ol>
-    <Step state="done" title={release.origin === "oidc" ? "Built on GitHub" : "Uploaded by you"}>
+    <Step state="done" title={release.promoted_from ? "Promoted" : release.origin === "oidc" ? "Built on GitHub" : "Uploaded by you"}>
       <p>{systems} · {ago(release.created_at)}</p>
       {#if release.run_url}
         <a href={release.run_url} target="_blank" rel="noreferrer" class="mt-1 inline-flex items-center gap-1 text-accent hover:underline">Workflow run<ArrowUpRight class="size-3.5" /></a>
@@ -101,11 +101,11 @@
       </div>
     </Step>
 
-    <Step state={reviewState} title={release.status === "changes-requested" ? "Changes requested" : release.status === "rejected" ? "Rejected" : shipped ? "Approved" : "Review"}>
+    <Step state={reviewState} title={release.status === "changes-requested" ? "Changes requested" : release.status === "rejected" ? "Rejected" : shipped ? (release.approved_by === AUTOMATIC_REVIEWER ? "Checked and out" : "Approved") : "Review"}>
       {#if review?.reason}
         <p class="text-ink-soft">{review.reason}</p>
       {:else if shipped && release.approved_at}
-        <p>Approved {ago(release.approved_at)}</p>
+        <p>{release.approved_by === AUTOMATIC_REVIEWER ? "Went out on its checks" : "Approved"} {ago(release.approved_at)}</p>
       {:else if release.status === "in-review"}
         <p>A person is looking at it. First releases usually take a day; updates are quicker.</p>
       {:else if failed.length}

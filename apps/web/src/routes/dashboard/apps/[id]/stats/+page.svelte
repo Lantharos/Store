@@ -18,6 +18,7 @@
   let table = $state(false)
   const stats = $derived(resource<Stats>(endpoints.stats(id, days)))
   const data = $derived(stats.data)
+  const installs = $derived(settings.data!.app.format === "files" ? "Downloads" : "Installs")
   const dayLabel = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" })
 </script>
 
@@ -35,7 +36,7 @@
   <div class="placeholder mt-6 h-72"></div>
 {:else}
   <dl class="mt-8 grid grid-cols-2 gap-6 rounded-group bg-raised p-5 transition-opacity sm:grid-cols-4 sm:p-7" class:opacity-60={stats.loading}>
-    <div><dt class="text-[13px] text-ink-muted">Installs</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(data.total.installs)}</dd></div>
+    <div><dt class="text-[13px] text-ink-muted">{installs}</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(data.total.installs)}</dd></div>
     <div><dt class="text-[13px] text-ink-muted">Updates</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(data.total.updates)}</dd></div>
     <div><dt class="text-[13px] text-ink-muted">Busiest day</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(Math.max(0, ...data.days.map((day) => day.installs)))}</dd></div>
     <div><dt class="text-[13px] text-ink-muted">On {data.versions[0]?.version ?? "the latest"}</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count((data.versions[0]?.installs ?? 0) + (data.versions[0]?.updates ?? 0))}</dd></div>
@@ -47,7 +48,7 @@
       {#if table}
         <div class="max-h-96 overflow-y-auto">
           <table class="w-full text-[15px] tabular">
-            <thead class="sticky top-0 bg-raised text-left text-[13px] text-ink-muted"><tr><th class="py-2 font-normal">Day</th><th class="py-2 text-right font-normal">Installs</th><th class="py-2 text-right font-normal">Updates</th></tr></thead>
+            <thead class="sticky top-0 bg-raised text-left text-[13px] text-ink-muted"><tr><th class="py-2 font-normal">Day</th><th class="py-2 text-right font-normal">{installs}</th><th class="py-2 text-right font-normal">Updates</th></tr></thead>
             <tbody class="divide-y divide-hairline">
               {#each [...data.days].reverse() as day (day.day)}
                 <tr><td class="py-2">{dayLabel.format(new Date(`${day.day}T00:00:00Z`))}</td><td class="py-2 text-right">{count(day.installs)}</td><td class="py-2 text-right">{count(day.updates)}</td></tr>
@@ -63,17 +64,17 @@
 
   <div class="mt-10 flex items-center justify-between gap-3 px-1">
     <h2 class="font-semibold">Where they are</h2>
-    <Segmented bind:value={measure} label="Measure" size="sm" options={[{ value: "installs", label: "Installs" }, { value: "updates", label: "Updates" }]} />
+    <Segmented bind:value={measure} label="Measure" size="sm" options={[{ value: "installs", label: installs }, { value: "updates", label: "Updates" }]} />
   </div>
   <div class="mt-4 grid gap-6 lg:grid-cols-2">
     <section class="rounded-group bg-raised p-5 sm:p-7">
       <h3 class="mb-5 text-[15px] text-ink-muted">By version</h3>
-      <BarList measure={measure === "installs" ? "Installs" : "Updates"} rows={data.versions.map((row) => ({ label: row.version, value: row[measure] }))} />
+      <BarList measure={measure === "installs" ? installs : "Updates"} rows={data.versions.map((row) => ({ label: row.version, value: row[measure] }))} />
     </section>
     <section class="rounded-group bg-raised p-5 sm:p-7">
       <h3 class="mb-5 text-[15px] text-ink-muted">By system</h3>
-      <BarList measure={measure === "installs" ? "Installs" : "Updates"} rows={data.platforms.map((row) => ({ label: PLATFORM_NAMES[row.platform], value: row[measure] })).sort((a, b) => b.value - a.value)} />
+      <BarList measure={measure === "installs" ? installs : "Updates"} rows={data.platforms.map((row) => ({ label: PLATFORM_NAMES[row.platform], value: row[measure] })).sort((a, b) => b.value - a.value)} />
     </section>
   </div>
-  <p class="mt-4 px-1 text-[13px] text-ink-muted">Counted from downloads, a day at a time. Schelf keeps nothing about who installed it.</p>
+  <p class="mt-4 px-1 text-[13px] text-ink-muted">Counted from downloads, a day at a time, through every link and feed. Schelf keeps nothing about who downloaded it.</p>
 {/if}

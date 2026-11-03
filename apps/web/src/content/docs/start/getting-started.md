@@ -6,6 +6,8 @@ description: Put your app on Schelf in about five minutes, and ship every releas
 
 Schelf takes the apps you already build in GitHub Actions and gets them to people: a download page that picks the right file for each visitor, updates that are reviewed before they go out, and the Schelf app on Luft. You never hand Schelf a secret, and it never hands you one.
 
+Building with Electron, Tauri or anything else, or just want somewhere to host your downloads without being in the store? See [Host your releases](/docs/host-your-releases).
+
 ## What you need
 
 - Your app's code in a GitHub repository, public or private.

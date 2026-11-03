@@ -1,10 +1,12 @@
 # schelf.store design
 
-Schelf is a place to ship desktop apps from. A developer connects a GitHub repository once; from then on, publishing a GitHub release builds the app in their own GitHub Actions, sends it to Schelf with GitHub's short-lived identity token, and a person reviews it. Once approved, people get it from a download page on any system, through the app's own updater on Windows and macOS, and through the Schelf app on Luft and other Linux systems.
+Schelf is a place to ship apps from. A developer connects a GitHub repository once; from then on, publishing a GitHub release builds the app in their own GitHub Actions and sends it to Schelf with GitHub's short-lived identity token, or the developer uploads it by hand. Schelf checks it, a person reviews it where that's called for, and people get it from a download page on any system, through the app's own updater, and through the Schelf app on Luft and other Linux systems.
+
+Not every project has to be in the store. Schelf also hosts releases for apps that are never listed, open or closed source, in any format: a project gets stable download links for the developer's own site, update feeds for its updater, checksums, provenance and download counts.
 
 There are two sides:
 
-- **The service**, schelf.store: publishing, review, signing, hosting, updates, rollouts, stopping bad releases, download pages, and a dashboard for developers. It works for any Sabine app or AppImage, on every system.
+- **The service**, schelf.store: publishing, review, signing, hosting, updates, rollouts, stopping bad releases, download pages, stable links and update feeds, and a dashboard for developers. It works for any Sabine app, AppImage or file a project ships, on every system.
 - **The Schelf app**, built into Luft and optional on other Linux systems. It's one client of the service. On Windows and macOS nobody installs a store: they download the app, and it updates itself from Schelf.
 
 This document is the overview. The details are in:
@@ -14,7 +16,7 @@ This document is the overview. The details are in:
 | [publishing.md](publishing.md) | App ids and namespace proofs, `schelf.toml`, trusted publishing from GitHub Actions, the `schelf` command, from tag to install |
 | [review.md](review.md) | The Pult inboxes, the facts on each item, triage, reading update diffs, the review command |
 | [trust.md](trust.md) | Keys, what each client checks, permissions, rollouts, deltas, rollback, stopping a bad app |
-| [data.md](data.md) | D1 tables, R2 layout, the signed files clients read, counting downloads without tracking, the API |
+| [data.md](data.md) | D1 tables, R2 layout, the signed files clients read, download links and feeds, counting downloads without tracking, the API |
 | [clients.md](clients.md) | The Schelf app and its other sources, Sabine's built-in updates, the website and dashboard |
 | [extensions.md](extensions.md) | Luft extensions in the store |
 | [legal.md](legal.md) | Developer agreement, terms, privacy, DSA notice and action, DMCA |
@@ -23,21 +25,54 @@ This document is the overview. The details are in:
 
 | Area | Decision |
 | --- | --- |
-| What it is | A distribution service with a storefront, hosting the apps it lists. |
+| What it is | A distribution service: release hosting and management for any app, with a storefront for the ones that are listed. |
 | Who can publish | Anyone with a GitHub repository, public or private, free. Paid apps after there's a company. |
 | Where apps are built | In the developer's own GitHub Actions. Schelf runs no build machines. |
-| How releases arrive | Trusted publishing: the developer's workflow proves who it is with GitHub's OIDC token, so there are no secrets to copy. Every file carries a GitHub build attestation. |
+| How releases arrive | Trusted publishing: the developer's workflow proves who it is with GitHub's OIDC token, so there are no secrets to copy. Every file carries a GitHub build attestation. Or uploaded by hand, from the dashboard or with a token, under closer scrutiny. |
 | Checks | Automatic checks in the Worker on upload; deeper checks (malware scan, source diff, permission inspection) in a public workflow in this repository, run on GitHub's free runners. |
-| Review | In Pult: facts on every item, Jev triage as a first pass, a person decides. |
+| Review | In Pult: facts on every item, Jev triage as a first pass, a person decides. Which releases need a person depends on how they arrived, the channel and whether the project is listed ([hosting](#hosting-releases)). |
 | Accounts | Better Auth on D1 with Drizzle: GitHub sign-in (which also proves `io.github.*` namespaces), email codes and passkeys. |
 | Infrastructure | Cloudflare: Workers, D1, R2, Analytics Engine, Queues, Email Service. |
 | Kinds | Apps, and extensions for Luft. |
-| Formats | Sabine apps on every system, AppImages on Linux, Luft extensions on Luft. |
+| Formats | Sabine apps on every system, AppImages on Linux, Luft extensions on Luft, and files: installers, archives, programs and APKs, which Schelf hosts and offers as downloads. |
+| Visibility | Projects are listed or unlisted. Unlisted ones have a page, links, feeds and stats but aren't in the catalog. |
 | Signing | Store signing key on every index file, update feed and the revocation list; an offline root signs the store keys. |
 | Permissions | Luft's shared permission format, declared up front, shown before install; wider updates need review and consent. |
 | Stopping bad apps | A signed revocation list every client fetches hourly. |
 | Tracking | None. Downloads are counted per app, version and system; nothing identifies a device or person. |
 | Other sources | The catalog includes Flathub and Fedora apps, filtered for quality, so the Schelf app is useful from day one. |
+
+## Hosting releases
+
+Decisions for projects that use Schelf as their release host, listed or not. Details of the data and the URLs are in [data](data.md#hosting).
+
+**Projects.** Every app has a slug under its publisher, `lantharos/raffi`, which is its address on the site (`schelf.store/lantharos/raffi`) and on `dl.schelf.store`. The reverse-DNS id stays for Sabine apps, AppImages and Luft extensions; a project made in the dashboard or by `schelf init` for anything else is named `<publisher>.<slug>` inside the store, which never collides with a reverse-DNS id (those have at least three parts) and needs no namespace proof. `schelf.toml` names it with `project = "lantharos/raffi"` instead of `id`. Publisher slugs that would shadow the store's own paths (`apps`, `docs`, `media`, `trust`, …) are reserved.
+
+**Listed or unlisted.** A new project is unlisted: not in the catalog, search, categories, sitemaps or the Schelf app's browsing, but with a page reachable by its address (`noindex` unless the publisher turns indexing on), stable download links, update feeds and stats. Listing later is **Ask to be listed** in the dashboard, which sends one item to the `listings` inbox in Pult; **List it** or **Keep unlisted** (with a reason, emailed) decides it. A listed app's page is `/apps/<id>`; the project address redirects there, and the other way round for unlisted ones.
+
+**Closed source.** A repository is optional and `distribution` is `open` or `proprietary`. Licence checks and the source diff run only for open-source projects; closed-source releases get the binary checks (malware scan, inspection, provenance) and are labelled "Closed source" on the page and tagged `closed-source` in Pult.
+
+**Any artifact.** Besides Sabine bundles, AppImages and extensions, a `files` project carries installers (`exe`, `msi`, `dmg`, `pkg`, `deb`, `rpm`, `flatpak`), archives (`zip`, `tarball`), single programs (`binary`), `apk` and AppImages, each for a system: the app platforms plus `macos-x86_64`, `macos-universal`, `android` and `any`. Formats the Schelf app can't install are download-only.
+
+**How releases arrive, and who reviews them.**
+
+| Release | Unlisted project | Listed project |
+| --- | --- | --- |
+| From GitHub Actions, stable or beta or a custom channel | Out once the checks pass; a person only when a check flags something | A person, every release |
+| From GitHub Actions, nightly | Out once the checks pass | Out once the checks pass |
+| Uploaded by hand (dashboard or `schelf publish` with a token) | A person, every release | A person, every release |
+
+"Flags something" means any check other than the listing, licence and source diff that isn't a pass, or the malware scan and inspection not having run. Manual uploads are labelled "Uploaded by the developer", tagged `uploaded`, get a stricter check set (the malware scan has to finish, files that can't be opened are flagged), and new publishers (under 30 days old) can upload three a day. A release that goes out on its checks is approved by "Schelf's checks", logged on its Pult record, and starts its rollout like any other.
+
+**Stable links.** `dl.schelf.store/<publisher>/<project>/latest[/<platform>[/<kind>]]` and `/v/<version>/…` redirect to the immutable file. `latest` with no platform picks the visitor's from the user agent and client hints. By default the latest link serves the newest release that has reached everyone; with **Download links follow the rollout** it serves a rolling-out release to its percentage of requests. Bridges are never served. `latest.json` describes the newest release and every file; `latest/SHA256SUMS` lists checksums; `embed.js` turns a plain link into a "Download for macOS" button. Every file shows its SHA-256 and attestation.
+
+**Update feeds.** Sabine's `provider = "schelf"` feed is unchanged. For electron-updater, `latest.yml`, `latest-mac.yml`, `latest-linux.yml` and `latest-linux-arm64.yml` (and `<channel>*.yml`) carry each file's SHA-512, worked out while the file streams in, and the rollout as `stagingPercentage`, which electron-updater applies per device. For Tauri, `tauri.json` carries each bundle's minisign signature, uploaded as a `.sig` next to it, under both `os-arch` and `os-arch-bundle` keys; since Tauri can't stage, it follows the same rule as the latest link. electron-updater and Tauri feeds are signed by the developer's own keys (code signatures, Tauri's updater key); only Sabine's feed carries the store's signature.
+
+**Channels.** Every release is on a channel: `stable` by default, the one a pre-release version names (`-beta`/`-rc` → beta, `-nightly`/`-canary` → nightly, `-alpha` → alpha), or one set with the action's `channel` input, `--channel` or the upload form. Links and feeds follow stable unless they name one (`/@beta/…`, `beta.yml`, Sabine's channel). A version is published once per project; **Promote** copies a shipped release to another channel without re-uploading (same R2 objects, new release row with `promoted_from`, checks copied) and routes it by the target channel's rule. Channels can keep only their last N releases; nightly keeps 10 by default, and pruning deletes files no other release uses.
+
+**Moving to a new framework.** A project records which updater each release line uses (`app.updater`, `release.updater`). **Change how this app updates** starts a move (`updater_switch`): the project's format and updater change to the new ones, and from then on the developer ships the first release built with the new framework and a **bridge**, one last release built the old way (`bridge: true`), whose only job is to install the new build. Each feed serves the newest release with its own updater, so after the move the old feed only ever offers the bridge, for good; links skip bridges; the move completes once both have shipped, and the release history marks it. Bridges are the robust choice on Windows, where updaters run an installer; on macOS and in AppImages, where electron-updater and Tauri swap the app in place, the bridge can be the new build packaged the old way.
+
+**Stats and stopping.** Downloads through links, feeds and direct URLs are counted per version and platform as before, with nothing about the person. Stopping a release, the revocation list (for clients that read it: Sabine, the Schelf app) and every Pult action apply to every project.
 
 ## How it fits together
 

@@ -37,6 +37,7 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
     channel: release.channel,
     tag: release.tag,
     origin: release.origin,
+    format: release.format,
     updater: release.updater,
     bridge: release.bridge,
     promoted_from: release.promotedFrom,
@@ -46,6 +47,7 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
     platforms: [...new Set(artifacts.map((artifact) => artifact.platform as Platform))],
     created_at: release.createdAt.toISOString(),
     approved_at: iso(release.approvedAt),
+    approved_by: release.approvedBy,
   }
 }
 

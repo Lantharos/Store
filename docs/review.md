@@ -1,6 +1,6 @@
 # Review
 
-Every new app and every update is decided by a person in Pult. The store gathers the facts, Pult's triage sorts them, and anyone can ask Claude for a hands-on review of one app when it's worth it. Nothing reaches users before someone presses Approve.
+Every release of a listed app, and every upload by hand, is decided by a person in Pult. Releases of unlisted projects and nightlies of listed ones, sent from GitHub Actions, go out on the store's checks alone unless a check flags something, and then they come here too ([the rules](design.md#hosting-releases)). The store gathers the facts, Pult's triage sorts them, and the owner can run a hands-on review of one app when it's worth it.
 
 ## The pieces
 
@@ -23,6 +23,7 @@ The store is a Pult app like any other, wired the way Pult runs its own back off
 | Resource | `publisher`        | A person or an organisation: owner, members, namespaces, trusted publishers, upload tokens, verification history and apps. Browse by status, kind and verified.      |
 | Inbox    | `submissions`      | First release of a new app id. States: open, changes requested, approved, rejected.                                                                                  |
 | Inbox    | `updates`          | Every later release. Same states.                                                                                                                                    |
+| Inbox    | `listings`         | Unlisted projects asking to be listed. States: open, listed, kept unlisted. Decided with List it or Keep unlisted on the app.                                        |
 | Inbox    | `reports`          | Reports from people and rights holders, tagged by kind. States: open, actioned, dismissed; the store's own record follows the item.                                  |
 | Inbox    | `verification`     | Requests for the verified mark. States: open, more requested, approved, rejected.                                                                                    |
 | Inbox    | `mail`             | Email to the store's addresses, see [Email](#email). States: open, handled, spam.                                                                                    |
@@ -42,7 +43,8 @@ Actions, all running in the store. Each one only shows while it applies: Pause o
 | Ask for changes (message to the developer)                | release in review                   | none                                                                                                        |
 | Reject (reason, sent as statement of reasons)             | release in review                   | confirm                                                                                                     |
 | Pause, resume, send to everyone, set rollout, roll back   | release rolling out or live         | confirm (resume: none)                                                                                      |
-| Delist, list again                                        | listed or delisted app              | confirm                                                                                                     |
+| Delist, list again                                        | published or delisted app           | confirm                                                                                                     |
+| List it, Keep unlisted (reason, emailed)                  | app asking to be listed             | confirm                                                                                                     |
 | Pull (block from starting, with a public note), undo pull | app or release                      | reauth                                                                                                      |
 | Revoke a token, remove a trusted publisher                | app                                 | confirm                                                                                                     |
 | Remove all trusted publishers, revoke all tokens          | publisher                           | reauth                                                                                                      |
@@ -58,7 +60,7 @@ Actions, all running in the store. Each one only shows while it applies: Pause o
 | Prepare a new store key                                   | store                               | confirm; the key is made and sealed inside the store, and shown for the root to sign                        |
 | Publish store keys                                        | store                               | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
 
-Approve, Ask for changes and Reject move the item to approved, changes requested or rejected; all three are closed, since a fixed release arrives as a new item. Triage can run Reject and Ask for changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them.
+Approve, Ask for changes and Reject move the item to approved, changes requested or rejected; all three are closed, since a fixed release arrives as a new item. Triage can run Reject and Ask for changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them, `unlisted` and `closed-source` from the project, the channel when it isn't stable, and `bridge` for the last release before a move to a new framework. An unlisted project's release in the inbox is there because a check flagged it, and its history says which.
 
 A record's history shows what was done in Pult, and the store adds what happened on its side: a release sent for review or failing its checks, each rollout step and rollout changes from the dashboard, apps added, trusted publishers and upload tokens added or removed, namespaces claimed, proved or given up, and verification requests sent.
 

@@ -11,7 +11,7 @@
   },
   "resources": {
     "app": {
-      "source": "src/ops/define/app.ts:32",
+      "source": "src/ops/define/app.ts:34",
       "label": "App",
       "plural": "Apps",
       "icon": "box",
@@ -25,7 +25,7 @@
               "enum": [
                 "draft",
                 "in-review",
-                "listed",
+                "published",
                 "delisted",
                 "pulled"
               ]
@@ -35,6 +35,13 @@
               "enum": [
                 "app",
                 "extension"
+              ]
+            },
+            "visibility": {
+              "type": "string",
+              "enum": [
+                "listed",
+                "unlisted"
               ]
             }
           }
@@ -47,8 +54,53 @@
         }
       },
       "actions": {
+        "list": {
+          "source": "src/ops/define/app.ts:108",
+          "label": "List it",
+          "description": "Puts the project in the catalog, search and the Schelf app.",
+          "danger": "confirm",
+          "input": null,
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": "listed",
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
+        "keepUnlisted": {
+          "source": "src/ops/define/app.ts:119",
+          "label": "Keep unlisted",
+          "description": "Declines the request to be listed and tells the publisher why. The project keeps working as it is.",
+          "danger": "confirm",
+          "input": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "description": "Sent to the publisher"
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": "kept unlisted",
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
         "delist": {
-          "source": "src/ops/define/app.ts:99",
+          "source": "src/ops/define/app.ts:132",
           "label": "Delist",
           "description": "Hides the app from the catalog and search. Installs and updates keep working.",
           "danger": "confirm",
@@ -64,7 +116,7 @@
           "schedule": null
         },
         "relist": {
-          "source": "src/ops/define/app.ts:108",
+          "source": "src/ops/define/app.ts:141",
           "label": "List again",
           "description": "Shows the app in the catalog and search again.",
           "danger": "confirm",
@@ -80,7 +132,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/app.ts:118",
+          "source": "src/ops/define/app.ts:151",
           "label": "Pull",
           "description": "Stops every version from installing and starting, delists the app and shows the note to people who have it.",
           "danger": "reauth",
@@ -116,7 +168,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/app.ts:129",
+          "source": "src/ops/define/app.ts:162",
           "label": "Undo pull",
           "description": "Lets the app install and start again and lists it.",
           "danger": "reauth",
@@ -132,7 +184,7 @@
           "schedule": null
         },
         "revokeToken": {
-          "source": "src/ops/define/app.ts:139",
+          "source": "src/ops/define/app.ts:172",
           "label": "Revoke a token",
           "description": "Stops one upload token from publishing. The developer can make a new one.",
           "danger": "confirm",
@@ -160,7 +212,7 @@
           "schedule": null
         },
         "removeTrustedPublisher": {
-          "source": "src/ops/define/app.ts:165",
+          "source": "src/ops/define/app.ts:198",
           "label": "Remove a trusted publisher",
           "description": "Stops one workflow from publishing until the developer adds it again.",
           "danger": "confirm",
@@ -469,7 +521,7 @@
       "related": {},
       "actions": {
         "approve": {
-          "source": "src/ops/define/release.ts:41",
+          "source": "src/ops/define/release.ts:43",
           "label": "Approve",
           "description": "Signs the release into the index and the update feeds and starts the rollout at 10%.",
           "danger": "confirm",
@@ -485,7 +537,7 @@
           "schedule": null
         },
         "approveSecurityFix": {
-          "source": "src/ops/define/release.ts:48",
+          "source": "src/ops/define/release.ts:50",
           "label": "Approve as a security fix",
           "description": "Approves the release and sends it to everyone at once.",
           "danger": "confirm",
@@ -501,7 +553,7 @@
           "schedule": null
         },
         "requestChanges": {
-          "source": "src/ops/define/release.ts:56",
+          "source": "src/ops/define/release.ts:58",
           "label": "Ask for changes",
           "description": "Sends the developer a message; they fix it and publish again.",
           "danger": "none",
@@ -529,7 +581,7 @@
           "schedule": null
         },
         "reject": {
-          "source": "src/ops/define/release.ts:65",
+          "source": "src/ops/define/release.ts:67",
           "label": "Reject",
           "description": "Rejects the release and sends the developer the reason as a statement of reasons.",
           "danger": "confirm",
@@ -557,7 +609,7 @@
           "schedule": null
         },
         "pause": {
-          "source": "src/ops/define/release.ts:74",
+          "source": "src/ops/define/release.ts:76",
           "label": "Pause rollout",
           "description": "Keeps the rollout where it is until it's resumed.",
           "danger": "confirm",
@@ -573,7 +625,7 @@
           "schedule": null
         },
         "resume": {
-          "source": "src/ops/define/release.ts:81",
+          "source": "src/ops/define/release.ts:83",
           "label": "Resume rollout",
           "danger": "none",
           "input": null,
@@ -588,7 +640,7 @@
           "schedule": null
         },
         "sendToEveryone": {
-          "source": "src/ops/define/release.ts:86",
+          "source": "src/ops/define/release.ts:88",
           "label": "Send to everyone",
           "description": "Skips the remaining rollout steps.",
           "danger": "confirm",
@@ -604,7 +656,7 @@
           "schedule": null
         },
         "setRollout": {
-          "source": "src/ops/define/release.ts:93",
+          "source": "src/ops/define/release.ts:95",
           "label": "Set rollout",
           "description": "Offers the release to this share of devices.",
           "danger": "confirm",
@@ -632,7 +684,7 @@
           "schedule": null
         },
         "rollback": {
-          "source": "src/ops/define/release.ts:102",
+          "source": "src/ops/define/release.ts:104",
           "label": "Roll back",
           "description": "Withdraws the release; devices are offered the version before it.",
           "danger": "confirm",
@@ -648,7 +700,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/release.ts:109",
+          "source": "src/ops/define/release.ts:111",
           "label": "Pull",
           "description": "Stops this version from installing and starting on every device and shows the note to people who have it.",
           "danger": "reauth",
@@ -684,7 +736,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/release.ts:120",
+          "source": "src/ops/define/release.ts:122",
           "label": "Undo pull",
           "description": "Lets this version install and start again.",
           "danger": "reauth",
@@ -700,7 +752,7 @@
           "schedule": null
         },
         "askClaude": {
-          "source": "src/ops/define/release.ts:130",
+          "source": "src/ops/define/release.ts:132",
           "label": "Review with Claude",
           "description": "Shows the command that installs and tries the app in a throwaway VM.",
           "danger": "none",
@@ -787,6 +839,55 @@
     }
   },
   "inboxes": {
+    "listings": {
+      "source": "src/ops/define/inboxes.ts:128",
+      "label": "Listings",
+      "icon": "list",
+      "resource": "app",
+      "layout": "list",
+      "states": [
+        "open",
+        "listed",
+        "kept unlisted"
+      ],
+      "closed": [
+        "listed",
+        "kept unlisted"
+      ],
+      "reopen": [],
+      "data": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "app",
+          "name",
+          "publisher"
+        ]
+      },
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
+      "intake": null,
+      "triage": null,
+      "reply": false,
+      "hooks": {
+        "state": false
+      },
+      "sla": {
+        "open": 259200000
+      }
+    },
     "mail": {
       "source": "src/ops/define/mail.ts:12",
       "label": "Mail",
@@ -888,7 +989,7 @@
       }
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:128",
+      "source": "src/ops/define/inboxes.ts:147",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
@@ -1566,5 +1667,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "55f4d5b70fda"
+  "version": "bd661008fa98"
 }

@@ -5,6 +5,18 @@ export const DOC_SECTIONS = [
     title: "Publishing",
     pages: ["trusted-publishing", "publish-action", "cli", "rollouts", "stopping-a-release"],
   },
+  {
+    title: "Hosting",
+    pages: [
+      "host-your-releases",
+      "download-links",
+      "update-feeds",
+      "channels",
+      "manual-uploads",
+      "closed-source-apps",
+      "moving-to-a-new-framework",
+    ],
+  },
   { title: "Kinds of apps", pages: ["sabine-apps", "appimages", "luft-extensions"] },
   { title: "Policies", pages: ["review-guidelines", "faq"] },
 ] as const

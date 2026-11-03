@@ -31,6 +31,7 @@ export const artifact = z.object({
   url: z.string(),
   size: z.number().int().nonnegative(),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  attestation: z.string().nullable(),
   executable: z.string().nullable(),
   deltas: z.array(
     z.object({

@@ -14,13 +14,15 @@ The publish action runs at the end of your release workflow. It asks GitHub for 
 
 ## Inputs
 
-| Input            | Default                   | What it does                                                                                                                                                |
-| ---------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `files`          |                           | Files to publish, one glob per line.                                                                                                                        |
-| `release-assets` |                           | Names of this GitHub release's assets to publish, one glob per line, for builds that attach their files to the release. Waits for them to finish uploading. |
-| `schelf-toml`    | `schelf.toml`             | Where your `schelf.toml` is.                                                                                                                                |
-| `notes`          | The release's description | Release notes shown on your store page. Markdown works.                                                                                                     |
-| `github-token`   | `${{ github.token }}`     | Records the attestations and reads the release.                                                                                                             |
+| Input            | Default                                | What it does                                                                                                                                                |
+| ---------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `files`          |                                        | Files to publish, one glob per line.                                                                                                                        |
+| `release-assets` |                                        | Names of this GitHub release's assets to publish, one glob per line, for builds that attach their files to the release. Waits for them to finish uploading. |
+| `schelf-toml`    | `schelf.toml`                          | Where your `schelf.toml` is.                                                                                                                                |
+| `notes`          | The release's description              | Release notes shown on your store page. Markdown works.                                                                                                     |
+| `channel`        | `stable`, or the one the version names | The [channel](/docs/channels) to release on, like `beta` or `nightly`.                                                                                      |
+| `bridge`         | `false`                                | Publishes the last build in the old framework when [moving to a new one](/docs/moving-to-a-new-framework).                                                  |
+| `github-token`   | `${{ github.token }}`                  | Records the attestations and reads the release.                                                                                                             |
 
 Use either `files` or `release-assets`.
 
@@ -75,10 +77,11 @@ jobs:
 
 The action works out which system each file is for:
 
-| Format         | How                                                                                                                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sabine app     | From the names Sabine's release workflow gives its bundles, like `Notes-1.2.0-linux-x86_64-appimage.AppImage` or `Notes-1.2.0-windows-aarch64-msi.msi`. Pass those files as they are. |
-| AppImage       | From the file itself: x86_64 or aarch64.                                                                                                                                              |
-| Luft extension | One `.tar.zst` of the extension folder. Add `x86_64` or `aarch64` to the name if it ships a native helper.                                                                            |
+| Format         | How                                                                                                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sabine app     | From the names Sabine's release workflow gives its bundles, like `Notes-1.2.0-linux-x86_64-appimage.AppImage` or `Notes-1.2.0-windows-aarch64-msi.msi`. Pass those files as they are.                                                                |
+| AppImage       | From the file itself: x86_64 or aarch64.                                                                                                                                                                                                             |
+| Luft extension | One `.tar.zst` of the extension folder. Add `x86_64` or `aarch64` to the name if it ships a native helper.                                                                                                                                           |
+| Project        | From the file's extension and the system and architecture in its name, like `Raffi_1.2.0_aarch64.dmg`. Add `#macos-aarch64` after a line in `files` to say it yourself. A `.sig` next to a file becomes its [updater signature](/docs/update-feeds). |
 
 Files over 95 MB are uploaded in parts automatically.

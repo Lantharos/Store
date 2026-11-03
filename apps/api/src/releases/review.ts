@@ -1,4 +1,4 @@
-import { ROLLOUT_STEPS, SHIPPED_STATUSES } from "@schelf/protocol"
+import { AUTOMATIC_REVIEWER, ROLLOUT_STEPS, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, eq, inArray, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { reviewRoute } from "../hosting/scrutiny.ts"
@@ -12,7 +12,6 @@ import { notifyPublisher } from "./notify.ts"
 
 export type Decision = "approved" | "changes-requested" | "rejected"
 const FIRST_STEP = ROLLOUT_STEPS[0]
-export const AUTOMATIC_REVIEWER = "Schelf's checks"
 
 async function releaseOrFail(id: string) {
   const release = await db.query.release.findFirst({ where: eq(schema.release.id, id) })

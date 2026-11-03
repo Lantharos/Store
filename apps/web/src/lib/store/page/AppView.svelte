@@ -1,7 +1,7 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
-  import type { AppIndex, Installs, System } from "@schelf/protocol"
+  import type { AppIndex, Installs, ProjectSummary, System } from "@schelf/protocol"
   import { pickArtifact } from "../../system/artifacts.ts"
   import AppIcon from "../apps/AppIcon.svelte"
   import ExtensionArt from "../apps/ExtensionArt.svelte"
@@ -22,8 +22,10 @@
     releases,
     system,
     extensionAccess,
+    project,
   }: {
     app: AppIndex
+    project: ProjectSummary
     installs: Installs
     description: string
     releases: { version: string; published: string; notes: string }[]
@@ -33,7 +35,13 @@
 
   const panel = $props.id()
   const listing = $derived(app.listing.en!)
-  const latest = $derived(app.releases[0])
+  const latest = $derived(app.releases.find((release) => release.channel === "stable"))
+  const hosted = $derived(app.format === "files")
+  const note = $derived(
+    latest?.provenance.origin === "github-actions"
+      ? "Every file is built on GitHub Actions and checked by Schelf."
+      : "Every file was uploaded by the developer and checked by Schelf.",
+  )
   const extension = $derived(app.kind === "extension")
   const artifacts = $derived(latest?.artifacts ?? [])
   const unavailable = $derived(!extension && system.os !== "luft" && !pickArtifact(artifacts, system))
@@ -58,12 +66,20 @@
           {#each app.categories.slice(0, 1) as category (category)}
             · <a href={extension ? "/extensions" : categoryHref(category)} class="hover:text-ink">{categoryLabel(category)}</a>
           {/each}
-          {#if app.distribution === "open"}· Free and open source{/if}
+          · {app.distribution === "open" ? "Free and open source" : "Closed source"}
         </p>
       </div>
     </div>
     {#if latest}
-      <Download id={app.id} {extension} {artifacts} {system} {panel} bind:others />
+      <Download
+        id={app.id}
+        {extension}
+        {artifacts}
+        {system}
+        {panel}
+        inSchelf={project.listed && !hosted}
+        bind:others
+      />
     {:else}
       <div class="sm:text-right">
         <p class="font-medium">Coming soon</p>
@@ -73,7 +89,7 @@
   </header>
 
   {#if latest && !extension}
-    <OtherSystems {artifacts} open={others || unavailable} id={panel} />
+    <OtherSystems {artifacts} open={others || unavailable} id={panel} {note} />
   {/if}
 
   {#if app.screenshots.length}

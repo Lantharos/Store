@@ -16,9 +16,12 @@
   )
 </script>
 
-<PageHeader title={session.publisher?.kind === "person" ? "Your apps" : `${session.publisher?.name}'s apps`}>
+<PageHeader title={session.publisher?.kind === "person" ? "Your projects" : `${session.publisher?.name}'s projects`}>
   {#snippet actions()}
-    {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-primary"><Plus class="size-4" />Add an app</a>{/if}
+    {#if session.can("apps")}
+      <a href="/dashboard/apps/new" class="button button-quiet">Add an app</a>
+      <a href="/dashboard/projects/new" class="button button-primary"><Plus class="size-4" />New project</a>
+    {/if}
   {/snippet}
 </PageHeader>
 
@@ -38,7 +41,7 @@
 {#if session.apps.length}
   <ul class="mt-8 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
     <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_8rem] gap-4 px-5 pt-4 pb-2.5 text-[13px] text-ink-muted md:grid" aria-hidden="true">
-      <span>App</span><span>Version</span><span>Latest release</span><span class="text-right">Installs this week</span>
+      <span>Project</span><span>Version</span><span>Latest release</span><span class="text-right">Downloads this week</span>
     </li>
     {#each session.apps as app, index (app.id)}
       {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}
@@ -52,7 +55,7 @@
             {/if}
             <span class="min-w-0">
               <span class="block truncate font-medium">{app.name}</span>
-              <span class="block truncate font-mono text-[13px] text-ink-muted">{app.id}</span>
+              <span class="block truncate font-mono text-[13px] text-ink-muted">{app.publisher_slug}/{app.slug}{app.visibility === "unlisted" ? " · unlisted" : ""}</span>
             </span>
           </span>
           <span class="text-[15px] tabular text-ink-soft max-md:text-right">{app.version ?? "–"}</span>
@@ -69,19 +72,16 @@
     {/each}
   </ul>
 {:else}
-  <section class="enter mt-8 grid gap-8 rounded-group bg-raised p-7 sm:p-10 lg:grid-cols-[1fr_1fr]">
-    <div>
-      <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put your first app on Schelf</h2>
-      <p class="mt-2 leading-relaxed text-ink-soft">Connect a GitHub repository once. After that, every GitHub release you publish is built in your own workflow, checked, and sent to review.</p>
-      {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-primary mt-6">Add an app</a>{/if}
+  <section class="enter mt-8 grid gap-4 lg:grid-cols-2">
+    <div class="rounded-group bg-raised p-7 sm:p-9">
+      <h2 class="text-2xl font-semibold tracking-[-0.02em]">Host your releases</h2>
+      <p class="mt-2 leading-relaxed text-ink-soft">Any app, open or closed source, on any system. Send releases from GitHub Actions or upload them, and point your site's download button at Schelf. It stays unlisted until you ask to list it.</p>
+      {#if session.can("apps")}<a href="/dashboard/projects/new" class="button button-primary mt-6">New project</a>{/if}
     </div>
-    <ol class="space-y-4 text-[15px]">
-      {#each ["Claim your app id", "Connect your repository", "Commit two files", "Publish a GitHub release"] as step, index (step)}
-        <li class="flex items-center gap-3">
-          <span class="grid size-7 place-items-center rounded-full bg-well text-[13px] font-semibold tabular">{index + 1}</span>
-          {step}
-        </li>
-      {/each}
-    </ol>
+    <div class="rounded-group bg-raised p-7 sm:p-9">
+      <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put an app in the store</h2>
+      <p class="mt-2 leading-relaxed text-ink-soft">Sabine apps, AppImages and Luft extensions, listed in the catalog and the Schelf app on Luft, with a person reviewing every release.</p>
+      {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-quiet mt-6">Add an app</a>{/if}
+    </div>
   </section>
 {/if}

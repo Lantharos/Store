@@ -1,11 +1,22 @@
-import type { Artifact, ArtifactKind, Platform, System } from "@schelf/protocol"
+import {
+  type Artifact,
+  type ArtifactKind,
+  linkTarget,
+  type Platform,
+  pickFile,
+  type System,
+} from "@schelf/protocol"
 
 export const PLATFORM_NAMES: Record<Platform, string> = {
   "windows-x86_64": "Windows",
   "windows-aarch64": "Windows on Arm",
-  "macos-aarch64": "macOS",
+  "macos-aarch64": "macOS on Apple silicon",
+  "macos-x86_64": "macOS on Intel",
+  "macos-universal": "macOS",
   "linux-x86_64": "Linux",
   "linux-aarch64": "Linux on Arm",
+  android: "Android",
+  any: "Any system",
   luft: "Luft",
   "luft-x86_64": "Luft",
   "luft-aarch64": "Luft on Arm",
@@ -21,35 +32,25 @@ export const KIND_NAMES: Record<ArtifactKind, string> = {
   rpm: "Fedora and openSUSE package",
   archive: "Archive",
   extension: "Extension",
+  pkg: "Installer package",
+  flatpak: "Flatpak bundle",
+  apk: "Android package",
+  zip: "Zip archive",
+  tarball: "Tar archive",
+  binary: "Program",
 }
 
-const SYSTEM_NAMES = { windows: "Windows", macos: "Mac", linux: "Linux", luft: "Luft" } as const
-
-const PREFERRED: Record<
-  "windows" | "macos" | "linux",
-  { platforms: (arch: string) => Platform[]; kinds: ArtifactKind[] }
-> = {
-  windows: {
-    platforms: (arch) => (arch === "aarch64" ? ["windows-aarch64", "windows-x86_64"] : ["windows-x86_64"]),
-    kinds: ["exe", "msi", "archive"],
-  },
-  macos: { platforms: () => ["macos-aarch64"], kinds: ["dmg", "archive"] },
-  linux: {
-    platforms: (arch) => (arch === "aarch64" ? ["linux-aarch64"] : ["linux-x86_64"]),
-    kinds: ["app-image", "appimage", "deb", "rpm", "archive"],
-  },
-}
+const SYSTEM_NAMES = {
+  windows: "Windows",
+  macos: "Mac",
+  linux: "Linux",
+  luft: "Luft",
+  android: "Android",
+} as const
 
 export function pickArtifact(artifacts: Artifact[], system: System) {
-  if (system.os !== "windows" && system.os !== "macos" && system.os !== "linux") return null
-  const preference = PREFERRED[system.os]
-  for (const target of preference.platforms(system.arch)) {
-    for (const wanted of preference.kinds) {
-      const match = artifacts.find((artifact) => artifact.platform === target && artifact.kind === wanted)
-      if (match) return match
-    }
-  }
-  return null
+  const target = linkTarget(system)
+  return target ? (pickFile(artifacts, target) ?? null) : null
 }
 
 export function systemName(system: System) {
@@ -74,9 +75,10 @@ export function systemsOf(platforms: Iterable<string>) {
     else if (platform.startsWith("macos")) names.add("macOS")
     else if (platform.startsWith("linux")) names.add("Linux")
     else if (platform.startsWith("luft")) names.add("Luft")
+    else if (platform === "android") names.add("Android")
   }
   if (names.has("Linux")) names.add("Luft")
-  return ["Luft", "Linux", "Windows", "macOS"].filter((name) => names.has(name))
+  return ["Luft", "Linux", "Windows", "macOS", "Android"].filter((name) => names.has(name))
 }
 
 export function schelfLink(id: string) {

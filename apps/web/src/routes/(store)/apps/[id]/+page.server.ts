@@ -1,9 +1,7 @@
 import { error, redirect } from "@sveltejs/kit"
 import { findAppPage, findMirrorApp } from "#lib/api/store.ts"
-import { appSchema } from "#lib/seo/schema.ts"
 import { STOREFRONT_CACHE } from "#lib/server/cache.ts"
-import { renderUserMarkdown } from "#lib/server/markdown.ts"
-import { extensionGrants } from "#lib/store/page/extension.ts"
+import { storePage } from "#lib/store/page/load.ts"
 
 const KIND_PATH = { app: "apps", extension: "extensions" } as const
 
@@ -18,24 +16,8 @@ export async function load({ params, url, setHeaders }) {
     return { view: "mirror" as const, mirror }
   }
 
-  if (found.status === "pulled") error(410, "This app was removed from Schelf.")
-  if (found.status === "delisted") error(404, "This app isn't listed on Schelf any more.")
+  if (!found.project.listed) redirect(308, new URL(found.project.page).pathname)
   const { app } = found
   if (app.kind !== wanted || app.id !== params.id) redirect(308, `/${KIND_PATH[app.kind]}/${app.id}`)
-
-  const path = `/${KIND_PATH[app.kind]}/${app.id}`
-  return {
-    view: "store" as const,
-    app,
-    installs: found.installs,
-    extensionAccess: app.releases[0]?.extension ? extensionGrants(app.releases[0].extension) : null,
-    path,
-    description: renderUserMarkdown(app.listing.en!.description),
-    releases: app.releases.map((release) => ({
-      version: release.version,
-      published: release.published,
-      notes: renderUserMarkdown(release.notes),
-    })),
-    schema: appSchema(app, path, found.installs.total),
-  }
+  return storePage(found, `/${KIND_PATH[app.kind]}/${app.id}`)
 }

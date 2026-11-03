@@ -12,11 +12,12 @@
     title="{listing.name}: {listing.summary} · Schelf"
     description={listing.description.split("\n\n")[0]?.slice(0, 200) || listing.summary}
     path={data.path}
-    image="{data.path}/og.png"
+    image="/apps/{data.app.id}/og.png"
     imageAlt={listing.name}
-    schema={data.schema}
+    schema={data.project.indexed ? data.schema : undefined}
+    indexed={data.project.indexed}
   />
-  <AppView app={data.app} installs={data.installs} description={data.description} releases={data.releases} system={data.system} extensionAccess={data.extensionAccess} />
+  <AppView app={data.app} project={data.project} installs={data.installs} description={data.description} releases={data.releases} system={data.system} extensionAccess={data.extensionAccess} />
 {:else}
   <Meta title="{data.mirror.name} · Schelf" description={data.mirror.summary} path="/apps/{data.mirror.id}" indexed={false} />
   <MirrorView app={data.mirror} system={data.system} />

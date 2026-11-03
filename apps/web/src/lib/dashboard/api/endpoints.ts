@@ -16,6 +16,7 @@ export const endpoints = {
   acceptInvite: (invite: string) => `/invites/${invite}/accept`,
   declineInvite: (invite: string) => `/invites/${invite}/decline`,
   apps: (id: string) => `${publisher(id)}/apps`,
+  projects: (id: string) => `${publisher(id)}/apps/projects`,
   namespaces: (id: string) => `${publisher(id)}/namespaces`,
   namespace: (id: string, prefix: string) => `${publisher(id)}/namespaces/${encodeURIComponent(prefix)}`,
   verifyNamespace: (id: string, prefix: string) =>
@@ -44,4 +45,10 @@ export const endpoints = {
   release: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}`,
   rollout: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}/rollout`,
   stats: (id: string, days: number) => `${app(id)}/stats?days=${days}`,
+  hosting: (id: string) => `${app(id)}/hosting`,
+  listingRequest: (id: string) => `${app(id)}/listing-request`,
+  switchUpdater: (id: string) => `${app(id)}/switch`,
+  channel: (id: string, channel: string) => `${app(id)}/channels/${channel}`,
+  promote: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}/promote`,
+  uploads: (id: string) => `${app(id)}/uploads`,
 }

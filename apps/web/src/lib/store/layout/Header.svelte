@@ -4,8 +4,8 @@
   import X from "@lucide/svelte/icons/x"
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
-  import DashboardButton from "./DashboardButton.svelte"
   import SearchBox from "../search/SearchBox.svelte"
+  import DashboardButton from "./DashboardButton.svelte"
 
   const NAV = [
     { href: "/", label: "Discover", match: (path: string) => path === "/" },

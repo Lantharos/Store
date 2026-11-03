@@ -17,17 +17,25 @@ listing = "store/"
 sabine = "0.68"
 ```
 
+A project that Schelf hosts files for needs even less:
+
+```toml
+project = "lantharos/raffi"
+format = "files"
+```
+
 ## Fields
 
-| Field                    | Required   | What it is                                                                                                               |
-| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `id`                     | Yes        | Your [app id](/docs/app-ids). Must match `Sabine.toml`, your AppStream file and your desktop entry.                      |
-| `kind`                   | No         | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                        |
-| `format`                 | Yes        | `sabine`, `appimage`, or `luft-extension` for extensions.                                                                |
-| `permissions`            | No         | The file holding your [permission declaration](/docs/permissions). Leave it out and your app is listed with full access. |
-| `listing`                | No         | A folder with screenshots and translated text kept in the repository.                                                    |
-| `requires.sabine`        | No         | The oldest Sabine version your app runs on, like `"0.68"`.                                                               |
-| `requires.extension_api` | Extensions | The Luft extension API version your extension was built for.                                                             |
+| Field                    | Required     | What it is                                                                                                               |
+| ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `id`                     | One of these | Your [app id](/docs/app-ids). Must match `Sabine.toml`, your AppStream file and your desktop entry.                      |
+| `project`                | One of these | Or the project's address, like `lantharos/raffi`, for [projects](/docs/host-your-releases) without an app id.            |
+| `kind`                   | No           | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                        |
+| `format`                 | Yes          | `sabine`, `appimage`, `luft-extension` for extensions, or `files` for anything else Schelf hosts.                        |
+| `permissions`            | No           | The file holding your [permission declaration](/docs/permissions). Leave it out and your app is listed with full access. |
+| `listing`                | No           | A folder with screenshots and translated text kept in the repository.                                                    |
+| `requires.sabine`        | No           | The oldest Sabine version your app runs on, like `"0.68"`.                                                               |
+| `requires.extension_api` | Extensions   | The Luft extension API version your extension was built for.                                                             |
 
 ## Where the listing comes from
 

@@ -92,6 +92,7 @@ function indexedRelease(
       url: fileUrl(artifact.key),
       size: artifact.size,
       sha256: artifact.sha256,
+      attestation: artifact.attestationUrl,
       executable: artifact.executable,
       deltas: artifact.deltas.map((delta) => ({
         from: delta.from,

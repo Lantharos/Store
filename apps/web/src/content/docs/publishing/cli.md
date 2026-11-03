@@ -10,22 +10,24 @@ description: Set up, check, publish and roll out from your terminal.
 bunx schelf <command>
 ```
 
-| Command                             | What it does                                                                                                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schelf init`                       | Sets up the app or extension in this repository: signs you in, claims the id, connects the workflow and writes `schelf.toml` and `.github/workflows/schelf.yml`. |
-| `schelf check`                      | Checks `schelf.toml`, your permissions and your listing, and previews the store page.                                                                            |
-| `schelf publish [files…]`           | Publishes a release. In GitHub Actions it uses the workflow's own identity; anywhere else, a token.                                                              |
-| `schelf status [version]`           | Where a release is: each check, review and rollout. Shows the newest release without a version.                                                                  |
-| `schelf rollout <version> <change>` | Changes a rollout: a percentage like `50`, `pause`, `resume`, or `all`.                                                                                          |
-| `schelf login` / `schelf logout`    | Signs this computer in or out, through your browser.                                                                                                             |
+| Command                             | What it does                                                                                                                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schelf init`                       | Sets up the app, extension or project in this repository: signs you in, claims the id or makes an unlisted project, connects the workflow and writes `schelf.toml` and `.github/workflows/schelf.yml`. |
+| `schelf check`                      | Checks `schelf.toml`, your permissions and your listing, and previews the store page.                                                                                                                  |
+| `schelf publish [files…]`           | Publishes a release. In GitHub Actions it uses the workflow's own identity; anywhere else, a token.                                                                                                    |
+| `schelf status [version]`           | Where a release is: each check, review and rollout. Shows the newest release without a version.                                                                                                        |
+| `schelf rollout <version> <change>` | Changes a rollout: a percentage like `50`, `pause`, `resume`, or `all`.                                                                                                                                |
+| `schelf login` / `schelf logout`    | Signs this computer in or out, through your browser.                                                                                                                                                   |
 
 ## Options
 
-| Option            | What it does                                                                             |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| `--token <token>` | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`. |
-| `--config <path>` | Use a `schelf.toml` somewhere other than the repository root.                            |
-| `--api <origin>`  | Talk to another store. You can also set `SCHELF_API`.                                    |
+| Option             | What it does                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `--token <token>`  | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`. |
+| `--config <path>`  | Use a `schelf.toml` somewhere other than the repository root.                            |
+| `--channel <name>` | Publish to a [channel](/docs/channels) other than stable.                                |
+| `--bridge`         | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).    |
+| `--api <origin>`   | Talk to another store. You can also set `SCHELF_API`.                                    |
 
 ## Signing in
 

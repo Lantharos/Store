@@ -1,10 +1,12 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
   import type { Artifact } from "@schelf/protocol"
+  import CopyButton from "../../code/CopyButton.svelte"
   import { bytes } from "../../format.ts"
   import { groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
 
-  let { artifacts, open, id }: { artifacts: Artifact[]; open: boolean; id: string } = $props()
+  let { artifacts, open, id, note }: { artifacts: Artifact[]; open: boolean; id: string; note: string } =
+    $props()
   const groups = $derived(groupByPlatform(artifacts))
 </script>
 
@@ -24,14 +26,17 @@
                   </span>
                   <span class="text-[13px] text-ink-muted tabular">{bytes(file.size)}</span>
                 </a>
+                <p class="flex items-center gap-2 text-[12px] text-ink-muted">
+                  <span class="min-w-0 truncate font-mono" title="SHA-256 {file.sha256}">{file.sha256.slice(0, 16)}…</span>
+                  <CopyButton text={file.sha256} label="Copy the SHA-256" compact class="h-6!" />
+                  {#if file.attestation}<a href={file.attestation} class="hover:text-ink" rel="nofollow">Provenance</a>{/if}
+                </p>
               </li>
             {/each}
           </ul>
         </div>
       {/each}
-      <p class="text-[13px] leading-relaxed text-ink-muted sm:col-span-full">
-        Every file is signed by Schelf.
-      </p>
+      <p class="text-[13px] leading-relaxed text-ink-muted sm:col-span-full">{note}</p>
     </div>
   </div>
 </div>

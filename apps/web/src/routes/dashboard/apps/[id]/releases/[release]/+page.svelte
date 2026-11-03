@@ -3,6 +3,9 @@
   import type { ReleaseSummary } from "@schelf/protocol"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
+  import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import { appSettings } from "#lib/dashboard/apps/context.ts"
+  import Promote from "#lib/dashboard/releases/Promote.svelte"
   import ReleaseFiles from "#lib/dashboard/releases/ReleaseFiles.svelte"
   import ReleaseHeader from "#lib/dashboard/releases/ReleaseHeader.svelte"
   import { previousShipped, releaseDetail } from "#lib/dashboard/releases/release.svelte.ts"
@@ -15,6 +18,7 @@
   const releaseId = $derived(page.params.release!)
   const detail = $derived(releaseDetail(id, releaseId))
   const releases = $derived(resource<ReleaseSummary[]>(endpoints.releases(id)))
+  const settings = $derived(appSettings()())
 </script>
 
 <svelte:head><title>{detail.data ? `${detail.data.version} · ` : ""}Schelf for developers</title></svelte:head>
@@ -31,7 +35,12 @@
       <Timeline appId={id} release={detail.data} previous={releases.data ? previousShipped(releases.data, releaseId) : null} onchange={(next) => detail.set(next)}>
         {#snippet header()}<ReleaseHeader release={detail.data!} />{/snippet}
       </Timeline>
-      <ReleaseFiles release={detail.data} />
+      <div class="space-y-6">
+        {#if settings.data && (detail.data.status === "live" || detail.data.status === "rolling-out") && session.can("releases")}
+          <Promote settings={settings.data} release={detail.data} />
+        {/if}
+        <ReleaseFiles release={detail.data} />
+      </div>
     </div>
   {/if}
 </div>

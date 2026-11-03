@@ -111,15 +111,19 @@ The `publish` action:
 
 A repository can publish several apps, each with its own `schelf.toml` in its folder and its own tags. The store reads a release's version from the part of the tag after its last `/`, so tags such as `draft/v1.2.0` and `rain/v1.0.0` name both the app and the version. One workflow runs on those tags, works out the app from the part before the `/`, builds only that app, and points the action at its file with `schelf-toml: apps/draft/schelf.toml`. Sabine's release workflow builds an app in a subfolder with `app: apps/draft`, only on the platforms it runs on with `platforms: linux-x86_64 linux-aarch64`, and with the system libraries it links from `linux_packages`. Register that one workflow as a trusted publisher of every app it publishes. Releases pushed as tags have no GitHub release, so pass the notes with the action's `notes` input, such as the tag's message. Luft publishes its apps and extensions this way, from `.github/workflows/store.yml`.
 
-For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions".
+For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once, and the dashboard can upload a release directly. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions", and always go to a person.
+
+### Projects that aren't in the store
+
+`schelf init` in a repository with nothing Schelf builds itself (an Electron or Tauri app, or anything else) makes an unlisted project instead: `schelf.toml` with `project = "<publisher>/<slug>"` and `format = "files"`, a workflow that publishes the GitHub release's assets, the repository's workflow as trusted publisher, and the app's updater when it finds electron-updater or Tauri. See [design](design.md#hosting-releases).
 
 ## The schelf command
 
 | Command | Does |
 | --- | --- |
-| `schelf init` | Sets up an app or extension, as above. |
+| `schelf init` | Sets up an app, extension or project, as above. |
 | `schelf check` | Validates `schelf.toml`, the permission declaration and the listing locally, showing what the store page will look like in the terminal and what's missing. |
-| `schelf publish [files…]` | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. |
+| `schelf publish [files…]` | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
 | `schelf status [version]` | Where a release is: checks, review, rollout. |
 | `schelf rollout <version> <percent | pause | resume | all>` | Rollout control. |
 | `schelf login` / `logout` | Browser sign-in for the commands that need an account. |

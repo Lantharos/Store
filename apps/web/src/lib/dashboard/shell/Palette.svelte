@@ -58,7 +58,13 @@
         }))
       : []
     const pages: Command[] = [
-      { id: "new", label: "Add an app", group: "Go to", run: go("/dashboard/apps/new") },
+      { id: "new-project", label: "New project", group: "Go to", run: go("/dashboard/projects/new") },
+      {
+        id: "new",
+        label: "Add an app for Luft and the store",
+        group: "Go to",
+        run: go("/dashboard/apps/new"),
+      },
       { id: "settings", label: "Settings", group: "Go to", run: go(settingsHref("profile")) },
       {
         id: "organisation",

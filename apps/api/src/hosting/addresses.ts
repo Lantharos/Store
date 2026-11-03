@@ -21,7 +21,7 @@ export function linkBase(app: Pick<AppRow, "slug">, publisherSlug: string, chann
 }
 
 export function projectSummary(
-  app: Addressed & Pick<AppRow, "pageIndexed">,
+  app: Addressed & Pick<AppRow, "pageIndexed" | "updater">,
   publisherSlug: string,
 ): ProjectSummary {
   return {
@@ -29,6 +29,7 @@ export function projectSummary(
     slug: app.slug,
     listed: app.visibility === "listed",
     indexed: app.visibility === "listed" || app.pageIndexed,
+    updates: app.updater !== null,
     page: pageUrl(app, publisherSlug),
     latest: `${linkBase(app, publisherSlug)}/latest`,
   }

@@ -29,6 +29,9 @@ export const appPage = (id: string) =>
 
 export const findAppPage = (id: string) => find<AppPage>(`/apps/${encodeURIComponent(id)}`)
 
+export const findProjectPage = (publisher: string, project: string) =>
+  find<AppPage>(`/projects/${encodeURIComponent(publisher)}/${encodeURIComponent(project)}`)
+
 export const findMirrorApp = (id: string) => find<MirrorEntry>(`/mirror/${encodeURIComponent(id)}`)
 
 export const publisher = (slug: string) =>

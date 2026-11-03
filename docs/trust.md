@@ -12,13 +12,17 @@ Who signs what, what each client checks, how permissions reach the user, how upd
 | Build attestation | GitHub (Sigstore, keyless) | Each published file's digest and the run that built it | Permanent, public |
 | Windows Authenticode, Apple Developer ID | The developer | Binaries and installers on those systems | Theirs |
 
-There are no developer keys to lose or leak. A release can only come from the workflow the developer registered, and it still needs a person's approval before anyone gets it. A stolen dashboard token can upload a release, but it's marked as uploaded by hand in review, scoped to one app and revocable.
+There are no developer keys to lose or leak. A release can only come from the workflow the developer registered, and it still needs a person's approval before anyone gets it. A stolen dashboard token can upload a release, but every upload is reviewed by a person whatever the project, it's marked as uploaded by hand, scoped to one app and revocable. Releases of unlisted projects from a trusted workflow go out on the store's checks; the workflow, the attestation and a clean malware scan stand in for the person.
 
 ## What gets signed
 
 An **index entry** is the store's signature over a release in `index/v1/apps/<id>.json`: app id, version, artifacts with hashes, the permissions, and where it came from (repository, workflow, commit, run). It's made only when a person approves the release.
 
 An **update feed** is the same release in Sabine's update manifest format, signed by the store key, at `sabine/<id>/<channel>.json`. Sabine apps that set `provider = "schelf"` follow it ([clients](clients.md#sabine-apps-on-windows-and-macos)).
+
+Projects that use electron-updater or Tauri's updater get those feeds too ([design](design.md#hosting-releases)). The store doesn't sign them: electron-updater checks each file's SHA-512 from the feed and the developer's code signature, and Tauri checks the developer's own updater signature, which is uploaded with each bundle. Both are served over HTTPS from the store's own host.
+
+A **stable link** redirects to an immutable artifact URL. It never names a bridge or a release that's pulled or blocked.
 
 ## What clients check
 

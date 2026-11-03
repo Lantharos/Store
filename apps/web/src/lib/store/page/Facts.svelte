@@ -5,7 +5,7 @@
 
   let { app, installs }: { app: AppIndex; installs: Installs } = $props()
 
-  const latest = $derived(app.releases[0])
+  const latest = $derived(app.releases.find((release) => release.channel === "stable"))
   const systems = $derived(systemsOf(latest?.artifacts.map((artifact) => artifact.platform) ?? []))
   const repository = $derived(app.repository?.replace(/^https?:\/\//, ""))
   const built = $derived(

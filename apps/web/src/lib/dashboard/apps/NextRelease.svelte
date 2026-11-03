@@ -20,7 +20,9 @@
     <CodeBlock lang="sh" code={`gh release create ${next} --generate-notes`} />
   </div>
   <p class="mt-3 text-[13px] leading-relaxed text-ink-muted">
-    Your workflow builds every system, Schelf checks it and a person reviews it. You'll get an email when it's out.
+    {app.visibility === "listed"
+      ? "Your workflow builds every system, Schelf checks it and a person reviews it. You'll get an email when it's out."
+      : "Your workflow sends the files, and they go out once Schelf's checks pass. If a check flags something, a person looks first."}
   </p>
   {#if app.repository}
     <a href="https://github.com/{app.repository}/releases/new" target="_blank" rel="noreferrer" class="button button-sm button-quiet mt-4">Draft a release on GitHub</a>

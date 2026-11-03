@@ -1,0 +1,27 @@
+import { type AppPage, STABLE } from "@schelf/protocol"
+import { error } from "@sveltejs/kit"
+import { appSchema } from "#lib/seo/schema.ts"
+import { renderUserMarkdown } from "#lib/server/markdown.ts"
+import { extensionGrants } from "./extension.ts"
+
+export function storePage(found: AppPage, path: string) {
+  if (found.status === "pulled") error(410, "This app was removed from Schelf.")
+  if (found.status === "delisted") error(404, "This app isn't listed on Schelf any more.")
+  const { app } = found
+  const stable = app.releases.filter((release) => release.channel === STABLE)
+  return {
+    view: "store" as const,
+    app,
+    installs: found.installs,
+    project: found.project,
+    extensionAccess: stable[0]?.extension ? extensionGrants(stable[0].extension) : null,
+    path,
+    description: renderUserMarkdown(app.listing.en!.description),
+    releases: stable.map((release) => ({
+      version: release.version,
+      published: release.published,
+      notes: renderUserMarkdown(release.notes),
+    })),
+    schema: appSchema(app, path, found.installs.total),
+  }
+}

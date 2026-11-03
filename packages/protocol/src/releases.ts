@@ -44,6 +44,8 @@ export function channelFromVersion(version: string) {
   return (word && PRERELEASE_CHANNELS[word]) || STABLE
 }
 
+export const AUTOMATIC_REVIEWER = "Schelf's checks"
+
 export const UPDATERS = ["sabine", "electron", "tauri"] as const
 export const updater = z.enum(UPDATERS)
 export type Updater = z.infer<typeof updater>

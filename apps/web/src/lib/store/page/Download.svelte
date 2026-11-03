@@ -13,9 +13,11 @@
     system: detected,
     others = $bindable(false),
     panel,
+    inSchelf = true,
   }: {
     id: string
     extension?: boolean
+    inSchelf?: boolean
     artifacts: Artifact[]
     system: System
     others?: boolean
@@ -29,7 +31,7 @@
     refined = await refine(detected)
   })
 
-  const onLuft = $derived(system.os === "luft")
+  const onLuft = $derived(inSchelf && system.os === "luft")
   const chosen = $derived(extension || onLuft ? null : pickArtifact(artifacts, system))
   const name = $derived(systemName(system))
 </script>
@@ -53,7 +55,7 @@
       {KIND_NAMES[chosen.kind]} · {bytes(chosen.size)} ·
       <button type="button" class="text-accent hover:underline" aria-expanded={others} aria-controls={panel} onclick={() => (others = !others)}>Other systems</button>
     </p>
-    {#if system.os === "linux"}
+    {#if inSchelf && system.os === "linux"}
       <a href={schelfLink(id)} class="text-[13px] text-ink-muted hover:text-ink sm:text-right">On Luft? Open in Schelf</a>
     {/if}
   {:else}

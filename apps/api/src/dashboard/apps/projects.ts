@@ -1,9 +1,10 @@
-import { createProject, DEFAULT_LOCALE, projectId, RESERVED_SLUGS } from "@schelf/protocol"
+import { createProject, DEFAULT_LOCALE, projectId, RESERVED_SLUGS, SCHELF_WORKFLOW } from "@schelf/protocol"
 import { and, eq, like } from "drizzle-orm"
 import type { Context } from "hono"
 import { db, schema } from "../../db/client.ts"
 import { repository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
+import { randomId } from "../../lib/ids.ts"
 import { recordHistory } from "../../ops/events.ts"
 import { active, allow, appAccess, type PublisherVars } from "../../publishers/access.ts"
 import { githubAccount } from "../access.ts"
@@ -56,6 +57,18 @@ export async function addProject(c: Context<PublisherVars>) {
     }),
     db.insert(schema.listing).values({ appId: id, locale: DEFAULT_LOCALE, name: input.name, summary: "" }),
     db.insert(schema.listingMeta).values({ appId: id }),
+    ...(repo
+      ? [
+          db.insert(schema.trustedPublisher).values({
+            id: randomId(),
+            appId: id,
+            ownerId: String(repo.owner.id),
+            repositoryId: String(repo.id),
+            repository: repo.full_name,
+            workflow: SCHELF_WORKFLOW,
+          }),
+        ]
+      : []),
   ])
   recordHistory("app", id, "Added as an unlisted project", c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, id)).app), 201)
