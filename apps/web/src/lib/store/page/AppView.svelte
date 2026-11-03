@@ -56,7 +56,7 @@
     {:else}
       <div class="sm:text-right">
         <p class="font-medium">Coming soon</p>
-        <p class="mt-1 text-[13px] text-ink-muted">The first release is being checked.</p>
+        <p class="mt-1 text-[13px] text-ink-muted">The first release isn't out yet.</p>
       </div>
     {/if}
   </header>
