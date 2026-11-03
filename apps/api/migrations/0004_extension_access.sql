@@ -1,0 +1,1 @@
+ALTER TABLE `release` ADD `extension_access` text;

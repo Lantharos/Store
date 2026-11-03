@@ -1,4 +1,5 @@
 import { stringify } from "smol-toml"
+import { EXTENSION_MANIFEST } from "./extensions.ts"
 import type { Format, Kind } from "./platforms.ts"
 
 export const SCHELF_WORKFLOW = ".github/workflows/schelf.yml"
@@ -19,6 +20,7 @@ export interface SetupInput {
 
 export function schelfTomlFor(input: SetupInput) {
   const sabine = sabineVersionOf(input)
+  const permissions = input.permissions ?? (input.kind === "extension" ? EXTENSION_MANIFEST : undefined)
   const requires = {
     ...(sabine && { sabine: sabine.replace(/^v/, "") }),
     ...(input.extensionApi !== undefined && { extension_api: input.extensionApi }),
@@ -27,7 +29,7 @@ export function schelfTomlFor(input: SetupInput) {
     id: input.id,
     kind: input.kind,
     format: input.format,
-    ...(input.permissions && { permissions: input.permissions }),
+    ...(permissions && { permissions }),
     ...(input.listing && { listing: input.listing }),
     ...(Object.keys(requires).length > 0 && { requires }),
   })

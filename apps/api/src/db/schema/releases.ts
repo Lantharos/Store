@@ -1,4 +1,4 @@
-import type { CheckName, CheckStatus, Permissions, Requires } from "@schelf/protocol"
+import type { CheckName, CheckStatus, ExtensionAccess, Permissions, Requires } from "@schelf/protocol"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { createdAt } from "./columns.ts"
 import { app } from "./developers.ts"
@@ -20,6 +20,7 @@ export const release = sqliteTable(
     notes: text("notes").notNull().default(""),
     manifest: text("manifest").notNull(),
     permissions: text("permissions", { mode: "json" }).$type<Permissions | null>(),
+    extensionAccess: text("extension_access", { mode: "json" }).$type<ExtensionAccess | null>(),
     permissionsWidened: integer("permissions_widened", { mode: "boolean" }).notNull().default(false),
     requires: text("requires", { mode: "json" }).$type<Requires>().notNull(),
     status: text("status", {

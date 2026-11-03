@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { extensionAccess } from "../extensions.ts"
 import { requires } from "../manifest.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
@@ -59,6 +60,7 @@ export const indexedRelease = z.object({
   notes: z.string(),
   rollout: z.object({ percent: z.number().int().min(0).max(100), paused: z.boolean() }),
   permissions: permissions.nullable(),
+  extension: extensionAccess.nullable(),
   access,
   requires,
   provenance,

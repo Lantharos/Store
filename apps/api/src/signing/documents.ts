@@ -68,6 +68,7 @@ function indexedRelease(
     notes: release.notes,
     rollout: { percent: release.rolloutPercent, paused: release.rolloutPaused },
     permissions: release.permissions,
+    extension: release.extensionAccess,
     access: accessFor(record, release),
     requires: release.requires,
     provenance: {

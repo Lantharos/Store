@@ -1,11 +1,12 @@
 import { env } from "cloudflare:workers"
 import {
+  EXTENSION_MANIFEST,
   PART_SIZE,
-  type Permissions,
   type PublishRequest,
   type PublishResponse,
   partsFor,
   paths,
+  readExtensionAccess,
   readPermissions,
   readSchelfToml,
   type SchelfToml,
@@ -32,10 +33,18 @@ function readManifest(text: string): SchelfToml {
   }
 }
 
-function declaredPermissions(manifest: SchelfToml, text: string | undefined): Permissions | null {
-  if (!manifest.permissions) return null
+function declared(manifest: SchelfToml, text: string | undefined) {
+  if (manifest.kind === "extension") {
+    if (!manifest.permissions || text === undefined)
+      fail(
+        422,
+        `An extension's schelf.toml sets permissions = "${EXTENSION_MANIFEST}"; send its contents too`,
+      )
+    return { permissions: null, extensionAccess: readExtensionAccess(text) }
+  }
+  if (!manifest.permissions) return { permissions: null, extensionAccess: null }
   if (text === undefined) fail(422, `schelf.toml names ${manifest.permissions}; send its contents too`)
-  return readPermissions(text)
+  return { permissions: readPermissions(text), extensionAccess: null }
 }
 
 export async function appById(id: string) {
@@ -128,7 +137,7 @@ export async function startRelease(
       origin: publisher.origin,
       notes: body.notes,
       manifest: body.schelf_toml,
-      permissions: declaredPermissions(manifest, body.permissions_toml),
+      ...declared(manifest, body.permissions_toml),
       requires: manifest.requires,
       status: "uploading",
     }),

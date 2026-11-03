@@ -2,6 +2,9 @@ import {
   type CheckResult,
   compareVersions,
   DEFAULT_LOCALE,
+  EXTENSION_MANIFEST,
+  extensionLabels,
+  extensionWidens,
   formatFits,
   namespaceCovers,
   platformsFor,
@@ -116,7 +119,21 @@ function listingCheck({ listing, meta, screenshots }: QuickCheckInput) {
     : passed("listing", "The listing is complete")
 }
 
-function permissionCheck({ app, release, previous }: QuickCheckInput) {
+function extensionPermissionCheck({ release, previous }: QuickCheckInput) {
+  const access = release.extensionAccess
+  if (!access) return failed("permissions", `Send ${EXTENSION_MANIFEST} with the release`)
+  if (previous && extensionWidens(previous.extensionAccess, access))
+    return warning("permissions", "Asks for more than the last approved release", {
+      before: previous.extensionAccess,
+      after: access,
+    })
+  const asks = extensionLabels(access)
+  return passed("permissions", asks.length ? asks.join(", ") : "Asks for nothing beyond the basics")
+}
+
+function permissionCheck(input: QuickCheckInput) {
+  const { app, release, previous } = input
+  if (app.kind === "extension") return extensionPermissionCheck(input)
   if (app.format === "sabine") return passed("permissions", "Sabine apps run with full access for now")
   if (!release.permissions) return warning("permissions", "Asks for full access")
   if (previous && widens(previous.permissions, release.permissions))

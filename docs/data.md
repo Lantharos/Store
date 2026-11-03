@@ -76,7 +76,7 @@ Every JSON file under `index/` and `trust/` is signed: next to `x.json` sits `x.
 }
 ```
 
-Platforms are `linux-x86_64`, `linux-aarch64`, `windows-x86_64`, `windows-aarch64`, `macos-aarch64`, and `luft` for extensions without native code. `access` is `full` or `limited`; the full permission list is in the app's own file. Mirror catalogs use the same entry shape with `"origin": "flathub"` and a `flathub` ref, or `"origin": "fedora"` and a `package` name, instead of `platforms`.
+Platforms are `linux-x86_64`, `linux-aarch64`, `windows-x86_64`, `windows-aarch64`, `macos-aarch64`, and `luft` for extensions without native code. `access` is `full` or `limited`; the full permission list is in the app's own file, where an extension's release carries `extension`: its `permissions` from the extension API and whether it has a `helper`. Mirror catalogs use the same entry shape with `"origin": "flathub"` and a `flathub` ref, or `"origin": "fedora"` and a `package` name, instead of `platforms`.
 
 ## Counting without tracking
 
