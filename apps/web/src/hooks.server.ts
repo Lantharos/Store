@@ -1,14 +1,16 @@
 import { waitUntil } from "cloudflare:workers"
 import type { Handle, HandleServerError } from "@sveltejs/kit/hooks"
+import { storeVersion } from "#lib/server/cache.ts"
 import { detect, systemKey } from "#lib/system/detect.ts"
 import { building, version } from "$app/env"
 
 const UNCACHED = /^\/(dashboard|api)(\/|$)/
 
-function cacheKey(request: Request, key: string) {
+function cacheKey(request: Request, key: string, store: string) {
   const keyed = new URL(request.url)
   keyed.searchParams.set("system", key)
   keyed.searchParams.set("build", version)
+  keyed.searchParams.set("store", store)
   return new Request(keyed)
 }
 
@@ -25,7 +27,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     return resolve(event)
   }
 
-  const key = cacheKey(event.request, systemKey(system))
+  const key = cacheKey(event.request, systemKey(system), await storeVersion())
   const cached = await caches.default.match(key)
   if (cached) return cached
 
