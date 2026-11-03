@@ -4,6 +4,7 @@
   import X from "@lucide/svelte/icons/x"
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
+  import DashboardButton from "./DashboardButton.svelte"
   import SearchBox from "../search/SearchBox.svelte"
 
   const NAV = [
@@ -40,7 +41,7 @@
   <div class="ml-auto hidden w-full max-w-80 md:block">
     <SearchBox />
   </div>
-  <a href="/dashboard" class="hidden text-[15px] whitespace-nowrap text-ink-soft transition-colors hover:text-ink lg:block">Dashboard</a>
+  <DashboardButton />
   <div class="ml-auto flex gap-1 md:hidden">
     <button type="button" class="button size-10 p-0 hover:bg-well" aria-label="Search" onclick={() => (sheet = sheet === "search" ? null : "search")}>
       <Search class="size-5" />
