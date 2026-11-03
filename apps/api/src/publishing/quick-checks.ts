@@ -2,6 +2,7 @@ import {
   type CheckResult,
   compareVersions,
   DEFAULT_LOCALE,
+  EXTENSION_HELPER_PLATFORMS,
   EXTENSION_MANIFEST,
   extensionLabels,
   extensionWidens,
@@ -64,7 +65,18 @@ function versionCheck({ release, previous }: QuickCheckInput) {
     : failed("version", `${release.version} isn't newer than ${previous.version}, the last approved release`)
 }
 
-function platformCheck({ app, artifacts }: QuickCheckInput) {
+function extensionPlatforms(platforms: string[], helper: boolean) {
+  if (!helper)
+    return platforms.every((platform) => platform === "luft")
+      ? null
+      : "An extension without a helper ships one luft file for every machine"
+  if (platforms.includes("luft"))
+    return "An extension that runs its own program ships a file per architecture, not one luft file"
+  const missing = EXTENSION_HELPER_PLATFORMS.filter((platform) => !platforms.includes(platform))
+  return missing.length ? `The helper needs a build for ${missing.join(" and ")} too` : null
+}
+
+function platformCheck({ app, release, artifacts }: QuickCheckInput) {
   if (!formatFits(app.kind, app.format)) return failed("platforms", `A ${app.kind} can't be a ${app.format}`)
   const allowed = platformsFor(app.kind)
   for (const artifact of artifacts) {
@@ -85,6 +97,9 @@ function platformCheck({ app, artifacts }: QuickCheckInput) {
       return failed("platforms", `${artifact.name} is an archive; say which program inside it starts the app`)
   }
   const platforms = [...new Set(artifacts.map((artifact) => artifact.platform))]
+  const extensionProblem =
+    app.kind === "extension" && extensionPlatforms(platforms, release.extensionAccess?.helper ?? false)
+  if (extensionProblem) return failed("platforms", extensionProblem)
   return passed("platforms", `Built for ${platforms.join(", ")}`)
 }
 

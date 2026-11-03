@@ -29,6 +29,7 @@ export const EXTENSION_PERMISSION_LABELS: Record<ExtensionPermission, string> = 
   media: "See and control what's playing",
 }
 export const EXTENSION_HELPER_LABEL = "Runs its own program"
+export const EXTENSION_HELPER_PLATFORMS = ["luft-x86_64", "luft-aarch64"] as const
 
 /** What an extension's manifest asks for: its permissions, and whether it ships a native helper. */
 export const extensionAccess = z.object({

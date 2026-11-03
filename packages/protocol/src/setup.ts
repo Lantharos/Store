@@ -15,6 +15,7 @@ export interface SetupInput {
   listing?: string
   sabineVersion?: string
   extensionApi?: number
+  helper?: { path: string; build: string }
   environment?: string | null
 }
 
@@ -83,6 +84,44 @@ function appImageWorkflow(environment: string | null | undefined) {
 `
 }
 
+function extensionWithHelperWorkflow(
+  id: string,
+  helper: { path: string; build: string },
+  environment: string | null | undefined,
+) {
+  return `${header(PUBLISH_PERMISSIONS)}  build:
+    strategy:
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: \${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the helper
+        run: ${helper.build}
+      - name: Pack the extension with its helper
+        run: |
+          mkdir -p dist
+          git archive --format=tar --output=extension.tar HEAD
+          tar --append --file=extension.tar ${helper.path}
+          zstd -19 extension.tar -o "dist/${id}-$(uname -m).tar.zst"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-\${{ matrix.runner }}
+          path: dist
+${publishJob(environment)}    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: extension-*
+          path: dist
+          merge-multiple: true
+      - uses: ${PUBLISH_ACTION}
+        with:
+          files: dist/*.tar.zst
+`
+}
+
 function extensionWorkflow(id: string, environment: string | null | undefined) {
   return `${header(PUBLISH_PERMISSIONS)}${publishJob(environment)}    steps:
       - uses: actions/checkout@v7
@@ -98,7 +137,8 @@ const sabineVersionOf = (input: SetupInput) =>
 
 export function workflowFor(input: SetupInput) {
   if (input.format === "sabine") return sabineWorkflow(sabineVersionOf(input)!, input.environment)
-  return input.format === "appimage"
-    ? appImageWorkflow(input.environment)
+  if (input.format === "appimage") return appImageWorkflow(input.environment)
+  return input.helper
+    ? extensionWithHelperWorkflow(input.id, input.helper, input.environment)
     : extensionWorkflow(input.id, input.environment)
 }

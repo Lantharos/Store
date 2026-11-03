@@ -83,6 +83,9 @@ describe("extensions", () => {
     expect(await inferArtifact("/x/com.example.Rain-aarch64.tar.zst", "luft-extension")).toMatchObject({
       platform: "luft-aarch64",
     })
+    expect(await inferArtifact("/x/com.example.Rain-x86_64.tar.zst", "luft-extension")).toMatchObject({
+      platform: "luft-x86_64",
+    })
   })
 })
 

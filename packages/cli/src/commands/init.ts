@@ -8,6 +8,7 @@ import { detectProject, type Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
 import { repositoryRoot } from "../project/git.ts"
 import { plannedFiles, sabineVersion, writePlanned } from "../setup/files.ts"
+import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
 import { importListing } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
@@ -43,6 +44,9 @@ async function setupInput(project: Project, id: string): Promise<SetupInput> {
       : undefined,
     sabineVersion: project.format === "sabine" ? await sabineVersion(project.root) : undefined,
     extensionApi: project.extension?.api,
+    helper: project.extension?.helper
+      ? { path: project.extension.helper, build: await helperBuild(project.root, project.extension.helper) }
+      : undefined,
   }
 }
 

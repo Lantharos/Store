@@ -97,7 +97,7 @@ For an AppImage built elsewhere, the workflow waits for the release's AppImages 
           release-assets: "*.AppImage"
 ```
 
-Extensions are packed from the tagged tree with `git archive` into one `.tar.zst`. A release published by another workflow with `GITHUB_TOKEN` starts no workflows, so publish releases yourself, or add the action as a step at the end of the workflow that builds, and register that workflow as the trusted publisher instead.
+Extensions are packed from the tagged tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. A release published by another workflow with `GITHUB_TOKEN` starts no workflows, so publish releases yourself, or add the action as a step at the end of the workflow that builds, and register that workflow as the trusted publisher instead.
 
 The `publish` action:
 
