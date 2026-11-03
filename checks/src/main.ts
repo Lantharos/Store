@@ -104,6 +104,7 @@ const deltas: DeltaReport[] = await makeDeltas({
   return []
 })
 
+for (const check of checks) console.log(`${check.status.padEnd(8)} ${check.name}: ${check.summary}`)
 const report: ChecksReport = { checks, facts }
 const answer = await request<ChecksResponse>(payload.callback, {
   method: "POST",
@@ -111,4 +112,3 @@ const answer = await request<ChecksResponse>(payload.callback, {
   body: JSON.stringify(report),
 })
 console.log(`Reported ${checks.length} checks and ${deltas.length} deltas; the release is ${answer.status}`)
-for (const check of checks) console.log(`${check.status.padEnd(8)} ${check.name}: ${check.summary}`)
