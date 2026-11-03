@@ -24,7 +24,8 @@ export const featured = (system: System) =>
 export const search = (q: string, system: System, kind?: "app" | "extension") =>
   get<SearchResponse>(`/search${query({ q, platform: platformParam(system), kind })}`)
 
-export const searchExtensions = (q: string) => get<SearchResponse>(`/search${query({ q, kind: "extension" })}`)
+export const searchExtensions = (q: string) =>
+  get<SearchResponse>(`/search${query({ q, kind: "extension" })}`)
 
 export const appPage = (id: string) =>
   get<AppPage>(`/apps/${encodeURIComponent(id)}`, "There's no app here. It may have moved or been removed.")

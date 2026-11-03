@@ -7,5 +7,10 @@ export async function load({ url, locals, setHeaders }) {
   const query = url.searchParams.get("q")?.trim() ?? ""
   if (!query) return { query, results: [], extensions: [], categories: categoriesOf((await catalog()).apps) }
   const [{ results }, extensions] = await Promise.all([search(query, locals.system), searchExtensions(query)])
-  return { query, results, extensions: extensions.results.filter((hit) => hit.origin === "schelf"), categories: [] }
+  return {
+    query,
+    results,
+    extensions: extensions.results.filter((hit) => hit.origin === "schelf"),
+    categories: [],
+  }
 }
