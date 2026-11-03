@@ -1,12 +1,12 @@
 import { waitUntil } from "cloudflare:workers"
-import type { Handle } from "@sveltejs/kit/hooks"
+import type { Handle, HandleServerError } from "@sveltejs/kit/hooks"
 import { detect, systemKey } from "#lib/system/detect.ts"
 import { building, version } from "$app/env"
 
 const UNCACHED = /^\/(dashboard|api)(\/|$)/
 
-function cacheKey(url: URL, key: string) {
-  const keyed = new URL(url)
+function cacheKey(request: Request, key: string) {
+  const keyed = new URL(request.url)
   keyed.searchParams.set("system", key)
   keyed.searchParams.set("build", version)
   return new Request(keyed)
@@ -25,7 +25,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     return resolve(event)
   }
 
-  const key = cacheKey(event.url, systemKey(system))
+  const key = cacheKey(event.request, systemKey(system))
   const cached = await caches.default.match(key)
   if (cached) return cached
 
@@ -35,4 +35,10 @@ export const handle: Handle = async ({ event, resolve }) => {
     waitUntil(caches.default.put(key, response.clone()))
   }
   return response
+}
+
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+  if (kind !== "unknown") return
+  console.error(event.url.pathname, error)
+  return { message: "Something went wrong on our side. Try again in a moment." }
 }

@@ -34,8 +34,13 @@
     <h1 class="mt-2 text-[36px] font-semibold tracking-[-0.03em] sm:text-[44px]">{copy.title}</h1>
     <p class="mt-3 text-lg leading-relaxed text-ink-soft">{message}</p>
     <div class="mt-8 flex flex-wrap gap-2">
-      <a href="/" class="button button-ink">Discover apps</a>
-      <a href="/search" class="button button-quiet">Search</a>
+      {#if page.status >= 500}
+        <button type="button" class="button button-ink" onclick={() => location.reload()}>Reload</button>
+        <a href="/" class="button button-quiet">Discover apps</a>
+      {:else}
+        <a href="/" class="button button-ink">Discover apps</a>
+      {/if}
+      {#if page.status < 500}<a href="/search" class="button button-quiet">Search</a>{/if}
     </div>
   </section>
 </main>
