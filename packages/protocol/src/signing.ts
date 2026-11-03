@@ -28,7 +28,7 @@ export async function importSigningKey(seed: string): Promise<SigningKey> {
   pkcs8.set(PKCS8_SEED_PREFIX)
   pkcs8.set(bytes, PKCS8_SEED_PREFIX.length)
   const privateKey = await crypto.subtle.importKey("pkcs8", pkcs8, ED25519, true, ["sign"])
-  const jwk = await crypto.subtle.exportKey("jwk", privateKey)
+  const jwk = (await crypto.subtle.exportKey("jwk", privateKey)) as JsonWebKey
   const publicKey = toBase64(fromBase64Url(jwk.x!))
   return {
     id: await keyIdOf(publicKey),
@@ -39,7 +39,7 @@ export async function importSigningKey(seed: string): Promise<SigningKey> {
 
 export async function generateSigningSeed() {
   const pair = (await crypto.subtle.generateKey(ED25519, true, ["sign", "verify"])) as CryptoKeyPair
-  const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey))
+  const pkcs8 = new Uint8Array((await crypto.subtle.exportKey("pkcs8", pair.privateKey)) as ArrayBuffer)
   return toBase64(pkcs8.slice(-SEED_BYTES))
 }
 

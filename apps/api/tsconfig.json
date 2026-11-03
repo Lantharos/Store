@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "types": ["./worker-configuration.d.ts"], "lib": ["ES2024"] },
+  "include": ["src", ".pult", "pult.config.ts", "worker-configuration.d.ts"]
+}

@@ -1,0 +1,100 @@
+import { type AppSettings, DEFAULT_LOCALE } from "@schelf/protocol"
+import { desc, eq } from "drizzle-orm"
+import { db, schema } from "../../db/client.ts"
+import { iso } from "../../lib/time.ts"
+import { type AppRow, fileUrl, installsSince, mediaUrl } from "../../signing/records.ts"
+import { setupFiles } from "./setup.ts"
+
+export async function appSettings(app: AppRow): Promise<AppSettings> {
+  const [listings, meta, screenshots, publishers, tokens, [latest], installs] = await Promise.all([
+    db.select().from(schema.listing).where(eq(schema.listing.appId, app.id)),
+    db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) }),
+    db
+      .select()
+      .from(schema.screenshot)
+      .where(eq(schema.screenshot.appId, app.id))
+      .orderBy(schema.screenshot.position),
+    db.select().from(schema.trustedPublisher).where(eq(schema.trustedPublisher.appId, app.id)),
+    db
+      .select()
+      .from(schema.token)
+      .where(eq(schema.token.appId, app.id))
+      .orderBy(desc(schema.token.createdAt)),
+    db
+      .select({ version: schema.release.version, status: schema.release.status })
+      .from(schema.release)
+      .where(eq(schema.release.appId, app.id))
+      .orderBy(desc(schema.release.createdAt))
+      .limit(1),
+    installsSince([app.id], 7),
+  ])
+  const english = listings.find((entry) => entry.locale === DEFAULT_LOCALE)
+  const publisher = publishers[0]
+  return {
+    app: {
+      id: app.id,
+      kind: app.kind,
+      format: app.format,
+      name: english?.name ?? app.id,
+      icon: mediaUrl(meta?.iconKey),
+      status: app.status,
+      version: latest?.version ?? null,
+      release_status: latest?.status ?? null,
+      installs_7d: installs.get(app.id) ?? 0,
+      repository: app.repository,
+      licence: app.licence,
+      distribution: app.distribution,
+      created_at: app.createdAt.toISOString(),
+    },
+    listing: Object.fromEntries(
+      listings.map((entry) => [
+        entry.locale,
+        {
+          name: entry.name,
+          summary: entry.summary,
+          description: entry.description,
+          keywords: entry.keywords,
+        },
+      ]),
+    ),
+    meta: {
+      icon: mediaUrl(meta?.iconKey),
+      categories: meta?.categories ?? [],
+      homepage: meta?.homepage ?? null,
+      support: meta?.support ?? null,
+      privacy_url: meta?.privacyUrl ?? null,
+      content_rating: meta?.contentRating ?? null,
+      brand_color: meta?.brandColor ?? null,
+    },
+    screenshots: screenshots.map((shot) => ({
+      id: shot.id,
+      position: shot.position,
+      platform: shot.platform as never,
+      url: fileUrl(shot.key),
+      width: shot.width,
+      height: shot.height,
+      caption: shot.caption,
+    })),
+    publishers: publishers.map((row) => ({
+      id: row.id,
+      owner_id: row.ownerId,
+      repository_id: row.repositoryId,
+      repository: row.repository,
+      workflow: row.workflow,
+      environment: row.environment,
+      created_at: row.createdAt.toISOString(),
+    })),
+    tokens: tokens.map((row) => ({
+      id: row.id,
+      name: row.name,
+      last_used_at: iso(row.lastUsedAt),
+      expires_at: row.expiresAt.toISOString(),
+      revoked_at: iso(row.revokedAt),
+    })),
+    setup: setupFiles(
+      app,
+      publisher?.workflow ?? ".github/workflows/schelf.yml",
+      publisher?.environment ?? null,
+    ),
+  }
+}

@@ -1,0 +1,109 @@
+import { env } from "cloudflare:workers"
+import {
+  type DashboardScreenshot,
+  MAX_ICON_BYTES,
+  MAX_SCREENSHOT_BYTES,
+  paths,
+  reorderScreenshots,
+  screenshotUpload,
+  sha256Hex,
+} from "@schelf/protocol"
+import { and, eq, max } from "drizzle-orm"
+import { Hono } from "hono"
+import type { DeveloperVars } from "../../auth/session.ts"
+import { db, schema } from "../../db/client.ts"
+import { fail, readBody, readQuery } from "../../lib/http.ts"
+import { randomId } from "../../lib/ids.ts"
+import { fileUrl } from "../../signing/records.ts"
+import { ownedApp } from "../access.ts"
+import { sniffImage } from "./images.ts"
+import { listingChanged } from "./listing.ts"
+
+const IMMUTABLE = "public, max-age=31536000, immutable"
+const MIN_SCREENSHOT_EDGE = 640
+
+export const mediaRoutes = new Hono<DeveloperVars>()
+
+async function storeImage(request: Request, appId: string, limit: number, allowSvg: boolean) {
+  const length = Number(request.headers.get("content-length"))
+  if (!length || length > limit) fail(413, `Images can be up to ${Math.round(limit / 1024 / 1024)} MB`)
+  const bytes = new Uint8Array(await request.arrayBuffer())
+  if (bytes.length > limit) fail(413, `Images can be up to ${Math.round(limit / 1024 / 1024)} MB`)
+  const image = sniffImage(bytes, allowSvg)
+  if (!image) fail(422, allowSvg ? "Upload a PNG, JPEG, WebP or SVG" : "Upload a PNG, JPEG or WebP")
+  const key = paths.media(appId, await sha256Hex(bytes), image.extension)
+  await env.BUCKET.put(key, bytes, { httpMetadata: { contentType: image.type, cacheControl: IMMUTABLE } })
+  return { key, image }
+}
+
+mediaRoutes.put("/:id/icon", async (c) => {
+  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { key, image } = await storeImage(c.req.raw, app.id, MAX_ICON_BYTES, true)
+  if (image.width !== image.height) fail(422, "Icons are square")
+  await db
+    .insert(schema.listingMeta)
+    .values({ appId: app.id, iconKey: key })
+    .onConflictDoUpdate({ target: schema.listingMeta.appId, set: { iconKey: key } })
+  await listingChanged(app)
+  return c.json({ url: fileUrl(key) })
+})
+
+mediaRoutes.post("/:id/screenshots", async (c) => {
+  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const options = readQuery(c, screenshotUpload)
+  const { key, image } = await storeImage(c.req.raw, app.id, MAX_SCREENSHOT_BYTES, false)
+  if (Math.min(image.width, image.height) < MIN_SCREENSHOT_EDGE)
+    fail(422, `Screenshots are at least ${MIN_SCREENSHOT_EDGE} pixels on each side`)
+  const [last] = await db
+    .select({ position: max(schema.screenshot.position) })
+    .from(schema.screenshot)
+    .where(eq(schema.screenshot.appId, app.id))
+  const shot = {
+    id: randomId(),
+    appId: app.id,
+    platform: options.platform ?? null,
+    position: (last?.position ?? -1) + 1,
+    key,
+    width: image.width,
+    height: image.height,
+    caption: options.caption ?? null,
+  }
+  await db.insert(schema.screenshot).values(shot)
+  await listingChanged(app)
+  return c.json(
+    {
+      id: shot.id,
+      position: shot.position,
+      platform: options.platform ?? null,
+      url: fileUrl(key),
+      width: shot.width,
+      height: shot.height,
+      caption: shot.caption,
+    } satisfies DashboardScreenshot,
+    201,
+  )
+})
+
+mediaRoutes.put("/:id/screenshots/order", async (c) => {
+  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { ids } = await readBody(c, reorderScreenshots)
+  await db.batch(
+    ids.map((id, position) =>
+      db
+        .update(schema.screenshot)
+        .set({ position })
+        .where(and(eq(schema.screenshot.id, id), eq(schema.screenshot.appId, app.id))),
+    ) as never,
+  )
+  await listingChanged(app)
+  return c.body(null, 204)
+})
+
+mediaRoutes.delete("/:id/screenshots/:shot", async (c) => {
+  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  await db
+    .delete(schema.screenshot)
+    .where(and(eq(schema.screenshot.id, c.req.param("shot")), eq(schema.screenshot.appId, app.id)))
+  await listingChanged(app)
+  return c.body(null, 204)
+})

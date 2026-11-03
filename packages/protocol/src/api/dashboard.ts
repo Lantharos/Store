@@ -40,7 +40,7 @@ export type BecomeDeveloper = z.infer<typeof becomeDeveloper>
 
 export interface Namespace {
   prefix: string
-  proof: ProofMethod | null
+  proof: ProofMethod | "manual" | null
   token: string
   verified: boolean
   verified_at: string | null
@@ -124,8 +124,6 @@ export interface DashboardScreenshot extends Screenshot {
 export const screenshotUpload = z.object({
   platform: platform.optional(),
   caption: z.string().max(200).optional(),
-  width: z.coerce.number().int().positive(),
-  height: z.coerce.number().int().positive(),
 })
 export const reorderScreenshots = z.object({ ids: z.array(z.string()) })
 
@@ -209,7 +207,7 @@ export const rolloutRequest = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pause") }),
   z.object({ action: z.literal("resume") }),
   z.object({ action: z.literal("all") }),
-  z.object({ action: z.literal("rollback"), unsafe: z.boolean().default(false) }),
+  z.object({ action: z.literal("rollback") }),
   z.object({ action: z.literal("set"), percent: z.number().int().min(1).max(100) }),
 ])
 export type RolloutRequest = z.infer<typeof rolloutRequest>

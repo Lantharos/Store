@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "schelf-api",
+  "account_id": "2e3bfcbc9512a7ab1ea3a9cb9a474b30",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "schelf.store/api/*", "zone_name": "schelf.store" },
+    { "pattern": "dl.schelf.store", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "schelf-store",
+      "database_id": "a461f2c7-c13f-40bb-a9f7-23b32fb81181",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "schelf-store" }],
+  "queues": {
+    "producers": [{ "binding": "SIGNING", "queue": "schelf-store-sign" }],
+    "consumers": [
+      { "queue": "schelf-store-sign", "max_batch_size": 100, "max_batch_timeout": 2, "max_retries": 10 }
+    ]
+  },
+  "analytics_engine_datasets": [{ "binding": "DOWNLOADS", "dataset": "schelf_downloads" }],
+  "send_email": [{ "name": "EMAIL" }],
+  "ratelimits": [
+    { "name": "AUTH_LIMIT", "namespace_id": "2001", "simple": { "limit": 20, "period": 60 } },
+    { "name": "REPORT_LIMIT", "namespace_id": "2002", "simple": { "limit": 5, "period": 60 } }
+  ],
+  "triggers": { "crons": ["0 * * * *", "20 0 * * *"] },
+  "limits": { "cpu_ms": 300000 },
+  "vars": {
+    "PUBLIC_URL": "https://schelf.store",
+    "DOWNLOAD_URL": "https://dl.schelf.store",
+    "NOTIFY_FROM": "no-reply@schelf.store",
+    "STORE_REPOSITORY": "Lantharos/schelf-store",
+    "STORE_REPOSITORY_ID": "1429206588",
+    "ACCOUNT_ID": "2e3bfcbc9512a7ab1ea3a9cb9a474b30"
+  },
+  "observability": { "enabled": true }
+}

@@ -27,7 +27,7 @@ export const featuredQuery = z.object({
 export type FeaturedQuery = z.infer<typeof featuredQuery>
 
 export interface FeaturedSection {
-  id: "popular" | "new" | "updated" | `category:${string}`
+  id: "popular" | "updated" | "coming-soon"
   title: string
   apps: CatalogEntry[]
 }

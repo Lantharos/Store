@@ -16,7 +16,7 @@ export function toHex(bytes: Uint8Array) {
 }
 
 export function utf8(text: string) {
-  return new TextEncoder().encode(text)
+  return new TextEncoder().encode(text) as Uint8Array<ArrayBuffer>
 }
 
 export async function sha256Hex(data: string | Uint8Array<ArrayBuffer>) {

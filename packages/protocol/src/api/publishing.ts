@@ -73,17 +73,8 @@ export interface CompleteResponse {
   dashboard: string
 }
 
-export const deltaReport = z.object({
-  platform,
-  from: z.string(),
-  key: z.string(),
-  size: z.number().int().positive(),
-  sha256: z.string().regex(/^[0-9a-f]{64}$/),
-})
-
 export const checksReport = z.object({
   checks: z.array(checkResult).min(1),
-  deltas: z.array(deltaReport).default([]),
   facts: z.record(z.string(), z.unknown()).default({}),
 })
 export type ChecksReport = z.infer<typeof checksReport>

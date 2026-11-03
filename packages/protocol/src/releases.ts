@@ -67,3 +67,24 @@ export function rolloutDue(percent: number, steppedAt: Date, now: Date) {
 export function inRollout(percent: number, deviceDraw: number) {
   return deviceDraw * 100 < percent
 }
+
+const VERSION = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
+
+export function versionFromTag(tag: string) {
+  const match = VERSION.exec(tag.slice(tag.lastIndexOf("/") + 1))
+  return match ? match[0].replace(/^v/, "") : null
+}
+
+export function compareVersions(left: string, right: string) {
+  const a = VERSION.exec(left)
+  const b = VERSION.exec(right)
+  if (!a || !b) return left.localeCompare(right)
+  for (const index of [1, 2, 3]) {
+    const difference = Number(a[index] ?? 0) - Number(b[index] ?? 0)
+    if (difference !== 0) return Math.sign(difference)
+  }
+  if (a[4] === b[4]) return 0
+  if (a[4] === undefined) return 1
+  if (b[4] === undefined) return -1
+  return a[4].localeCompare(b[4], "en", { numeric: true })
+}
