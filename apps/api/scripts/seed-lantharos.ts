@@ -76,7 +76,11 @@ const APPS: SeedApp[] = [
     folder: "apps/mailman",
     summary: "Mail",
     description: "One inbox for every account, a screener for new senders and search that works offline.",
-    shots: ["apps/mailman/store/inbox.webp", "apps/mailman/store/reading.webp", "apps/mailman/store/compose.webp"],
+    shots: [
+      "apps/mailman/store/inbox.webp",
+      "apps/mailman/store/reading.webp",
+      "apps/mailman/store/compose.webp",
+    ],
   },
   {
     folder: "apps/meet",
