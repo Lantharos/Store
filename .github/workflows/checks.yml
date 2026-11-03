@@ -36,7 +36,8 @@ jobs:
       - name: Update virus signatures
         run: |
           mkdir -p "$CLAMAV_DATABASE"
-          sudo freshclam --quiet --datadir="$CLAMAV_DATABASE" --user="$(id -un)" --log="$RUNNER_TEMP/freshclam.log"
+          printf 'DatabaseDirectory %s\nDatabaseMirror database.clamav.net\n' "$CLAMAV_DATABASE" > "$RUNNER_TEMP/freshclam.conf"
+          freshclam --quiet --config-file="$RUNNER_TEMP/freshclam.conf"
       - run: bun install --frozen-lockfile
       - name: Check the release
         run: bun checks/src/main.ts

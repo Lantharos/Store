@@ -17,4 +17,4 @@ Run it in your app's repository. It finds your Sabine app, AppImage or extension
 | `schelf rollout <version> <percent\|pause\|resume\|all>` | Changes a rollout                                                                                         |
 | `schelf login`, `schelf logout`                          | Signs in or out                                                                                           |
 
-The details are in the [publishing guide](https://github.com/Lantharos/schelf-store/blob/main/docs/publishing.md).
+The details are in the [publishing guide](https://github.com/Lantharos/Store/blob/main/docs/publishing.md).

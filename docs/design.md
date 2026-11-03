@@ -65,7 +65,7 @@ apps/
 packages/
   protocol/   shared types and schemas: schelf.toml, index files, feeds, revocations, permissions, the API
   cli/        the `schelf` command (published to npm as `schelf`)
-publish/      the GitHub Action developers use (`Lantharos/schelf-store/publish@v1`)
+publish/      the GitHub Action developers use (`Lantharos/Store/publish@v1`)
 checks/       the checks workflow and its scripts
 mirror/       the job that builds the Flathub and Fedora catalogs
 review/       the review command (bun run review)

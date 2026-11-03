@@ -81,7 +81,7 @@ jobs:
           pattern: release-*
           path: dist
           merge-multiple: true
-      - uses: Lantharos/schelf-store/publish@v1
+      - uses: Lantharos/Store/publish@v1
         with:
           files: dist/**
 ```
@@ -92,7 +92,7 @@ For an AppImage built elsewhere, the workflow waits for the release's AppImages 
 
 ```yaml
       - uses: actions/checkout@v7
-      - uses: Lantharos/schelf-store/publish@v1
+      - uses: Lantharos/Store/publish@v1
         with:
           release-assets: "*.AppImage"
 ```

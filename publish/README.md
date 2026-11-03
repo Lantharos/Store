@@ -10,7 +10,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v7
-  - uses: Lantharos/schelf-store/publish@v1
+  - uses: Lantharos/Store/publish@v1
     with:
       files: dist/**
 ```
