@@ -57,6 +57,8 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
         },
       ]),
     ),
+    listing_sources: Object.fromEntries(listings.map((entry) => [entry.locale, entry.sources])),
+    meta_sources: meta?.sources ?? {},
     meta: {
       icon: mediaUrl(meta?.iconKey),
       categories: meta?.categories ?? [],

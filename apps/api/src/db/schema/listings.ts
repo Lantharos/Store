@@ -1,3 +1,4 @@
+import type { FieldSources } from "@schelf/protocol"
 import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import { app } from "./developers.ts"
 
@@ -12,6 +13,7 @@ export const listing = sqliteTable(
     summary: text("summary").notNull(),
     description: text("description").notNull().default(""),
     keywords: text("keywords", { mode: "json" }).$type<string[]>().notNull().default([]),
+    sources: text("sources", { mode: "json" }).$type<FieldSources>().notNull().default({}),
   },
   (table) => [primaryKey({ columns: [table.appId, table.locale] })],
 )
@@ -27,6 +29,7 @@ export const listingMeta = sqliteTable("listing_meta", {
   privacyUrl: text("privacy_url"),
   contentRating: text("content_rating"),
   brandColor: text("brand_color"),
+  sources: text("sources", { mode: "json" }).$type<FieldSources>().notNull().default({}),
 })
 
 export const screenshot = sqliteTable(

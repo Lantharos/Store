@@ -97,7 +97,13 @@ export interface ListingMeta {
   brand_color: string | null
 }
 
+export const LISTING_SOURCES = ["appstream", "sabine", "dashboard"] as const
+export const listingSource = z.enum(LISTING_SOURCES)
+export type ListingSource = z.infer<typeof listingSource>
+export type FieldSources = Record<string, ListingSource>
+
 export const updateMeta = z.object({
+  source: listingSource.default("dashboard"),
   categories: z.array(z.string().max(40)).max(4).optional(),
   homepage: z.url().nullable().optional(),
   support: z.url().nullable().optional(),
@@ -113,7 +119,7 @@ export const updateMeta = z.object({
 })
 export type UpdateMeta = z.infer<typeof updateMeta>
 
-export const updateListing = listingText
+export const updateListing = listingText.extend({ source: listingSource.default("dashboard") })
 export type UpdateListing = z.infer<typeof updateListing>
 
 export interface DashboardScreenshot extends Screenshot {
@@ -163,6 +169,8 @@ export interface AppSettings {
     created_at: string
   }
   listing: Record<string, z.infer<typeof listingText>>
+  listing_sources: Record<string, FieldSources>
+  meta_sources: FieldSources
   meta: ListingMeta
   screenshots: DashboardScreenshot[]
   publishers: TrustedPublisher[]

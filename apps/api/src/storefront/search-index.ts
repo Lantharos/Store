@@ -56,16 +56,44 @@ export function clearOriginStatement(origin: string) {
   return env.DB.prepare("DELETE FROM search WHERE key >= ? AND key < ?").bind(`${origin}:`, `${origin};`)
 }
 
-export async function searchKeys(query: string, limit: number, prefix?: string) {
+interface Hit {
+  key: string
+  name: string
+}
+
+function scoped(prefix: string | undefined) {
+  return prefix
+    ? { clause: "AND key >= ?3 AND key < ?4", bounds: [`${prefix}:`, `${prefix};`] }
+    : { clause: "", bounds: [] }
+}
+
+async function prefixHits(query: string, limit: number, prefix: string | undefined) {
+  const { clause, bounds } = scoped(prefix)
+  const { results } = await env.DB.prepare(
+    `SELECT key, name FROM search WHERE (name LIKE ?1 || '%' OR name LIKE '% ' || ?1 || '%') ${clause} ORDER BY length(name) LIMIT ?2`,
+  )
+    .bind(query.replace(/[%_]/g, ""), limit, ...bounds)
+    .all<Hit>()
+  return results
+}
+
+async function fuzzyHits(query: string, limit: number, prefix: string | undefined) {
   const expression = matchExpression(query)
   if (!expression) return []
-  const scoped = prefix ? "AND key >= ?2 AND key < ?3" : ""
-  const statement = env.DB.prepare(
-    `SELECT key, name, bm25(search, 0, 10, 3, 4, 1) AS score FROM search WHERE search MATCH ?1 ${scoped} ORDER BY score LIMIT ?4`,
+  const { clause, bounds } = scoped(prefix)
+  const { results } = await env.DB.prepare(
+    `SELECT key, name FROM search WHERE search MATCH ?1 ${clause} ORDER BY bm25(search, 0, 10, 3, 4, 1) LIMIT ?2`,
   )
-  const bound = prefix
-    ? statement.bind(expression, `${prefix}:`, `${prefix};`, limit)
-    : statement.bind(expression, null, null, limit)
-  const { results } = await bound.all<{ key: string; name: string; score: number }>()
+    .bind(expression, limit, ...bounds)
+    .all<Hit>()
   return results
+}
+
+export async function searchKeys(query: string, limit: number, prefix?: string) {
+  const [starts, similar] = await Promise.all([
+    prefixHits(query.trim(), limit, prefix),
+    fuzzyHits(query, limit, prefix),
+  ])
+  const seen = new Set<string>()
+  return [...starts, ...similar].filter((hit) => !seen.has(hit.key) && seen.add(hit.key)).slice(0, limit)
 }

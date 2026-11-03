@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers"
 import {
   MAX_ICON_BYTES,
+  MIRROR_ORIGINS,
   type MirrorEntry,
   type MirrorOrigin,
   type MirrorRequest,
@@ -8,7 +9,7 @@ import {
   paths,
   sha256Hex,
 } from "@schelf/protocol"
-import { and, inArray } from "drizzle-orm"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { fileUrl, within } from "../signing/records.ts"
@@ -52,6 +53,16 @@ export async function mirrorHits(keys: string[]) {
     .where(and(within(schema.mirrorApp.id, ids), inArray(schema.mirrorApp.origin, ["flathub", "fedora"])))
   for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row), toEntry(row))
   return hits
+}
+
+export async function mirrorEntry(id: string, origin: string | undefined) {
+  const rows = await db
+    .select()
+    .from(schema.mirrorApp)
+    .where(and(eq(schema.mirrorApp.id, id), isNull(schema.mirrorApp.hiddenReason)))
+  const preferred = origin ? [origin] : MIRROR_ORIGINS
+  const row = preferred.map((name) => rows.find((candidate) => candidate.origin === name)).find(Boolean)
+  return row ? toEntry(row) : null
 }
 
 async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {

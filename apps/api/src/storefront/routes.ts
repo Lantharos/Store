@@ -7,6 +7,7 @@ import {
   type FeaturedResponse,
   type FeaturedSection,
   featuredQuery,
+  type MirrorEntry,
   paths,
   type ReportResponse,
   reportRequest,
@@ -22,7 +23,7 @@ import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
 import { installsSince } from "../signing/records.ts"
 import { currentCatalog } from "./catalog.ts"
-import { mirrorHits } from "./mirror.ts"
+import { mirrorEntry, mirrorHits } from "./mirror.ts"
 import { confirmReport } from "./report-mail.ts"
 import { searchKeys } from "./search-index.ts"
 
@@ -119,6 +120,13 @@ storefrontRoutes.get("/apps/:id", async (c) => {
     status: app.status,
     installs: { last_30_days: last30.get(app.id) ?? 0, total: Number(total?.installs ?? 0) },
   } satisfies AppPage)
+})
+
+storefrontRoutes.get("/mirror/:id", async (c) => {
+  const entry = await mirrorEntry(c.req.param("id"), c.req.query("origin"))
+  if (!entry) fail(404, "There's no app with that id")
+  c.header("cache-control", PUBLIC_CACHE)
+  return c.json(entry satisfies MirrorEntry)
 })
 
 storefrontRoutes.get("/developers/:slug", async (c) => {

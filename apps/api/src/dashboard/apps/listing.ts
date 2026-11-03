@@ -1,4 +1,10 @@
-import { DEFAULT_LOCALE, updateListing, updateMeta } from "@schelf/protocol"
+import {
+  DEFAULT_LOCALE,
+  type FieldSources,
+  type ListingSource,
+  updateListing,
+  updateMeta,
+} from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import type { DeveloperVars } from "../../auth/session.ts"
@@ -17,17 +23,35 @@ export async function listingChanged(app: AppRow) {
   if (INDEXED.has(app.status)) await Promise.all([resignApp(app.id), reindexApp(app.id)])
 }
 
+function traced(
+  before: Record<string, unknown> | null,
+  sources: FieldSources,
+  changes: Record<string, unknown>,
+  source: ListingSource,
+): FieldSources {
+  const next = { ...sources }
+  for (const [field, value] of Object.entries(changes)) {
+    const changed = !before || JSON.stringify(before[field]) !== JSON.stringify(value)
+    if (source !== "dashboard" || changed) next[field] = source
+  }
+  return next
+}
+
 export const listingRoutes = new Hono<DeveloperVars>()
 
 listingRoutes.put("/:id/listing/:locale", async (c) => {
   const app = await ownedApp(c.var.developer, c.req.param("id"))
   const locale = c.req.param("locale")
   if (!LOCALE.test(locale)) fail(422, "That isn't a locale")
-  const text = await readBody(c, updateListing)
+  const { source, ...text } = await readBody(c, updateListing)
+  const existing = await db.query.listing.findFirst({
+    where: and(eq(schema.listing.appId, app.id), eq(schema.listing.locale, locale)),
+  })
+  const row = { ...text, sources: traced(existing ?? null, existing?.sources ?? {}, text, source) }
   await db
     .insert(schema.listing)
-    .values({ appId: app.id, locale, ...text })
-    .onConflictDoUpdate({ target: [schema.listing.appId, schema.listing.locale], set: text })
+    .values({ appId: app.id, locale, ...row })
+    .onConflictDoUpdate({ target: [schema.listing.appId, schema.listing.locale], set: row })
   await listingChanged(app)
   return c.json(await appSettings(app))
 })
@@ -45,8 +69,9 @@ listingRoutes.delete("/:id/listing/:locale", async (c) => {
 
 listingRoutes.patch("/:id/meta", async (c) => {
   const app = await ownedApp(c.var.developer, c.req.param("id"))
-  const input = await readBody(c, updateMeta)
-  const meta = {
+  const { source, ...input } = await readBody(c, updateMeta)
+  const existing = await db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) })
+  const fields = {
     ...(input.categories !== undefined && { categories: input.categories }),
     ...(input.homepage !== undefined && { homepage: input.homepage }),
     ...(input.support !== undefined && { support: input.support }),
@@ -54,7 +79,18 @@ listingRoutes.patch("/:id/meta", async (c) => {
     ...(input.content_rating !== undefined && { contentRating: input.content_rating }),
     ...(input.brand_color !== undefined && { brandColor: input.brand_color }),
   }
-  if (Object.keys(meta).length)
+  const { distribution: _, ...traceable } = input
+  const before = {
+    categories: existing?.categories,
+    homepage: existing?.homepage,
+    support: existing?.support,
+    privacy_url: existing?.privacyUrl,
+    content_rating: existing?.contentRating,
+    brand_color: existing?.brandColor,
+    licence: app.licence,
+  }
+  const meta = { ...fields, sources: traced(before, existing?.sources ?? {}, traceable, source) }
+  if (Object.keys(traceable).length)
     await db
       .insert(schema.listingMeta)
       .values({ appId: app.id, ...meta })
