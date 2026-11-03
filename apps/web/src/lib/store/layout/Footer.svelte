@@ -35,7 +35,6 @@
   <div class="grid gap-10 border-t border-hairline pt-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
     <div class="space-y-4">
       <a href="/" class="flex items-center gap-2.5 font-semibold"><Logo class="size-7" />Schelf</a>
-      <p class="max-w-xs leading-relaxed text-ink-muted">Apps for Luft, Linux, Windows and macOS. Every release is checked by a person, and nobody is tracked.</p>
       <SchemeSwitch />
     </div>
     {#each GROUPS as group (group.title)}
@@ -49,5 +48,4 @@
       </nav>
     {/each}
   </div>
-  <p class="mt-10 text-[13px] text-ink-muted">Schelf is made by Lantharos. Apps belong to their publishers.</p>
 </footer>
