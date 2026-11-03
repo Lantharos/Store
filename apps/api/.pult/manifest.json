@@ -1,6 +1,9 @@
 {
   "project": "schelf",
-  "environments": ["dev", "prod"],
+  "environments": [
+    "dev",
+    "prod"
+  ],
   "sync": "dev",
   "delivery": {
     "mode": "webhook",
@@ -19,7 +22,13 @@
           "properties": {
             "status": {
               "type": "string",
-              "enum": ["draft", "in-review", "listed", "delisted", "pulled"]
+              "enum": [
+                "draft",
+                "in-review",
+                "listed",
+                "delisted",
+                "pulled"
+              ]
             }
           }
         }
@@ -81,7 +90,10 @@
                 "maxLength": 500
               }
             },
-            "required": ["reason", "note"]
+            "required": [
+              "reason",
+              "note"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -125,7 +137,7 @@
       },
       "actions": {
         "approveVerification": {
-          "source": "src/ops/define/publisher.ts:71",
+          "source": "src/ops/define/publisher.ts:77",
           "label": "Approve",
           "description": "Gives the publisher the verified mark on its page, its apps and in the Schelf app.",
           "danger": "confirm",
@@ -141,7 +153,7 @@
           "schedule": null
         },
         "askForMore": {
-          "source": "src/ops/define/publisher.ts:79",
+          "source": "src/ops/define/publisher.ts:85",
           "label": "Ask for more",
           "description": "Sends the publisher a message they answer in the dashboard; their answer comes back here.",
           "danger": "none",
@@ -154,7 +166,9 @@
                 "maxLength": 5000
               }
             },
-            "required": ["message"]
+            "required": [
+              "message"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -167,7 +181,7 @@
           "schedule": null
         },
         "rejectVerification": {
-          "source": "src/ops/define/publisher.ts:87",
+          "source": "src/ops/define/publisher.ts:94",
           "label": "Reject",
           "description": "Declines the request and emails the reason. They can ask again later.",
           "danger": "confirm",
@@ -180,7 +194,9 @@
                 "maxLength": 2000
               }
             },
-            "required": ["reason"]
+            "required": [
+              "reason"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -193,7 +209,7 @@
           "schedule": null
         },
         "checkAgain": {
-          "source": "src/ops/define/publisher.ts:96",
+          "source": "src/ops/define/publisher.ts:103",
           "label": "Check again",
           "description": "Runs the domain, email, GitHub and impersonation checks again and refreshes the item.",
           "danger": "none",
@@ -209,7 +225,7 @@
           "schedule": null
         },
         "revokeVerification": {
-          "source": "src/ops/define/publisher.ts:102",
+          "source": "src/ops/define/publisher.ts:109",
           "label": "Revoke verification",
           "description": "Removes the verified mark and emails the reason.",
           "danger": "reauth",
@@ -222,7 +238,9 @@
                 "maxLength": 2000
               }
             },
-            "required": ["reason"]
+            "required": [
+              "reason"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -235,7 +253,7 @@
           "schedule": null
         },
         "removePublishers": {
-          "source": "src/ops/define/publisher.ts:110",
+          "source": "src/ops/define/publisher.ts:117",
           "label": "Remove trusted publishers",
           "description": "Stops every workflow of this publisher from publishing until they add it again.",
           "danger": "reauth",
@@ -251,7 +269,7 @@
           "schedule": null
         },
         "revokeTokens": {
-          "source": "src/ops/define/publisher.ts:121",
+          "source": "src/ops/define/publisher.ts:128",
           "label": "Revoke tokens",
           "danger": "reauth",
           "input": null,
@@ -266,7 +284,7 @@
           "schedule": null
         },
         "suspend": {
-          "source": "src/ops/define/publisher.ts:129",
+          "source": "src/ops/define/publisher.ts:139",
           "label": "Suspend",
           "description": "Stops the publisher from publishing or changing listings. Listed apps stay listed.",
           "danger": "reauth",
@@ -282,7 +300,7 @@
           "schedule": null
         },
         "reinstate": {
-          "source": "src/ops/define/publisher.ts:137",
+          "source": "src/ops/define/publisher.ts:150",
           "label": "Reinstate",
           "danger": "confirm",
           "input": null,
@@ -297,7 +315,7 @@
           "schedule": null
         },
         "grantNamespace": {
-          "source": "src/ops/define/publisher.ts:144",
+          "source": "src/ops/define/publisher.ts:157",
           "label": "Grant namespace",
           "description": "Gives the publisher a namespace without a proof, after a claim.",
           "danger": "confirm",
@@ -309,7 +327,9 @@
                 "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$"
               }
             },
-            "required": ["prefix"]
+            "required": [
+              "prefix"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -377,7 +397,9 @@
                 "maxLength": 5000
               }
             },
-            "required": ["message"]
+            "required": [
+              "message"
+            ]
           },
           "preview": false,
           "automatable": true,
@@ -403,7 +425,9 @@
                 "maxLength": 2000
               }
             },
-            "required": ["reason"]
+            "required": [
+              "reason"
+            ]
           },
           "preview": false,
           "automatable": true,
@@ -480,7 +504,10 @@
                 "maxLength": 500
               }
             },
-            "required": ["reason", "note"]
+            "required": [
+              "reason",
+              "note"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -561,7 +588,10 @@
             "description": "The contents of trust/v1/store-keys.json.sig"
           }
         },
-        "required": ["body", "signature"]
+        "required": [
+          "body",
+          "signature"
+        ]
       },
       "preview": false,
       "automatable": false,
@@ -597,8 +627,15 @@
       "icon": "scale",
       "resource": "publisher",
       "layout": "list",
-      "states": ["open", "granted", "declined"],
-      "closed": ["granted", "declined"],
+      "states": [
+        "open",
+        "granted",
+        "declined"
+      ],
+      "closed": [
+        "granted",
+        "declined"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -613,9 +650,16 @@
             "type": "string"
           }
         },
-        "required": ["claimant", "subject", "evidence"]
+        "required": [
+          "claimant",
+          "subject",
+          "evidence"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -630,8 +674,15 @@
       "icon": "flag",
       "resource": "app",
       "layout": "list",
-      "states": ["open", "actioned", "dismissed"],
-      "closed": ["actioned", "dismissed"],
+      "states": [
+        "open",
+        "actioned",
+        "dismissed"
+      ],
+      "closed": [
+        "actioned",
+        "dismissed"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -649,18 +700,38 @@
             "type": "string"
           },
           "location": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
-        "required": ["app", "kind", "reason", "explanation", "location", "name", "email"]
+        "required": [
+          "app",
+          "kind",
+          "reason",
+          "explanation",
+          "location",
+          "name",
+          "email"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -677,8 +748,16 @@
       "icon": "inbox",
       "resource": "release",
       "layout": "list",
-      "states": ["open", "changes requested", "approved", "rejected"],
-      "closed": ["approved", "rejected"],
+      "states": [
+        "open",
+        "changes requested",
+        "approved",
+        "rejected"
+      ],
+      "closed": [
+        "approved",
+        "rejected"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -696,9 +775,17 @@
             "type": "string"
           }
         },
-        "required": ["app", "name", "version", "publisher"]
+        "required": [
+          "app",
+          "name",
+          "version",
+          "publisher"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": {
         "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
@@ -720,7 +807,11 @@
           "quality": {
             "type": "score",
             "prompt": "How finished does the listing look: name, summary, description, icon, screenshots?",
-            "levels": ["low", "fair", "good"]
+            "levels": [
+              "low",
+              "fair",
+              "good"
+            ]
           }
         },
         "rules": [
@@ -786,8 +877,16 @@
       "icon": "refresh",
       "resource": "release",
       "layout": "list",
-      "states": ["open", "changes requested", "approved", "rejected"],
-      "closed": ["approved", "rejected"],
+      "states": [
+        "open",
+        "changes requested",
+        "approved",
+        "rejected"
+      ],
+      "closed": [
+        "approved",
+        "rejected"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -805,9 +904,17 @@
             "type": "string"
           }
         },
-        "required": ["app", "name", "version", "publisher"]
+        "required": [
+          "app",
+          "name",
+          "version",
+          "publisher"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": {
         "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
@@ -829,7 +936,11 @@
           "quality": {
             "type": "score",
             "prompt": "How finished does the listing look: name, summary, description, icon, screenshots?",
-            "levels": ["low", "fair", "good"]
+            "levels": [
+              "low",
+              "fair",
+              "good"
+            ]
           },
           "risky": {
             "type": "noul",
@@ -913,13 +1024,22 @@
       }
     },
     "verification": {
-      "source": "src/ops/define/verification.ts:53",
+      "source": "src/ops/define/verification.ts:63",
       "label": "Verification",
       "icon": "shield",
       "resource": "publisher",
       "layout": "list",
-      "states": ["open", "more requested", "approved", "rejected"],
-      "closed": ["more requested", "approved", "rejected"],
+      "states": [
+        "open",
+        "more requested",
+        "approved",
+        "rejected"
+      ],
+      "closed": [
+        "more requested",
+        "approved",
+        "rejected"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -937,9 +1057,17 @@
             "type": "string"
           }
         },
-        "required": ["verification", "name", "legalName", "email"]
+        "required": [
+          "verification",
+          "name",
+          "legalName",
+          "email"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": true,
@@ -967,7 +1095,9 @@
                 "type": "count",
                 "inbox": "submissions",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "New apps"
@@ -978,7 +1108,9 @@
                 "type": "count",
                 "inbox": "updates",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "Updates"
@@ -989,7 +1121,9 @@
                 "type": "count",
                 "inbox": "reports",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "Reports"
@@ -1000,7 +1134,9 @@
                 "type": "count",
                 "inbox": "verification",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "Verification"
@@ -1016,7 +1152,9 @@
                 "type": "items",
                 "inbox": "submissions",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
@@ -1029,7 +1167,9 @@
                 "type": "items",
                 "inbox": "updates",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
@@ -1047,7 +1187,9 @@
                 "type": "items",
                 "inbox": "reports",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
@@ -1060,7 +1202,9 @@
                 "type": "items",
                 "inbox": "verification",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
