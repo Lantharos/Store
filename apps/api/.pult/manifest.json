@@ -27,7 +27,8 @@
                 "in-review",
                 "published",
                 "delisted",
-                "pulled"
+                "pulled",
+                "deleted"
               ]
             },
             "kind": {
@@ -55,7 +56,7 @@
       },
       "actions": {
         "list": {
-          "source": "src/ops/define/app.ts:108",
+          "source": "src/ops/define/app.ts:109",
           "label": "List it",
           "description": "Puts the project in the catalog, search and the Schelf app.",
           "danger": "confirm",
@@ -71,7 +72,7 @@
           "schedule": null
         },
         "keepUnlisted": {
-          "source": "src/ops/define/app.ts:119",
+          "source": "src/ops/define/app.ts:120",
           "label": "Keep unlisted",
           "description": "Declines the request to be listed and tells the publisher why. The project keeps working as it is.",
           "danger": "confirm",
@@ -100,7 +101,7 @@
           "schedule": null
         },
         "delist": {
-          "source": "src/ops/define/app.ts:132",
+          "source": "src/ops/define/app.ts:133",
           "label": "Delist",
           "description": "Hides the app from the catalog and search. Installs and updates keep working.",
           "danger": "confirm",
@@ -116,7 +117,7 @@
           "schedule": null
         },
         "relist": {
-          "source": "src/ops/define/app.ts:141",
+          "source": "src/ops/define/app.ts:142",
           "label": "List again",
           "description": "Shows the app in the catalog and search again.",
           "danger": "confirm",
@@ -132,7 +133,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/app.ts:151",
+          "source": "src/ops/define/app.ts:152",
           "label": "Pull",
           "description": "Stops every version from installing and starting, delists the app and shows the note to people who have it.",
           "danger": "reauth",
@@ -168,7 +169,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/app.ts:162",
+          "source": "src/ops/define/app.ts:163",
           "label": "Undo pull",
           "description": "Lets the app install and start again and lists it.",
           "danger": "reauth",
@@ -184,7 +185,7 @@
           "schedule": null
         },
         "revokeToken": {
-          "source": "src/ops/define/app.ts:172",
+          "source": "src/ops/define/app.ts:173",
           "label": "Revoke a token",
           "description": "Stops one upload token from publishing. The developer can make a new one.",
           "danger": "confirm",
@@ -212,7 +213,7 @@
           "schedule": null
         },
         "removeTrustedPublisher": {
-          "source": "src/ops/define/app.ts:198",
+          "source": "src/ops/define/app.ts:199",
           "label": "Remove a trusted publisher",
           "description": "Stops one workflow from publishing until the developer adds it again.",
           "danger": "confirm",
@@ -1667,5 +1668,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "bd661008fa98"
+  "version": "fcc930ae2925"
 }

@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers"
 import { PRIVATE_PREFIX } from "@schelf/protocol"
+import { and, eq } from "drizzle-orm"
+import { db, schema } from "../db/client.ts"
 import { embedScript } from "../hosting/embed.ts"
 import { isProjectPath, serveProject } from "../hosting/serve.ts"
 import { INDEX_CACHE } from "../signing/write.ts"
@@ -42,6 +44,22 @@ function cacheControl(key: string) {
   return SIGNED_PREFIXES.some((prefix) => key.startsWith(prefix)) ? INDEX_CACHE : IMMUTABLE
 }
 
+function feedOwner(key: string) {
+  const [root, app, channel, ...rest] = key.split("/")
+  return root === "sabine" && app && channel && !rest.length ? app : null
+}
+
+async function deleted(app: string) {
+  return (await db.$count(schema.app, and(eq(schema.app.id, app), eq(schema.app.status, "deleted")))) > 0
+}
+
+async function missing(key: string) {
+  const owner = feedOwner(key)
+  if (owner && (await deleted(owner)))
+    return new Response("Gone", { status: 410, headers: { "cache-control": INDEX_CACHE } })
+  return new Response("Not found", { status: 404 })
+}
+
 export async function serveDownload(request: Request) {
   if (request.method !== "GET" && request.method !== "HEAD")
     return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } })
@@ -61,7 +79,7 @@ export async function serveDownload(request: Request) {
     request.method === "HEAD"
       ? await env.BUCKET.head(key)
       : await env.BUCKET.get(key, { onlyIf: request.headers, range: request.headers })
-  if (!object) return new Response("Not found", { status: 404 })
+  if (!object) return missing(key)
 
   const headers = new Headers()
   object.writeHttpMetadata(headers)

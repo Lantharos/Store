@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers"
+import { env, exports } from "cloudflare:workers"
 import { type DeletedProject, paths } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
@@ -84,6 +84,19 @@ describe("deleting a project", () => {
     const restored = await db.query.app.findFirst({ where: eq(schema.app.id, appId) })
     expect(restored?.status).toBe("published")
     expect(restored?.deletedAt).toBeNull()
+  })
+
+  test("its Sabine feeds answer Gone, unlike feeds that never existed", async () => {
+    const { appId, owner } = await owned()
+    await released(appId)
+    const feed = (id: string) =>
+      exports.default.fetch(new Request(`https://dl.schelf.store/${paths.sabine(id, "stable")}`))
+    expect((await feed(appId)).status).toBe(404)
+    await json(await owner.call("DELETE", `/apps/${appId}`))
+    expect((await feed(appId)).status).toBe(410)
+    expect((await feed(`${appId}x`)).status).toBe(404)
+    expect((await owner.call("POST", `/apps/${appId}/restore`)).status).toBe(204)
+    expect((await feed(appId)).status).not.toBe(410)
   })
 
   test("after the grace period its files are purged, and only its publisher can use the id again", async () => {
