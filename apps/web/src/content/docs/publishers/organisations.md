@@ -4,13 +4,13 @@ title: Organisations
 description: Publish as yourself or as an organisation, with members, roles and a public page.
 ---
 
-Everything on Schelf is published by a publisher. When you sign in for the first time you get your own: your name on your apps, your namespaces, your page. If you make apps with other people or for a company, create an organisation as well. You can belong to as many as you like, and switch between them at the top of the dashboard's sidebar.
+Everything on Schelf is published by a publisher. When you sign in for the first time you get your own: your name on your apps, your namespaces, your page. If you make apps with other people or for a company, create an organisation as well. You can belong to as many as you like, and switch between them at the top of the dashboard's sidebar. Settings for the publisher you picked, and for your own account, are under **Settings**.
 
 An organisation owns its apps, namespaces, trusted publishers and tokens. People come and go; the apps stay with the organisation.
 
 ## Creating one
 
-Choose **New organisation** in the publisher menu, give it a name and accept the developer agreement on its behalf. You become its owner. Then invite the others from **Members**.
+Choose **New organisation** in the publisher menu, give it a name and accept the developer agreement on its behalf. You become its owner. Then invite the others from **Settings → Members**.
 
 ## Roles
 
@@ -28,11 +28,11 @@ Invite someone by email address or by GitHub username. An email invitation goes 
 
 ## Owners
 
-An organisation always has at least one owner. To step down, make someone else an owner first, or use **Make owner and step down** on their row in **Members**, which swaps your roles. The last owner can't leave, and can't delete their account while other people are still members.
+An organisation always has at least one owner. To step down, make someone else an owner first, or use **Make owner and step down** on their row in **Settings → Members**, which swaps your roles. The last owner can't leave, and can't delete their account while other people are still members.
 
 ## The public page
 
-Each publisher has a page at `schelf.store/publishers/<address>` with its logo, name, a short description, its website, and its apps and extensions. Edit it under **Public page** in the dashboard. Logos are cropped to a square when you upload them.
+Each publisher has a page at `schelf.store/publishers/<address>` with its logo, name, a short description, its website, and its apps and extensions. Edit it under **Settings → Profile**. Logos are cropped to a square when you upload them.
 
 ## In the command line
 

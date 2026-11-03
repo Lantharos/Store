@@ -1,11 +1,8 @@
 <script lang="ts">
-  import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import BookOpen from "@lucide/svelte/icons/book-open"
-  import Building from "@lucide/svelte/icons/building-2"
   import Plus from "@lucide/svelte/icons/plus"
   import Search from "@lucide/svelte/icons/search"
-  import ShieldCheck from "@lucide/svelte/icons/shield-check"
-  import Users from "@lucide/svelte/icons/users"
+  import Settings from "@lucide/svelte/icons/settings"
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
@@ -13,22 +10,12 @@
   import { session } from "../api/session.svelte.ts"
   import PublisherSwitcher from "../publishers/PublisherSwitcher.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "../releases/status.ts"
+  import { SETTINGS } from "../settings/sections.ts"
   import UserRow from "./UserRow.svelte"
 
   let { onsearch }: { onsearch: () => void } = $props()
   const path = $derived(page.url.pathname)
   const appPath = (id: string) => `/dashboard/apps/${id}`
-  const settings = $derived([
-    { href: "/dashboard/publisher", label: "Public page", icon: Building, shown: true },
-    {
-      href: "/dashboard/members",
-      label: "Members",
-      icon: Users,
-      shown: session.publisher?.kind === "organisation",
-    },
-    { href: "/dashboard/namespaces", label: "Namespaces", icon: ShieldCheck, shown: true },
-    { href: "/dashboard/verification", label: "Verification", icon: BadgeCheck, shown: true },
-  ])
 </script>
 
 <div class="flex h-full flex-col gap-1 overflow-y-auto p-4 text-[15px]">
@@ -71,11 +58,9 @@
   </nav>
 
   <div class="mt-auto space-y-0.5 pt-6 text-ink-soft">
-    {#each settings.filter((item) => item.shown) as item (item.href)}
-      <a href={item.href} aria-current={path.startsWith(item.href) ? "page" : undefined} class="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink">
-        <item.icon class="size-4" />{item.label}
-      </a>
-    {/each}
+    <a href={SETTINGS} aria-current={path.startsWith(SETTINGS) ? "page" : undefined} class="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink">
+      <Settings class="size-4" />Settings
+    </a>
     <a href="/docs" class="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:text-ink"><BookOpen class="size-4" />Docs</a>
     <UserRow />
   </div>

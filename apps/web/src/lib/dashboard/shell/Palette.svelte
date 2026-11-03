@@ -7,6 +7,12 @@
   import { scheme } from "../../theme/scheme.svelte.ts"
   import Dialog from "../../ui/overlay/Dialog.svelte"
   import { session } from "../api/session.svelte.ts"
+  import {
+    accountSections,
+    publisherSections,
+    sectionAfterSwitch,
+    settingsHref,
+  } from "../settings/sections.ts"
 
   let { open = $bindable(false) }: { open?: boolean } = $props()
 
@@ -53,17 +59,21 @@
       : []
     const pages: Command[] = [
       { id: "new", label: "Add an app", group: "Go to", run: go("/dashboard/apps/new") },
-      { id: "publisher", label: "Public page", group: "Go to", run: go("/dashboard/publisher") },
-      { id: "members", label: "Members", group: "Go to", run: go("/dashboard/members") },
-      { id: "namespaces", label: "Namespaces", group: "Go to", run: go("/dashboard/namespaces") },
-      { id: "verification", label: "Verification", group: "Go to", run: go("/dashboard/verification") },
       {
         id: "organisation",
         label: "New organisation",
         group: "Go to",
         run: go("/dashboard/organisations/new"),
       },
-      { id: "account", label: "Account", group: "Go to", run: go("/dashboard/account") },
+      ...(session.publisher ? [...publisherSections(session.publisher), ...accountSections] : []).map(
+        (section) => ({
+          id: `settings:${section.slug}`,
+          label: section.label,
+          hint: "Settings",
+          group: "Settings",
+          run: go(settingsHref(section.slug)),
+        }),
+      ),
       { id: "docs", label: "Documentation", group: "Go to", run: go("/docs") },
       { id: "store", label: "The store", group: "Go to", run: go("/") },
       { id: "light", label: "Use light appearance", group: "Appearance", run: () => scheme.set("light") },
@@ -82,7 +92,10 @@
         label: `Switch to ${publisher.name}`,
         group: "Publishers",
         icon: { src: publisher.logo, name: publisher.name },
-        run: () => session.use(publisher.id).then(() => goto("/dashboard")),
+        run: () =>
+          session
+            .use(publisher.id)
+            .then(() => goto(sectionAfterSwitch(page.url.pathname, publisher) ?? "/dashboard")),
       }))
     return [...sections, ...appCommands, ...publishers, ...pages]
   })

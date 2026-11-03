@@ -12,7 +12,6 @@
 
   const publisher = $derived(session.publisher!)
   const editable = $derived(session.can("profile"))
-  const outdated = $derived(publisher.agreement_version !== session.account?.agreement)
 
   let form = $state(untrack(() => draftOf(session.publisher!)))
   let busy = $state(false)
@@ -54,22 +53,9 @@
       busy = false
     }
   }
-
-  async function accept() {
-    try {
-      session.updatePublisher(
-        await api.patch<DashboardPublisher>(endpoints.publisher(publisher.id), {
-          agreement: session.account!.agreement,
-        }),
-      )
-      toasts.show("Thanks. You're on the current agreement.")
-    } catch (failure) {
-      toasts.error(failure)
-    }
-  }
 </script>
 
-<PageHeader title="Public page" text="What people see on {publisher.name}'s page and next to its apps.">
+<PageHeader title="Profile" text="What people see on {publisher.name}'s page and next to its apps.">
   {#snippet actions()}
     <a href="/publishers/{publisher.slug}" target="_blank" class="button button-quiet">View page<ArrowUpRight class="size-4" /></a>
   {/snippet}
@@ -100,13 +86,4 @@
     {#if editable}<button class="button button-primary" disabled={!changed || busy}>Save</button>{/if}
   </form>
 
-  <section>
-    <h2 class="text-xl font-semibold">Developer agreement</h2>
-    {#if outdated}
-      <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">The agreement changed since {publisher.name} accepted it. New releases wait until an owner has read <a href="/legal/developer-agreement" target="_blank" class="link">version {session.account?.agreement}</a> and accepted it.</p>
-      {#if session.can("owners")}<button type="button" class="button button-sm button-primary mt-4" onclick={accept}>Accept version {session.account?.agreement}</button>{/if}
-    {:else}
-      <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">{publisher.name} accepted <a href="/legal/developer-agreement" class="link">version {publisher.agreement_version}</a>, the current one.</p>
-    {/if}
-  </section>
 </div>

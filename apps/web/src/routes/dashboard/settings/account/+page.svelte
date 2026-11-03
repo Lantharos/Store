@@ -1,10 +1,8 @@
 <script lang="ts">
   import Mail from "@lucide/svelte/icons/mail"
-  import { ROLE_NAMES } from "@schelf/protocol"
   import Passkeys from "#lib/dashboard/account/Passkeys.svelte"
   import { auth } from "#lib/dashboard/api/auth.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
-  import PublisherMark from "#lib/dashboard/publishers/PublisherMark.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
   import { goto } from "$app/navigation"
@@ -14,7 +12,10 @@
   let typed = $state("")
 
   async function linkGitHub() {
-    await auth.linkSocial({ provider: "github", callbackURL: `${location.origin}/dashboard/account` })
+    await auth.linkSocial({
+      provider: "github",
+      callbackURL: `${location.origin}/dashboard/settings/account`,
+    })
   }
 
   async function remove() {
@@ -38,20 +39,6 @@
 </section>
 
 <section class="mt-12 max-w-2xl">
-  <h2 class="text-xl font-semibold">Publishers</h2>
-  <ul class="mt-2 divide-y divide-hairline">
-    {#each account.publishers as publisher (publisher.id)}
-      <li class="flex items-center gap-4 py-3">
-        <PublisherMark logo={publisher.logo} name={publisher.name} />
-        <span class="min-w-0 flex-1 truncate">{publisher.name}</span>
-        <span class="text-[15px] text-ink-muted">{publisher.kind === "person" ? "You" : ROLE_NAMES[publisher.role].label}</span>
-      </li>
-    {/each}
-  </ul>
-  <a href="/dashboard/organisations/new" class="button button-sm button-quiet mt-3">New organisation</a>
-</section>
-
-<section class="mt-12 max-w-2xl">
   <h2 class="text-xl font-semibold">Signing in</h2>
   <div class="mt-2 divide-y divide-hairline">
     <div class="flex items-center gap-4 py-4">
@@ -71,6 +58,12 @@
       </div>
     </div>
   </div>
+</section>
+
+<section class="mt-12 max-w-2xl">
+  <h2 class="text-xl font-semibold">Sign out</h2>
+  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Signs you out on this browser. The schelf command stays signed in until you run schelf logout.</p>
+  <button type="button" class="button button-sm button-quiet mt-4" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>
 </section>
 
 <section class="mt-12 max-w-2xl">

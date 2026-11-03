@@ -3,7 +3,7 @@ import type { CheckName } from "@schelf/protocol"
 export const CHECK_FIXES: Partial<Record<CheckName, { text: string; href?: string; link?: string }>> = {
   namespace: {
     text: "Prove the namespace your app id is under, then publish again.",
-    href: "/dashboard/namespaces",
+    href: "/dashboard/settings/namespaces",
     link: "Open namespaces",
   },
   version: { text: "Publish a release with a version higher than your last one." },

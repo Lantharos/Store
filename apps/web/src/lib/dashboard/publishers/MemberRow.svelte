@@ -38,7 +38,7 @@
 
 <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
   <span class="grid size-9 shrink-0 place-items-center rounded-full bg-well font-semibold text-ink-soft">{member.name.slice(0, 1)}</span>
-  <div class="min-w-0 flex-1">
+  <div class="min-w-48 flex-1">
     <p class="truncate font-medium">{member.name}{#if you}<span class="font-normal text-ink-muted">{" (you)"}</span>{/if}</p>
     <p class="truncate text-[13px] text-ink-muted">{member.email} · joined {date(member.joined_at)}</p>
   </div>

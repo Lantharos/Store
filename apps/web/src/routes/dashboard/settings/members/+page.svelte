@@ -8,6 +8,7 @@
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import InviteForm from "#lib/dashboard/publishers/InviteForm.svelte"
   import MemberRow from "#lib/dashboard/publishers/MemberRow.svelte"
+  import { settingsHref } from "#lib/dashboard/settings/sections.ts"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
@@ -25,7 +26,7 @@
   const leaving = $derived(removing?.user_id === session.account?.user.id)
 
   $effect(() => {
-    if (publisher.kind === "person") void goto("/dashboard")
+    if (publisher.kind === "person") void goto(settingsHref("profile"))
   })
 
   async function changeRole(member: Member, role: Role) {
@@ -104,7 +105,7 @@
             <span class="grid size-9 shrink-0 place-items-center rounded-full bg-well text-ink-muted">
               {#if invite.email}<Mail class="size-4" />{:else}<AtSign class="size-4" />{/if}
             </span>
-            <div class="min-w-0 flex-1">
+            <div class="min-w-48 flex-1">
               <p class="truncate font-medium">{invite.email ?? invite.github}</p>
               <p class="truncate text-[13px] text-ink-muted">{ROLE_NAMES[invite.role].label}{invite.invited_by ? `, invited by ${invite.invited_by}` : ""} · expires {ago(invite.expires_at)}</p>
             </div>

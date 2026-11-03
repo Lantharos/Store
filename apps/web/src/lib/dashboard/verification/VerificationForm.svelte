@@ -68,7 +68,7 @@
           {#if session.account?.github}
             <button type="button" class="button button-quiet shrink-0" disabled={flow.busy !== null} onclick={() => flow.proveGithub()}>Prove it</button>
           {:else}
-            <a href="/dashboard/account" class="button button-quiet shrink-0">Connect GitHub</a>
+            <a href="/dashboard/settings/account" class="button button-quiet shrink-0">Connect GitHub</a>
           {/if}
         {/if}
       </div>

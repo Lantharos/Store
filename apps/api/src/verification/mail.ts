@@ -44,7 +44,7 @@ export function notifyVerification(publisherId: string, outcome: VerificationOut
               message,
               outcome === "approved" || outcome === "revoked"
                 ? null
-                : `Answer in the dashboard, not by email:\n${env.PUBLIC_URL}/dashboard/verification?publisher=${publisherId}`,
+                : `Answer in the dashboard, not by email:\n${env.PUBLIC_URL}/dashboard/settings/verification?publisher=${publisherId}`,
             ]
               .filter(Boolean)
               .join("\n\n"),

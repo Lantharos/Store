@@ -25,7 +25,7 @@
       })
       await session.refreshAccount()
       await session.use(created.id)
-      await goto("/dashboard/members")
+      await goto("/dashboard/settings/members")
     } catch (failure) {
       error = (failure as Error).message
     } finally {

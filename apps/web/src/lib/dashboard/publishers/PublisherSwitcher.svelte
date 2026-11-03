@@ -1,21 +1,29 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down"
+  import type { DashboardPublisher } from "@schelf/protocol"
   import { goto } from "$app/navigation"
+  import { page } from "$app/state"
   import Menu, { type MenuItem } from "../../ui/overlay/Menu.svelte"
   import { session } from "../api/session.svelte.ts"
+  import { sectionAfterSwitch } from "../settings/sections.ts"
   import PublisherMark from "./PublisherMark.svelte"
 
   let open = $state(false)
   let trigger = $state<HTMLButtonElement>()
   const current = $derived(session.publisher!)
 
+  async function switchTo(publisher: DashboardPublisher) {
+    await session.use(publisher.id)
+    await goto(sectionAfterSwitch(page.url.pathname, publisher) ?? "/dashboard")
+  }
+
   const items: MenuItem[] = $derived([
     ...(session.account?.publishers ?? []).map((publisher) => ({
       label: publisher.name,
       hint: publisher.kind === "person" ? "You" : undefined,
       selected: publisher.id === current.id,
-      onselect: () => session.use(publisher.id).then(() => goto("/dashboard")),
+      onselect: () => switchTo(publisher),
     })),
     { label: "New organisation", onselect: () => goto("/dashboard/organisations/new") },
   ])

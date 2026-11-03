@@ -6,7 +6,7 @@ description: How a publisher earns the checkmark, what you send and what Schelf 
 
 The checkmark next to a publisher's name tells people that Schelf checked who is behind it and that its domains are its own. It shows on the publisher's page, on each of its apps and in the Schelf app. It's separate from namespaces: proving a namespace lets you publish ids under it, while verification is about who you are.
 
-Verification is done by a person, not automatically. An owner asks for it under **Verification** in the dashboard.
+Verification is done by a person, not automatically. An owner asks for it under **Settings → Verification** in the dashboard.
 
 ## What you send
 
