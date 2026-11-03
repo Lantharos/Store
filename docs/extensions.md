@@ -25,4 +25,4 @@ The differences:
 
 ## Luft's own extensions
 
-Extensions Luft ships preinstalled (rain is the first) are published through the store too, under `com.lantharos.*`, so they update between Luft releases and can be removed like any other.
+Extensions Luft ships preinstalled (Rain is the first) are published through the store too, under `com.lantharos.*`, so they update between Luft releases and can be removed like any other. Luft's image carries the newest approved release with its listing and installs it for each account at sign-in, so the store's copy replaces the one built into the image from the start; the built-in copy stays for systems that haven't got a store release yet. Luft's general apps, such as Draft, Magpie and Mailman, come the same way: preinstalled from their store release, updated by Schelf, and removable.

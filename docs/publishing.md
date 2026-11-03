@@ -107,6 +107,10 @@ The `publish` action:
 4. Uploads the files; the Worker hashes them as they stream into R2 and refuses any that don't match.
 5. Calls `complete`. The Worker confirms the attestations exist for each digest in that repository, runs the quick checks, queues the deeper ones (a `schelf-checks` repository dispatch to this repository, whose payload names the release, its files and the address to report back to), and prints the release's dashboard address in the job summary.
 
+### Repositories with several apps
+
+A repository can publish several apps, each with its own `schelf.toml` in its folder and its own tags. The store reads a release's version from the part of the tag after its last `/`, so tags such as `draft/v1.2.0` and `rain/v1.0.0` name both the app and the version. One workflow runs on those tags, works out the app from the part before the `/`, builds only that app, and points the action at its file with `schelf-toml: apps/draft/schelf.toml`. Sabine's release workflow builds an app in a subfolder with `app: apps/draft`, only on the platforms it runs on with `platforms: linux-x86_64 linux-aarch64`, and with the system libraries it links from `linux_packages`. Register that one workflow as a trusted publisher of every app it publishes. Releases pushed as tags have no GitHub release, so pass the notes with the action's `notes` input, such as the tag's message. Luft publishes its apps and extensions this way, from `.github/workflows/store.yml`.
+
 For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions".
 
 ## The schelf command
