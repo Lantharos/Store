@@ -6,3 +6,4 @@ dist
 .dev.vars
 *.log
 .env
+!/publish/dist

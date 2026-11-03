@@ -1,0 +1,38 @@
+name: Publish on Schelf
+description: Send a release to schelf.store for review, with build provenance for every file
+author: Lantharos
+branding:
+  icon: package
+  color: yellow
+
+inputs:
+  files:
+    description: Files to publish, one glob per line
+    required: false
+  release-assets:
+    description: Names of this GitHub release's assets to publish, one glob per line, for builds that attach their files to the release. Waits for them to finish uploading.
+    required: false
+  schelf-toml:
+    description: Path to schelf.toml
+    default: schelf.toml
+  notes:
+    description: Release notes. Defaults to the GitHub release's description.
+    required: false
+  api:
+    description: The store to publish to
+    default: https://schelf.store
+  github-token:
+    description: Token that records the build provenance attestations and reads the release
+    default: ${{ github.token }}
+
+outputs:
+  release:
+    description: The release's id on Schelf
+  status:
+    description: Where the release is after upload, such as checking or failed
+  url:
+    description: The release in the Schelf dashboard
+
+runs:
+  using: node24
+  main: dist/index.js

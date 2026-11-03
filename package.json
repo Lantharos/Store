@@ -3,7 +3,13 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.4",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "publish",
+    "checks",
+    "mirror"
+  ],
   "scripts": {
     "dev": "bun run --filter @schelf/api --filter @schelf/web dev",
     "check": "bun run --filter '*' check",

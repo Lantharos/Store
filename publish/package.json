@@ -1,0 +1,17 @@
+{
+  "name": "@schelf/publish-action",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/main.ts --target=node --format=esm --minify --outfile=dist/index.js",
+    "check": "tsc -p .",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@actions/attest": "3.2.0",
+    "@actions/core": "3.0.1",
+    "@schelf/protocol": "workspace:*",
+    "@schelf/publisher": "workspace:*",
+    "@types/bun": "1.4.4"
+  }
+}

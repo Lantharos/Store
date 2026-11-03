@@ -1,0 +1,17 @@
+{
+  "name": "@schelf/mirror",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p .",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@schelf/appstream": "workspace:*",
+    "@schelf/protocol": "workspace:*",
+    "@schelf/publisher": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4"
+  }
+}

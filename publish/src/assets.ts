@@ -1,0 +1,66 @@
+import { createWriteStream } from "node:fs"
+import { mkdir } from "node:fs/promises"
+import { join, matchesGlob } from "node:path"
+import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
+import * as core from "@actions/core"
+
+interface Asset {
+  name: string
+  url: string
+  state: "uploaded" | "open" | "starter"
+}
+
+const POLL_SECONDS = 15
+const WAIT_MINUTES = 30
+
+const api = process.env.GITHUB_API_URL ?? "https://api.github.com"
+
+async function github<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`${api}${path}`, {
+    headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json" },
+  })
+  if (!response.ok) throw new Error(`GitHub answered ${response.status} for ${path}`)
+  return (await response.json()) as T
+}
+
+async function matchingAssets(tag: string, patterns: string[], token: string) {
+  const repository = process.env.GITHUB_REPOSITORY
+  const release = await github<{ assets: Asset[] }>(
+    `/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`,
+    token,
+  )
+  return release.assets.filter((asset) => patterns.some((pattern) => matchesGlob(asset.name, pattern)))
+}
+
+async function settledAssets(tag: string, patterns: string[], token: string) {
+  const deadline = Date.now() + WAIT_MINUTES * 60_000
+  for (;;) {
+    const assets = await matchingAssets(tag, patterns, token)
+    if (assets.length && assets.every((asset) => asset.state === "uploaded")) return assets
+    if (Date.now() > deadline) {
+      throw new Error(
+        `Release ${tag} has no finished assets matching ${patterns.join(", ")} after ${WAIT_MINUTES} minutes`,
+      )
+    }
+    core.info(`Waiting for the release's assets matching ${patterns.join(", ")}`)
+    await new Promise((resolve) => setTimeout(resolve, POLL_SECONDS * 1000))
+  }
+}
+
+export async function downloadReleaseAssets(tag: string, patterns: string[], token: string) {
+  const assets = await settledAssets(tag, patterns, token)
+  const directory = join(process.env.RUNNER_TEMP ?? ".", "schelf-release-assets")
+  await mkdir(directory, { recursive: true })
+  await Promise.all(
+    assets.map(async (asset) => {
+      const response = await fetch(asset.url, {
+        headers: { authorization: `Bearer ${token}`, accept: "application/octet-stream" },
+      })
+      if (!response.ok || !response.body)
+        throw new Error(`Couldn't download ${asset.name} (${response.status})`)
+      await pipeline(Readable.fromWeb(response.body), createWriteStream(join(directory, asset.name)))
+    }),
+  )
+  return assets.map((asset) => join(directory, asset.name))
+}

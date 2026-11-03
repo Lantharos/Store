@@ -1,0 +1,44 @@
+name: Checks
+
+on:
+  repository_dispatch:
+    types: [schelf-checks]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: checks-${{ github.event.client_payload.release }}
+
+jobs:
+  check:
+    name: ${{ github.event.client_payload.app }} ${{ github.event.client_payload.version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CLAMAV_DATABASE: ${{ github.workspace }}/../clamav
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - name: Install the scanners and unpackers
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq --no-install-recommends \
+            clamav yara squashfs-tools msitools p7zip-full libarchive-tools binutils-multiarch zstd rpm
+      - id: day
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CLAMAV_DATABASE }}
+          key: clamav-${{ steps.day.outputs.day }}
+          restore-keys: clamav-
+      - name: Update virus signatures
+        run: |
+          mkdir -p "$CLAMAV_DATABASE"
+          sudo freshclam --quiet --datadir="$CLAMAV_DATABASE" --user="$(id -un)"
+      - run: bun install --frozen-lockfile
+      - name: Check the release
+        run: bun checks/src/main.ts
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
