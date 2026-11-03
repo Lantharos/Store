@@ -1,8 +1,11 @@
 import { readdir } from "node:fs/promises"
 import { join } from "node:path"
 import {
+  accessOf,
+  extensionLabels,
   type Permissions,
   PUBLISH_ACTION,
+  readExtensionAccess,
   readPermissions,
   readSchelfToml,
   SCHELF_TOML,
@@ -13,12 +16,14 @@ import {
 import { ZodError } from "zod"
 import type { Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
+import { describePermissions } from "../project/permissions.ts"
 import type { Issue } from "./issues.ts"
 import { type Listing, listingIssues, readListing } from "./listing.ts"
 
 export interface Validation {
   manifest?: SchelfToml
-  permissions: Permissions | null
+  access: string[]
+  fullAccess: boolean
   listing: Listing
   issues: Issue[]
 }
@@ -120,11 +125,21 @@ export async function validate(project: Project): Promise<Validation> {
   const manifest = text === undefined ? undefined : parse(SCHELF_TOML, () => readSchelfToml(text), issues)
 
   let permissions: Permissions | null = null
+  let access = describePermissions(null)
+  let fullAccess = true
   if (manifest?.permissions) {
-    const declaration = await readOptional(join(project.root, manifest.permissions))
-    if (declaration === undefined)
-      issues.push({ level: "error", message: `${manifest.permissions} doesn't exist` })
-    else permissions = parse(manifest.permissions, () => readPermissions(declaration), issues) ?? null
+    const file = manifest.permissions
+    const declaration = await readOptional(join(project.root, file))
+    if (declaration === undefined) issues.push({ level: "error", message: `${file} doesn't exist` })
+    else if (manifest.kind === "extension") {
+      const extension = parse(file, () => readExtensionAccess(declaration), issues)
+      access = extension ? extensionLabels(extension) : []
+      fullAccess = extension?.helper ?? false
+    } else {
+      permissions = parse(file, () => readPermissions(declaration), issues) ?? null
+      access = describePermissions(permissions)
+      fullAccess = manifest.format === "sabine" || accessOf(permissions) === "full"
+    }
   } else if (manifest?.format === "appimage") {
     issues.push({
       level: "warning",
@@ -137,5 +152,5 @@ export async function validate(project: Project): Promise<Validation> {
     issues.push(...identityIssues(project, manifest), ...(await workflowIssues(project, manifest)))
   const listing = readListing(project, await countScreenshots(project.root, manifest?.listing))
   issues.push(...listingIssues(listing))
-  return { manifest, permissions, listing, issues }
+  return { manifest, access, fullAccess, listing, issues }
 }

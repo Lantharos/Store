@@ -1,5 +1,3 @@
-import { accessOf } from "@schelf/protocol"
-import { describePermissions } from "../project/permissions.ts"
 import { blank, field, line } from "../ui/output.ts"
 import { bold, muted } from "../ui/style.ts"
 import type { Validation } from "./validate.ts"
@@ -24,14 +22,10 @@ export function wrap(text: string, width: number): string[] {
   return lines
 }
 
-export function preview({ listing, permissions }: Validation) {
+export function preview({ listing, access, fullAccess }: Validation) {
   line(bold(listing.name ?? "Unnamed app"))
   if (listing.summary) line(listing.summary)
-  const byline = [
-    listing.developer,
-    listing.licence,
-    accessOf(permissions) === "full" ? "Full access" : "Limited access",
-  ]
+  const byline = [listing.developer, listing.licence, fullAccess ? "Full access" : "Limited access"]
   line(muted(byline.filter(Boolean).join(" · ")))
   if (listing.description) {
     blank()
@@ -40,8 +34,8 @@ export function preview({ listing, permissions }: Validation) {
     if (lines.length > DESCRIPTION_LINES) line(muted("…"))
   }
   blank()
-  const [first, ...rest] = describePermissions(permissions)
-  field("Permissions", first!)
+  const [first = "Nothing beyond its own place on the desktop", ...rest] = access
+  field("Permissions", first)
   for (const text of rest) field("", text)
   field("Screenshots", String(listing.screenshots))
   if (listing.categories.length) field("Categories", listing.categories.join(", "))
