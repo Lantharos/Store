@@ -1,5 +1,6 @@
 {
   "name": "@schelf/protocol",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
