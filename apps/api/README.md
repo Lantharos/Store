@@ -5,13 +5,13 @@ The schelf.store api Worker: publishing, checks, review, signing, downloads on `
 ## Run it
 
 ```sh
-cp .dev.vars.example .dev.vars   # fill in at least the first three
+cp .dev.vars.example .dev.vars   # fill in at least the first four
 bun run db:migrate
 bun run dev
 bun run test
 ```
 
-`STORE_SIGNING_KEY` is a base64 Ed25519 seed; any 32 random bytes work locally.
+`STORE_SIGNING_KEY` is a base64 Ed25519 seed and `SEALING_KEY` 32 random bytes in base64. Locally, also set `ROOT_PUBLIC_KEY` to a root of your own and sign store keys with it (`scripts/store-keys.ts init`), since the store only signs with keys its root vouches for.
 
 ## Deploy
 
@@ -19,7 +19,11 @@ bun run test
 bun run deploy
 ```
 
-It builds the Pult definitions, applies D1 migrations and deploys. Lantharos's own listings come from `scripts/seed-lantharos.ts` (`OWNER_EMAIL=… REVIEWER_TOKEN=… bun scripts/seed-lantharos.ts --remote`).
+It builds the Pult definitions, applies D1 migrations, deploys, and deploys the definitions to Pult, so run it with the production `PULT_KEY` in the environment. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`; the store signs them on its next hourly run.
+
+## Pult
+
+Review, rollouts, pulling apps and key rotation all happen in Pult, in the `schelf` project with `dev` and `prod` environments. Each environment's origin is where the Worker runs (`https://schelf.store` for prod); Pult calls `/api/ops`. Put the prod key in the `PULT_KEY` secret.
 
 ## Secrets
 
@@ -30,12 +34,12 @@ Set with `wrangler secret put <name>`.
 | `BETTER_AUTH_SECRET` | Random string for sessions. |
 | `UPLOAD_SECRET` | Random string that signs upload tokens. |
 | `STORE_SIGNING_KEY` | The store signing key (Ed25519 seed, base64). Its public half must be in `trust/v1/store-keys.json`. |
-| `REVIEWER_TOKEN` | Bearer token for `/api/v1/review/*`, used by the review command. |
+| `SEALING_KEY` | 32 random bytes in base64 that seal store keys made for a rotation. |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app for signing in, callback `https://schelf.store/api/auth/callback/github`. |
-| `GITHUB_TOKEN` | Fine-grained token with Contents read and write on Lantharos/schelf-store, to start the checks workflow. Without it releases go straight to review. |
+| `GITHUB_TOKEN` | Fine-grained token with Contents read and write on Lantharos/Store, to start the checks workflow. Without it releases go straight to review. |
 | `ANALYTICS_TOKEN` | API token with Account Analytics Read, for the nightly download counts. |
 | `PULT_KEY` | The `schelf` project's Pult key. Without it nothing reaches Pult. |
 
 ## Store keys
 
-`scripts/store-keys.ts` signs `trust/v1/store-keys.json` with the root key: `init` for the first key, `add` to rotate in a new one, `revoke` to drop a leaked one. Upload the three files it writes to the bucket, then `POST /api/v1/review/resign` re-signs every index file and feed.
+`scripts/store-keys.ts` signs `trust/v1/store-keys.json` with the root key: `init` for the first key, `add` to rotate in a new one, `revoke` to drop a leaked one. A new key comes from Prepare a new store key in Pult, and the signed file goes live with Publish store keys, which also re-signs everything.

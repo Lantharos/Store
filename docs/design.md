@@ -43,7 +43,7 @@ This document is the overview. The details are in:
 
 ```
 developer repo
-  release published ──▶ their workflow builds ──▶ schelf-store/publish action
+  release published ──▶ their workflow builds ──▶ Lantharos/Store/publish action
                                                     │ OIDC token, files, schelf.toml
                                                     ▼
    schelf.store Worker (api) ── verifies token, attestation, hashes ──▶ R2

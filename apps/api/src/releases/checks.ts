@@ -27,7 +27,7 @@ export function requireStoreWorkflow(claims: WorkflowClaims, workflow: string) {
     workflowPath(claims) !== workflow ||
     claims.ref !== MAIN
   )
-    fail(403, `Only ${env.STORE_REPOSITORY}'s ${workflow} on main may call this`)
+    fail(403, `Only this store's own ${workflow} on main may call this`)
 }
 
 export async function dispatchChecks(
@@ -57,7 +57,7 @@ export async function dispatchChecks(
     })),
     callback: `${env.PUBLIC_URL}/api/v1/checks/${release.id}`,
   }
-  await github(`/repos/${env.STORE_REPOSITORY}/dispatches`, {
+  await github(`/repositories/${env.STORE_REPOSITORY_ID}/dispatches`, {
     method: "POST",
     body: JSON.stringify({ event_type: CHECKS_EVENT, client_payload: payload }),
   })

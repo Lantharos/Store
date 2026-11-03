@@ -38,8 +38,8 @@
     "PUBLIC_URL": "https://schelf.store",
     "DOWNLOAD_URL": "https://dl.schelf.store",
     "NOTIFY_FROM": "no-reply@schelf.store",
-    "STORE_REPOSITORY": "Lantharos/schelf-store",
     "STORE_REPOSITORY_ID": "1429206588",
+    "ROOT_PUBLIC_KEY": "kP/cqtRR3PN+8X1gMdRBXRsfqLq0l5Lsbv54K6FnqJg=",
     "ACCOUNT_ID": "2e3bfcbc9512a7ab1ea3a9cb9a474b30"
   },
   "observability": { "enabled": true }

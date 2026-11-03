@@ -9,6 +9,7 @@ import {
   verifyDocument,
 } from "@schelf/protocol"
 import { describe, expect, test } from "vitest"
+import { approve } from "../src/releases/review.ts"
 import { rebuildApp } from "../src/signing/rebuild.ts"
 import { bytesOf, developerWithApp, schelfToml } from "./fixtures.ts"
 
@@ -68,14 +69,7 @@ describe("publishing with a dashboard token", () => {
     expect(result.checks.filter((check) => check.status === "failed")).toEqual([])
     expect(result.status).toBe("in-review")
 
-    const decided = await exports.default.fetch(
-      new Request(`${API}/review/${started.release}/decision`, {
-        method: "POST",
-        headers: { authorization: "Bearer test-reviewer", "content-type": "application/json" },
-        body: JSON.stringify({ action: "approve" }),
-      }),
-    )
-    expect(decided.status).toBe(200)
+    await approve(started.release, "Reviewer")
     await rebuildApp(appId)
 
     const key = await importSigningKey(env.STORE_SIGNING_KEY)

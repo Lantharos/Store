@@ -15,6 +15,13 @@
       "when": 1793701354347,
       "tag": "0001_search",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793703352616,
+      "tag": "0002_signing_keys",
+      "breakpoints": true
     }
   ]
 }

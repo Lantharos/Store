@@ -51,6 +51,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -65,6 +66,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -98,6 +100,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -112,6 +115,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -143,6 +147,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -157,6 +162,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -172,6 +178,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -186,6 +193,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -212,6 +220,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -219,7 +228,7 @@
       }
     },
     "release": {
-      "source": "src/ops/define/release.ts:56",
+      "source": "src/ops/define/release.ts:60",
       "label": "Release",
       "plural": "Releases",
       "icon": "package",
@@ -228,7 +237,7 @@
       "related": {},
       "actions": {
         "approve": {
-          "source": "src/ops/define/release.ts:69",
+          "source": "src/ops/define/release.ts:73",
           "label": "Approve",
           "description": "Signs the release into the index and the update feeds and starts the rollout at 10%.",
           "danger": "confirm",
@@ -236,14 +245,15 @@
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": "approved",
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "approveSecurityFix": {
-          "source": "src/ops/define/release.ts:74",
+          "source": "src/ops/define/release.ts:80",
           "label": "Approve as a security fix",
           "description": "Approves the release and sends it to everyone at once.",
           "danger": "confirm",
@@ -251,14 +261,15 @@
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": "approved",
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "requestChanges": {
-          "source": "src/ops/define/release.ts:80",
+          "source": "src/ops/define/release.ts:88",
           "label": "Request changes",
           "danger": "none",
           "input": {
@@ -275,16 +286,17 @@
             ]
           },
           "preview": false,
-          "automatable": false,
+          "automatable": true,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": "changes requested",
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "reject": {
-          "source": "src/ops/define/release.ts:85",
+          "source": "src/ops/define/release.ts:96",
           "label": "Reject",
           "description": "Rejects the release and sends the developer the reason as a statement of reasons.",
           "danger": "confirm",
@@ -302,44 +314,47 @@
             ]
           },
           "preview": false,
-          "automatable": false,
+          "automatable": true,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": "rejected",
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "pause": {
-          "source": "src/ops/define/release.ts:91",
+          "source": "src/ops/define/release.ts:105",
           "label": "Pause rollout",
           "danger": "confirm",
           "input": null,
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "resume": {
-          "source": "src/ops/define/release.ts:96",
+          "source": "src/ops/define/release.ts:111",
           "label": "Resume rollout",
           "danger": "confirm",
           "input": null,
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "rollback": {
-          "source": "src/ops/define/release.ts:101",
+          "source": "src/ops/define/release.ts:117",
           "label": "Roll back",
           "description": "Withdraws the release; devices are offered the previous version.",
           "danger": "confirm",
@@ -347,14 +362,15 @@
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/release.ts:107",
+          "source": "src/ops/define/release.ts:124",
           "label": "Pull",
           "description": "Blocks this version from installing and starting on every device, with a public note.",
           "danger": "reauth",
@@ -380,28 +396,30 @@
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/release.ts:116",
+          "source": "src/ops/define/release.ts:134",
           "label": "Unpull",
           "danger": "reauth",
           "input": null,
           "preview": false,
           "automatable": false,
           "approval": false,
-          "contextual": false,
+          "contextual": true,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
         },
         "askClaude": {
-          "source": "src/ops/define/release.ts:123",
+          "source": "src/ops/define/release.ts:142",
           "label": "Ask Claude to review",
           "danger": "none",
           "input": null,
@@ -410,6 +428,7 @@
           "approval": false,
           "contextual": false,
           "background": false,
+          "moves": null,
           "pick": {},
           "choices": [],
           "schedule": null
@@ -417,10 +436,77 @@
       }
     }
   },
-  "actions": {},
+  "actions": {
+    "prepare-store-key": {
+      "source": "src/ops/define/store.ts:14",
+      "label": "Prepare a new store key",
+      "description": "Makes a new signing key inside the store. It isn't used until the root signs it into the published store keys.",
+      "danger": "confirm",
+      "input": null,
+      "preview": false,
+      "automatable": false,
+      "approval": false,
+      "contextual": false,
+      "background": false,
+      "moves": null,
+      "pick": {},
+      "choices": [],
+      "schedule": null
+    },
+    "publish-store-keys": {
+      "source": "src/ops/define/store.ts:35",
+      "label": "Publish store keys",
+      "description": "Publishes a store-keys.json the root signed, switches signing to the newest key in it and re-signs everything.",
+      "danger": "reauth",
+      "input": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The contents of trust/v1/store-keys.json"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The contents of trust/v1/store-keys.json.sig"
+          }
+        },
+        "required": [
+          "body",
+          "signature"
+        ]
+      },
+      "preview": false,
+      "automatable": false,
+      "approval": false,
+      "contextual": false,
+      "background": false,
+      "moves": null,
+      "pick": {},
+      "choices": [],
+      "schedule": null
+    },
+    "resign-everything": {
+      "source": "src/ops/define/store.ts:6",
+      "label": "Re-sign the index",
+      "description": "Signs every index file, update feed and the revocation list again with the current store key.",
+      "danger": "confirm",
+      "input": null,
+      "preview": false,
+      "automatable": false,
+      "approval": false,
+      "contextual": false,
+      "background": false,
+      "moves": null,
+      "pick": {},
+      "choices": [],
+      "schedule": null
+    }
+  },
   "inboxes": {
     "claims": {
-      "source": "src/ops/define/inboxes.ts:71",
+      "source": "src/ops/define/inboxes.ts:146",
       "label": "Claims",
       "icon": "scale",
       "resource": "developer",
@@ -467,7 +553,7 @@
       "sla": {}
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:43",
+      "source": "src/ops/define/inboxes.ts:118",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
@@ -541,7 +627,7 @@
       }
     },
     "submissions": {
-      "source": "src/ops/define/inboxes.ts:21",
+      "source": "src/ops/define/inboxes.ts:70",
       "label": "Submissions",
       "icon": "inbox",
       "resource": "release",
@@ -585,7 +671,82 @@
         "lastSeen"
       ],
       "intake": null,
-      "triage": null,
+      "triage": {
+        "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
+        "questions": {
+          "junk": {
+            "type": "noul",
+            "prompt": "Is this an empty, broken, placeholder or spam submission?"
+          },
+          "kind": {
+            "type": "choice",
+            "prompt": "What is this submission?",
+            "options": {
+              "genuine": "A real app doing what its listing says",
+              "copycat": "A copy of another app, or passing itself off as one",
+              "malware": "Looks built to harm or deceive the people who install it",
+              "incomplete": "A real app whose listing isn't finished"
+            }
+          },
+          "quality": {
+            "type": "score",
+            "prompt": "How finished does the listing look: name, summary, description, icon, screenshots?",
+            "levels": [
+              "low",
+              "fair",
+              "good"
+            ]
+          }
+        },
+        "rules": [
+          {
+            "name": "Close junk",
+            "live": false,
+            "then": [
+              {
+                "type": "run",
+                "action": "release.reject",
+                "input": {
+                  "reason": "This submission is empty, broken, a placeholder or spam, so it wasn't reviewed further. This was decided automatically; reply to this email if you think it's wrong and a person will look again."
+                }
+              }
+            ]
+          },
+          {
+            "name": "Flag malware suspects",
+            "live": false,
+            "then": [
+              {
+                "type": "tag",
+                "tag": "malware"
+              }
+            ]
+          },
+          {
+            "name": "Flag copycats",
+            "live": false,
+            "then": [
+              {
+                "type": "tag",
+                "tag": "impersonation"
+              }
+            ]
+          },
+          {
+            "name": "Ask for a finished listing",
+            "live": false,
+            "then": [
+              {
+                "type": "run",
+                "action": "release.requestChanges",
+                "input": {
+                  "message": "The listing needs more before it can be reviewed: a clear name and summary, a description, an icon, at least two screenshots per system and a category. The release page shows what's missing."
+                }
+              }
+            ]
+          }
+        ]
+      },
       "reply": false,
       "hooks": {
         "state": false
@@ -595,7 +756,7 @@
       }
     },
     "updates": {
-      "source": "src/ops/define/inboxes.ts:32",
+      "source": "src/ops/define/inboxes.ts:82",
       "label": "Updates",
       "icon": "refresh",
       "resource": "release",
@@ -639,7 +800,105 @@
         "lastSeen"
       ],
       "intake": null,
-      "triage": null,
+      "triage": {
+        "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
+        "questions": {
+          "junk": {
+            "type": "noul",
+            "prompt": "Is this an empty, broken, placeholder or spam submission?"
+          },
+          "kind": {
+            "type": "choice",
+            "prompt": "What is this submission?",
+            "options": {
+              "genuine": "A real app doing what its listing says",
+              "copycat": "A copy of another app, or passing itself off as one",
+              "malware": "Looks built to harm or deceive the people who install it",
+              "incomplete": "A real app whose listing isn't finished"
+            }
+          },
+          "quality": {
+            "type": "score",
+            "prompt": "How finished does the listing look: name, summary, description, icon, screenshots?",
+            "levels": [
+              "low",
+              "fair",
+              "good"
+            ]
+          },
+          "risky": {
+            "type": "noul",
+            "prompt": "Does the update add network endpoints, obfuscated or binary blobs, new install or build scripts, or code unrelated to the app's purpose?"
+          },
+          "scope": {
+            "type": "choice",
+            "prompt": "How big is this update?",
+            "options": {
+              "routine": "Fixes and small changes",
+              "feature": "New features",
+              "rewrite": "Large parts rewritten or replaced"
+            }
+          }
+        },
+        "rules": [
+          {
+            "name": "Close junk",
+            "live": false,
+            "then": [
+              {
+                "type": "run",
+                "action": "release.reject",
+                "input": {
+                  "reason": "This submission is empty, broken, a placeholder or spam, so it wasn't reviewed further. This was decided automatically; reply to this email if you think it's wrong and a person will look again."
+                }
+              }
+            ]
+          },
+          {
+            "name": "Flag malware suspects",
+            "live": false,
+            "then": [
+              {
+                "type": "tag",
+                "tag": "malware"
+              }
+            ]
+          },
+          {
+            "name": "Flag copycats",
+            "live": false,
+            "then": [
+              {
+                "type": "tag",
+                "tag": "impersonation"
+              }
+            ]
+          },
+          {
+            "name": "Ask for a finished listing",
+            "live": false,
+            "then": [
+              {
+                "type": "run",
+                "action": "release.requestChanges",
+                "input": {
+                  "message": "The listing needs more before it can be reviewed: a clear name and summary, a description, an icon, at least two screenshots per system and a category. The release page shows what's missing."
+                }
+              }
+            ]
+          },
+          {
+            "name": "Fast lane for routine updates",
+            "live": false,
+            "then": [
+              {
+                "type": "tag",
+                "tag": "routine"
+              }
+            ]
+          }
+        ]
+      },
       "reply": false,
       "hooks": {
         "state": false
@@ -652,7 +911,7 @@
   "views": {},
   "pages": {
     "home": {
-      "source": "src/ops/define/pages.ts:5",
+      "source": "src/ops/define/pages.ts:6",
       "label": "Home",
       "icon": "layout",
       "params": null,
@@ -756,6 +1015,23 @@
         {
           "type": "flag",
           "flag": "rollouts-frozen"
+        },
+        {
+          "type": "actions",
+          "actions": [
+            {
+              "action": "resign-everything",
+              "record": null
+            },
+            {
+              "action": "prepare-store-key",
+              "record": null
+            },
+            {
+              "action": "publish-store-keys",
+              "record": null
+            }
+          ]
         }
       ]
     }
@@ -794,5 +1070,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "67e5de50b638"
+  "version": "db3f93ee2f44"
 }

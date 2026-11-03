@@ -9,9 +9,8 @@ import { serveDownload } from "./downloads/serve.ts"
 import { errorResponse, fail } from "./lib/http.ts"
 import { backOffice } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
-import { reviewerRoutes } from "./releases/reviewer.ts"
 import { stepRollouts } from "./releases/rollout.ts"
-import { resign, type SigningJob, signQueued } from "./signing/queue.ts"
+import { resign, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
 import { storefrontRoutes } from "./storefront/routes.ts"
 
 const HOURLY = "0 * * * *"
@@ -40,7 +39,6 @@ app.post("/api/ops", (c) => {
 })
 app.route(API_BASE, storefrontRoutes)
 app.route(API_BASE, publishingRoutes)
-app.route(`${API_BASE}/review`, reviewerRoutes)
 app.route(`${API_BASE}/dev`, dashboardRoutes)
 app.all("*", () => fail(404, "Not found"))
 
@@ -51,7 +49,7 @@ export default {
   },
   async scheduled(controller) {
     if (controller.cron === HOURLY) {
-      await stepRollouts()
+      await Promise.all([stepRollouts(), resignIfRequested()])
       return
     }
     await Promise.all([rollUpDownloads(), recheckNamespaces(), resign({ type: "revocations" })])

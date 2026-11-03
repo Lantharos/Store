@@ -26,7 +26,7 @@ Better Auth's own tables (`user`, `session`, `account`, `verification`, `passkey
 | `mirror_app` | `id`, `origin` (flathub, fedora), `name`, `summary`, `icon`, `categories`, `developer`, `verified`, `installs_30d`, `updated_at`, `hidden_reason`, `rank` | Written by the mirror job; feeds search and the mirror catalogs. |
 | `count_daily` | `app_id`, `release_id`, `platform`, `day`, `installs`, `updates` | Rolled up from Analytics Engine each night. |
 
-Search uses an SQLite FTS5 table (`search`, trigram tokens, so misspellings still match) over the English listing and `mirror_app`. `store_state` keeps small counters such as the revocation serial.
+Search uses an SQLite FTS5 table (`search`, trigram tokens, so misspellings still match) over the English listing and `mirror_app`. `store_state` keeps small counters such as the revocation serial, and a re-sign request that data changed outside the Worker (a seed or a fix by hand) leaves for the hourly run. `signing_key` holds store keys made inside the Worker for a rotation, sealed with the `SEALING_KEY` secret; the Worker signs with the newest key that the published `store-keys.json` vouches for and that it holds.
 
 ## R2
 
@@ -115,9 +115,6 @@ All under `https://schelf.store/api/v1`.
 
 Signed in with Better Auth, under `/dev`: `account` (and `account/developer` to accept the agreement), `namespaces` (claim, `:prefix/verify`), `apps` (list, add), `apps/:id` (settings and the files to commit), `apps/:id/listing/:locale`, `apps/:id/meta`, `apps/:id/icon`, `apps/:id/screenshots`, `apps/:id/publishers`, `apps/:id/tokens`, `apps/:id/releases` (status, checks timeline, `rollout`), `apps/:id/stats`. The `schelf` command signs in with Better Auth's device authorization (`/api/auth/device/code`, then `/api/auth/device/token`, client id `schelf-cli`); the person approves the code on `https://schelf.store/device`, and the command sends the session token as a bearer token.
 
-### Review
-
-`/review/:release` (facts and files), `/review/:release/decision` (approve, request changes, reject) and `/review/resign` (re-sign every index file and feed, after a key rotation) take the reviewer token. Pult runs the same decisions as actions.
 
 ### Webhooks in
 

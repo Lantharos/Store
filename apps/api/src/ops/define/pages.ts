@@ -1,6 +1,7 @@
 import { b, home } from "@lantharos/pult"
 import { rolloutsFrozen, submissionsOpen } from "./flags.ts"
 import { reports, submissions, updates } from "./inboxes.ts"
+import { prepareKey, publishKeys, resign } from "./store.ts"
 
 export default home([
   b.columns(
@@ -15,4 +16,5 @@ export default home([
   b.items(reports, { filter: { state: "open" }, limit: 5 }),
   b.flag(submissionsOpen),
   b.flag(rolloutsFrozen),
+  b.actions(resign, prepareKey, publishKeys),
 ])

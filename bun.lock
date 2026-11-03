@@ -13,7 +13,7 @@
       "name": "@schelf/api",
       "dependencies": {
         "@better-auth/passkey": "1.7.15",
-        "@lantharos/pult": "0.9.0",
+        "@lantharos/pult": "0.10.0",
         "@schelf/protocol": "workspace:*",
         "better-auth": "1.7.15",
         "drizzle-orm": "0.45.4",
@@ -341,7 +341,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lantharos/pult": ["@lantharos/pult@0.9.0", "", { "dependencies": { "@standard-schema/spec": "1.1.0", "croner": "10.0.1", "jiti": "2.7.0" }, "bin": { "pult": "cli.mjs" } }, "sha512-C5P0SilFb8oCRZcwNdelkHnX7CayEDA9RSzuX/HCxOen61GTbRsE0RVTGtDeYuKBjVC3e2BHVE0IEHIKPIv+rQ=="],
+    "@lantharos/pult": ["@lantharos/pult@0.10.0", "", { "dependencies": { "@standard-schema/spec": "1.1.0", "croner": "10.0.1", "jiti": "2.7.0" }, "bin": { "pult": "cli.mjs" } }, "sha512-ScGrLn0O5jQE15uCG+zV5yTjMx9ZJLwQjO8FmNXfYz9wp/Zl1+Gyzm4Fc0VHlOB0CwJ7ejfvDap0akjXin7oGA=="],
 
     "@levischuck/tiny-cbor": ["@levischuck/tiny-cbor@0.2.11", "", {}, "sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow=="],
 

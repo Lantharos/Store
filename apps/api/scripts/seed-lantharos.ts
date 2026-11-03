@@ -2,11 +2,11 @@ import { readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { paths, sha256Hex } from "@schelf/protocol"
 import { sniffImage } from "../src/dashboard/apps/images.ts"
+import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
 
 const LUFT = process.env.LUFT ?? join(import.meta.dirname, "../../../../luft")
 const OWNER_EMAIL = process.env.OWNER_EMAIL
 const REMOTE = process.argv.includes("--remote")
-const API = REMOTE ? "https://schelf.store" : "http://localhost:8787"
 const MAIN_CATEGORIES = new Set([
   "AudioVideo",
   "Development",
@@ -82,24 +82,6 @@ const APPS: SeedApp[] = [
       "Checks the computer, makes room next to the system already there, and restarts into Luft once to try it or install it. It can also make a USB stick, and take everything back out again.",
     shots: ["web/docs/src/assets/shots/meet.webp"],
   },
-  {
-    folder: "barometer",
-    summary: "System monitor",
-    description: "What every app is using, with live graphs for the processor, memory, graphics and network.",
-    shots: [],
-  },
-  {
-    folder: "keys",
-    summary: "Keyboard layouts",
-    description: "Draw your own keyboard layout or input method, and try it before you save it.",
-    shots: [],
-  },
-  {
-    folder: "disks",
-    summary: "Drives",
-    description: "Partitions to scale, encryption, health checks and USB sticks made from an image.",
-    shots: [],
-  },
 ]
 
 function sql(value: string | number | null) {
@@ -145,7 +127,7 @@ if (!OWNER_EMAIL) throw new Error("Set OWNER_EMAIL to the account that should ow
 const now = Date.now()
 const uploads = new Map<string, string>()
 const statements = [
-  `INSERT OR IGNORE INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (${sql(DEVELOPER.userId)}, 'Lantharos', ${sql(OWNER_EMAIL)}, 1, ${now}, ${now});`,
+  `INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (${sql(DEVELOPER.userId)}, 'Lantharos', ${sql(OWNER_EMAIL)}, 1, ${now}, ${now}) ON CONFLICT (id) DO UPDATE SET email = excluded.email;`,
   `INSERT INTO developer (id, user_id, name, slug, kind, github_login, agreement_version, agreement_at, status, created_at)
    SELECT ${sql(DEVELOPER.id)}, id, ${sql(DEVELOPER.name)}, ${sql(DEVELOPER.slug)}, 'organisation', 'Lantharos', '2026-11', ${now}, 'active', ${now} FROM user WHERE email = ${sql(OWNER_EMAIL)}
    ON CONFLICT (id) DO UPDATE SET name = excluded.name;`,
@@ -176,6 +158,10 @@ for (const seed of APPS) {
   }
 }
 
+statements.push(
+  `INSERT INTO store_state (key, value) VALUES (${sql(RESIGN_REQUEST)}, ${sql(String(now))}) ON CONFLICT (key) DO UPDATE SET value = excluded.value;`,
+)
+
 const sqlFile = join(import.meta.dirname, "../.wrangler/seed-lantharos.sql")
 writeFileSync(sqlFile, statements.join("\n"))
 await wrangler("d1", "execute", "DB", "--file", sqlFile)
@@ -195,9 +181,4 @@ for (const [key, file] of uploads) {
   )
 }
 
-const resigned = await fetch(`${API}/api/v1/review/resign`, {
-  method: "POST",
-  headers: { authorization: `Bearer ${process.env.REVIEWER_TOKEN}` },
-})
-if (!resigned.ok) throw new Error(`Re-signing failed: ${resigned.status} ${await resigned.text()}`)
-console.log(`Seeded ${APPS.length} apps and asked the store to sign the index`)
+console.log(`Seeded ${APPS.length} apps; the store signs them on its next hourly run`)

@@ -36,7 +36,7 @@ On Windows and macOS, the operating system then checks the developer's own code 
 
 ## Rotating keys
 
-- **Store signing key:** a new one is signed by the root and published in `store-keys.json` a month before the old one expires. If it leaks, the owner signs its revocation with the root, the Worker gets a new key, and every index file and feed is re-signed within minutes.
+- **Store signing key:** Prepare a new store key in Pult makes one inside the store and shows its public half; the owner signs it into `store-keys.json` with the root on a trusted computer (`apps/api/scripts/store-keys.ts`) a month before the old one expires, and Publish store keys in Pult puts it live. The store then signs with the newest key it holds that the root vouches for. If a key leaks, the owner signs its revocation the same way, and publishing it re-signs every index file and feed within minutes.
 - **Trusted publishers** change in the dashboard; removing one stops new releases from that workflow at once.
 - **Dashboard tokens** are revoked in the dashboard, and expire after a year.
 

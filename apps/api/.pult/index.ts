@@ -11,6 +11,7 @@ const project: Project<never> = {
     "src/ops/define/inboxes.ts": () => import("../src/ops/define/inboxes.ts"),
     "src/ops/define/pages.ts": () => import("../src/ops/define/pages.ts"),
     "src/ops/define/release.ts": () => import("../src/ops/define/release.ts"),
+    "src/ops/define/store.ts": () => import("../src/ops/define/store.ts"),
   },
 }
 

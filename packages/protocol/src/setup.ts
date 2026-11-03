@@ -3,7 +3,7 @@ import type { Format, Kind } from "./platforms.ts"
 
 export const SCHELF_WORKFLOW = ".github/workflows/schelf.yml"
 export const SABINE_REPOSITORY = "Lantharos/Sabine"
-export const PUBLISH_ACTION = "Lantharos/schelf-store/publish@v1"
+export const PUBLISH_ACTION = "Lantharos/Store/publish@v1"
 export const SCHELF_SABINE_VERSION = "v0.70"
 
 export interface SetupInput {

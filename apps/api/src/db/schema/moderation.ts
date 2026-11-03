@@ -55,3 +55,10 @@ export const storeState = sqliteTable("store_state", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 })
+
+export const signingKey = sqliteTable("signing_key", {
+  id: text("id").primaryKey(),
+  publicKey: text("public_key").notNull(),
+  sealedSeed: text("sealed_seed").notNull(),
+  createdAt: createdAt(),
+})

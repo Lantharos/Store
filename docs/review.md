@@ -44,6 +44,11 @@ Actions, all running in the store:
 | Suspend developer | developer | reauth |
 | Grant namespace manually (after a claim) | developer | confirm |
 | Ask Claude to review | release | none; shows the command to run |
+| Re-sign the index | store | confirm |
+| Prepare a new store key | store | confirm; the key is made and sealed inside the store, and shown for the root to sign |
+| Publish store keys | store | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
+
+Approve, Request changes and Reject move the item to approved, changes requested or rejected. Triage can run Reject and Request changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them.
 
 The owner is the only reviewer today, so nothing needs `approval: true`. When a second reviewer joins, Pull, Revoke and Suspend get it.
 
@@ -111,12 +116,12 @@ bun run review <app id>[@version]
 
 It's a script Claude Code can run on its own when asked "review this app", and a person can run it too. It:
 
-1. Fetches the release's facts and artifacts from the store with a reviewer token, and verifies the signatures the way a client would.
+1. Reads the release's item from Pult with an agent token, downloads its files from `dl.schelf.store`, and checks their hashes against the item.
 2. Makes a throwaway copy-on-write overlay of a clean Luft VM disk (`os/vm` in the Luft repository: `run.sh` with `DISK=<overlay>` and `HEADLESS=1`, driven with `control.py`). The app never runs on the host. Network is on by default, since most apps need it, and off with `--offline`.
 3. Installs the app inside the VM the way Schelf would, through the AppImage sandbox or Sabine, and launches it.
 4. Walks the app: takes screenshots after start, opens its main views and its settings, tries the obvious first task, and watches the sandbox's denials and outgoing connections.
 5. Judges: does it do what the listing says, does it look finished, does it ask for more than it uses, does it phone home, does it crash.
-6. Posts a report to the store (`POST /api/review/<release>`), which stores the screenshots in R2 and adds the report to the Pult item.
+6. Adds the report to the Pult item as a note.
 7. Deletes the overlay.
 
 Windows builds are reviewed the same way once there's a Windows VM image with Sabine installed; until then the review covers Linux and notes it.

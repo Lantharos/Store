@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Lantharos/schelf-store.git",
+    "url": "git+https://github.com/Lantharos/Store.git",
     "directory": "packages/cli"
   },
   "homepage": "https://schelf.store/docs",

@@ -4,16 +4,30 @@ import { db, schema } from "../db/client.ts"
 import { releases } from "./data/records.ts"
 import { reports, submissions, updates } from "./define/inboxes.ts"
 
+const FLAGGING_CHECKS: Partial<Record<string, string>> = {
+  malware: "malware",
+  impersonation: "impersonation",
+}
+
+async function tagsFor(release: NonNullable<Awaited<ReturnType<typeof releases.byId>>>) {
+  const checks = await releases.checks(release.id)
+  return [
+    ...(release.permissionsWidened ? ["permissions"] : []),
+    ...(release.origin === "token" ? ["uploaded"] : []),
+    ...checks.flatMap((check) => {
+      const flag = FLAGGING_CHECKS[check.name]
+      return flag && check.status !== "passed" ? [flag] : []
+    }),
+  ]
+}
+
 export async function sendRelease(pult: Pult, releaseId: string, kind: "submission" | "update") {
   const release = await releases.byId(releaseId)
   if (!release) return
   const sent = await pult.send(kind === "submission" ? submissions : updates, {
     fingerprint: release.id,
     record: release.id,
-    tags: [
-      ...(release.permissionsWidened ? ["permissions"] : []),
-      ...(release.origin === "token" ? ["uploaded"] : []),
-    ],
+    tags: await tagsFor(release),
     data: { app: release.appId, name: release.name, version: release.version, developer: release.developer },
   })
   await db.update(schema.review).set({ pultItem: sent.id }).where(eq(schema.review.releaseId, release.id))
