@@ -117,10 +117,10 @@ export const updateMeta = z.object({
   licence: z.string().max(100).nullable().optional(),
   distribution: distribution.optional(),
 })
-export type UpdateMeta = z.infer<typeof updateMeta>
+export type UpdateMeta = z.input<typeof updateMeta>
 
 export const updateListing = listingText.extend({ source: listingSource.default("dashboard") })
-export type UpdateListing = z.infer<typeof updateListing>
+export type UpdateListing = z.input<typeof updateListing>
 
 export interface DashboardScreenshot extends Screenshot {
   id: string
