@@ -1,13 +1,14 @@
 <script lang="ts">
   import LayoutGrid from "@lucide/svelte/icons/layout-grid"
+  import { API_BASE } from "@schelf/protocol"
   import { onMount } from "svelte"
   import Avatar from "../../dashboard/account/Avatar.svelte"
 
   let user = $state<{ name: string; image: string | null } | null>(null)
 
   onMount(async () => {
-    const response = await fetch("/api/auth/get-session")
-    if (response.ok) user = (await response.json())?.user ?? null
+    const response = await fetch(`${API_BASE}/dev/account`)
+    if (response.ok) user = (await response.json()).user
   })
 </script>
 

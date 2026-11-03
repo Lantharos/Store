@@ -7,7 +7,7 @@ import { markdownPages } from "./vite/pages.ts"
 const API = "http://localhost:8787"
 
 export default defineConfig({
-  plugins: [markdownPages(), tailwindcss(), sveltekit({ adapter: adapter() })],
+  plugins: [markdownPages(), tailwindcss(), sveltekit({ adapter: adapter(), version: { pollInterval: 60_000 } })],
   server: {
     port: 5174,
     strictPort: true,
