@@ -14,8 +14,7 @@ import { request } from "./http.ts"
 export interface ReleaseInput {
   api: string
   token: string
-  tag?: string
-  version?: string
+  version: string
   channel?: string
   bridge?: boolean
   commit?: string
@@ -70,7 +69,6 @@ export function hashArtifacts(artifacts: InferredArtifact[]): Promise<HashedArti
 
 export async function publishRelease(input: ReleaseInput, onEvent: (event: PublishEvent) => void = () => {}) {
   const body: PublishRequest = {
-    tag: input.tag,
     version: input.version,
     commit: input.commit,
     schelf_toml: input.schelfToml,

@@ -6,7 +6,7 @@ Publish apps and Luft extensions on [schelf.store](https://schelf.store).
 bunx schelf init
 ```
 
-Run it in your app's repository. It finds your Sabine app, AppImage or extension, signs you in through the browser, claims the app's id, trusts the repository's workflow to publish it, and writes `schelf.toml` and `.github/workflows/schelf.yml`. Commit both, publish a GitHub release, and the release goes to review. `npx schelf` works too.
+Run it in your app's repository. It finds your Sabine app, AppImage or extension, signs you in through the browser, claims the app's id, trusts the repository's workflow to publish it, and writes `schelf.toml` and `.github/workflows/schelf.yml`. Commit both, open Publish to Schelf in the repository's Actions tab, press Run workflow, and the release goes to review. `npx schelf` works too.
 
 | Command                                                  | Does                                                                                                      |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |

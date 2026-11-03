@@ -3,6 +3,7 @@ import { dirname, join } from "node:path"
 import { readSchelfToml, type SchelfToml } from "@schelf/protocol"
 
 export interface ReleaseContext {
+  folder: string
   manifest: SchelfToml
   schelfToml: string
   permissionsToml?: string
@@ -27,13 +28,15 @@ function tagFromRef() {
 }
 
 export async function releaseContext(schelfTomlPath: string): Promise<ReleaseContext> {
+  const folder = dirname(schelfTomlPath)
   const schelfToml = await readFile(schelfTomlPath, "utf8")
   const manifest = readSchelfToml(schelfToml)
   const permissionsToml = manifest.permissions
-    ? await readFile(join(dirname(schelfTomlPath), manifest.permissions), "utf8")
+    ? await readFile(join(folder, manifest.permissions), "utf8")
     : undefined
   const event = await githubEvent()
   return {
+    folder,
     manifest,
     schelfToml,
     permissionsToml,

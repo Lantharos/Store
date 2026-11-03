@@ -1,7 +1,7 @@
 ---
 
 title: Getting started
-description: Put your app on Schelf in about five minutes, and ship every release after that with a GitHub release.
+description: Put your app on Schelf in about five minutes, and ship every release after that with one button.
 ---
 
 Schelf takes the apps you already build in GitHub Actions and gets them to people: a download page that picks the right file for each visitor, updates that are reviewed before they go out, and the Schelf app on Luft. You never hand Schelf a secret, and it never hands you one.
@@ -25,7 +25,7 @@ bunx schelf init
 It opens your browser to sign in, then reads `Sabine.toml`, your AppStream metadata and the git remote. It claims your app id, connects the repository's workflow as a [trusted publisher](/docs/trusted-publishing), and writes two files:
 
 - `schelf.toml`, which says what the app is. [Reference](/docs/schelf-toml).
-- `.github/workflows/schelf.yml`, which builds the app and sends it to Schelf when you publish a GitHub release.
+- `.github/workflows/schelf.yml`, which builds the app and sends it to Schelf when you press **Run workflow** on it, and, if you want, whenever the version in `Sabine.toml` changes on your default branch.
 
 Commit them and push:
 
@@ -39,13 +39,13 @@ That's the setup. Prefer clicking? Everything `schelf init` does can be done fro
 
 ## Your first release
 
-Publish a GitHub release the way you normally would, from the Releases page or with:
+Open your repository's **Actions** tab, choose **Publish to Schelf**, press **Run workflow** and pick a channel. Or from the terminal:
 
 ```sh
-gh release create v1.0.0 --generate-notes
+gh workflow run schelf.yml
 ```
 
-Your workflow builds every system, and the publish step uploads the files with a record of exactly which run built them. Then:
+The version comes from `Sabine.toml`, so there's nothing to tag. Your workflow builds every system, and the publish step uploads the files with a record of exactly which run built them. Then:
 
 1. **Checks** run within a few minutes: your id and namespace, the version, the files, the listing, the permissions, a malware scan and the licence. If one fails, the dashboard tells you what to change.
 2. **Review.** A person looks at the release, usually within a day for a first release and faster for updates.

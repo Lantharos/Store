@@ -1,6 +1,6 @@
 # Publishing
 
-How a developer gets an app onto Schelf: claiming an id, describing the app, connecting a workflow, and the steps from a GitHub release to an install.
+How a developer gets an app onto Schelf: claiming an id, describing the app, connecting a workflow, and the steps from pressing Publish to an install.
 
 ## Five minutes from nothing to a submitted release
 
@@ -9,7 +9,7 @@ bunx schelf init          # in the app's repository
 git add schelf.toml .github/workflows/schelf.yml && git commit -m "Publish on Schelf" && git push
 ```
 
-`schelf init` signs in through the browser, reads `Sabine.toml`, AppStream metadata and the git remote, claims the app id (proving `io.github.<user>.*` through the GitHub sign-in, or walking through a DNS proof), registers the repository and workflow as a trusted publisher, and writes the two files. The next GitHub release goes to review. Everything it does can also be done in the dashboard.
+`schelf init` signs in through the browser, reads `Sabine.toml`, AppStream metadata and the git remote, claims the app id (proving `io.github.<user>.*` through the GitHub sign-in, or walking through a DNS proof), registers the repository and workflow as a trusted publisher, and writes the two files. Pressing **Run workflow** on *Publish to Schelf* in the repository's Actions tab builds the app and sends it to review. Everything it does can also be done in the dashboard.
 
 ## App ids
 
@@ -48,16 +48,21 @@ Most of the listing comes from `Sabine.toml`, the AppStream metainfo file and th
 
 ## Trusted publishing
 
-Schelf never holds a secret of the developer's, and the developer never holds one of Schelf's. A trusted publisher is a rule on an app: "releases of this app may come from workflow `.github/workflows/schelf.yml` in repository `alice/notes` (repository id `123`), optionally only from environment `release`". Repository and owner ids are stored next to the names, so a deleted and re-created repository with the same name can't publish.
+Schelf never holds a secret of the developer's, and the developer never holds one of Schelf's. A trusted publisher is a rule on an app: "releases of this app may come from workflow `.github/workflows/schelf.yml` in repository `alice/notes` (repository id `123`), optionally only from environment `release`, and optionally only from refs matching `refs/heads/main`". Repository and owner ids are stored next to the names, so a deleted and re-created repository with the same name can't publish. Without a ref rule, any branch or tag the workflow runs on can publish; `refs/heads/main` limits it to the default branch, and `refs/tags/*` to tags. Every release records the ref, commit and workflow run it came from.
 
 The workflow `schelf init` writes, for a Sabine app:
 
 ```yaml
-name: Schelf
+name: Publish to Schelf
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Channel
+        type: choice
+        options: [stable, beta, nightly]
+        default: stable
 
 permissions:
   contents: write
@@ -84,11 +89,24 @@ jobs:
       - uses: Lantharos/Store/publish@v1
         with:
           files: dist/**
+          channel: ${{ inputs.channel }}
 ```
+
+It adds **Publish to Schelf** to the repository's Actions tab, with a channel to choose. `schelf init` also offers to publish whenever the version in `Sabine.toml` (or `extension.toml`) changes on the default branch. That adds a push trigger and a small job that runs first and lets the build go ahead only when the version line changed:
+
+```yaml
+  push:
+    branches: [main]
+    paths: [Sabine.toml]
+```
+
+### Versions
+
+The version comes from the publish request, never from a tag. The action takes it from its `version` input, else from the release's tag when the run is for one, else from the app's manifest next to `schelf.toml`: `Sabine.toml`, `extension.toml`, `src-tauri/tauri.conf.json` or `package.json`. On the `nightly` channel it makes a version of its own from the next minor version, the time and the commit, like `0.2.0-nightly.202611030415.g1a2b3c4`, so nightlies never collide and each is newer than the last. The store refuses a version the app already has, on any channel, and a version that isn't newer than the last approved release on its channel fails the checks.
 
 Sabine's release workflow builds every package and, because the app updates from Schelf, leaves the GitHub release alone. The action reads each file's platform and package kind from the names Sabine gives them.
 
-For an AppImage built elsewhere, the workflow waits for the release's AppImages and publishes those, reading each one's architecture from its ELF header:
+For an AppImage built elsewhere, the workflow runs when a GitHub release is published, waits for the release's AppImages and publishes those, reading each one's architecture from its ELF header:
 
 ```yaml
       - uses: actions/checkout@v7
@@ -97,25 +115,33 @@ For an AppImage built elsewhere, the workflow waits for the release's AppImages 
           release-assets: "*.AppImage"
 ```
 
-Extensions are packed from the tagged tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. A release published by another workflow with `GITHUB_TOKEN` starts no workflows, so publish releases yourself, or add the action as a step at the end of the workflow that builds, and register that workflow as the trusted publisher instead.
+Extensions are packed from the checked-out tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. Any workflow can publish: add the action as a step at the end of the one that builds, and register that workflow as the trusted publisher.
 
 The `publish` action:
 
 1. Asks GitHub for an OIDC token with the audience `schelf.store`.
 2. Records a build provenance attestation over every file, so anyone can check which workflow run built it.
-3. Calls `POST /api/v1/publish` with the token, the release tag, `schelf.toml` and each file's name, platform, size and SHA-256. The Worker checks the token's signature against GitHub's keys, its audience and expiry, and that its repository id, workflow path, environment and `ref` (a tag) match a trusted publisher of that app. It answers with upload addresses for this release only, valid for an hour.
+3. Calls `POST /api/v1/publish` with the token, the version, `schelf.toml` and each file's name, platform, size and SHA-256. The Worker checks the token's signature against GitHub's keys, its audience and expiry, and that its repository id, workflow path, environment and `ref` match a trusted publisher of that app. It answers with upload addresses for this release only, valid for an hour.
 4. Uploads the files; the Worker hashes them as they stream into R2 and refuses any that don't match.
 5. Calls `complete`. The Worker confirms the attestations exist for each digest in that repository, runs the quick checks, queues the deeper ones (a `schelf-checks` repository dispatch to this repository, whose payload names the release, its files and the address to report back to), and prints the release's dashboard address in the job summary.
 
 ### Repositories with several apps
 
-A repository can publish several apps, each with its own `schelf.toml` in its folder and its own tags. The store reads a release's version from the part of the tag after its last `/`, so tags such as `draft/v1.2.0` and `rain/v1.0.0` name both the app and the version. One workflow runs on those tags, works out the app from the part before the `/`, builds only that app, and points the action at its file with `schelf-toml: apps/draft/schelf.toml`. Sabine's release workflow builds an app in a subfolder with `app: apps/draft`, only on the platforms it runs on with `platforms: linux-x86_64 linux-aarch64`, and with the system libraries it links from `linux_packages`. Register that one workflow as a trusted publisher of every app it publishes. Releases pushed as tags have no GitHub release, so pass the notes with the action's `notes` input, such as the tag's message. Luft publishes its apps and extensions this way, from `.github/workflows/store.yml`.
+A repository can publish several apps, each with its own `schelf.toml` in its folder. One workflow builds whichever app it's asked for, points the action at that app's file with `schelf-toml: apps/draft/schelf.toml`, and is registered as a trusted publisher of every app it publishes. Sabine's release workflow builds an app in a subfolder with `app: apps/draft`, only on the platforms it runs on with `platforms: linux-x86_64 linux-aarch64`, with the system libraries it links from `linux_packages`, and with a `version` that replaces the one in `Sabine.toml` for nightlies.
+
+Luft publishes its apps and extensions this way, from `.github/workflows/store.yml`:
+
+- **By hand.** *Store* in the Actions tab has **Run workflow** with the app or extension and a channel to choose.
+- **On a version change.** A push to `main` that changes the version in an app's `Sabine.toml` or an extension's `extension.toml` publishes that app to stable. The release notes come from the commit message.
+- **Nightly.** Every night, each app that changed since its last nightly is published to the nightly channel from `main`.
+
+Pushes and the nightly schedule start one run per app, so each app's build and release has a run of its own. No tags or GitHub releases are made for any of them.
 
 For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once, and the dashboard can upload a release directly. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions", and always go to a person.
 
 ### Projects that aren't in the store
 
-`schelf init` in a repository with nothing Schelf builds itself (an Electron or Tauri app, or anything else) makes an unlisted project instead: `schelf.toml` with `project = "<publisher>/<slug>"` and `format = "files"`, a workflow that publishes the GitHub release's assets, the repository's workflow as trusted publisher, and the app's updater when it finds electron-updater or Tauri. See [design](design.md#hosting-releases).
+`schelf init` in a repository with nothing Schelf builds itself (an Electron or Tauri app, or anything else) makes an unlisted project instead: `schelf.toml` with `project = "<publisher>/<slug>"` and `format = "files"`, a workflow that publishes a GitHub release's assets when the release is published, the repository's workflow as trusted publisher, and the app's updater when it finds electron-updater or Tauri. See [design](design.md#hosting-releases).
 
 ## The schelf command
 
@@ -123,16 +149,16 @@ For local use and other CI, `schelf publish` uses a dashboard token instead of O
 | --- | --- |
 | `schelf init` | Sets up an app, extension or project, as above. |
 | `schelf check` | Validates `schelf.toml`, the permission declaration and the listing locally, showing what the store page will look like in the terminal and what's missing. |
-| `schelf publish [files…]` | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
+| `schelf publish [files…]` | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--version`, `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
 | `schelf status [version]` | Where a release is: checks, review, rollout. |
 | `schelf rollout <version> <percent | pause | resume | all>` | Rollout control. |
 | `schelf login` / `logout` | Browser sign-in for the commands that need an account. |
 
-## From release to install
+## From publish to install
 
-1. **Release.** The developer publishes a GitHub release. Their workflow builds and runs the publish action.
+1. **Publish.** The developer runs their workflow, by hand, on a version change, on a schedule or on a GitHub release. It builds and runs the publish action.
 2. **Upload.** The Worker verifies the token, files and attestations, creates the release (`checking`) and stores the files in R2.
-3. **Checks.** Quick checks run in the Worker: id and namespace, version newer than the last, platforms and formats known, listing complete, permissions compared with the last approved release, impersonation. The deeper checks run in this repository's public `checks` workflow, started by the Worker through `repository_dispatch` and reporting back with its own OIDC token: malware scan, unpacking and inspecting each file, the source diff since the last approved tag (for public repositories), licence. A failed check goes back to the developer with the reason, and nothing reaches review.
+3. **Checks.** Quick checks run in the Worker: id and namespace, version newer than the last, platforms and formats known, listing complete, permissions compared with the last approved release, impersonation. The deeper checks run in this repository's public `checks` workflow, started by the Worker through `repository_dispatch` and reporting back with its own OIDC token: malware scan, unpacking and inspecting each file, the source diff since the commit of the last approved release on the channel (for public repositories), licence. A failed check goes back to the developer with the reason, and nothing reaches review.
 4. **Review.** The release goes to the Submissions inbox (first release of an id) or Updates (any later one) in Pult, with the facts. Details in [review](review.md).
 5. **Decision.** Approve signs the release into the index and the update feeds and starts the rollout. Request changes and Reject email the developer with the reason, shown in the dashboard too. Every email links to the release in the dashboard.
 6. **Rollout.** 10%, 25%, 50%, 100% over three days unless the developer changes it ([trust](trust.md#updates)). Members get an email when it reaches everyone.

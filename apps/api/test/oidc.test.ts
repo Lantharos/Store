@@ -2,9 +2,9 @@ import { OIDC_AUDIENCE } from "@schelf/protocol"
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose"
 import { describe, expect, test } from "vitest"
 import {
+  allowsRef,
   GITHUB_ISSUER,
-  matchesPublisher,
-  tagOf,
+  matchesWorkflow,
   verifyWorkflowToken,
   type WorkflowClaims,
 } from "../src/github/oidc.ts"
@@ -13,9 +13,9 @@ const claims: WorkflowClaims = {
   repository: "mira/notes",
   repository_id: "123",
   repository_owner_id: "45",
-  workflow_ref: "mira/notes/.github/workflows/schelf.yml@refs/tags/v1.2.0",
-  job_workflow_ref: "mira/notes/.github/workflows/schelf.yml@refs/tags/v1.2.0",
-  ref: "refs/tags/v1.2.0",
+  workflow_ref: "mira/notes/.github/workflows/schelf.yml@refs/heads/main",
+  job_workflow_ref: "mira/notes/.github/workflows/schelf.yml@refs/heads/main",
+  ref: "refs/heads/main",
   sha: "a".repeat(40),
   run_id: "9",
   run_attempt: "1",
@@ -26,6 +26,7 @@ const rule = {
   repositoryId: "123",
   workflow: ".github/workflows/schelf.yml",
   environment: null,
+  ref: null,
 }
 
 async function signer() {
@@ -58,12 +59,12 @@ describe("GitHub identity tokens", () => {
 
 describe("trusted publishers", () => {
   test("match the registered repository, owner and workflow by id", () => {
-    expect(matchesPublisher(claims, rule)).toBe(true)
-    expect(matchesPublisher({ ...claims, repository_id: "999" }, rule)).toBe(false)
-    expect(matchesPublisher({ ...claims, repository_owner_id: "999" }, rule)).toBe(false)
+    expect(matchesWorkflow(claims, rule)).toBe(true)
+    expect(matchesWorkflow({ ...claims, repository_id: "999" }, rule)).toBe(false)
+    expect(matchesWorkflow({ ...claims, repository_owner_id: "999" }, rule)).toBe(false)
     expect(
-      matchesPublisher(
-        { ...claims, workflow_ref: "mira/notes/.github/workflows/other.yml@refs/tags/v1.2.0" },
+      matchesWorkflow(
+        { ...claims, workflow_ref: "mira/notes/.github/workflows/other.yml@refs/heads/main" },
         rule,
       ),
     ).toBe(false)
@@ -71,8 +72,8 @@ describe("trusted publishers", () => {
 
   test("a workflow in another repository with the same path doesn't match", () => {
     expect(
-      matchesPublisher(
-        { ...claims, workflow_ref: "eve/notes/.github/workflows/schelf.yml@refs/tags/v1.2.0" },
+      matchesWorkflow(
+        { ...claims, workflow_ref: "eve/notes/.github/workflows/schelf.yml@refs/heads/main" },
         rule,
       ),
     ).toBe(false)
@@ -80,11 +81,11 @@ describe("trusted publishers", () => {
 
   test("a renamed repository keeps publishing because ids match", () => {
     expect(
-      matchesPublisher(
+      matchesWorkflow(
         {
           ...claims,
           repository: "mira/notebook",
-          workflow_ref: "mira/notebook/.github/workflows/schelf.yml@refs/tags/v1.2.0",
+          workflow_ref: "mira/notebook/.github/workflows/schelf.yml@refs/heads/main",
         },
         rule,
       ),
@@ -93,12 +94,19 @@ describe("trusted publishers", () => {
 
   test("an environment rule needs that environment", () => {
     const guarded = { ...rule, environment: "release" }
-    expect(matchesPublisher(claims, guarded)).toBe(false)
-    expect(matchesPublisher({ ...claims, environment: "release" }, guarded)).toBe(true)
+    expect(matchesWorkflow(claims, guarded)).toBe(false)
+    expect(matchesWorkflow({ ...claims, environment: "release" }, guarded)).toBe(true)
   })
 
-  test("only tags publish", () => {
-    expect(tagOf("refs/tags/v1.2.0")).toBe("v1.2.0")
-    expect(tagOf("refs/heads/main")).toBeNull()
+  test("any branch or tag publishes unless the rule names refs", () => {
+    expect(allowsRef(rule, "refs/heads/feature")).toBe(true)
+    const main = { ...rule, ref: "refs/heads/main" }
+    expect(allowsRef(main, "refs/heads/main")).toBe(true)
+    expect(allowsRef(main, "refs/heads/main-old")).toBe(false)
+    expect(allowsRef(main, "refs/tags/v1.2.0")).toBe(false)
+    const tags = { ...rule, ref: "refs/tags/v*" }
+    expect(allowsRef(tags, "refs/tags/v1.2.0")).toBe(true)
+    expect(allowsRef(tags, "refs/heads/v1")).toBe(false)
+    expect(allowsRef({ ...rule, ref: "refs/heads/release.1" }, "refs/heads/releasex1")).toBe(false)
   })
 })

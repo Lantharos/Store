@@ -2,7 +2,7 @@ import { z } from "zod"
 import { mirrorEntry } from "../files/catalog.ts"
 import type { Permissions } from "../permissions.ts"
 import { type ArtifactKind, artifactKind, type Platform, platform } from "../platforms.ts"
-import { type CheckResult, channelName, checkResult, type ReleaseStatus } from "../releases.ts"
+import { type CheckResult, channelName, checkResult, type ReleaseStatus, SEMVER } from "../releases.ts"
 
 export const OIDC_AUDIENCE = "schelf.store"
 export const MULTIPART_THRESHOLD = 95_000_000
@@ -30,25 +30,19 @@ export const publishFile = z.object({
 })
 export type PublishFile = z.infer<typeof publishFile>
 
-export const publishRequest = z
-  .object({
-    tag: z.string().min(1).max(200).optional(),
-    version: z.string().min(1).max(64).optional(),
-    commit: z
-      .string()
-      .regex(/^[0-9a-f]{40}$/)
-      .optional(),
-    schelf_toml: z.string().max(20_000),
-    permissions_toml: z.string().max(20_000).optional(),
-    notes: z.string().max(20_000).default(""),
-    channel: channelName.optional(),
-    bridge: z.boolean().default(false),
-    files: z.array(publishFile).min(1).max(20),
-  })
-  .refine((body) => body.tag || body.version, {
-    message: "Give the release a tag or a version",
-    path: ["version"],
-  })
+export const publishRequest = z.object({
+  version: z.string().max(64).regex(SEMVER, "A version looks like 1.2.0 or 2.0.0-beta.1"),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{40}$/)
+    .optional(),
+  schelf_toml: z.string().max(20_000),
+  permissions_toml: z.string().max(20_000).optional(),
+  notes: z.string().max(20_000).default(""),
+  channel: channelName.optional(),
+  bridge: z.boolean().default(false),
+  files: z.array(publishFile).min(1).max(20),
+})
 export type PublishRequest = z.infer<typeof publishRequest>
 
 export interface UploadTarget {
@@ -98,8 +92,8 @@ export interface ChecksDispatch {
   version: string
   repository: string | null
   scrutiny: { source: "open" | "closed"; strict: boolean }
-  tag: string | null
-  previous_tag: string | null
+  commit: string | null
+  previous_commit: string | null
   permissions: Permissions | null
   files: { name: string; platform: Platform; kind: ArtifactKind; url: string; sha256: string }[]
   callback: string

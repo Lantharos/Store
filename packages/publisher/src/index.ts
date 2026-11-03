@@ -17,3 +17,4 @@ export {
   publishRelease,
   type ReleaseInput,
 } from "./release.ts"
+export { manifestVersion, releaseVersion, type VersionSource } from "./version.ts"

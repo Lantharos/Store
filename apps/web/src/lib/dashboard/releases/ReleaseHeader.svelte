@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ReleaseDetail } from "@schelf/protocol"
+  import { type ReleaseDetail, refName } from "@schelf/protocol"
   import { ago } from "../../format.ts"
 
   let { release, href }: { release: ReleaseDetail; href?: string } = $props()
@@ -14,6 +14,6 @@
     {#if release.channel !== "stable"}<span class="ml-1.5 text-[15px] font-normal text-ink-muted">on {release.channel}</span>{/if}
   </h2>
   <p class="text-[15px] text-ink-muted">
-    {#if release.tag}Tagged <span class="font-mono text-[13px]">{release.tag}</span>{" · "}{/if}{#if release.commit}<span class="font-mono text-[13px]">{release.commit.slice(0, 7)}</span>{" · "}{/if}{ago(release.created_at)}
+    {#if release.ref}From <span class="font-mono text-[13px]">{refName(release.ref)}</span>{" · "}{/if}{#if release.commit}<span class="font-mono text-[13px]">{release.commit.slice(0, 7)}</span>{" · "}{/if}{ago(release.created_at)}
   </p>
 </div>

@@ -83,6 +83,7 @@ export async function publisherBlocks(publisher: PublisherView) {
         repository: repositoryLink(rule.repository),
         workflow: rule.workflow,
         environment: rule.environment ?? "Any",
+        ref: rule.ref ?? "Any",
       })),
       { title: "Trusted publishers" },
     ),

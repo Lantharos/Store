@@ -8,6 +8,7 @@ import {
   hashArtifacts,
   publishRelease,
   releaseContext,
+  releaseVersion,
 } from "@schelf/publisher"
 import { downloadReleaseAssets } from "./assets.ts"
 import { writeSummary } from "./summary.ts"
@@ -31,15 +32,25 @@ async function run() {
   const api = core.getInput("api").replace(/\/$/, "")
   const githubToken = core.getInput("github-token")
   const context = await releaseContext(core.getInput("schelf-toml"))
-  if (!context.tag)
-    throw new Error("This run isn't for a tag. Run it on a published release or a pushed tag.")
+  const channel = core.getInput("channel") || undefined
+  const version = await releaseVersion({
+    version: core.getInput("version") || undefined,
+    folder: context.folder,
+    format: context.manifest.format,
+    tag: context.tag,
+    commit: context.commit,
+    channel,
+  })
 
   const patterns = lines("files")
   const assetPatterns = lines("release-assets")
   if (!patterns.length && !assetPatterns.length)
     throw new Error("Give the action files or release-assets to publish")
-  if (assetPatterns.length)
+  if (assetPatterns.length) {
+    if (!context.tag)
+      throw new Error("release-assets publishes a GitHub release's files; run this on a release")
     patterns.push(...(await downloadReleaseAssets(context.tag, assetPatterns, githubToken)))
+  }
 
   const artifacts = await hashArtifacts(await collectArtifacts(patterns, context.manifest.format))
   for (const artifact of artifacts) core.info(`${artifact.platform.padEnd(16)} ${artifact.name}`)
@@ -47,14 +58,14 @@ async function run() {
   await core.group("Recording build provenance", () => attest(artifacts, githubToken))
   const token = await githubOidcToken()
   const { release, completed } = await core.group(
-    `Publishing ${manifestName(context.manifest)} ${context.tag}`,
+    `Publishing ${manifestName(context.manifest)} ${version}`,
     () =>
       publishRelease(
         {
           api,
           token,
-          tag: context.tag!,
-          channel: core.getInput("channel") || undefined,
+          version,
+          channel,
           bridge: core.getBooleanInput("bridge"),
           commit: context.commit,
           schelfToml: context.schelfToml,

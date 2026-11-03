@@ -4,7 +4,7 @@ title: Trusted publishing
 description: How Schelf knows a release really came from your repository, without any secrets to copy or leak.
 ---
 
-A trusted publisher is a rule on your app: “releases of this app may come from the workflow `.github/workflows/schelf.yml` in the repository `alice/notes`”, optionally only from one GitHub environment. When that workflow runs, GitHub gives it a short-lived token that proves which repository, workflow and tag it is. Schelf checks that token against your rule. Nothing else can publish.
+A trusted publisher is a rule on your app: “releases of this app may come from the workflow `.github/workflows/schelf.yml` in the repository `alice/notes`”, optionally only from one GitHub environment or one branch. When that workflow runs, GitHub gives it a short-lived token that proves which repository, workflow, branch or tag and commit it is. Schelf checks that token against your rule. Nothing else can publish.
 
 There are no keys to keep, rotate or lose, and nothing to paste into your repository's secrets.
 
@@ -12,11 +12,12 @@ There are no keys to keep, rotate or lose, and nothing to paste into your reposi
 
 `schelf init` adds one for you. To add or change one by hand, open your app in the dashboard and go to **Publishing**. You need:
 
-| Field       | Example                        |
-| ----------- | ------------------------------ |
-| Repository  | `alice/notes`                  |
-| Workflow    | `.github/workflows/schelf.yml` |
-| Environment | `release`, or leave it empty   |
+| Field       | Example                              |
+| ----------- | ------------------------------------ |
+| Repository  | `alice/notes`                        |
+| Workflow    | `.github/workflows/schelf.yml`       |
+| Environment | `release`, or leave it empty         |
+| Ref         | `refs/heads/main`, or leave it empty |
 
 Schelf stores GitHub's numeric ids for the repository and its owner next to the names, so if the repository is deleted and someone re-creates one with the same name, it can't publish.
 
@@ -31,7 +32,11 @@ permissions:
   attestations: write
 ```
 
-Releases are only accepted from tags, so a push to a branch can never publish.
+Every release records the branch or tag, the commit and the workflow run it came from, and the store page links to them.
+
+## Limiting the branch
+
+Without a ref, the workflow can publish from any branch or tag it runs on. Set one to narrow that down: `refs/heads/main` accepts only runs on `main`, and `refs/tags/*` only runs for tags. A `*` matches anything, so `refs/heads/release/*` accepts every branch under `release/`.
 
 ## Using an environment
 

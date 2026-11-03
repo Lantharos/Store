@@ -106,7 +106,7 @@ test("an extension is published with its manifest as the permission declaration"
   await publishRelease({
     api: store.url.origin,
     token: "oidc",
-    tag: "v1.0.0",
+    version: "1.0.0",
     schelfToml: context.schelfToml,
     permissionsToml: context.permissionsToml,
     notes: "",

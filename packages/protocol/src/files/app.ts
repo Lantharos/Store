@@ -48,7 +48,7 @@ export const provenance = z.object({
   origin: z.enum(["github-actions", "developer"]),
   repository: z.string().nullable(),
   workflow: z.string().nullable(),
-  tag: z.string().nullable(),
+  ref: z.string().nullable(),
   commit: z.string().nullable(),
   run: z.string().nullable(),
 })

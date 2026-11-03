@@ -115,11 +115,22 @@ export function inRollout(percent: number, deviceDraw: number) {
   return deviceDraw * 100 < percent
 }
 
+export const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
 const VERSION = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
 
 export function versionFromTag(tag: string) {
   const match = VERSION.exec(tag.slice(tag.lastIndexOf("/") + 1))
   return match ? match[0].replace(/^v/, "") : null
+}
+
+export const refName = (ref: string) => ref.replace(/^refs\/(heads|tags)\//, "")
+
+const stamp = (at: Date) => at.toISOString().slice(0, 16).replace(/\D/g, "")
+
+export function nightlyVersion(version: string, commit: string, at: Date) {
+  const match = VERSION.exec(version)
+  if (!match) throw new Error(`${version} isn't a version`)
+  return `${match[1]}.${Number(match[2] ?? 0) + 1}.0-nightly.${stamp(at)}.g${commit.slice(0, 7)}`
 }
 
 export function compareVersions(left: string, right: string) {

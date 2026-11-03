@@ -16,7 +16,6 @@ import {
   readSchelfToml,
   type SchelfToml,
   splitProjectPath,
-  versionFromTag,
 } from "@schelf/protocol"
 import { and, eq, sql } from "drizzle-orm"
 import { ZodError } from "zod"
@@ -112,7 +111,6 @@ export interface NewRelease {
   app: AppRow
   publisher: Publisher
   version: string
-  tag: string | null
   commit: string | null
   notes: string
   manifest: string
@@ -163,7 +161,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
       appId: app.id,
       version,
       channel,
-      tag: oidc?.tag ?? input.tag,
+      ref: oidc?.ref ?? null,
       commit: oidc?.commit ?? input.commit,
       runUrl: oidc?.runUrl ?? null,
       workflow: oidc?.workflow ?? null,
@@ -212,15 +210,12 @@ export async function startRelease(
     )
   if (app.kind !== manifest.kind)
     fail(422, `${app.id} is registered as an ${app.kind}, not an ${manifest.kind}`)
-  const publisher = await identifyPublisher(credential, app, body.tag ?? null)
+  const publisher = await identifyPublisher(credential, app)
   await publishable(app)
-  const version = body.version ?? versionFromTag(body.tag!)
-  if (!version) fail(422, `${body.tag} doesn't look like a version; pass the version explicitly`)
   return createRelease({
     app,
     publisher,
-    version,
-    tag: body.tag ?? null,
+    version: body.version,
     commit: body.commit ?? null,
     notes: body.notes,
     manifest: body.schelf_toml,

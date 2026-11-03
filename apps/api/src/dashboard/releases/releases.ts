@@ -35,7 +35,7 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
     id: release.id,
     version: release.version,
     channel: release.channel,
-    tag: release.tag,
+    ref: release.ref,
     origin: release.origin,
     format: release.format,
     updater: release.updater,

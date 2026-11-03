@@ -7,6 +7,7 @@ import {
   oidcAvailable,
   publishRelease,
   releaseContext,
+  releaseVersion,
 } from "@schelf/publisher"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { git, repositoryRoot } from "../project/git.ts"
@@ -28,32 +29,38 @@ export async function publish(args: Args) {
   const api = apiOrigin(args)
   const root = await repositoryRoot(process.cwd())
   const context = await releaseContext(flag(args, "config") ?? join(root, SCHELF_TOML))
-  const tag =
-    flag(args, "tag") ??
-    context.tag ??
-    (await git(root, "describe", "--tags", "--exact-match").catch(() => undefined))
-  if (!tag) throw new Failure("This commit has no tag", "Tag the release, or pass --tag.")
+  const commit = context.commit ?? (await git(root, "rev-parse", "HEAD").catch(() => undefined))
+  const channel = flag(args, "channel")
+  const version = await releaseVersion({
+    version: flag(args, "version"),
+    folder: context.folder,
+    format: context.manifest.format,
+    tag: context.tag,
+    commit,
+    channel,
+  }).catch((error: Error) => {
+    throw new Failure("This release has no version", `${error.message}.`)
+  })
   if (!args.positionals.length)
     throw new Failure(
       "Name the files to publish",
       "For example: schelf publish dist/*.AppImage, or dist/app.tar.gz#macos-aarch64 to say which system a file is for",
     )
 
-  title(`Publishing ${manifestName(context.manifest)} ${tag}`)
+  title(`Publishing ${manifestName(context.manifest)} ${version}`)
   const artifacts = await collectArtifacts(args.positionals, context.manifest.format)
   for (const artifact of artifacts) field(artifact.platform, artifact.name, 18)
   blank()
 
   const token = await credential(args)
-  const commit = context.commit ?? (await git(root, "rev-parse", "HEAD").catch(() => undefined))
   const result = await step(
     `Uploading ${artifacts.length} file${artifacts.length === 1 ? "" : "s"}`,
     async () =>
       publishRelease({
         api,
         token,
-        tag,
-        channel: flag(args, "channel"),
+        version,
+        channel,
         bridge: args.flags.has("bridge"),
         commit,
         schelfToml: context.schelfToml,

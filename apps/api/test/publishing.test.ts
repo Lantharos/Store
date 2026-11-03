@@ -16,13 +16,20 @@ import { bytesOf, publisherWithApp, schelfToml } from "./fixtures.ts"
 const API = "https://schelf.store/api/v1"
 const PERMISSIONS = '[sandbox]\nfilesystems = ["xdg-documents"]\n'
 
-async function publish(token: string, appId: string, file: Uint8Array<ArrayBuffer>, announcedSha?: string) {
-  const response = await exports.default.fetch(
+interface Release {
+  version?: string
+  channel?: string
+  announcedSha?: string
+}
+
+async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, release: Release = {}) {
+  return exports.default.fetch(
     new Request(`${API}/publish`, {
       method: "POST",
       headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({
-        tag: "v1.0.0",
+        version: release.version ?? "1.0.0",
+        channel: release.channel,
         schelf_toml: schelfToml(appId),
         permissions_toml: PERMISSIONS,
         files: [
@@ -31,15 +38,32 @@ async function publish(token: string, appId: string, file: Uint8Array<ArrayBuffe
             platform: "linux-x86_64",
             kind: "appimage",
             size: file.length,
-            sha256: announcedSha ?? (await sha256Hex(file)),
+            sha256: release.announcedSha ?? (await sha256Hex(file)),
           },
         ],
       }),
     }),
   )
+}
+
+async function publish(token: string, appId: string, file: Uint8Array<ArrayBuffer>, release?: Release) {
+  const response = await start(token, appId, file, release)
   expect(response.status).toBe(201)
   return (await response.json()) as PublishResponse
 }
+
+async function uploadAndComplete(started: PublishResponse, file: Uint8Array<ArrayBuffer>) {
+  expect((await upload(started, file)).status).toBe(200)
+  const completed = await exports.default.fetch(
+    new Request(`${API}/publish/${started.release}/complete`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${started.upload_token}` },
+    }),
+  )
+  return (await completed.json()) as CompleteResponse
+}
+
+const versionCheck = (result: CompleteResponse) => result.checks.find((check) => check.name === "version")
 
 function upload(started: PublishResponse, body: Uint8Array<ArrayBuffer>) {
   return exports.default.fetch(
@@ -58,14 +82,7 @@ describe("publishing with a dashboard token", () => {
     const started = await publish(token, appId, file)
     expect(started.version).toBe("1.0.0")
 
-    expect((await upload(started, file)).status).toBe(200)
-    const completed = await exports.default.fetch(
-      new Request(`${API}/publish/${started.release}/complete`, {
-        method: "POST",
-        headers: { authorization: `Bearer ${started.upload_token}` },
-      }),
-    )
-    const result = (await completed.json()) as CompleteResponse
+    const result = await uploadAndComplete(started, file)
     expect(result.checks.filter((check) => check.status === "failed")).toEqual([])
     expect(result.status).toBe("in-review")
 
@@ -93,7 +110,9 @@ describe("publishing with a dashboard token", () => {
   test("a file that doesn't match its announced SHA-256 is refused and removed", async () => {
     const { appId, token } = await publisherWithApp()
     const file = bytesOf("the real build")
-    const started = await publish(token, appId, file, await sha256Hex(bytesOf("a different build")))
+    const started = await publish(token, appId, file, {
+      announcedSha: await sha256Hex(bytesOf("a different build")),
+    })
     const response = await upload(started, file)
     expect(response.status).toBe(422)
     expect(await env.BUCKET.head(paths.artifact(appId, "1.0.0", "linux-x86_64", "notes.AppImage"))).toBeNull()
@@ -107,7 +126,7 @@ describe("publishing with a dashboard token", () => {
         method: "POST",
         headers: { authorization: `Bearer ${mine.token}`, "content-type": "application/json" },
         body: JSON.stringify({
-          tag: "v1.0.0",
+          version: "1.0.0",
           schelf_toml: schelfToml(theirs.appId),
           permissions_toml: PERMISSIONS,
           files: [{ name: "a", platform: "linux-x86_64", kind: "appimage", size: 1, sha256: "0".repeat(64) }],
@@ -115,5 +134,30 @@ describe("publishing with a dashboard token", () => {
       }),
     )
     expect(response.status).toBe(403)
+  })
+
+  test("a version that was already published is refused", async () => {
+    const { appId, token } = await publisherWithApp()
+    const file = bytesOf("the first build")
+    await uploadAndComplete(await publish(token, appId, file), file)
+    const again = await start(token, appId, bytesOf("a rebuild"), { channel: "beta" })
+    expect(again.status).toBe(409)
+  })
+
+  test("a version only has to be newer than the last approved one on its own channel", async () => {
+    const { appId, token } = await publisherWithApp()
+    const stable = bytesOf("the stable build")
+    const approved = await publish(token, appId, stable)
+    await uploadAndComplete(approved, stable)
+    await approve(approved.release, "Reviewer")
+
+    const older = bytesOf("an older build")
+    const backwards = await uploadAndComplete(await publish(token, appId, older, { version: "0.9.0" }), older)
+    expect(versionCheck(backwards)?.status).toBe("failed")
+
+    const nightly = bytesOf("a nightly build")
+    const started = await publish(token, appId, nightly, { version: "0.1.0-nightly.202611030415.g1a2b3c4" })
+    expect(started.channel).toBe("nightly")
+    expect(versionCheck(await uploadAndComplete(started, nightly))?.status).toBe("passed")
   })
 })

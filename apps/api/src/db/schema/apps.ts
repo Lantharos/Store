@@ -98,6 +98,7 @@ export const trustedPublisher = sqliteTable(
     repository: text("repository").notNull(),
     workflow: text("workflow").notNull(),
     environment: text("environment"),
+    ref: text("ref"),
     createdAt: createdAt(),
   },
   (table) => [index("trusted_publisher_repository").on(table.repositoryId)],

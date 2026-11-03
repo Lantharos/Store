@@ -30,7 +30,7 @@ export function parseArgs(argv: string[]): Args {
 const VALUED = new Set([
   "api",
   "token",
-  "tag",
+  "version",
   "notes",
   "config",
   "workflow",

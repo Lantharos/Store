@@ -16,10 +16,13 @@ inputs:
     description: Path to schelf.toml
     default: schelf.toml
   notes:
-    description: Release notes. Defaults to the GitHub release's description.
+    description: Release notes. Defaults to the GitHub release's description when the run is for one.
+    required: false
+  version:
+    description: The version to publish. Defaults to the release's tag when the run is for one, and otherwise to the version in the app's Sabine.toml, extension.toml, tauri.conf.json or package.json.
     required: false
   channel:
-    description: The channel to release on, such as beta or nightly. Defaults to stable, or to the channel a pre-release version names, like 2.0.0-beta.1.
+    description: The channel to release on, such as beta or nightly. Defaults to stable, or to the channel a pre-release version names, like 2.0.0-beta.1. Nightly releases get a version of their own, like 0.2.0-nightly.202611030415.g1a2b3c4, unless you pass one.
     required: false
   bridge:
     description: Publish this as the bridge, the last build in the old framework when moving to a new one

@@ -21,7 +21,7 @@ export const release = sqliteTable(
       .references(() => app.id, { onDelete: "cascade" }),
     version: text("version").notNull(),
     channel: text("channel").notNull().default("stable"),
-    tag: text("tag"),
+    ref: text("ref"),
     commit: text("commit"),
     runUrl: text("run_url"),
     workflow: text("workflow"),

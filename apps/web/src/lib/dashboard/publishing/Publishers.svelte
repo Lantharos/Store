@@ -1,6 +1,6 @@
 <script lang="ts">
   import GitBranch from "@lucide/svelte/icons/git-branch"
-  import { SCHELF_WORKFLOW, type TrustedPublisher } from "@schelf/protocol"
+  import { refName, SCHELF_WORKFLOW, type TrustedPublisher } from "@schelf/protocol"
   import { date } from "../../format.ts"
   import Field from "../../ui/fields/Field.svelte"
   import Confirm from "../../ui/overlay/Confirm.svelte"
@@ -15,7 +15,8 @@
   let adding = $state(false)
   let removing = $state<TrustedPublisher | null>(null)
   let removeOpen = $state(false)
-  let form = $state({ repository: "", workflow: SCHELF_WORKFLOW, environment: "" })
+  const blank = () => ({ repository: "", workflow: SCHELF_WORKFLOW, environment: "", ref: "" })
+  let form = $state(blank())
   let error = $state<string | null>(null)
   let busy = $state(false)
 
@@ -28,6 +29,7 @@
         repository: form.repository.trim().replace(/^https:\/\/github\.com\//, ""),
         workflow: form.workflow.trim(),
         environment: form.environment.trim() || undefined,
+        ref: form.ref.trim() || undefined,
       })
       publishers = [...publishers, created]
       adding = false
@@ -53,7 +55,7 @@
       <h2 class="font-semibold">Trusted publishers</h2>
       <p class="mt-0.5 max-w-xl text-[13px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
     </div>
-    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: SCHELF_WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>{/if}
+    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = blank()), (error = null), (adding = true))}>Add a publisher</button>{/if}
   </div>
   <ul class="mt-4 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
     {#each publishers as publisher (publisher.id)}
@@ -61,7 +63,7 @@
         <GitBranch class="size-5 shrink-0 text-ink-muted" />
         <div class="min-w-0 flex-1">
           <a href="https://github.com/{publisher.repository}" target="_blank" rel="noreferrer" class="font-medium hover:underline">{publisher.repository}</a>
-          <p class="truncate font-mono text-[13px] text-ink-muted">{publisher.workflow}{publisher.environment ? ` · environment ${publisher.environment}` : ""}</p>
+          <p class="truncate font-mono text-[13px] text-ink-muted">{publisher.workflow}{publisher.environment ? ` · environment ${publisher.environment}` : ""}{publisher.ref ? ` · ${refName(publisher.ref)} only` : ""}</p>
         </div>
         <span class="text-[13px] text-ink-muted">Added {date(publisher.created_at)}</span>
         {#if session.can("apps")}<button type="button" class="button button-sm button-danger" onclick={() => ((removing = publisher), (removeOpen = true))}>Remove</button>{/if}
@@ -83,6 +85,9 @@
     </Field>
     <Field label="Environment" hint="Optional. Only jobs in this GitHub environment can publish.">
       <input class="field" bind:value={form.environment} placeholder="release" />
+    </Field>
+    <Field label="Ref" hint="Optional. Only runs on this branch or tag can publish; a * matches anything.">
+      <input class="field font-mono text-[14px]" bind:value={form.ref} placeholder="refs/heads/main" autocomplete="off" />
     </Field>
     {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
     <div class="flex justify-end gap-2 pt-2">

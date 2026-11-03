@@ -4,9 +4,9 @@ import { eq } from "drizzle-orm"
 import { errors } from "jose"
 import { db, schema } from "../db/client.ts"
 import {
-  matchesPublisher,
+  allowsRef,
+  matchesWorkflow,
   runUrl,
-  tagOf,
   verifyWorkflowToken,
   type WorkflowClaims,
   workflowPath,
@@ -17,7 +17,7 @@ import type { AppRow } from "../signing/records.ts"
 const LAST_USED_GRANULARITY_MS = 60_000
 
 export type Publisher =
-  | { origin: "oidc"; tag: string; commit: string; runUrl: string; workflow: string; claims: WorkflowClaims }
+  | { origin: "oidc"; ref: string; commit: string; runUrl: string; workflow: string; claims: WorkflowClaims }
   | { origin: "manual"; tokenId: string | null }
 
 export async function workflowClaims(token: string) {
@@ -40,23 +40,26 @@ async function dashboardToken(token: string, app: AppRow): Promise<Publisher> {
   return { origin: "manual", tokenId: row.id }
 }
 
-async function trustedWorkflow(token: string, app: AppRow, requestedTag: string | null): Promise<Publisher> {
+async function trustedWorkflow(token: string, app: AppRow): Promise<Publisher> {
   const claims = await workflowClaims(token)
   const rules = await db
     .select()
     .from(schema.trustedPublisher)
     .where(eq(schema.trustedPublisher.appId, app.id))
-  if (!rules.some((rule) => matchesPublisher(claims, rule)))
+  const trusted = rules.filter((rule) => matchesWorkflow(claims, rule))
+  if (!trusted.length)
     fail(
       403,
       `${claims.repository} (${workflowPath(claims) ?? claims.workflow_ref}) isn't a trusted publisher of ${app.id}`,
     )
-  const tag = tagOf(claims.ref)
-  if (!tag) fail(403, "Releases are published from a tag, and this run isn't for one")
-  if (requestedTag && tag !== requestedTag) fail(403, `This run is for ${tag}, not ${requestedTag}`)
+  if (!trusted.some((rule) => allowsRef(rule, claims.ref)))
+    fail(
+      403,
+      `${app.id} publishes only from ${trusted.map((rule) => rule.ref).join(" or ")}, and this run is for ${claims.ref}`,
+    )
   return {
     origin: "oidc",
-    tag,
+    ref: claims.ref,
     commit: claims.sha,
     runUrl: runUrl(claims),
     workflow: workflowPath(claims)!,
@@ -64,9 +67,9 @@ async function trustedWorkflow(token: string, app: AppRow, requestedTag: string 
   }
 }
 
-export function identifyPublisher(credential: string | null, app: AppRow, tag: string | null) {
+export function identifyPublisher(credential: string | null, app: AppRow) {
   if (!credential) fail(401, "Publish with a GitHub identity token or a dashboard token")
   return credential.startsWith(TOKEN_PREFIX)
     ? dashboardToken(credential, app)
-    : trustedWorkflow(credential, app, tag)
+    : trustedWorkflow(credential, app)
 }

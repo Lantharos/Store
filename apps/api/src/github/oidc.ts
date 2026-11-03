@@ -25,6 +25,7 @@ export interface TrustedPublisherRule {
   repositoryId: string
   workflow: string
   environment: string | null
+  ref: string | null
 }
 
 export async function verifyWorkflowToken(
@@ -45,17 +46,19 @@ export function workflowPath(claims: Pick<WorkflowClaims, "repository" | "workfl
   return path?.startsWith(prefix) ? path.slice(prefix.length) : null
 }
 
-export function tagOf(ref: string) {
-  return ref.startsWith("refs/tags/") ? ref.slice("refs/tags/".length) : null
-}
+const literal = (text: string) => text.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
 
-export function matchesPublisher(claims: WorkflowClaims, rule: TrustedPublisherRule) {
+export function matchesWorkflow(claims: WorkflowClaims, rule: TrustedPublisherRule) {
   return (
     claims.repository_id === rule.repositoryId &&
     claims.repository_owner_id === rule.ownerId &&
     workflowPath(claims) === rule.workflow &&
     (rule.environment === null || claims.environment === rule.environment)
   )
+}
+
+export function allowsRef(rule: TrustedPublisherRule, ref: string) {
+  return rule.ref === null || new RegExp(`^${rule.ref.split("*").map(literal).join(".*")}$`).test(ref)
 }
 
 export function runUrl(claims: WorkflowClaims) {

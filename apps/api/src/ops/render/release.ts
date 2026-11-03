@@ -33,7 +33,7 @@ function provenance(release: ReleaseView) {
             release.commit.slice(0, 12),
           )
         : undefined,
-    tag: release.tag ?? undefined,
+    ref: release.ref ?? undefined,
   }
 }
 

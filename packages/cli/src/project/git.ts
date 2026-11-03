@@ -34,3 +34,10 @@ export async function githubRepository(root: string): Promise<Repository | undef
 export async function repositoryRoot(directory: string) {
   return git(directory, "rev-parse", "--show-toplevel").catch(() => directory)
 }
+
+export async function defaultBranch(root: string) {
+  const head = await git(root, "symbolic-ref", "--short", "refs/remotes/origin/HEAD").catch(
+    () => "origin/main",
+  )
+  return head.replace(/^origin\//, "")
+}

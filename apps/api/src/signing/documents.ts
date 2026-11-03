@@ -81,7 +81,7 @@ function indexedRelease(
       origin: release.origin === "oidc" ? "github-actions" : "developer",
       repository: record.app.repository,
       workflow: release.workflow,
-      tag: release.tag,
+      ref: release.ref,
       commit: release.commit,
       run: release.runUrl,
     },

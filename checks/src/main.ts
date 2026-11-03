@@ -50,8 +50,12 @@ const unpacked = await mapLimit(downloads, 2, async (file) => {
 const opened = unpacked.filter((file) => file !== undefined)
 
 const repository =
-  payload.repository && payload.tag
-    ? await Repository.clone(payload.repository, join(work, "source"))
+  payload.repository && payload.commit
+    ? await Repository.clone(
+        payload.repository,
+        join(work, "source"),
+        [payload.commit, payload.previous_commit].filter((commit) => commit !== null),
+      )
     : undefined
 const inspections: Record<string, Inspection> = {}
 
@@ -75,7 +79,7 @@ const checks = await Promise.all([
     return inspectionResult(inspections)
   }),
   attempt("diff", async () => {
-    if (!repository || !payload.tag)
+    if (!repository || !payload.commit)
       return {
         name: "diff",
         status: "passed",
@@ -83,13 +87,13 @@ const checks = await Promise.all([
           ? "Closed source, so review looks at the build"
           : "The source isn't public, so review looks at the build",
       }
-    if (!payload.previous_tag)
+    if (!payload.previous_commit)
       return { name: "diff", status: "passed", summary: "First release; nothing to compare" }
-    const { patch, ...diff } = await repository.diff(payload.previous_tag, payload.tag)
+    const { patch, ...diff } = await repository.diff(payload.previous_commit, payload.commit)
     facts.diff = diff
     facts.patch = patch
-    facts.compare = `https://github.com/${payload.repository}/compare/${payload.previous_tag}...${payload.tag}`
-    return diffResult(diff, payload.previous_tag, payload.tag)
+    facts.compare = `https://github.com/${payload.repository}/compare/${payload.previous_commit}...${payload.commit}`
+    return diffResult(diff, payload.previous_commit.slice(0, 7), payload.commit.slice(0, 7))
   }),
 ])
 
@@ -97,7 +101,7 @@ checks.push(
   await attempt("licence", async () => {
     if (closedSource)
       return { name: "licence", status: "passed", summary: "Closed source, so there's no licence to check" }
-    const files = repository && payload.tag ? await repository.licenceFiles(payload.tag) : []
+    const files = repository && payload.commit ? await repository.licenceFiles(payload.commit) : []
     const declared = Object.values(inspections).find((inspection) => inspection.licence)?.licence ?? null
     const licence = judgeLicence(declared, files)
     facts.licence = licence

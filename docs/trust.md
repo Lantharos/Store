@@ -8,7 +8,7 @@ Who signs what, what each client checks, how permissions reach the user, how upd
 | --- | --- | --- | --- |
 | Store root (Ed25519) | The owner, offline in 1Password; never on a server | Store signing keys and their revocation | Years; built into every client |
 | Store signing key (Ed25519) | The api Worker, as a secret | Index files, update feeds, the revocation list | One year, rotated with overlap; the list is re-signed every night so it never looks stale |
-| GitHub OIDC identity | The developer's workflow run | Nothing; it proves which repository, workflow and tag a release came from | Minutes |
+| GitHub OIDC identity | The developer's workflow run | Nothing; it proves which repository, workflow, ref and commit a release came from | Minutes |
 | Build attestation | GitHub (Sigstore, keyless) | Each published file's digest and the run that built it | Permanent, public |
 | Windows Authenticode, Apple Developer ID | The developer | Binaries and installers on those systems | Theirs |
 

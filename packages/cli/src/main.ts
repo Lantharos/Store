@@ -24,7 +24,7 @@ const COMMANDS: Record<
   check: { run: check, usage: "check", about: "Check schelf.toml and preview the store page" },
   publish: {
     run: publish,
-    usage: "publish [files…] [--channel <name>]",
+    usage: "publish [files…] [--channel <name>] [--version <version>]",
     about: "Publish a release from CI or with a token",
   },
   status: { run: status, usage: "status [version]", about: "Where a release is: checks, review, rollout" },
@@ -64,7 +64,7 @@ function report(error: unknown) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  if (args.flags.has("version")) {
+  if (args.flags.get("version") === true) {
     console.log(process.env.SCHELF_CLI_VERSION)
     return 0
   }

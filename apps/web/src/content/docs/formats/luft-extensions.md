@@ -25,7 +25,7 @@ format = "luft-extension"
 extension_api = 1
 ```
 
-The workflow packs the extension folder as one `.tar.zst` and publishes it with each GitHub release.
+The workflow packs the extension folder as one `.tar.zst` and publishes it, with the version from `extension.toml`, when you press **Run workflow** on it.
 
 |             | Apps                        | Extensions                                                          |
 | ----------- | --------------------------- | ------------------------------------------------------------------- |

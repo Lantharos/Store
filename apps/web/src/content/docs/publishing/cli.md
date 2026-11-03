@@ -21,13 +21,14 @@ bunx schelf <command>
 
 ## Options
 
-| Option             | What it does                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| `--token <token>`  | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`. |
-| `--config <path>`  | Use a `schelf.toml` somewhere other than the repository root.                            |
-| `--channel <name>` | Publish to a [channel](/docs/channels) other than stable.                                |
-| `--bridge`         | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).    |
-| `--api <origin>`   | Talk to another store. You can also set `SCHELF_API`.                                    |
+| Option                | What it does                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`. |
+| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                            |
+| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                    |
+| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                |
+| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).    |
+| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                    |
 
 ## Signing in
 

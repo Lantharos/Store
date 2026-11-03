@@ -37,10 +37,16 @@ publishingRoutes.post("/:id/trusted-publishers", async (c) => {
     repository: repo.full_name,
     workflow: input.workflow,
     environment: input.environment ?? null,
+    ref: input.ref ?? null,
     createdAt: new Date(),
   }
   await db.insert(schema.trustedPublisher).values(row)
-  recordHistory("app", app.id, `Trusted ${row.repository}, ${row.workflow} to publish`, c.var.viewer.name)
+  recordHistory(
+    "app",
+    app.id,
+    `Trusted ${row.repository}, ${row.workflow}${row.ref ? ` on ${row.ref}` : ""} to publish`,
+    c.var.viewer.name,
+  )
   return c.json(
     {
       id: row.id,
@@ -49,6 +55,7 @@ publishingRoutes.post("/:id/trusted-publishers", async (c) => {
       repository: row.repository,
       workflow: row.workflow,
       environment: row.environment,
+      ref: row.ref,
       created_at: row.createdAt.toISOString(),
     } satisfies TrustedPublisher,
     201,

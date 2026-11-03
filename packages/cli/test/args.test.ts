@@ -5,15 +5,15 @@ import { rolloutRequest } from "../src/commands/rollout.ts"
 test("flags take values only where a value is expected", () => {
   const args = parseArgs([
     "publish",
-    "--tag",
-    "v1.0.0",
+    "--version",
+    "1.0.0",
     "--verbose",
     "dist/a",
     "--api=http://localhost:8787",
     "dist/b",
   ])
   expect(args.positionals).toEqual(["publish", "dist/a", "dist/b"])
-  expect(flag(args, "tag")).toBe("v1.0.0")
+  expect(flag(args, "version")).toBe("1.0.0")
   expect(flag(args, "api")).toBe("http://localhost:8787")
   expect(args.flags.get("verbose")).toBe(true)
 })

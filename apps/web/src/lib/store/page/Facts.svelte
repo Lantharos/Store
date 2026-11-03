@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AppIndex, Installs } from "@schelf/protocol"
+  import { type AppIndex, type Installs, refName } from "@schelf/protocol"
   import { count, date } from "../../format.ts"
   import { systemsOf } from "../../system/artifacts.ts"
 
@@ -10,7 +10,12 @@
   const repository = $derived(app.repository?.replace(/^https?:\/\//, ""))
   const built = $derived(
     latest?.provenance.origin === "github-actions"
-      ? { text: `On GitHub from ${latest.provenance.tag ?? "a tag"}`, href: latest.provenance.run }
+      ? {
+          text: latest.provenance.ref
+            ? `Built on GitHub from ${refName(latest.provenance.ref)}`
+            : "Built on GitHub",
+          href: latest.provenance.run,
+        }
       : latest
         ? { text: "Uploaded by the developer", href: null }
         : null,

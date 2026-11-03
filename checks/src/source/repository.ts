@@ -8,35 +8,39 @@ const MAX_PATCH_BYTES = 8 * 1024 * 1024
 export class Repository {
   private constructor(readonly directory: string) {}
 
-  static async clone(repository: string, directory: string) {
+  static async clone(repository: string, directory: string, commits: string[]) {
     const output = await run(
       "git",
       ["clone", "--quiet", "--bare", "--filter=blob:none", `https://github.com/${repository}.git`, directory],
       { timeoutSeconds: 600 },
     )
-    return output.code === 0 ? new Repository(directory) : undefined
+    if (output.code !== 0) return undefined
+    await run("git", ["-C", directory, "fetch", "--quiet", "--filter=blob:none", "origin", ...commits], {
+      timeoutSeconds: 600,
+    })
+    return new Repository(directory)
   }
 
   private git(...args: string[]) {
     return runChecked("git", ["-C", this.directory, ...args], { timeoutSeconds: 900 })
   }
 
-  async show(tag: string, path: string) {
-    const output = await run("git", ["-C", this.directory, "show", `${tag}:${path}`])
+  async show(revision: string, path: string) {
+    const output = await run("git", ["-C", this.directory, "show", `${revision}:${path}`])
     return output.code === 0 ? output.stdout : undefined
   }
 
-  async licenceFiles(tag: string) {
-    const names = (await this.git("ls-tree", "--name-only", tag))
+  async licenceFiles(revision: string) {
+    const names = (await this.git("ls-tree", "--name-only", revision))
       .split("\n")
       .filter((name) => LICENCE_FILE.test(name))
-    return Promise.all(names.map(async (path) => ({ path, text: (await this.show(tag, path)) ?? "" })))
+    return Promise.all(names.map(async (path) => ({ path, text: (await this.show(revision, path)) ?? "" })))
   }
 
-  private async packagesAt(tag: string, paths: string[]) {
+  private async packagesAt(revision: string, paths: string[]) {
     const all: Packages = new Map()
     for (const path of paths) {
-      const text = await this.show(tag, path)
+      const text = await this.show(revision, path)
       if (text) for (const [name, version] of readPackages(path, text)) all.set(name, version)
     }
     return all

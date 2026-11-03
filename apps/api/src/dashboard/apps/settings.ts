@@ -142,6 +142,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       repository: row.repository,
       workflow: row.workflow,
       environment: row.environment,
+      ref: row.ref,
       created_at: row.createdAt.toISOString(),
     })),
     tokens: tokens.map((row) => ({

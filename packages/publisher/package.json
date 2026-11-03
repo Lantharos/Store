@@ -11,7 +11,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@schelf/protocol": "workspace:*"
+    "@schelf/protocol": "workspace:*",
+    "smol-toml": "1.9.1"
   },
   "devDependencies": {
     "@types/bun": "1.4.4"

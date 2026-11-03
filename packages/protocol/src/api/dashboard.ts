@@ -207,13 +207,19 @@ export interface TrustedPublisher {
   repository: string
   workflow: string
   environment: string | null
+  ref: string | null
   created_at: string
 }
+
+const refPattern = z
+  .string()
+  .regex(/^refs\/(heads|tags)\/\S+$/, "A ref looks like refs/heads/main or refs/tags/*")
 
 export const addTrustedPublisher = z.object({
   repository: z.string().regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/),
   workflow: z.string().regex(/^\.github\/workflows\/[A-Za-z0-9._-]+\.ya?ml$/),
   environment: z.string().max(100).optional(),
+  ref: refPattern.optional(),
 })
 
 export interface DashboardToken {
@@ -254,7 +260,7 @@ export interface ReleaseSummary {
   id: string
   version: string
   channel: string
-  tag: string | null
+  ref: string | null
   origin: Origin
   format: z.infer<typeof format>
   updater: Updater | null

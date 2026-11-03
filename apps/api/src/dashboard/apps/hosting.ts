@@ -105,7 +105,6 @@ hostingRoutes.post("/:id/uploads", async (c) => {
       app,
       publisher: { origin: "manual", tokenId: null },
       version: input.version.replace(/^v/, ""),
-      tag: null,
       commit: null,
       notes: input.notes,
       manifest: schelfTomlFor({

@@ -15,7 +15,7 @@ Open the project and choose **Upload**. Drop the files in; Schelf reads each one
 Make a token under **Publishing** on the project. Tokens are for one project, last a year, and can be revoked at any time. Then:
 
 ```sh
-SCHELF_TOKEN=schelf_… bunx schelf publish --tag v1.4.0 dist/*
+SCHELF_TOKEN=schelf_… bunx schelf publish --version 1.4.0 dist/*
 ```
 
 `schelf publish` reads `schelf.toml`, hashes the files, uploads them in parts when they're big, and prints the checks.

@@ -6,7 +6,7 @@ import { dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { detectProject, type Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
-import { repositoryRoot } from "../project/git.ts"
+import { defaultBranch, repositoryRoot } from "../project/git.ts"
 import { plannedFiles, sabineVersion, writePlanned } from "../setup/files.ts"
 import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
@@ -39,6 +39,15 @@ async function permissionsFile(project: Project) {
   return undefined
 }
 
+const VERSION_FILES = { sabine: "Sabine.toml", "luft-extension": "extension.toml" } as const
+
+async function publishBranch(project: Project) {
+  if (!interactive || !(project.format === "sabine" || project.format === "luft-extension")) return undefined
+  const branch = await defaultBranch(project.root)
+  const question = `Also publish whenever the version in ${VERSION_FILES[project.format]} changes on ${branch}?`
+  return (await confirm(question, false)) ? branch : undefined
+}
+
 async function setupInput(project: Project, id: string): Promise<SetupInput> {
   return {
     id,
@@ -53,6 +62,7 @@ async function setupInput(project: Project, id: string): Promise<SetupInput> {
     helper: project.extension?.helper
       ? { path: project.extension.helper, build: await helperBuild(project.root, project.extension.helper) }
       : undefined,
+    branch: await publishBranch(project),
   }
 }
 
@@ -113,7 +123,9 @@ export async function init(args: Args) {
 
   next([
     `git add ${files.map((file) => file.path).join(" ")} && git commit -m "Publish on Schelf" && git push`,
-    "Publish a GitHub release. It builds, goes through the checks and lands in review.",
+    project.format === "appimage"
+      ? "Publish a GitHub release with the AppImages. They go through the checks and land in review."
+      : "Open Publish to Schelf in the repository's Actions tab and press Run workflow. It builds, goes through the checks and lands in review.",
     `${bold("schelf status")} shows where it is.`,
   ])
   return 0

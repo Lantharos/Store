@@ -89,6 +89,7 @@ export const app = resource("app", {
           repository: repositoryLink(rule.repository),
           workflow: rule.workflow,
           environment: rule.environment ?? "Any",
+          ref: rule.ref ?? "Any",
           added: rule.createdAt,
         })),
         { title: "Trusted publishers" },

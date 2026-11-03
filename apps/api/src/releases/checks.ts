@@ -52,8 +52,8 @@ export async function dispatchChecks(
       source: app.distribution === "open" ? "open" : "closed",
       strict: release.origin === "manual",
     },
-    tag: release.origin === "oidc" ? release.tag : null,
-    previous_tag: previous?.tag ?? null,
+    commit: release.origin === "oidc" ? release.commit : null,
+    previous_commit: previous?.origin === "oidc" ? previous.commit : null,
     permissions: release.permissions,
     files: artifacts.map((artifact) => ({
       name: artifact.name,
