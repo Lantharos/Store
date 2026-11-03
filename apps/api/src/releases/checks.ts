@@ -52,7 +52,7 @@ export async function dispatchChecks(
       source: app.distribution === "open" ? "open" : "closed",
       strict: release.origin === "manual",
     },
-    tag: release.tag,
+    tag: release.origin === "oidc" ? release.tag : null,
     previous_tag: previous?.tag ?? null,
     permissions: release.permissions,
     files: artifacts.map((artifact) => ({

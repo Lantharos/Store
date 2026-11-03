@@ -141,7 +141,7 @@ export async function serveProject(request: Request, segments: string[]) {
   }
   if (first === "latest.json" && !second) {
     const files = projectFiles(project, channel, releases, options)
-    const newest = releases.find((release) => !release.bridge)
+    const newest = latestRelease(releases, options)
     if (!newest) return notFound("Nothing is out yet")
     return json(
       {
