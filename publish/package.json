@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "bun build src/main.ts --target=node --format=esm --minify --outfile=dist/index.js",
-    "check": "tsc -p .",
-    "test": "bun test"
+    "check": "tsc -p ."
   },
   "devDependencies": {
     "@actions/attest": "3.2.0",

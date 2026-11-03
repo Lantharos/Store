@@ -38,10 +38,9 @@ export function dashboard(api: string, token: string) {
     addPublisher: (id: string, body: { repository: string; workflow: string }) =>
       post<TrustedPublisher>(`${app(id)}/publishers`, body),
     releases: (id: string) => get<ReleaseSummary[]>(`${app(id)}/releases`),
-    release: (id: string, version: string) =>
-      get<ReleaseDetail>(`${app(id)}/releases/${encodeURIComponent(version)}`),
-    rollout: (id: string, version: string, body: RolloutRequest) =>
-      post<ReleaseDetail>(`${app(id)}/releases/${encodeURIComponent(version)}/rollout`, body),
+    release: (id: string, release: string) => get<ReleaseDetail>(`${app(id)}/releases/${release}`),
+    rollout: (id: string, release: string, body: RolloutRequest) =>
+      post<ReleaseDetail>(`${app(id)}/releases/${release}/rollout`, body),
   }
 }
 

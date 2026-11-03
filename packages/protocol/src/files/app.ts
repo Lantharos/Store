@@ -31,6 +31,14 @@ export const artifact = z.object({
   size: z.number().int().nonnegative(),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
   executable: z.string().nullable(),
+  deltas: z.array(
+    z.object({
+      from: z.string(),
+      url: z.string(),
+      size: z.number().int().positive(),
+      sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    }),
+  ),
 })
 export type Artifact = z.infer<typeof artifact>
 

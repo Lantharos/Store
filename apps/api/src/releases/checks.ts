@@ -1,5 +1,11 @@
 import { env } from "cloudflare:workers"
-import { type ChecksDispatch, type ChecksReport, paths } from "@schelf/protocol"
+import {
+  type ArtifactKind,
+  type ChecksDispatch,
+  type ChecksReport,
+  type Platform,
+  paths,
+} from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { github } from "../github/api.ts"
@@ -41,9 +47,11 @@ export async function dispatchChecks(
     repository: app.repository,
     tag: release.tag,
     previous_tag: previous?.tag ?? null,
+    permissions: release.permissions,
     files: artifacts.map((artifact) => ({
       name: artifact.name,
-      platform: artifact.platform,
+      platform: artifact.platform as Platform,
+      kind: artifact.kind as ArtifactKind,
       url: fileUrl(artifact.key),
       sha256: artifact.sha256,
     })),

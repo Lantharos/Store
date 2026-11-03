@@ -8,6 +8,9 @@ import { DAY_MS, dayOf } from "../lib/time.ts"
 export type AppRow = typeof schema.app.$inferSelect
 export type ReleaseRow = typeof schema.release.$inferSelect
 export type ArtifactRow = typeof schema.artifact.$inferSelect
+export type IndexedArtifact = ArtifactRow & {
+  deltas: { from: string; key: string; size: number; sha256: string }[]
+}
 
 export interface AppRecord {
   app: AppRow
@@ -15,7 +18,7 @@ export interface AppRecord {
   listing: (typeof schema.listing.$inferSelect)[]
   meta: typeof schema.listingMeta.$inferSelect | null
   screenshots: (typeof schema.screenshot.$inferSelect)[]
-  releases: { release: ReleaseRow; artifacts: ArtifactRow[] }[]
+  releases: { release: ReleaseRow; artifacts: IndexedArtifact[] }[]
   installs30d: number
 }
 
@@ -127,6 +130,23 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       : [],
     (artifact) => artifact.releaseId,
   )
+  const artifactIds = [...artifacts.values()].flat().map((artifact) => artifact.id)
+  const deltas = groupBy(
+    artifactIds.length
+      ? await db
+          .select({
+            artifactId: schema.delta.artifactId,
+            from: schema.release.version,
+            key: schema.delta.key,
+            size: schema.delta.size,
+            sha256: schema.delta.sha256,
+          })
+          .from(schema.delta)
+          .innerJoin(schema.release, eq(schema.delta.fromReleaseId, schema.release.id))
+          .where(within(schema.delta.artifactId, artifactIds))
+      : [],
+    (delta) => delta.artifactId,
+  )
   const developerById = new Map(developers.map((developer) => [developer.id, developer]))
   const listingsByApp = groupBy(listings, (row) => row.appId)
   const metaByApp = new Map(metas.map((meta) => [meta.appId, meta]))
@@ -145,9 +165,13 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       screenshots: screenshotsByApp.get(app.id) ?? [],
       releases: blocked.apps.has(app.id)
         ? []
-        : (shipped.get(app.id) ?? [])
-            .slice(0, INDEXED_RELEASES)
-            .map((release) => ({ release, artifacts: artifacts.get(release.id) ?? [] })),
+        : (shipped.get(app.id) ?? []).slice(0, INDEXED_RELEASES).map((release) => ({
+            release,
+            artifacts: (artifacts.get(release.id) ?? []).map((artifact) => ({
+              ...artifact,
+              deltas: deltas.get(artifact.id) ?? [],
+            })),
+          })),
       installs30d: installs.get(app.id) ?? 0,
     }
   })

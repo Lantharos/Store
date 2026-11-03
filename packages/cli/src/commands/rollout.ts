@@ -3,7 +3,7 @@ import { session } from "../api/auth.ts"
 import { dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin } from "../args.ts"
 import { blank, done, Failure, step } from "../ui/output.ts"
-import { appIdHere } from "./status.ts"
+import { appIdHere, findRelease } from "./status.ts"
 
 export function rolloutRequest(change: string): RolloutRequest {
   if (change === "pause" || change === "resume" || change === "all") return { action: change }
@@ -25,8 +25,9 @@ export async function rollout(args: Args) {
   const id = await appIdHere(args)
   const { token } = await session(api)
   blank()
-  const release = await step(`Changing the rollout of ${id} ${version}`, () =>
-    dashboard(api, token).rollout(id, version, request),
+  const account = dashboard(api, token)
+  const release = await step(`Changing the rollout of ${id} ${version}`, async () =>
+    account.rollout(id, (await findRelease(account, id, version)).id, request),
   )
   done(`${release.rollout_percent}% of devices${release.rollout_paused ? ", paused" : ""}`)
   blank()

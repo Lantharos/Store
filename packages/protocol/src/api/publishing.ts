@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { mirrorEntry } from "../files/catalog.ts"
-import { artifactKind, platform } from "../platforms.ts"
+import type { Permissions } from "../permissions.ts"
+import { type ArtifactKind, artifactKind, type Platform, platform } from "../platforms.ts"
 import { type CheckResult, checkResult, type ReleaseStatus } from "../releases.ts"
 
 export const OIDC_AUDIENCE = "schelf.store"
@@ -89,8 +90,17 @@ export interface ChecksDispatch {
   repository: string | null
   tag: string | null
   previous_tag: string | null
-  files: { name: string; platform: string; url: string; sha256: string }[]
+  permissions: Permissions | null
+  files: { name: string; platform: Platform; kind: ArtifactKind; url: string; sha256: string }[]
   callback: string
+}
+
+export interface DeltaReport {
+  platform: Platform
+  from: string
+  url: string
+  size: number
+  sha256: string
 }
 
 export const mirrorRequest = z.object({

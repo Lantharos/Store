@@ -38,7 +38,11 @@ const files = [
 ]
 
 describe("buildDigest", () => {
-  const diff = buildDigest(files, splitPatch(patch), { added: ["left-pad 1.3.0"], removed: [], majorBumps: [] })
+  const diff = buildDigest(files, splitPatch(patch), {
+    added: ["left-pad 1.3.0"],
+    removed: [],
+    majorBumps: [],
+  })
 
   test("groups files the way review reads them", () => {
     expect(groupOf("src/sync.rs")).toBe("code")
@@ -57,8 +61,12 @@ describe("buildDigest", () => {
   })
 
   test("puts the riskiest hunks first and stays within budget", () => {
-    expect(diff.digest.indexOf("diff --git a/package.json")).toBeLessThan(diff.digest.indexOf("diff --git a/src/sync.rs"))
-    expect(diff.digest.indexOf("diff --git a/src/sync.rs")).toBeLessThan(diff.digest.indexOf("diff --git a/README.md"))
+    expect(diff.digest.indexOf("diff --git a/package.json")).toBeLessThan(
+      diff.digest.indexOf("diff --git a/src/sync.rs"),
+    )
+    expect(diff.digest.indexOf("diff --git a/src/sync.rs")).toBeLessThan(
+      diff.digest.indexOf("diff --git a/README.md"),
+    )
     expect(diff.digest).toContain("Dependencies added\n  left-pad 1.3.0")
     const huge = buildDigest(
       [{ path: "src/big.ts", status: "M", added: 50_000, removed: 0, binary: false }],
@@ -69,7 +77,9 @@ describe("buildDigest", () => {
   })
 
   test("calls encoded blobs out by their entropy", () => {
-    const random = Array.from({ length: 6000 }, (_, index) => String.fromCharCode(33 + ((index * 7919) % 90))).join("")
+    const random = Array.from({ length: 6000 }, (_, index) =>
+      String.fromCharCode(33 + ((index * 7919) % 90)),
+    ).join("")
     expect(entropy(random)).toBeGreaterThan(5.2)
     expect(entropy("aaaa bbbb aaaa bbbb")).toBeLessThan(2)
   })
@@ -95,7 +105,13 @@ describe("dependencies", () => {
   test("reads npm and bun lockfiles", () => {
     const npm = readPackages(
       "package-lock.json",
-      JSON.stringify({ packages: { "": {}, "node_modules/react": { version: "19.0.0" }, "node_modules/a/node_modules/b": { version: "2.0.0" } } }),
+      JSON.stringify({
+        packages: {
+          "": {},
+          "node_modules/react": { version: "19.0.0" },
+          "node_modules/a/node_modules/b": { version: "2.0.0" },
+        },
+      }),
     )
     expect([...npm]).toEqual([
       ["react", "19.0.0"],

@@ -1,7 +1,9 @@
 import { mkdir, readdir, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import {
+  compareVersions,
   SABINE_REPOSITORY,
+  SCHELF_SABINE_VERSION,
   SCHELF_WORKFLOW,
   type SetupInput,
   schelfTomlFor,
@@ -13,18 +15,20 @@ import { followSchelfUpdates } from "../project/sabine.ts"
 
 const RELEASE_APP = /Lantharos\/Sabine\/\.github\/workflows\/release-app\.yml@(v[\d.]+)/i
 
+const newest = (...versions: string[]) =>
+  versions.reduce((left, right) => (compareVersions(left, right) >= 0 ? left : right))
+
 export async function sabineVersion(root: string) {
   const workflows = join(root, ".github", "workflows")
-  const names = await readdir(workflows).catch(() => [])
-  for (const name of names) {
+  for (const name of await readdir(workflows).catch(() => [])) {
     const pinned = RELEASE_APP.exec((await readOptional(join(workflows, name))) ?? "")?.[1]
-    if (pinned) return pinned
+    if (pinned) return newest(pinned, SCHELF_SABINE_VERSION)
   }
   const latest = await request<{ tag_name: string }>(
     `https://api.github.com/repos/${SABINE_REPOSITORY}/releases/latest`,
     {},
   )
-  return latest.tag_name
+  return newest(latest.tag_name, SCHELF_SABINE_VERSION)
 }
 
 export interface PlannedFile {

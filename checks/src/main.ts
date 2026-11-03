@@ -104,7 +104,7 @@ const deltas: DeltaReport[] = await makeDeltas({
   return []
 })
 
-const report: ChecksReport = { checks, deltas, facts }
+const report: ChecksReport = { checks, facts }
 const answer = await request<ChecksResponse>(payload.callback, {
   method: "POST",
   token: await githubOidcToken(),

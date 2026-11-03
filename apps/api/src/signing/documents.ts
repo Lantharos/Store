@@ -9,10 +9,14 @@ import {
   type SabineFeed,
   sabineTarget,
 } from "@schelf/protocol"
-import type { schema } from "../db/client.ts"
-import { type AppRecord, englishListing, fileUrl, mediaUrl, type ReleaseRow } from "./records.ts"
-
-type Artifact = typeof schema.artifact.$inferSelect
+import {
+  type AppRecord,
+  englishListing,
+  fileUrl,
+  type IndexedArtifact,
+  mediaUrl,
+  type ReleaseRow,
+} from "./records.ts"
 
 function accessFor(record: AppRecord, release: ReleaseRow | undefined) {
   if (record.app.format === "sabine") return "full"
@@ -52,7 +56,11 @@ export function catalogEntry(record: AppRecord): CatalogEntry {
   }
 }
 
-function indexedRelease(record: AppRecord, release: ReleaseRow, artifacts: Artifact[]): IndexedRelease {
+function indexedRelease(
+  record: AppRecord,
+  release: ReleaseRow,
+  artifacts: IndexedArtifact[],
+): IndexedRelease {
   return {
     version: release.version,
     channel: release.channel,
@@ -78,6 +86,12 @@ function indexedRelease(record: AppRecord, release: ReleaseRow, artifacts: Artif
       size: artifact.size,
       sha256: artifact.sha256,
       executable: artifact.executable,
+      deltas: artifact.deltas.map((delta) => ({
+        from: delta.from,
+        url: fileUrl(delta.key),
+        size: delta.size,
+        sha256: delta.sha256,
+      })),
     })),
   }
 }

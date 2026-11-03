@@ -77,6 +77,7 @@ export async function scanStrings(files: TreeFile[]) {
     const { stdout } = await run("strings", ["-a", "-n", "6", file.absolute])
     scanText(stdout, file.path, facts)
   })
-  for (const list of Object.values(facts) as Evidence[][]) list.sort((left, right) => left.value.localeCompare(right.value))
+  for (const list of Object.values(facts) as Evidence[][])
+    list.sort((left, right) => left.value.localeCompare(right.value))
   return facts
 }

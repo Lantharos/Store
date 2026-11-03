@@ -35,7 +35,9 @@ describe("quality rules", () => {
   test("leave out what isn't a usable app", () => {
     expect(exclusion({ ...app, type: "runtime" }, now)).toBe("not an app")
     expect(exclusion({ ...app, endOfLife: true }, now)).toBe("end of life")
-    expect(exclusion({ ...app, renamedTo: "org.example.NewTool" }, now)).toBe("renamed to org.example.NewTool")
+    expect(exclusion({ ...app, renamedTo: "org.example.NewTool" }, now)).toBe(
+      "renamed to org.example.NewTool",
+    )
     expect(exclusion({ ...app, screenshots: 0 }, now)).toBe("no screenshots, summary or icon")
     expect(exclusion({ ...app, libraryOnly: true }, now)).toBe("a library")
   })
@@ -87,7 +89,13 @@ test("Fedora apps already on Flathub are found by id, or by name and homepage", 
     parseMetainfo(
       `<component type="desktop"><id>${id}</id><name>${name}</name><url type="homepage">${homepage}</url></component>`,
     )
-  expect(onFlathub(component("org.gnome.Calculator.desktop", "Calculator", "https://x.org"), flathub)).toBe(true)
-  expect(onFlathub(component("firefox.desktop", "Firefox", "https://www.mozilla.org/firefox"), flathub)).toBe(true)
-  expect(onFlathub(component("galculator.desktop", "Calculator", "https://galculator.mnim.org"), flathub)).toBe(false)
+  expect(onFlathub(component("org.gnome.Calculator.desktop", "Calculator", "https://x.org"), flathub)).toBe(
+    true,
+  )
+  expect(onFlathub(component("firefox.desktop", "Firefox", "https://www.mozilla.org/firefox"), flathub)).toBe(
+    true,
+  )
+  expect(
+    onFlathub(component("galculator.desktop", "Calculator", "https://galculator.mnim.org"), flathub),
+  ).toBe(false)
 })

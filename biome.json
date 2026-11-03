@@ -6,12 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "**",
-      "!**/migrations",
-      "!**/worker-configuration.d.ts",
-      "!**/.svelte-kit"
-    ]
+    "includes": ["**", "!**/migrations", "!**/worker-configuration.d.ts", "!**/.svelte-kit"]
   },
   "formatter": {
     "indentStyle": "space",
@@ -55,9 +50,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.svelte"
-      ],
+      "includes": ["**/*.svelte"],
       "linter": {
         "rules": {
           "correctness": {

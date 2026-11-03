@@ -42,5 +42,7 @@ test("sets what the binary shows against what the app declares", () => {
     "undeclared full access",
     "declared devices: serial",
   ])
-  expect(comparePermissions(null, { libraries: [], strings: facts, files: [] }).every((row) => row.declared)).toBe(true)
+  expect(
+    comparePermissions(null, { libraries: [], strings: facts, files: [] }).every((row) => row.declared),
+  ).toBe(true)
 })

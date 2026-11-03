@@ -1,18 +1,23 @@
 import { env } from "cloudflare:workers"
 import {
+  MAX_ICON_BYTES,
   type MirrorEntry,
   type MirrorOrigin,
   type MirrorRequest,
   type MirrorResponse,
   paths,
+  sha256Hex,
 } from "@schelf/protocol"
 import { and, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { within } from "../signing/records.ts"
+import { fail } from "../lib/http.ts"
+import { fileUrl, within } from "../signing/records.ts"
 import { writeSigned } from "../signing/write.ts"
 import { clearOriginStatement, indexStatements } from "./search-index.ts"
 
 const STATEMENTS_PER_BATCH = 400
+const MIRROR_ID = /^[A-Za-z0-9._+-]{1,255}$/
+const ICON_FILE = /^([0-9a-f]{16})\.png$/
 
 function mirrorKey(entry: Pick<MirrorEntry, "origin" | "id">) {
   return `${entry.origin}:${entry.id}`
@@ -99,4 +104,18 @@ export async function replaceMirror(request: MirrorRequest): Promise<MirrorRespo
   await replaceOrigin("flathub", flathub)
   await replaceOrigin("fedora", fedora)
   return { flathub: flathub.length, fedora: fedora.length }
+}
+
+export async function receiveMirrorIcon(id: string, file: string, request: Request) {
+  const hash = ICON_FILE.exec(file)?.[1]
+  if (!MIRROR_ID.test(id) || !hash)
+    fail(422, "Mirror icons go to <app id>/<first 16 hex digits of their SHA-256>.png")
+  const bytes = new Uint8Array(await request.arrayBuffer())
+  if (bytes.length === 0 || bytes.length > MAX_ICON_BYTES) fail(413, "Icons are at most 1 MB")
+  if (!(await sha256Hex(bytes)).startsWith(hash)) fail(422, "The icon doesn't match the hash in its name")
+  const key = paths.media(id, hash, "png")
+  await env.BUCKET.put(key, bytes, {
+    httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" },
+  })
+  return { url: fileUrl(key) }
 }

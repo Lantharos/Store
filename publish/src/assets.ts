@@ -1,8 +1,5 @@
-import { createWriteStream } from "node:fs"
-import { mkdir } from "node:fs/promises"
+import { mkdir, open } from "node:fs/promises"
 import { join, matchesGlob } from "node:path"
-import { Readable } from "node:stream"
-import { pipeline } from "node:stream/promises"
 import * as core from "@actions/core"
 
 interface Asset {
@@ -59,7 +56,12 @@ export async function downloadReleaseAssets(tag: string, patterns: string[], tok
       })
       if (!response.ok || !response.body)
         throw new Error(`Couldn't download ${asset.name} (${response.status})`)
-      await pipeline(Readable.fromWeb(response.body), createWriteStream(join(directory, asset.name)))
+      const file = await open(join(directory, asset.name), "w")
+      try {
+        for await (const chunk of response.body) await file.write(chunk)
+      } finally {
+        await file.close()
+      }
     }),
   )
   return assets.map((asset) => join(directory, asset.name))

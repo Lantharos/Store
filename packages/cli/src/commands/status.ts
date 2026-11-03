@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { type CheckResult, readSchelfToml, SCHELF_TOML } from "@schelf/protocol"
 import { session } from "../api/auth.ts"
-import { dashboard } from "../api/dashboard.ts"
+import { type Dashboard, dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { repositoryRoot } from "../project/git.ts"
 import { blank, Failure, field, line, title } from "../ui/output.ts"
@@ -32,6 +32,17 @@ const ago = (iso: string) => {
   return `${Math.round(hours / 24)} days ago`
 }
 
+export async function findRelease(account: Dashboard, id: string, version: string | undefined) {
+  const releases = await account.releases(id)
+  const found = version
+    ? releases.find((release) => release.version === version.replace(/^v/, ""))
+    : releases[0]
+  if (found) return found
+  throw version
+    ? new Failure(`${id} has no release ${version}`)
+    : new Failure(`${id} has no releases yet`, "Publish a GitHub release to send the first one.")
+}
+
 export async function status(args: Args) {
   const api = apiOrigin(args)
   const id = await appIdHere(args)
@@ -53,7 +64,7 @@ export async function status(args: Args) {
   }
   if (release.next) field("Next", release.next)
   if (release.run_url) field("Build", link(release.run_url))
-  field("Dashboard", link(`${api}/dashboard/apps/${id}/releases/${release.version}`))
+  field("Dashboard", link(`${api}/dashboard/apps/${id}/releases/${release.id}`))
   blank()
   return 0
 }
