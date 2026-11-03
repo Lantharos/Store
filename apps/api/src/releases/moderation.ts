@@ -12,10 +12,18 @@ async function resignEverything(appId: string) {
   ])
 }
 
-export async function delist(appId: string, listed: boolean) {
+export async function delist(appId: string, replacement?: { id: string; note: string }) {
   await db
     .update(schema.app)
-    .set({ status: listed ? "published" : "delisted" })
+    .set({ status: "delisted", replacedBy: replacement?.id ?? null, replacedNote: replacement?.note ?? null })
+    .where(eq(schema.app.id, appId))
+  await resignEverything(appId)
+}
+
+export async function relist(appId: string) {
+  await db
+    .update(schema.app)
+    .set({ status: "published", replacedBy: null, replacedNote: null })
     .where(eq(schema.app.id, appId))
   await resignEverything(appId)
 }
@@ -61,6 +69,10 @@ export async function unpull(target: { app: string; release?: string }) {
         status: sql`case when ${schema.release.rolloutPercent} = 100 then 'live' else 'rolling-out' end`,
       })
       .where(eq(schema.release.id, target.release))
-  else await db.update(schema.app).set({ status: "published" }).where(eq(schema.app.id, target.app))
+  else
+    await db
+      .update(schema.app)
+      .set({ status: "published", replacedBy: null, replacedNote: null })
+      .where(eq(schema.app.id, target.app))
   await resignEverything(target.app)
 }

@@ -4,7 +4,8 @@ import { and, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { db, schema } from "../../db/client.ts"
 import { decideListing } from "../../hosting/listing.ts"
-import { delist, pull, unpull } from "../../releases/moderation.ts"
+import { delist, pull, relist, unpull } from "../../releases/moderation.ts"
+import { replaceApp } from "../../releases/replacing.ts"
 import { type AppView, apps } from "../data/apps.ts"
 import { APP_FORMAT, APP_KIND, APP_STATUS, SOURCE, VISIBILITY } from "../data/labels.ts"
 import { appPage, link, repositoryLink } from "../data/links.ts"
@@ -72,6 +73,8 @@ export const app = resource("app", {
         project: `${app.publisherSlug}/${app.slug}`,
         publisher: b.ref("publisher", app.publisherId, app.publisher),
         status: APP_STATUS[app.status],
+        "replaced by": app.replacedBy ? b.ref("app", app.replacedBy) : undefined,
+        "replacement note": app.replacedNote ?? undefined,
         visibility: VISIBILITY[app.visibility],
         "asks to be listed": app.listingRequestedAt ?? undefined,
         kind: APP_KIND[app.kind],
@@ -135,17 +138,32 @@ export const app = resource("app", {
       danger: "confirm",
       when: (app) => app.status === "published",
       run: async ({ record }) => {
-        await delist(record.id, false)
+        await delist(record.id)
         return `${record.name} is delisted`
+      },
+    }),
+    replace: action({
+      label: "Replace with…",
+      description:
+        "Delists the app and points it to the one that takes its place. Schelf installs that one for people who have this one, then removes this one.",
+      input: z.object({
+        replacement: z.string().trim().min(1).describe("The id of the listed app that takes its place"),
+        note: z.string().trim().min(1).max(300).describe("Shown on the app's page and in Schelf"),
+      }),
+      danger: "confirm",
+      when: (app) => app.status === "published",
+      run: async ({ record, input }) => {
+        const name = await replaceApp(record.id, input.replacement, input.note)
+        return `${record.name} is replaced by ${name}`
       },
     }),
     relist: action({
       label: "List again",
-      description: "Shows the app in the catalog and search again.",
+      description: "Shows the app in the catalog and search again, and drops any replacement.",
       danger: "confirm",
       when: (app) => app.status === "delisted",
       run: async ({ record }) => {
-        await delist(record.id, true)
+        await relist(record.id)
         return `${record.name} is listed again`
       },
     }),

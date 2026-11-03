@@ -46,6 +46,14 @@ export interface AppPage {
   status: Extract<AppStatus, "published" | "delisted" | "pulled">
   installs: Installs
   project: ProjectSummary
+  replacement: Replacement | null
+}
+
+export interface Replacement {
+  id: string
+  name: string
+  page: string
+  note: string
 }
 
 export interface ProjectSummary {

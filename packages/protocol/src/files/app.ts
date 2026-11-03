@@ -88,6 +88,7 @@ export const appIndex = z.object({
   licence: z.string().nullable(),
   repository: z.string().nullable(),
   distribution,
+  replaced_by: z.object({ id: z.string(), note: z.string() }).optional(),
   releases: z.array(indexedRelease),
 })
 export type AppIndex = z.infer<typeof appIndex>

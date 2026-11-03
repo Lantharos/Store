@@ -46,6 +46,8 @@ export const app = sqliteTable(
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
     statusBeforeDelete: text("status_before_delete", { enum: APP_STATUSES }),
     purgedAt: integer("purged_at", { mode: "timestamp_ms" }),
+    replacedBy: text("replaced_by"),
+    replacedNote: text("replaced_note"),
     createdAt: createdAt(),
   },
   (table) => [

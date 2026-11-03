@@ -6,6 +6,13 @@ import { extensionGrants } from "./extension.ts"
 
 export function storePage(found: AppPage, path: string) {
   if (found.status === "pulled") error(410, "This app was removed from Schelf.")
+  if (found.status === "delisted" && found.replacement)
+    return {
+      view: "replaced" as const,
+      app: found.app,
+      replacement: { ...found.replacement, page: new URL(found.replacement.page).pathname },
+      path,
+    }
   if (found.status === "delisted") error(404, "This app isn't listed on Schelf any more.")
   const { app } = found
   const stable = app.releases.filter((release) => release.channel === STABLE)

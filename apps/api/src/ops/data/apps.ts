@@ -23,6 +23,8 @@ function appQuery() {
       distribution: schema.app.distribution,
       repository: schema.app.repository,
       licence: schema.app.licence,
+      replacedBy: schema.app.replacedBy,
+      replacedNote: schema.app.replacedNote,
       publisherId: schema.publisher.id,
       publisher: schema.publisher.name,
       publisherSlug: schema.publisher.slug,

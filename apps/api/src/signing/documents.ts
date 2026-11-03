@@ -140,6 +140,9 @@ export function appIndex(record: AppRecord): AppIndex {
     licence: record.app.licence,
     repository: record.app.repository,
     distribution: record.app.distribution,
+    ...(record.app.replacedBy
+      ? { replaced_by: { id: record.app.replacedBy, note: record.app.replacedNote ?? "" } }
+      : {}),
     releases: indexable(record).map(({ release, artifacts }) => indexedRelease(record, release, artifacts)),
   }
 }

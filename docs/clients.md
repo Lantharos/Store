@@ -74,7 +74,7 @@ in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<
 
 **Downloads.** The button picks the artifact for the visitor's system from the user agent (and client hints for architecture): the installer on Windows, the disk image on macOS, the AppImage or package on other Linux. "Other systems" lists every artifact.
 
-**SEO.** App pages have their own title, description, Open Graph image rendered from the icon and first screenshot, `SoftwareApplication` structured data, canonical URLs and a sitemap. Pulled apps return 410; delisted ones 404.
+**SEO.** App pages have their own title, description, Open Graph image rendered from the icon and first screenshot, `SoftwareApplication` structured data, canonical URLs and a sitemap. Pulled apps return 410; delisted ones 404, unless another app replaced them, when the page says so and links to it.
 
 ## The dashboard
 

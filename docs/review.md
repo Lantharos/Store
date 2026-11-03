@@ -44,6 +44,7 @@ Actions, all running in the store. Each one only shows while it applies: Pause o
 | Reject (reason, sent as statement of reasons)             | release in review                   | confirm                                                                                                     |
 | Pause, resume, send to everyone, set rollout, roll back   | release rolling out or live         | confirm (resume: none)                                                                                      |
 | Delist, list again                                        | published or delisted app           | confirm                                                                                                     |
+| Replace with… (the listed app taking its place, a note)   | published app                       | confirm; delists it, and List again drops the replacement                                                   |
 | List it, Keep unlisted (reason, emailed)                  | app asking to be listed             | confirm                                                                                                     |
 | Pull (block from starting, with a public note), undo pull | app or release                      | reauth                                                                                                      |
 | Revoke a token, remove a trusted publisher                | app                                 | confirm                                                                                                     |
