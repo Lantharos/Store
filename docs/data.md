@@ -106,6 +106,8 @@ All under `https://schelf.store/api/v1`.
 | `PUT /publish/:release/files/:name` | Upload token from the previous call | Upload a file; files over 95 MB go up in parts with `?part=<n>` and `?parts=<count>`. |
 | `POST /publish/:release/complete` | Upload token | Verify hashes and attestations, run the quick checks, queue the rest. |
 | `POST /checks/:release` | OIDC token of this repository's checks workflow | Report the deeper checks. |
+| `PUT /checks/:release/deltas/:platform?from=<version>` | OIDC token of this repository's checks workflow | Store a zstd patch from an approved release to this one. |
+| `PUT /mirror/media/:id/<hash>.png` | OIDC token of this repository's mirror workflow | Store a Fedora app's icon, named by the start of its SHA-256. |
 | `POST /mirror` | OIDC token of this repository's mirror workflow | Replace the mirror catalogs and `mirror_app`. |
 
 ### Dashboard

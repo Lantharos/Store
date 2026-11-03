@@ -62,7 +62,7 @@ Rules:
 
 **Rollback.** Rolling back marks the release withdrawn and points the index at the previous one. Devices already on it are offered the previous version (Sabine keeps it locally, AppImages keep the last file), unless the developer marks the old one unsafe, in which case they stay put and get the next fix.
 
-**Deltas.** For each new release the checks workflow makes zstd patches (`--patch-from`, long-distance matching) from the last three approved releases of each platform. The client downloads the patch if it has one of those versions and the patch is under 60% of the full size, rebuilds the file, checks its hash against the index, and falls back to the full download on any mismatch. Sabine apps are mostly web assets and a Rust binary of 20–40 MB, so routine updates should be a few MB.
+**Deltas.** For each new release the checks workflow makes zstd patches (`zstd -19 --long=31 --patch-from`) from the last three approved releases of each platform, for the file clients update from: the AppImage, the Sabine archive, or the extension. It keeps a patch only when it's under 60% of the full size, and the index lists the kept ones next to each artifact. The client downloads the patch if it has one of those versions, rebuilds the file with `zstd -d --long=31 --patch-from`, checks its hash against the index, and falls back to the full download on any mismatch. Sabine apps are mostly web assets and a Rust binary of 20–40 MB, so routine updates should be a few MB.
 
 **Channels.** `stable` only at launch. The data model has a channel column for `beta` later.
 

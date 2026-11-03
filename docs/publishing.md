@@ -54,33 +54,55 @@ The workflow `schelf init` writes, for a Sabine app:
 
 ```yaml
 name: Schelf
+
 on:
   release:
     types: [published]
+
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
+
 jobs:
   build:
-    uses: Lantharos/sabine/.github/workflows/release-app.yml@v0.68.0
+    uses: Lantharos/Sabine/.github/workflows/release-app.yml@v0.70
     with:
-      sabine_version: v0.68.0
+      sabine_version: v0.70
+      accept_wix_eula: true
     secrets: inherit
   publish:
-    needs: build
     runs-on: ubuntu-latest
+    needs: build
     steps:
-      - uses: actions/download-artifact@v5
-        with: { path: dist, merge-multiple: true }
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
       - uses: Lantharos/schelf-store/publish@v1
-        with: { files: dist/* }
+        with:
+          files: dist/**
 ```
+
+Sabine's release workflow builds every package and, because the app updates from Schelf, leaves the GitHub release alone. The action reads each file's platform and package kind from the names Sabine gives them.
+
+For an AppImage built elsewhere, the workflow waits for the release's AppImages and publishes those, reading each one's architecture from its ELF header:
+
+```yaml
+      - uses: actions/checkout@v7
+      - uses: Lantharos/schelf-store/publish@v1
+        with:
+          release-assets: "*.AppImage"
+```
+
+Extensions are packed from the tagged tree with `git archive` into one `.tar.zst`. A release published by another workflow with `GITHUB_TOKEN` starts no workflows, so publish releases yourself, or add the action as a step at the end of the workflow that builds, and register that workflow as the trusted publisher instead.
 
 The `publish` action:
 
 1. Asks GitHub for an OIDC token with the audience `schelf.store`.
-2. Attests every file with `actions/attest-build-provenance`, so anyone can check which workflow run built it.
+2. Records a build provenance attestation over every file, so anyone can check which workflow run built it.
 3. Calls `POST /api/v1/publish` with the token, the release tag, `schelf.toml` and each file's name, platform, size and SHA-256. The Worker checks the token's signature against GitHub's keys, its audience and expiry, and that its repository id, workflow path, environment and `ref` (a tag) match a trusted publisher of that app. It answers with upload addresses for this release only, valid for an hour.
 4. Uploads the files; the Worker hashes them as they stream into R2 and refuses any that don't match.
 5. Calls `complete`. The Worker confirms the attestations exist for each digest in that repository, runs the quick checks, queues the deeper ones, and prints the release's dashboard address in the job summary.
