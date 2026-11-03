@@ -25,7 +25,8 @@
   --radius-tile: 22px;
 }
 
-:root {
+:root,
+[data-scheme] {
   color-scheme: light dark;
   --canvas: light-dark(#fcf9f3, #12110e);
   --raised: light-dark(#ffffff, #1d1b17);
