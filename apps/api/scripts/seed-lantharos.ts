@@ -1,12 +1,14 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { paths, sha256Hex } from "@schelf/protocol"
+import { paths, rasterIcon, sha256Hex } from "@schelf/protocol"
+import { iconPng } from "../src/dashboard/apps/icon-png.ts"
 import { sniffImage } from "../src/dashboard/apps/images.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
 
 const LUFT = process.env.LUFT ?? join(import.meta.dirname, "../../../../luft")
 const OWNER_EMAIL = process.env.OWNER_EMAIL
 const REMOTE = process.argv.includes("--remote")
+const WORK = join(import.meta.dirname, "../.wrangler")
 const MAIN_CATEGORIES = new Set([
   "AudioVideo",
   "Development",
@@ -74,21 +76,25 @@ const APPS: SeedApp[] = [
     folder: "apps/mailman",
     summary: "Mail",
     description: "One inbox for every account, a screener for new senders and search that works offline.",
-    shots: [],
+    shots: ["apps/mailman/store/inbox.webp", "apps/mailman/store/reading.webp", "apps/mailman/store/compose.webp"],
   },
   {
     folder: "apps/meet",
     summary: "Gets a computer ready for Luft without a USB stick",
     description:
       "Checks the computer, makes room next to the system already there, and restarts into Luft once to try it or install it. It can also make a USB stick, and take everything back out again.",
-    shots: ["web/docs/src/assets/shots/meet.webp"],
+    shots: ["apps/meet/store/check.webp", "apps/meet/store/room.webp", "apps/meet/store/ready.webp"],
   },
   {
-    folder: "kestrel/extensions/rain",
+    folder: "extensions/rain",
     summary: "Rain over your desktop",
     description:
       "Rain falls over the wallpaper and splashes on windows and the taskbar, from a drizzle to a storm, or plays as sound while you work.",
-    shots: [],
+    shots: [
+      "extensions/rain/store/windows.webp",
+      "extensions/rain/store/quick-settings.webp",
+      "extensions/rain/store/wallpaper.webp",
+    ],
   },
 ]
 
@@ -114,7 +120,7 @@ function readManifest(folder: string) {
     name: field("name")!,
     kind: extension ? "extension" : "app",
     format: extension ? "luft-extension" : "sabine",
-    icon: extension ? null : `${folder}/public/favicon.svg`,
+    icon: extension ? `${folder}/icon.svg` : `${folder}/public/favicon.svg`,
     categories: listFrom(text, "categories"),
     keywords: listFrom(text, "keywords"),
   }
@@ -126,7 +132,15 @@ async function media(appId: string, file: string, uploads: Map<string, string>) 
   if (!image) throw new Error(`${file} isn't an image the store takes`)
   const key = paths.media(appId, await sha256Hex(bytes), image.extension)
   uploads.set(key, join(LUFT, file))
-  return { key, image }
+  return { key, image, bytes }
+}
+
+async function iconWithPng(appId: string, file: string, uploads: Map<string, string>) {
+  const icon = await media(appId, file, uploads)
+  const png = join(WORK, `${icon.key.replaceAll("/", "-")}.png`)
+  writeFileSync(png, await iconPng(icon.bytes))
+  uploads.set(rasterIcon(icon.key), png)
+  return icon
 }
 
 async function wrangler(...args: string[]) {
@@ -154,7 +168,7 @@ const statements = [
 
 for (const seed of APPS) {
   const manifest = readManifest(seed.folder)
-  const icon = manifest.icon && (await media(manifest.id, manifest.icon, uploads))
+  const icon = manifest.icon && (await iconWithPng(manifest.id, manifest.icon, uploads))
   const categories = manifest.categories.filter((name) => MAIN_CATEGORIES.has(name))
   statements.push(
     `INSERT INTO app (id, publisher_id, kind, format, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'listed', ${now})
@@ -181,11 +195,11 @@ statements.push(
   `INSERT INTO store_state (key, value) VALUES (${sql(RESIGN_REQUEST)}, ${sql(String(now))}) ON CONFLICT (key) DO UPDATE SET value = excluded.value;`,
 )
 
-const sqlFile = join(import.meta.dirname, "../.wrangler/seed-lantharos.sql")
+const sqlFile = join(WORK, "seed-lantharos.sql")
 writeFileSync(sqlFile, statements.join("\n"))
 await wrangler("d1", "execute", "DB", "--file", sqlFile)
 for (const [key, file] of uploads) {
-  const type = key.endsWith(".svg") ? "image/svg+xml" : "image/webp"
+  const type = key.endsWith(".svg") ? "image/svg+xml" : key.endsWith(".png") ? "image/png" : "image/webp"
   await wrangler(
     "r2",
     "object",
