@@ -8,6 +8,7 @@ import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { errorResponse, fail } from "./lib/http.ts"
+import { deliverPending } from "./ops/pending.ts"
 import { backOffice, publishDefinitions } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
 import { stepRollouts } from "./releases/rollout.ts"
@@ -52,7 +53,13 @@ export default {
   },
   async scheduled(controller) {
     if (controller.cron === HOURLY) {
-      await Promise.all([stepRollouts(), resignIfRequested(), publishDefinitions()])
+      const office = backOffice()
+      await Promise.all([
+        stepRollouts(),
+        resignIfRequested(),
+        publishDefinitions(),
+        office && deliverPending(office.pult),
+      ])
       return
     }
     await Promise.all([rollUpDownloads(), recheckNamespaces(), resign({ type: "revocations" })])

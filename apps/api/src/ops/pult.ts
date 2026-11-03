@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers"
 import { createPult, type Pult } from "@lantharos/pult"
 import project from "../../.pult/index.ts"
+import { deliverPending } from "./pending.ts"
 
 interface BackOffice {
   pult: Pult
@@ -26,6 +27,7 @@ export async function publishDefinitions() {
   const marker = new Request(`${env.PUBLIC_URL}/internal/pult-definitions/${project.manifest.version}`)
   if (!(await caches.default.match(marker))) {
     await office.pult.deploy()
+    await deliverPending(office.pult)
     await caches.default.put(marker, new Response(null, { headers: { "cache-control": "max-age=31536000" } }))
   }
   definitionsPublished = true
