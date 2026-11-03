@@ -16,6 +16,8 @@ export interface StringFacts {
 }
 
 const MAX_FILE_BYTES = 300 * 1024 * 1024
+const DESCRIPTIVE =
+  /(^|\/)share\/(metainfo|appdata|applications|doc|licenses|man|icons|locale|mime)\/|\.(md|txt|desktop|xml|svg|png|jpe?g|webp|ico|mo|po)$/i
 const MAX_PER_KIND = 200
 const URL = /\b(?:https?|wss?|ftp):\/\/([A-Za-z0-9.-]+\.[A-Za-z]{2,}|\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?/g
 const ADDRESS = /^(\d{1,3}(?:\.\d{1,3}){3})(?::\d{2,5})?$/
@@ -72,7 +74,7 @@ export const emptyFacts = (): StringFacts => ({
 
 export async function scanStrings(files: TreeFile[]) {
   const facts = emptyFacts()
-  const scanned = files.filter((file) => file.size <= MAX_FILE_BYTES)
+  const scanned = files.filter((file) => file.size <= MAX_FILE_BYTES && !DESCRIPTIVE.test(file.path))
   await mapLimit(scanned, 8, async (file) => {
     const { stdout } = await run("strings", ["-a", "-n", "6", file.absolute])
     scanText(stdout, file.path, facts)
