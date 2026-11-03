@@ -13,7 +13,7 @@ const MARKS = { passed: good("✓"), warning: warn("!"), failed: bad("✕") }
 export function printChecks(checks: CheckResult[]) {
   if (!checks.length) return
   blank()
-  for (const check of checks) line(`${MARKS[check.status]} ${check.name.padEnd(13)}${muted(check.summary)}`)
+  for (const check of checks) line(`${MARKS[check.status]} ${check.name.padEnd(15)}${muted(check.summary)}`)
 }
 
 export async function appIdHere(args: Args) {
@@ -48,11 +48,7 @@ export async function status(args: Args) {
   const id = await appIdHere(args)
   const { token } = await session(api)
   const account = dashboard(api, token)
-  const releases = await account.releases(id)
-  const version = args.positionals[0] ?? releases[0]?.version
-  if (!version)
-    throw new Failure(`${id} has no releases yet`, "Publish a GitHub release to send the first one.")
-  const release = await account.release(id, version)
+  const release = await account.release(id, (await findRelease(account, id, args.positionals[0])).id)
 
   title(`${id} ${release.version}`)
   const origin = release.origin === "oidc" ? "built on GitHub Actions" : "uploaded by the developer"
