@@ -87,14 +87,18 @@
   {#if upload.files.length}
     <ul class="divide-y divide-hairline overflow-hidden rounded-group bg-raised">
       {#each upload.files as picked (picked.file.name)}
-        <li class="grid gap-3 px-5 py-3.5 sm:grid-cols-[minmax(0,1fr)_12rem_12rem_auto] sm:items-center">
-          <span class="min-w-0">
-            <span class="block truncate font-mono text-[13px]">{picked.file.name}</span>
-            <span class="block text-[13px] text-ink-muted">{bytes(picked.file.size)}{picked.signature ? " · signed for updates" : ""}</span>
-          </span>
-          <Select label="System for {picked.file.name}" bind:value={picked.platform} options={platforms} />
-          <Select label="Kind of {picked.file.name}" bind:value={picked.kind} options={kinds} />
-          <button type="button" class="button button-sm button-quiet w-8 px-0" aria-label="Remove {picked.file.name}" disabled={busy} onclick={() => upload.remove(picked)}><X class="size-4" /></button>
+        <li class="space-y-2.5 px-5 py-3.5">
+          <div class="flex items-center justify-between gap-3">
+            <span class="min-w-0">
+              <span class="block truncate font-mono text-[13px]">{picked.file.name}</span>
+              <span class="block text-[13px] text-ink-muted">{bytes(picked.file.size)}{picked.signature ? " · signed for updates" : ""}</span>
+            </span>
+            <button type="button" class="button button-sm button-quiet w-8 shrink-0 px-0" aria-label="Remove {picked.file.name}" disabled={busy} onclick={() => upload.remove(picked)}><X class="size-4" /></button>
+          </div>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <Select label="System for {picked.file.name}" bind:value={picked.platform} options={platforms} />
+            <Select label="Kind of {picked.file.name}" bind:value={picked.kind} options={kinds} />
+          </div>
         </li>
       {/each}
     </ul>
@@ -109,7 +113,7 @@
     </Field>
   </div>
   <Field label="Release notes" note="Optional">
-    <textarea class="field h-32 py-3" bind:value={notes}></textarea>
+    <textarea class="field h-32 resize-none py-3" bind:value={notes}></textarea>
   </Field>
   {#if move}
     <div class="flex items-start justify-between gap-6 rounded-group bg-raised p-5">

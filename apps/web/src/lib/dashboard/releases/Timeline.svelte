@@ -95,7 +95,7 @@
       <div class="disclosure grid {checksOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}" inert={!checksOpen}>
         <ul class="min-h-0 overflow-hidden">
           {#each sortedChecks as check (check.name)}
-            <CheckRow {check} {appId} widened={check.name === "permissions" && release.permissions_widened} />
+            <CheckRow {check} {appId} widened={check.name === "permissions" && release.permissions_widened} uploaded={release.origin === "manual"} />
           {/each}
         </ul>
       </div>

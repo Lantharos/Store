@@ -28,8 +28,8 @@
     <Kbd keys="mod+K" />
   </button>
 
-  <a href="/dashboard" aria-current={path === "/dashboard" ? "page" : undefined} class="rounded-xl px-2 py-1.5 text-[13px] text-ink-muted hover:text-ink aria-[current=page]:text-ink">Apps</a>
-  <nav aria-label="Apps" class="space-y-0.5">
+  <a href="/dashboard" aria-current={path === "/dashboard" ? "page" : undefined} class="rounded-xl px-2 py-1.5 text-[13px] text-ink-muted hover:text-ink aria-[current=page]:text-ink">Projects</a>
+  <nav aria-label="Projects" class="space-y-0.5">
     {#each session.apps as app (app.id)}
       {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}
       <a

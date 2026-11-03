@@ -83,7 +83,11 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       latest_follows_rollout: app.latestFollowsRollout,
       created_at: app.createdAt.toISOString(),
     },
-    links: projectLinks(app, publisherSlug),
+    links: projectLinks(app, publisherSlug, [
+      ...new Set(
+        [app.updater, ...switches.map((row) => row.fromUpdater)].filter((updater) => updater !== null),
+      ),
+    ]),
     channels: channelNames.map((name) => ({
       name,
       keep: channels.find((row) => row.name === name)?.keep ?? null,

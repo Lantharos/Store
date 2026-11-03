@@ -40,13 +40,13 @@
 
 {#if session.apps.length}
   <ul class="mt-8 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
-    <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_8rem] gap-4 px-5 pt-4 pb-2.5 text-[13px] text-ink-muted md:grid" aria-hidden="true">
+    <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_11rem] gap-4 px-5 pt-4 pb-2.5 text-[13px] text-ink-muted md:grid" aria-hidden="true">
       <span>Project</span><span>Version</span><span>Latest release</span><span class="text-right">Downloads this week</span>
     </li>
     {#each session.apps as app, index (app.id)}
       {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}
       <li class="enter" style:--order={index}>
-        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_8rem]">
+        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_11rem]">
           <span class="flex min-w-0 items-center gap-4">
             {#if app.kind === "extension"}
               <ExtensionArt art={app.art} icon={app.icon} name={app.name} width={88} class="h-11" />

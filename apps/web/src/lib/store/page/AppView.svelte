@@ -109,7 +109,7 @@
     <aside class="space-y-8">
       {#if extensionAccess}
         <ExtensionPermissions grants={extensionAccess} />
-      {:else if latest}
+      {:else if latest && !hosted}
         <Permissions permissions={latest.permissions} />
       {/if}
       <Facts {app} {installs} />

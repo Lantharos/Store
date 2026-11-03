@@ -64,7 +64,7 @@
     </div>
     <div class="space-y-6">
       <NextRelease {app} version={releases.data.find((release) => release.status === "live" || release.status === "rolling-out")?.version ?? latest.version} />
-      <WhereItGoes {app} />
+      <WhereItGoes settings={settings.data!} />
     </div>
   </div>
 {/if}

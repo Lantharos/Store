@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import type { Links, ProjectSummary } from "@schelf/protocol"
+import type { Links, ProjectSummary, Updater } from "@schelf/protocol"
 import type { AppRow } from "../signing/records.ts"
 
 type Addressed = Pick<AppRow, "id" | "kind" | "slug" | "visibility">
@@ -21,7 +21,7 @@ export function linkBase(app: Pick<AppRow, "slug">, publisherSlug: string, chann
 }
 
 export function projectSummary(
-  app: Addressed & Pick<AppRow, "pageIndexed" | "updater">,
+  app: Addressed & Pick<AppRow, "pageIndexed">,
   publisherSlug: string,
 ): ProjectSummary {
   return {
@@ -29,27 +29,24 @@ export function projectSummary(
     slug: app.slug,
     listed: app.visibility === "listed",
     indexed: app.visibility === "listed" || app.pageIndexed,
-    updates: app.updater !== null,
     page: pageUrl(app, publisherSlug),
     latest: `${linkBase(app, publisherSlug)}/latest`,
   }
 }
 
-function feeds(app: Addressed & Pick<AppRow, "updater">, base: string) {
-  if (app.updater === "sabine")
-    return [{ name: "Sabine", url: `${env.DOWNLOAD_URL}/sabine/${app.id}/stable.json` }]
-  if (app.updater === "electron") return [{ name: "electron-updater", url: base }]
-  if (app.updater === "tauri") return [{ name: "Tauri", url: `${base}/tauri.json` }]
-  return []
+function feed(app: Addressed, updater: Updater, base: string) {
+  if (updater === "sabine") return { name: "Sabine", url: `${env.DOWNLOAD_URL}/sabine/${app.id}/stable.json` }
+  if (updater === "electron") return { name: "electron-updater", url: base }
+  return { name: "Tauri", url: `${base}/tauri.json` }
 }
 
-export function projectLinks(app: Addressed & Pick<AppRow, "updater">, publisherSlug: string): Links {
+export function projectLinks(app: Addressed, publisherSlug: string, updaters: Updater[]): Links {
   const base = linkBase(app, publisherSlug)
   return {
     page: pageUrl(app, publisherSlug),
     latest: `${base}/latest`,
     json: `${base}/latest.json`,
     embed: `<a href="${base}/latest" data-schelf="${publisherSlug}/${app.slug}">Download</a>\n<script src="${env.DOWNLOAD_URL}/embed.js" async></script>`,
-    feeds: feeds(app, base),
+    feeds: updaters.map((updater) => feed(app, updater, base)),
   }
 }

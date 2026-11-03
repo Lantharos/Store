@@ -5,8 +5,14 @@
   import { CHECK_TITLES, type CheckResult } from "@schelf/protocol"
   import { CHECK_FIXES } from "./checks.ts"
 
-  let { check, appId, widened }: { check: CheckResult; appId: string; widened: boolean } = $props()
-  const fix = $derived(check.status === "passed" && !widened ? null : CHECK_FIXES[check.name])
+  let {
+    check,
+    appId,
+    widened,
+    uploaded,
+  }: { check: CheckResult; appId: string; widened: boolean; uploaded: boolean } = $props()
+  const expected = $derived(uploaded && check.name === "attestation")
+  const fix = $derived((check.status === "passed" && !widened) || expected ? null : CHECK_FIXES[check.name])
   const fixHref = $derived(
     fix?.href ?? (check.name === "listing" ? `/dashboard/apps/${appId}/listing` : undefined),
   )
