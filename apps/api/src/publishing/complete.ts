@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers"
 import { type CheckResult, type CompleteResponse, partsFor, paths, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, desc, eq, inArray, isNotNull, ne } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { repository } from "../github/api.ts"
+import { GitHubError, repository } from "../github/api.ts"
 import { type Attestation, findAttestation } from "../github/attestations.ts"
 import { fail } from "../lib/http.ts"
 import { dispatchChecks } from "../releases/checks.ts"
@@ -32,10 +32,17 @@ async function finishMultipart(artifact: ArtifactRow) {
 async function attestationsFor(release: ReleaseRow, artifacts: ArtifactRow[], repositoryName: string | null) {
   const found = new Map<string, Attestation | "unverifiable" | null>()
   if (release.origin !== "oidc" || !repositoryName) return found
-  const repo = await repository(repositoryName)
-  for (const artifact of artifacts) {
-    if (!repo) found.set(artifact.id, "unverifiable")
-    else found.set(artifact.id, await findAttestation(repo.full_name, String(repo.id), artifact.sha256))
+  try {
+    const repo = await repository(repositoryName)
+    for (const artifact of artifacts)
+      found.set(
+        artifact.id,
+        repo ? await findAttestation(repo.full_name, String(repo.id), artifact.sha256) : "unverifiable",
+      )
+  } catch (error) {
+    if (!(error instanceof GitHubError)) throw error
+    console.warn(`Couldn't read attestations for ${repositoryName}: ${error.message}`)
+    for (const artifact of artifacts) found.set(artifact.id, "unverifiable")
   }
   return found
 }

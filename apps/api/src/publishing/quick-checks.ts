@@ -50,7 +50,7 @@ const failed = (name: CheckResult["name"], summary: string, detail?: unknown): C
 function namespaceCheck({ app, namespaces }: QuickCheckInput) {
   const proven = namespaces.find((entry) => entry.verifiedAt && namespaceCovers(entry.prefix, app.id))
   return proven
-    ? passed("namespace", `${proven.prefix} is proven by ${proven.proof}`)
+    ? passed("namespace", `The ${proven.prefix} namespace is yours`)
     : failed("namespace", `Prove you own the namespace of ${app.id} in the dashboard`)
 }
 
@@ -95,7 +95,10 @@ function attestationCheck({ release, artifacts, attestations }: QuickCheckInput)
       `No build attestation for ${missing.map((artifact) => artifact.name).join(", ")}; attest every file with actions/attest-build-provenance`,
     )
   if (artifacts.some((artifact) => attestations.get(artifact.id) === "unverifiable"))
-    return warning("attestation", "The repository is private, so the attestations couldn't be read")
+    return warning(
+      "attestation",
+      "The attestations couldn't be read from GitHub, so a reviewer checks them by hand",
+    )
   return passed("attestation", "Every file has a build attestation from this repository")
 }
 

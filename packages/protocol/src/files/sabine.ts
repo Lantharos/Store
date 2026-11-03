@@ -24,6 +24,8 @@ export const sabineFeed = z.object({
   published_at: z.string(),
   requires_sabine: sabineVersion.default({ major: 0, build: 0 }),
   artifacts: z.record(z.string(), sabineArtifact),
+  rollout: z.number().int().min(0).max(100).optional(),
+  key: z.string().optional(),
   signature: z.string().default(""),
 })
 export type SabineFeed = z.infer<typeof sabineFeed>
@@ -56,12 +58,14 @@ export function sabineSigningPayload(feed: SabineFeed) {
     published_at: feed.published_at,
     requires_sabine: { major: feed.requires_sabine.major, build: feed.requires_sabine.build },
     artifacts,
+    ...(feed.rollout === undefined ? {} : { rollout: feed.rollout }),
+    ...(feed.key === undefined ? {} : { key: feed.key }),
     signature: "",
   })
 }
 
 export async function signSabineFeed(key: SigningKey, feed: SabineFeed): Promise<SabineFeed> {
-  const unsigned = { ...feed, signature: "" }
+  const unsigned = { ...feed, key: key.id, signature: "" }
   const payload = sabineSigningPayload(unsigned)
   return { ...(JSON.parse(payload) as SabineFeed), signature: await key.sign(utf8(payload)) }
 }

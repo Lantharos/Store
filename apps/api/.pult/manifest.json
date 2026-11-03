@@ -1,6 +1,9 @@
 {
   "project": "schelf",
-  "environments": ["dev", "prod"],
+  "environments": [
+    "dev",
+    "prod"
+  ],
   "sync": "dev",
   "delivery": {
     "mode": "webhook",
@@ -19,7 +22,13 @@
           "properties": {
             "status": {
               "type": "string",
-              "enum": ["draft", "in-review", "listed", "delisted", "pulled"]
+              "enum": [
+                "draft",
+                "in-review",
+                "listed",
+                "delisted",
+                "pulled"
+              ]
             }
           }
         }
@@ -79,7 +88,10 @@
                 "maxLength": 500
               }
             },
-            "required": ["reason", "note"]
+            "required": [
+              "reason",
+              "note"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -91,7 +103,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/app.ts:71",
+          "source": "src/ops/define/app.ts:72",
           "label": "Unpull",
           "danger": "reauth",
           "input": null,
@@ -107,7 +119,7 @@
       }
     },
     "developer": {
-      "source": "src/ops/define/developer.ts:12",
+      "source": "src/ops/define/developer.ts:15",
       "label": "Developer",
       "plural": "Developers",
       "icon": "user",
@@ -121,7 +133,7 @@
       },
       "actions": {
         "removePublishers": {
-          "source": "src/ops/define/developer.ts:55",
+          "source": "src/ops/define/developer.ts:62",
           "label": "Remove trusted publishers",
           "description": "Stops every workflow of this developer from publishing until they add it again.",
           "danger": "reauth",
@@ -136,7 +148,7 @@
           "schedule": null
         },
         "revokeTokens": {
-          "source": "src/ops/define/developer.ts:65",
+          "source": "src/ops/define/developer.ts:73",
           "label": "Revoke tokens",
           "danger": "reauth",
           "input": null,
@@ -150,7 +162,7 @@
           "schedule": null
         },
         "suspend": {
-          "source": "src/ops/define/developer.ts:73",
+          "source": "src/ops/define/developer.ts:84",
           "label": "Suspend",
           "description": "Stops the developer from publishing or changing listings. Listed apps stay listed.",
           "danger": "reauth",
@@ -165,7 +177,7 @@
           "schedule": null
         },
         "reinstate": {
-          "source": "src/ops/define/developer.ts:81",
+          "source": "src/ops/define/developer.ts:95",
           "label": "Reinstate",
           "danger": "confirm",
           "input": null,
@@ -179,7 +191,7 @@
           "schedule": null
         },
         "grantNamespace": {
-          "source": "src/ops/define/developer.ts:88",
+          "source": "src/ops/define/developer.ts:102",
           "label": "Grant namespace",
           "description": "Gives the developer a namespace without a proof, after a claim.",
           "danger": "confirm",
@@ -191,7 +203,9 @@
                 "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$"
               }
             },
-            "required": ["prefix"]
+            "required": [
+              "prefix"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -205,7 +219,7 @@
       }
     },
     "release": {
-      "source": "src/ops/define/release.ts:45",
+      "source": "src/ops/define/release.ts:56",
       "label": "Release",
       "plural": "Releases",
       "icon": "package",
@@ -214,7 +228,7 @@
       "related": {},
       "actions": {
         "approve": {
-          "source": "src/ops/define/release.ts:54",
+          "source": "src/ops/define/release.ts:69",
           "label": "Approve",
           "description": "Signs the release into the index and the update feeds and starts the rollout at 10%.",
           "danger": "confirm",
@@ -229,7 +243,7 @@
           "schedule": null
         },
         "approveSecurityFix": {
-          "source": "src/ops/define/release.ts:59",
+          "source": "src/ops/define/release.ts:74",
           "label": "Approve as a security fix",
           "description": "Approves the release and sends it to everyone at once.",
           "danger": "confirm",
@@ -244,7 +258,7 @@
           "schedule": null
         },
         "requestChanges": {
-          "source": "src/ops/define/release.ts:65",
+          "source": "src/ops/define/release.ts:80",
           "label": "Request changes",
           "danger": "none",
           "input": {
@@ -256,7 +270,9 @@
                 "maxLength": 5000
               }
             },
-            "required": ["message"]
+            "required": [
+              "message"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -268,7 +284,7 @@
           "schedule": null
         },
         "reject": {
-          "source": "src/ops/define/release.ts:70",
+          "source": "src/ops/define/release.ts:85",
           "label": "Reject",
           "description": "Rejects the release and sends the developer the reason as a statement of reasons.",
           "danger": "confirm",
@@ -281,7 +297,9 @@
                 "maxLength": 2000
               }
             },
-            "required": ["reason"]
+            "required": [
+              "reason"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -293,7 +311,7 @@
           "schedule": null
         },
         "pause": {
-          "source": "src/ops/define/release.ts:76",
+          "source": "src/ops/define/release.ts:91",
           "label": "Pause rollout",
           "danger": "confirm",
           "input": null,
@@ -307,7 +325,7 @@
           "schedule": null
         },
         "resume": {
-          "source": "src/ops/define/release.ts:81",
+          "source": "src/ops/define/release.ts:96",
           "label": "Resume rollout",
           "danger": "confirm",
           "input": null,
@@ -321,7 +339,7 @@
           "schedule": null
         },
         "rollback": {
-          "source": "src/ops/define/release.ts:86",
+          "source": "src/ops/define/release.ts:101",
           "label": "Roll back",
           "description": "Withdraws the release; devices are offered the previous version.",
           "danger": "confirm",
@@ -336,7 +354,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/release.ts:92",
+          "source": "src/ops/define/release.ts:107",
           "label": "Pull",
           "description": "Blocks this version from installing and starting on every device, with a public note.",
           "danger": "reauth",
@@ -354,7 +372,10 @@
                 "maxLength": 500
               }
             },
-            "required": ["reason", "note"]
+            "required": [
+              "reason",
+              "note"
+            ]
           },
           "preview": false,
           "automatable": false,
@@ -366,7 +387,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/release.ts:101",
+          "source": "src/ops/define/release.ts:116",
           "label": "Unpull",
           "danger": "reauth",
           "input": null,
@@ -380,7 +401,7 @@
           "schedule": null
         },
         "askClaude": {
-          "source": "src/ops/define/release.ts:108",
+          "source": "src/ops/define/release.ts:123",
           "label": "Ask Claude to review",
           "danger": "none",
           "input": null,
@@ -399,13 +420,20 @@
   "actions": {},
   "inboxes": {
     "claims": {
-      "source": "src/ops/define/inboxes.ts:66",
+      "source": "src/ops/define/inboxes.ts:71",
       "label": "Claims",
       "icon": "scale",
       "resource": "developer",
       "layout": "list",
-      "states": ["open", "granted", "declined"],
-      "closed": ["granted", "declined"],
+      "states": [
+        "open",
+        "granted",
+        "declined"
+      ],
+      "closed": [
+        "granted",
+        "declined"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -420,9 +448,16 @@
             "type": "string"
           }
         },
-        "required": ["claimant", "subject", "evidence"]
+        "required": [
+          "claimant",
+          "subject",
+          "evidence"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -432,13 +467,20 @@
       "sla": {}
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:38",
+      "source": "src/ops/define/inboxes.ts:43",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
       "layout": "list",
-      "states": ["open", "actioned", "dismissed"],
-      "closed": ["actioned", "dismissed"],
+      "states": [
+        "open",
+        "actioned",
+        "dismissed"
+      ],
+      "closed": [
+        "actioned",
+        "dismissed"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -456,18 +498,38 @@
             "type": "string"
           },
           "location": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
-        "required": ["app", "kind", "reason", "explanation", "location", "name", "email"]
+        "required": [
+          "app",
+          "kind",
+          "reason",
+          "explanation",
+          "location",
+          "name",
+          "email"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -479,13 +541,21 @@
       }
     },
     "submissions": {
-      "source": "src/ops/define/inboxes.ts:16",
+      "source": "src/ops/define/inboxes.ts:21",
       "label": "Submissions",
       "icon": "inbox",
       "resource": "release",
       "layout": "list",
-      "states": ["open", "changes requested", "approved", "rejected"],
-      "closed": ["approved", "rejected"],
+      "states": [
+        "open",
+        "changes requested",
+        "approved",
+        "rejected"
+      ],
+      "closed": [
+        "approved",
+        "rejected"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -503,9 +573,17 @@
             "type": "string"
           }
         },
-        "required": ["app", "name", "version", "developer"]
+        "required": [
+          "app",
+          "name",
+          "version",
+          "developer"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -517,13 +595,21 @@
       }
     },
     "updates": {
-      "source": "src/ops/define/inboxes.ts:27",
+      "source": "src/ops/define/inboxes.ts:32",
       "label": "Updates",
       "icon": "refresh",
       "resource": "release",
       "layout": "list",
-      "states": ["open", "changes requested", "approved", "rejected"],
-      "closed": ["approved", "rejected"],
+      "states": [
+        "open",
+        "changes requested",
+        "approved",
+        "rejected"
+      ],
+      "closed": [
+        "approved",
+        "rejected"
+      ],
       "reopen": [],
       "data": {
         "type": "object",
@@ -541,9 +627,17 @@
             "type": "string"
           }
         },
-        "required": ["app", "name", "version", "developer"]
+        "required": [
+          "app",
+          "name",
+          "version",
+          "developer"
+        ]
       },
-      "columns": ["title", "lastSeen"],
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
       "intake": null,
       "triage": null,
       "reply": false,
@@ -571,7 +665,9 @@
                 "type": "count",
                 "inbox": "submissions",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "New apps"
@@ -582,7 +678,9 @@
                 "type": "count",
                 "inbox": "updates",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "Updates"
@@ -593,7 +691,9 @@
                 "type": "count",
                 "inbox": "reports",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "view": null,
                 "label": "Reports"
@@ -609,7 +709,9 @@
                 "type": "items",
                 "inbox": "submissions",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
@@ -622,7 +724,9 @@
                 "type": "items",
                 "inbox": "updates",
                 "filter": {
-                  "state": ["open"]
+                  "state": [
+                    "open"
+                  ]
                 },
                 "sort": "-lastSeen",
                 "view": null,
@@ -636,7 +740,9 @@
           "type": "items",
           "inbox": "reports",
           "filter": {
-            "state": ["open"]
+            "state": [
+              "open"
+            ]
           },
           "sort": "-lastSeen",
           "view": null,
@@ -656,7 +762,7 @@
   },
   "flags": {
     "rollouts-frozen": {
-      "source": "src/ops/define/flags.ts:10",
+      "source": "src/ops/define/flags.ts:11",
       "label": "Freeze rollouts",
       "description": "Stops every rollout from advancing to its next step.",
       "value": {

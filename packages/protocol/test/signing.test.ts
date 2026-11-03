@@ -46,12 +46,21 @@ describe("Sabine feeds", () => {
     )
   })
 
+  test("put the rollout and the key id between the artifacts and the signature", () => {
+    const payload = sabineSigningPayload({ ...feed, artifacts: {}, rollout: 25, key: "95928d1f0502af33" })
+    expect(payload.endsWith(',"artifacts":{},"rollout":25,"key":"95928d1f0502af33","signature":""}')).toBe(
+      true,
+    )
+  })
+
   test("verify after a JSON round trip and refuse tampering", async () => {
     const key = await importSigningKey(SABINE_TEST_SEED)
     const signed = await signSabineFeed(key, feed)
     const received = JSON.parse(JSON.stringify(signed)) as SabineFeed
     expect(await verifySabineFeed(key.publicKey, received)).toBe(true)
+    expect(received.key).toBe(key.id)
     expect(await verifySabineFeed(key.publicKey, { ...received, version: "2.4.1" })).toBe(false)
+    expect(await verifySabineFeed(key.publicKey, { ...received, rollout: 100 })).toBe(false)
   })
 })
 

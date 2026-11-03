@@ -105,7 +105,7 @@ The `publish` action:
 2. Records a build provenance attestation over every file, so anyone can check which workflow run built it.
 3. Calls `POST /api/v1/publish` with the token, the release tag, `schelf.toml` and each file's name, platform, size and SHA-256. The Worker checks the token's signature against GitHub's keys, its audience and expiry, and that its repository id, workflow path, environment and `ref` (a tag) match a trusted publisher of that app. It answers with upload addresses for this release only, valid for an hour.
 4. Uploads the files; the Worker hashes them as they stream into R2 and refuses any that don't match.
-5. Calls `complete`. The Worker confirms the attestations exist for each digest in that repository, runs the quick checks, queues the deeper ones, and prints the release's dashboard address in the job summary.
+5. Calls `complete`. The Worker confirms the attestations exist for each digest in that repository, runs the quick checks, queues the deeper ones (a `schelf-checks` repository dispatch to this repository, whose payload names the release, its files and the address to report back to), and prints the release's dashboard address in the job summary.
 
 For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions".
 

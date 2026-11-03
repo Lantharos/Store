@@ -1,15 +1,19 @@
 import { env } from "cloudflare:workers"
 import { paths } from "@schelf/protocol"
+import { inArray } from "drizzle-orm"
 import { Hono } from "hono"
 import { createMiddleware } from "hono/factory"
 import { z } from "zod"
+import { db, schema } from "../db/client.ts"
 import { equalStrings } from "../lib/hmac.ts"
 import { bearer, fail, readBody } from "../lib/http.ts"
 import { releases } from "../ops/data/records.ts"
+import { resign } from "../signing/queue.ts"
 import { fileUrl } from "../signing/records.ts"
 import { approve, reject, requestChanges } from "./review.ts"
 
 const REVIEWER = "reviewer"
+const QUEUE_BATCH = 100
 
 const decision = z.discriminatedUnion("action", [
   z.object({ action: z.literal("approve"), security: z.boolean().default(false) }),
@@ -49,4 +53,17 @@ reviewerRoutes.post("/:release/decision", async (c) => {
         ? await requestChanges(id, REVIEWER, input.reason)
         : await reject(id, REVIEWER, input.reason)
   return c.json({ message })
+})
+
+reviewerRoutes.post("/resign", async (c) => {
+  const apps = await db
+    .select({ id: schema.app.id })
+    .from(schema.app)
+    .where(inArray(schema.app.status, ["listed", "delisted", "pulled"]))
+  for (let start = 0; start < apps.length; start += QUEUE_BATCH)
+    await resign(
+      ...apps.slice(start, start + QUEUE_BATCH).map((app) => ({ type: "app" as const, id: app.id })),
+    )
+  await resign({ type: "catalog" }, { type: "revocations" })
+  return c.json({ apps: apps.length })
 })

@@ -8,25 +8,25 @@ Better Auth's own tables (`user`, `session`, `account`, `verification`, `passkey
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| `developer` | `id`, `user_id`, `name`, `kind` (person, organisation), `github_login`, `agreement_version`, `agreement_at`, `status` (active, suspended) | One per account at launch. |
-| `namespace` | `prefix`, `developer_id`, `proof` (dns, well-known, github), `proof_value`, `verified_at`, `checked_at` | Re-checked monthly. |
+| `developer` | `id`, `user_id`, `name`, `slug`, `kind` (person, organisation), `github_login`, `agreement_version`, `agreement_at`, `status` (active, suspended) | One per account at launch. |
+| `namespace` | `prefix`, `developer_id`, `proof` (dns, well-known, github, manual), `proof_value` (the token to publish), `verified_at`, `checked_at` | Re-checked monthly. |
 | `app` | `id` (reverse DNS), `developer_id`, `kind` (app, extension), `format`, `repository`, `repository_id`, `licence`, `distribution` (open, proprietary), `status` (draft, in review, listed, delisted, pulled), `created_at` | |
 | `trusted_publisher` | `id`, `app_id`, `owner_id`, `repository_id`, `repository`, `workflow`, `environment`, `created_at` | Ids are GitHub's numeric ids; names are for display. |
 | `token` | `id`, `app_id`, `developer_id`, `hash`, `name`, `last_used_at`, `expires_at`, `revoked_at` | Dashboard tokens for `schelf publish` outside GitHub Actions. |
 | `listing` | `app_id`, `locale`, `name`, `summary`, `description`, `keywords` | One row per locale; `en` is required. |
 | `listing_meta` | `app_id`, `icon_key`, `categories`, `homepage`, `support`, `privacy_url`, `content_rating`, `brand_color` | |
 | `screenshot` | `app_id`, `platform`, `position`, `key`, `width`, `height`, `caption` | |
-| `release` | `id`, `app_id`, `version`, `channel`, `tag`, `commit`, `run_url`, `origin` (oidc, token), `notes`, `manifest` (the `schelf.toml` sent), `permissions` (JSON), `permissions_widened`, `requires` (JSON), `status` (uploading, checking, failed, in review, changes requested, rejected, rolling out, live, withdrawn, pulled), `rollout_percent`, `rollout_paused`, `approved_by`, `approved_at`, `created_at` | |
-| `artifact` | `release_id`, `platform`, `format`, `kind` (the Sabine artifact kind or `appimage`), `key`, `size`, `sha256`, `attestation_url` | |
+| `release` | `id`, `app_id`, `version`, `channel`, `tag`, `commit`, `run_url`, `workflow`, `origin` (oidc, token), `notes`, `manifest` (the `schelf.toml` sent), `permissions` (JSON), `permissions_widened`, `requires` (JSON), `status` (uploading, checking, failed, in review, changes requested, rejected, rolling out, live, withdrawn, pulled), `rollout_percent`, `rollout_paused`, `rollout_stepped_at`, `approved_by`, `approved_at`, `created_at` | |
+| `artifact` | `id`, `release_id`, `name`, `platform`, `format`, `kind` (the Sabine artifact kind, `appimage` or `extension`), `key`, `size`, `sha256`, `executable`, `upload_id`, `uploaded_at`, `attestation_url` | Files over 95 MB go up in parts, kept in `upload_part` until the upload completes. |
 | `delta` | `artifact_id`, `from_release_id`, `key`, `size`, `sha256` | |
 | `check` | `release_id`, `name`, `status` (passed, warning, failed), `summary`, `detail_key` | One row per check; the full detail is in R2. |
 | `review` | `release_id`, `pult_item`, `kind` (submission, update), `decision`, `decided_by`, `decided_at`, `reason` | |
 | `block` | `id`, `app_id`, `release_id` (null for all), `action` (block, warn), `reason`, `public_note`, `created_at`, `lifted_at` | Source of the revocation list. |
-| `report` | `id`, `app_id`, `kind` (dsa, dmca, abuse, security), `reporter_email`, `pult_item`, `status` | |
+| `report` | `id`, `app_id`, `kind` (dsa, dmca, abuse, security), `reporter_email`, `details`, `pult_item`, `status` | |
 | `mirror_app` | `id`, `origin` (flathub, fedora), `name`, `summary`, `icon`, `categories`, `developer`, `verified`, `installs_30d`, `updated_at`, `hidden_reason`, `rank` | Written by the mirror job; feeds search and the mirror catalogs. |
 | `count_daily` | `app_id`, `release_id`, `platform`, `day`, `installs`, `updates` | Rolled up from Analytics Engine each night. |
 
-Search uses SQLite FTS5 over `listing` and `mirror_app`.
+Search uses an SQLite FTS5 table (`search`, trigram tokens, so misspellings still match) over the English listing and `mirror_app`. `store_state` keeps small counters such as the revocation serial.
 
 ## R2
 
@@ -47,7 +47,7 @@ trust/v1/store-keys.json                     current store signing keys, signed 
 trust/v1/revocations.json                    blocked apps and releases, with a serial
 ```
 
-Every JSON file under `index/`, `sabine/` and `trust/` is signed: next to `x.json` sits `x.json.sig`, `{"key": "<key id>", "sig": "<base64 Ed25519 signature over the exact bytes of x.json>"}`. Sabine feeds carry their signature inside, the way Sabine already expects. Artifacts and media never change after they're written and are cached for a year; index files are cached for 60 seconds with an ETag.
+Every JSON file under `index/` and `trust/` is signed: next to `x.json` sits `x.json.sig`, `{"key": "<key id>", "sig": "<base64 Ed25519 signature over the exact bytes of x.json>"}`. A key id is the first 16 hex digits of the SHA-256 of the raw public key. Sabine feeds carry their signature inside, the way Sabine expects: the manifest is re-encoded in its field order with `rollout` and `key` (the store key id) between `artifacts` and an empty `signature`, and signed. A feed follows the newest approved release of its channel, with that release's rollout percentage. The formats, and helpers to sign and verify them, are in `packages/protocol`. Artifacts and media never change after they're written and are cached for a year; index files are cached for 60 seconds with an ETag.
 
 ### catalog.json
 
@@ -96,13 +96,14 @@ All under `https://schelf.store/api/v1`.
 | `GET /search?q=&locale=&platform=&kind=` | Ranked search with typo tolerance over store apps and the mirror. |
 | `GET /featured?locale=&platform=` | Home page sections. |
 | `GET /apps/:id` | One app for the storefront, with install counts. |
+| `GET /developers/:slug` | A developer's listed apps. |
 | `POST /reports` | Report an app (DSA notice form). |
 
 ### Publishing
 
 | Call | Auth | Purpose |
 | --- | --- | --- |
-| `POST /publish` | GitHub OIDC token (audience `schelf.store`) or a dashboard token | Start a release: tag, `schelf.toml`, notes, and each file's name, platform, size and SHA-256. Returns the release id and an upload address per file. |
+| `POST /publish` | GitHub OIDC token (audience `schelf.store`) or a dashboard token | Start a release: tag, `schelf.toml`, the permission file it names, notes, and each file's name, platform, kind, size and SHA-256 (and the program inside an archive). Returns the release id, an upload token and an upload address per file. |
 | `PUT /publish/:release/files/:name` | Upload token from the previous call | Upload a file; files over 95 MB go up in parts with `?part=<n>` and `?parts=<count>`. |
 | `POST /publish/:release/complete` | Upload token | Verify hashes and attestations, run the quick checks, queue the rest. |
 | `POST /checks/:release` | OIDC token of this repository's checks workflow | Report the deeper checks. |
@@ -112,7 +113,11 @@ All under `https://schelf.store/api/v1`.
 
 ### Dashboard
 
-Signed in with Better Auth: `…/dev/apps`, `…/apps/:id` (listing, media uploads, trusted publishers, tokens), `…/apps/:id/releases` (status, checks, rollout control, rollback), `…/namespaces`, `…/stats`, `…/account`.
+Signed in with Better Auth, under `/dev`: `account` (and `account/developer` to accept the agreement), `namespaces` (claim, `:prefix/verify`), `apps` (list, add), `apps/:id` (settings and the files to commit), `apps/:id/listing/:locale`, `apps/:id/meta`, `apps/:id/icon`, `apps/:id/screenshots`, `apps/:id/publishers`, `apps/:id/tokens`, `apps/:id/releases` (status, checks timeline, `rollout`), `apps/:id/stats`. The `schelf` command signs in with Better Auth's device authorization (`/api/auth/device/code`, then `/api/auth/device/token`, client id `schelf-cli`); the person approves the code on `https://schelf.store/device`, and the command sends the session token as a bearer token.
+
+### Review
+
+`/review/:release` (facts and files), `/review/:release/decision` (approve, request changes, reject) and `/review/resign` (re-sign every index file and feed, after a key rotation) take the reviewer token. Pult runs the same decisions as actions.
 
 ### Webhooks in
 

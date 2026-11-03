@@ -47,7 +47,7 @@ async function sabineRelease(appId: string, version: string, percent: number, ap
 }
 
 describe("Sabine update feeds", () => {
-  test("follow the newest release that reached everyone, signed so Sabine accepts it", async () => {
+  test("follow the newest approved release with its rollout, signed so Sabine accepts it", async () => {
     const { appId } = await developerWithApp("sabine")
     await db.update(schema.app).set({ status: "listed" })
     await sabineRelease(appId, "1.0.0", 100, new Date("2026-10-01T00:00:00Z"))
@@ -57,11 +57,12 @@ describe("Sabine update feeds", () => {
     const feed = await env.BUCKET.get(paths.sabine(appId, "stable")).then((object) =>
       object!.json<SabineFeed>(),
     )
-    expect(feed.version).toBe("1.0.0")
+    expect(feed).toMatchObject({ version: "1.1.0", rollout: 25 })
     expect(feed.requires_sabine).toEqual({ major: 0, build: 68 })
     expect(Object.keys(feed.artifacts).sort()).toEqual(["windows-x86_64", "windows-x86_64-msi"])
     expect(feed.artifacts["windows-x86_64"]!.executable).toBe("Notes.exe")
     const key = await importSigningKey(env.STORE_SIGNING_KEY)
+    expect(feed.key).toBe(key.id)
     expect(await verifySabineFeed(key.publicKey, feed)).toBe(true)
   })
 })

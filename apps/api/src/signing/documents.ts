@@ -140,7 +140,7 @@ export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
   const feeds = new Map<string, SabineFeed>()
   if (record.app.format !== "sabine") return feeds
   for (const { release, artifacts } of record.releases) {
-    if (release.rolloutPercent < 100 || feeds.has(release.channel)) continue
+    if (feeds.has(release.channel)) continue
     feeds.set(release.channel, {
       schema: 1,
       app_id: record.app.id,
@@ -157,6 +157,7 @@ export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
           ]
         }),
       ),
+      rollout: release.rolloutPercent,
       signature: "",
     })
   }
