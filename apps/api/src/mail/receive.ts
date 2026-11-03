@@ -7,7 +7,7 @@ import { deliverMail } from "./deliver.ts"
 import { readMail } from "./parse.ts"
 import { isAutomated, verdictOf } from "./screen.ts"
 import { quarantinedKey, storedKey, storeRaw } from "./stored.ts"
-import { threadOfReferences } from "./threads.ts"
+import { threadOfReferences, threadOfToken } from "./threads.ts"
 
 const NOTIFICATIONS = recipientOf(env.NOTIFY_FROM)?.name
 
@@ -41,7 +41,9 @@ export async function receiveMail(message: ForwardableEmailMessage) {
       mailbox: recipient.name,
       messageId: mail.messageId,
       rawKey,
-      thread: recipient.thread ?? (await threadOfReferences(mail.references)),
+      thread: recipient.thread
+        ? await threadOfToken(recipient.thread)
+        : await threadOfReferences(mail.references),
       tags: [...(automated ? ["automated"] : []), ...(verdict === "unverified" ? ["unverified"] : [])],
       acknowledge: ACKNOWLEDGED.includes(recipient.name) && verdict === "aligned" && !automated,
     })

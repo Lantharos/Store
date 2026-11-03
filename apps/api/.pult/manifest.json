@@ -888,7 +888,7 @@
       }
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:124",
+      "source": "src/ops/define/inboxes.ts:128",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
@@ -959,7 +959,7 @@
       ],
       "intake": null,
       "triage": null,
-      "reply": false,
+      "reply": true,
       "hooks": {
         "state": true
       },
@@ -968,7 +968,7 @@
       }
     },
     "submissions": {
-      "source": "src/ops/define/inboxes.ts:76",
+      "source": "src/ops/define/inboxes.ts:80",
       "label": "Submissions",
       "icon": "inbox",
       "resource": "release",
@@ -1098,7 +1098,7 @@
       }
     },
     "updates": {
-      "source": "src/ops/define/inboxes.ts:88",
+      "source": "src/ops/define/inboxes.ts:92",
       "label": "Updates",
       "icon": "refresh",
       "resource": "release",
@@ -1566,5 +1566,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "119d7c01b28c"
+  "version": "55f4d5b70fda"
 }

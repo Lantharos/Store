@@ -189,6 +189,24 @@ describe("receiving mail", () => {
     expect(await stored(byAddress)).toMatchObject({ thread: item })
   })
 
+  test("an answer to a report confirmation lands on the report", async () => {
+    const report = randomId()
+    const item = randomId()
+    await db.insert(schema.report).values({
+      id: report,
+      appId: "org.example.app",
+      kind: "abuse",
+      details: "{}",
+      pultItem: item,
+    })
+    const id = `${randomId()}@example.org`
+    await receiveMail(
+      incoming(`abuse+${report}@schelf.store`, raw([]).replace(/Message-ID: <[^>]+>/, `Message-ID: <${id}>`))
+        .message,
+    )
+    expect(await stored(id)).toMatchObject({ mailbox: "abuse", thread: item })
+  })
+
   test("too many messages from one sender are turned away", async () => {
     const sender = `${randomId()}@example.org`
     const outcomes = []

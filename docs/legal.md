@@ -25,7 +25,7 @@ The store hosts and distributes third-party apps, so it is a hosting service and
 | Duty | How the store meets it |
 | --- | --- |
 | Single point of contact (Art. 11, 12) | `legal@schelf.store`, listed in the imprint and on a `/legal/contact` page, with the languages it answers in. Mail to it becomes an item in Pult and gets a short receipt; the other addresses are in [review](review.md#email). |
-| Notice and action (Art. 16) | A report form on every app page and in Schelf. It asks for the reason, an explanation, where exactly, and the reporter's name and email (optional for child abuse material). Each report becomes an item in the Reports inbox in Pult and gets a confirmation email. |
+| Notice and action (Art. 16) | A report form on every app page and in Schelf. It asks for the reason, an explanation, where exactly, and the reporter's name and email (optional for child abuse material). Each report becomes an item in the Reports inbox in Pult and gets a confirmation email. When the item is actioned or dismissed the reporter is told, and answers to either email land back on the item. |
 | Statement of reasons (Art. 17) | When an app or listing is removed, restricted or delisted, the developer gets an email with what was done, why, the facts it relied on, whether it was automated, and how to appeal. The text is generated from the decision in Pult. |
 | Appeals | The developer replies to the statement and it reopens the item in Pult for a human to decide again. |
 | Terms that explain moderation (Art. 14) | The guidelines say what review checks, that automated filtering is a first pass that can only decline obvious junk submissions, and that a person makes every other rejection and every removal. |

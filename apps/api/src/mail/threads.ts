@@ -14,6 +14,14 @@ export async function threadOfReferences(references: string[]) {
   return known?.item ?? null
 }
 
+export async function threadOfToken(token: string) {
+  const report = await db.query.report.findFirst({
+    columns: { pultItem: true },
+    where: eq(schema.report.id, token),
+  })
+  return report ? report.pultItem : token
+}
+
 export async function threadingHeaders(item: string): Promise<Record<string, string>> {
   const messages = await db
     .select({ messageId: schema.mail.messageId, direction: schema.mail.direction })

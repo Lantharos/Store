@@ -171,7 +171,7 @@ Mail to schelf.store reaches the api Worker through Cloudflare Email Routing, wh
 | `support@schelf.store`  | Help with publishing or the dashboard                             |
 | `hello@schelf.store`    | Anything else                                                     |
 
-Each new conversation becomes one item in the `mail` inbox, tagged with the address it was sent to, with the sender, subject and text as its data and the attachments and the original message (`.eml`) as files. The raw message is also kept in R2 under `mail/`. Mail to `dmca@` and `abuse@` lands here too rather than in `reports`: those items are about one app and can't be answered by email, while a notice by mail often names several things and needs a conversation. Acting on an app is done from the app's own record in Pult.
+Each new conversation becomes one item in the `mail` inbox, tagged with the address it was sent to, with the sender, subject and text as its data and the attachments and the original message (`.eml`) as files. The raw message is also kept in R2 under `mail/`. Mail to `dmca@` and `abuse@` lands here too rather than in `reports`: a report is about one app and comes with the form's fields, while a notice by mail often names several things and needs a conversation. Acting on an app is done from the app's own record in Pult.
 
 Replies written in the item's Email tab go out from the address the mail came to, with a reply address of `<address>+<item>@schelf.store` and `In-Reply-To` and `References` pointing at the conversation. An answer to either finds its item again, joins its timeline with its files and reopens it. The store remembers the `Message-ID` of every message in and out, so answers from clients that drop the reply address still thread.
 
@@ -182,7 +182,9 @@ Screening happens before anything is stored:
 - Bulk and machine mail (`Auto-Submitted`, `List-Id`, `List-Unsubscribe`, `Precedence: bulk`, mailer daemons) gets the `automated` tag.
 - Triage closes plain spam as `spam`.
 
-The only automatic reply is a short receipt for a new conversation with `legal@` or `dmca@`, since a notice should be confirmed. It goes only to senders whose mail passed DMARC and isn't automated, and is marked `Auto-Submitted: auto-replied`. Everything else waits for a person.
+Reports can be answered too. A report's confirmation email has a reply address of `<address>+<report>@schelf.store`, on the address for its kind (`legal@` for illegal content, `dmca@`, `abuse@`, `security@`), so the reporter's answer joins the report's item, and the item's Email tab writes to the reporter. Moving a report to actioned or dismissed emails the reporter the outcome.
+
+The only automatic reply is a short receipt for a new conversation with `legal@` or `dmca@`, in the same design as the store's other email, since a notice should be confirmed. Replies written in Pult go out as plain text, like a person's email. It goes only to senders whose mail passed DMARC and isn't automated, and is marked `Auto-Submitted: auto-replied`. Everything else waits for a person.
 
 If Pult can't be reached, the message is still stored, and the Worker sends it on its hourly run.
 

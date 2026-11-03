@@ -5,7 +5,7 @@ import { db, schema } from "../db/client.ts"
 import { sendNotice } from "../mail/notices/send.ts"
 import { reportReceived } from "../mail/notices/templates/report.ts"
 
-async function appName(appId: string) {
+export async function appName(appId: string) {
   const listing = await db.query.listing.findFirst({
     columns: { name: true },
     where: and(eq(schema.listing.appId, appId), eq(schema.listing.locale, DEFAULT_LOCALE)),

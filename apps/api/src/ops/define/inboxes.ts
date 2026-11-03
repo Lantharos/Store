@@ -3,6 +3,10 @@ import { REPORT_KINDS } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { db, schema } from "../../db/client.ts"
+import { REPORT_MAILBOXES } from "../../mail/addresses.ts"
+import { reportDecided } from "../../mail/notices/templates/report.ts"
+import { sendDesigned, sendMail } from "../../mail/send.ts"
+import { appName } from "../../storefront/report-mail.ts"
 import { REPORT_KIND } from "../data/labels.ts"
 import { releases } from "../data/releases.ts"
 import { emailHint } from "../render/publisher.ts"
@@ -137,11 +141,21 @@ export const reports = inbox("reports", {
     email: z.string().nullable(),
   }),
   title: (data) => `${data.reason} (${data.app})`,
+  reply: {
+    to: (item) => item.data.email ?? undefined,
+    send: ({ item, to, subject, text, thread }) =>
+      sendMail({ mailbox: REPORT_MAILBOXES[item.data.kind], thread, to, subject, text }),
+  },
   onState: async ({ item, to }) => {
     await db
       .update(schema.report)
       .set({ status: to as "open" | "actioned" | "dismissed" })
       .where(eq(schema.report.pultItem, item.id))
+    if (to === "open" || !item.data.email) return
+    await sendDesigned(
+      { mailbox: REPORT_MAILBOXES[item.data.kind], thread: item.id, to: item.data.email },
+      reportDecided({ app: await appName(item.data.app), actioned: to === "actioned" }),
+    )
   },
   render: (item) => [
     b.fields({

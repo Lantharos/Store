@@ -1,3 +1,5 @@
+import type { ReportRequest } from "@schelf/protocol"
+
 export const MAIL_DOMAIN = "schelf.store"
 
 export const MAILBOXES = ["legal", "dmca", "abuse", "security", "privacy", "support", "hello"] as const
@@ -5,6 +7,13 @@ export const MAILBOXES = ["legal", "dmca", "abuse", "security", "privacy", "supp
 export type Mailbox = (typeof MAILBOXES)[number]
 
 export const ACKNOWLEDGED: readonly Mailbox[] = ["legal", "dmca"]
+
+export const REPORT_MAILBOXES: Record<ReportRequest["kind"], Mailbox> = {
+  abuse: "abuse",
+  dsa: "legal",
+  dmca: "dmca",
+  security: "security",
+}
 
 export function isMailbox(name: string): name is Mailbox {
   return (MAILBOXES as readonly string[]).includes(name)

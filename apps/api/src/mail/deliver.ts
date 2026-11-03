@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { mail as mailInbox } from "../ops/define/mail.ts"
 import type { Mailbox } from "./addresses.ts"
-import { acknowledge } from "./send.ts"
+import { mailReceived } from "./notices/templates/received.ts"
+import { sendDesigned } from "./send.ts"
 import { attachmentsOf, readStored } from "./stored.ts"
 
 export type MailRow = typeof schema.mail.$inferSelect
@@ -43,5 +44,10 @@ export async function deliverMail(pult: Pult, row: MailRow, given?: Stored) {
     },
   })
   await deliveredTo(row, sent.id)
-  if (row.acknowledge) await acknowledge(mailbox, sent.id, mail.from, mail.subject)
+  if (row.acknowledge)
+    await sendDesigned(
+      { mailbox, thread: sent.id, to: mail.from },
+      mailReceived({ mailbox, subject: mail.subject }),
+      true,
+    )
 }
