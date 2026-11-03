@@ -14,6 +14,11 @@ test("tells licences apart by their text", () => {
   expect(detectLicence(ZERO_BSD)).toBe("0BSD")
   expect(detectLicence("GNU LESSER GENERAL PUBLIC LICENSE\nVersion 2.1, February 1999")).toBe("LGPL-2.1")
   expect(detectLicence("GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007")).toBe("GPL-3.0")
+  expect(
+    detectLicence(
+      "GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n13. Use with the GNU Affero General Public License.",
+    ),
+  ).toBe("GPL-3.0")
   expect(detectLicence("All rights reserved.")).toBeUndefined()
 })
 

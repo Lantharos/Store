@@ -5,11 +5,11 @@ interface Signature {
 }
 
 const SIGNATURES: Signature[] = [
-  { id: "AGPL-3.0", all: [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3/i] },
-  { id: "LGPL-3.0", all: [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3/i] },
-  { id: "LGPL-2.1", all: [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 2\.1/i] },
-  { id: "GPL-3.0", all: [/GNU GENERAL PUBLIC LICENSE/i, /Version 3/i] },
-  { id: "GPL-2.0", all: [/GNU GENERAL PUBLIC LICENSE/i, /Version 2/i] },
+  { id: "AGPL-3.0", all: [/^\s*GNU AFFERO GENERAL PUBLIC LICENSE\s*$/im, /Version 3/i] },
+  { id: "LGPL-3.0", all: [/^\s*GNU LESSER GENERAL PUBLIC LICENSE\s*$/im, /Version 3/i] },
+  { id: "LGPL-2.1", all: [/^\s*GNU LESSER GENERAL PUBLIC LICENSE\s*$/im, /Version 2\.1/i] },
+  { id: "GPL-3.0", all: [/^\s*GNU GENERAL PUBLIC LICENSE\s*$/im, /Version 3/i] },
+  { id: "GPL-2.0", all: [/^\s*GNU GENERAL PUBLIC LICENSE\s*$/im, /Version 2/i] },
   { id: "MPL-2.0", all: [/Mozilla Public License,? (Version|v\.?) ?2\.0/i] },
   { id: "Apache-2.0", all: [/Apache License/i, /Version 2\.0/i] },
   { id: "BSD-3-Clause", all: [/Redistribution and use in source and binary forms/i, /Neither the name/i] },
