@@ -11,7 +11,7 @@ import {
   paths,
   STORE_ORIGIN,
 } from "@schelf/protocol"
-import { githubOidcToken, request } from "@schelf/publisher"
+import { ApiFailure, githubOidcToken, request } from "@schelf/publisher"
 import { fedoraCandidates, fedoraEntry, fedoraUrls, flathubIndex, hostOf, onFlathub } from "./fedora.ts"
 import { flathubCandidates, flathubEntry } from "./flathub.ts"
 import { hostIcons } from "./icons.ts"
@@ -97,6 +97,8 @@ if (sameApps(body.flathub, previousFlathub) && sameApps(body.fedora, previousFed
     method: "POST",
     token: await githubOidcToken(),
     body: JSON.stringify(body),
+  }).catch((error: unknown) => {
+    throw error instanceof ApiFailure ? new Error(`The store refused the mirror: ${error.detail}`) : error
   })
   console.log(`Published ${result.flathub} Flathub and ${result.fedora} Fedora apps`)
 }

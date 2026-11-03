@@ -14,7 +14,7 @@ interface SearchHit {
   name: string
   summary: string
   icon: string | null
-  main_categories: string
+  main_categories: string | string[]
   sub_categories: string[]
   developer_name: string | null
   verification_verified: boolean
@@ -87,7 +87,7 @@ export async function flathubCandidates() {
       icon: hit.icon,
       categories: component?.categories.length
         ? component.categories
-        : [hit.main_categories, ...hit.sub_categories],
+        : [hit.main_categories, hit.sub_categories].flat(),
       developer: hit.developer_name ?? component?.developer ?? "",
       verified: hit.verification_verified,
       installs30d: hit.installs_last_month,
