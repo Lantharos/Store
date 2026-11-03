@@ -28,6 +28,7 @@ export async function importListing(account: Dashboard, project: Project, identi
       summary: identity.summary,
       description: component?.description ?? "",
       keywords: (component?.keywords ?? []).slice(0, MAX_KEYWORDS),
+      source: component ? "appstream" : project.sabine ? "sabine" : "dashboard",
     })
     if (component)
       await account.patchMeta(identity.id, {
@@ -36,6 +37,7 @@ export async function importListing(account: Dashboard, project: Project, identi
         support: component.urls.bugtracker ?? component.urls.help ?? component.urls.contact ?? null,
         content_rating: component.contentRating?.type ?? null,
         licence: project.licence ?? null,
+        source: "appstream",
       })
   })
   if (project.icon) {
