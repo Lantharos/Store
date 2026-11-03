@@ -2,10 +2,12 @@
   import Meta from "#lib/seo/Meta.svelte"
   import AppGrid from "#lib/store/apps/AppGrid.svelte"
   import CategoryLinks from "#lib/store/apps/CategoryLinks.svelte"
+  import ExtensionGrid from "#lib/store/apps/ExtensionGrid.svelte"
 
   let { data } = $props()
   const store = $derived(data.results.filter((hit) => hit.origin === "schelf"))
   const mirrored = $derived(data.results.filter((hit) => hit.origin !== "schelf"))
+  const found = $derived(data.results.length + data.extensions.length > 0)
 </script>
 
 <Meta title={data.query ? `“${data.query}” · Schelf` : "Search · Schelf"} description="Search apps on Schelf." path="/search" indexed={false} />
@@ -13,10 +15,16 @@
 <div class="page">
   {#if data.query}
     <h1 class="mt-6 text-[28px] font-semibold tracking-[-0.02em] sm:mt-10 sm:text-[34px]">
-      {data.results.length ? "Results for" : "Nothing found for"} “{data.query}”
+      {found ? "Results for" : "Nothing found for"} “{data.query}”
     </h1>
     {#if store.length}
       <div class="mt-6"><AppGrid apps={store} /></div>
+    {/if}
+    {#if data.extensions.length}
+      <section class="mt-12" aria-labelledby="extensions">
+        <h2 id="extensions" class="text-xl font-semibold">Luft extensions</h2>
+        <div class="mt-4"><ExtensionGrid extensions={data.extensions} /></div>
+      </section>
     {/if}
     {#if mirrored.length}
       <section class="mt-12" aria-labelledby="mirrored">
@@ -25,7 +33,7 @@
         <div class="mt-3"><AppGrid apps={mirrored} /></div>
       </section>
     {/if}
-    {#if !data.results.length}
+    {#if !found}
       <p class="mt-3 max-w-xl leading-relaxed text-ink-soft">Try a shorter word, or what the app does rather than its name, like “photos” or “notes”.</p>
     {/if}
   {:else}

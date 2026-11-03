@@ -192,7 +192,7 @@
   flex-shrink: 0;
   aspect-ratio: 2 / 1;
   overflow: hidden;
-  border-radius: 11% / 22%;
+  border-radius: min(11%, var(--radius-tile)) / min(22%, var(--radius-tile));
 }
 
 @utility shot {
