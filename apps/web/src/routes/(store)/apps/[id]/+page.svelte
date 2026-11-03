@@ -16,7 +16,7 @@
     imageAlt={listing.name}
     schema={data.schema}
   />
-  <AppView app={data.app} installs={data.installs} description={data.description} releases={data.releases} system={data.system} />
+  <AppView app={data.app} installs={data.installs} description={data.description} releases={data.releases} system={data.system} extensionAccess={data.extensionAccess} />
 {:else}
   <Meta title="{data.mirror.name} · Schelf" description={data.mirror.summary} path="/apps/{data.mirror.id}" indexed={false} />
   <MirrorView app={data.mirror} system={data.system} />

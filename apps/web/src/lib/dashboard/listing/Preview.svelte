@@ -1,10 +1,13 @@
 <script lang="ts">
   import Download from "@lucide/svelte/icons/download"
   import type { DashboardScreenshot, ListingMeta, ListingText } from "@schelf/protocol"
+  import { API_BASE, type AppPage } from "@schelf/protocol"
   import { untrack } from "svelte"
   import AppIcon from "../../store/apps/AppIcon.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
   import { categoryLabel } from "../../store/categories.ts"
+  import ExtensionPermissions from "../../store/page/ExtensionPermissions.svelte"
+  import { type ExtensionGrant, extensionGrants } from "../../store/page/extension.ts"
   import Segmented from "../../ui/fields/Segmented.svelte"
 
   let {
@@ -13,15 +16,29 @@
     screenshots,
     developer,
     extension,
+    appId,
   }: {
     text: ListingText
     meta: ListingMeta
     screenshots: DashboardScreenshot[]
     developer: string
     extension: boolean
+    appId: string
   } = $props()
 
   type System = "windows" | "macos" | "linux" | "luft"
+  let grants = $state<ExtensionGrant[] | null>(null)
+
+  $effect(() => {
+    if (!extension) return
+    void fetch(`${API_BASE}/apps/${encodeURIComponent(appId)}`).then(async (response) => {
+      if (!response.ok) return
+      const page: AppPage = await response.json()
+      const access = page.app.releases[0]?.extension
+      grants = access ? extensionGrants(access) : null
+    })
+  })
+
   let system = $state<System>(untrack(() => (extension ? "luft" : "windows")))
   let scheme = $state<"light" | "dark">("light")
 
@@ -85,6 +102,15 @@
       <div class="space-y-2 text-[13px] leading-relaxed text-ink-soft">
         {#each paragraphs as paragraph}<p class="line-clamp-3">{paragraph}</p>{:else}<p class="text-ink-muted">Your description shows here.</p>{/each}
       </div>
+      {#if extension}
+        <div class="text-[13px]">
+          {#if grants}
+            <ExtensionPermissions {grants} />
+          {:else}
+            <p class="text-ink-muted">What it can do shows here once a release is approved.</p>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 

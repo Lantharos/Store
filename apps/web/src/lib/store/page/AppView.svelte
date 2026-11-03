@@ -6,6 +6,8 @@
   import AppIcon from "../apps/AppIcon.svelte"
   import { categoryHref, categoryLabel } from "../categories.ts"
   import Download from "./Download.svelte"
+  import ExtensionPermissions from "./ExtensionPermissions.svelte"
+  import type { ExtensionGrant } from "./extension.ts"
   import Facts from "./Facts.svelte"
   import OtherSystems from "./OtherSystems.svelte"
   import Permissions from "./Permissions.svelte"
@@ -18,12 +20,14 @@
     description,
     releases,
     system,
+    extensionAccess,
   }: {
     app: AppIndex
     installs: Installs
     description: string
     releases: { version: string; published: string; notes: string }[]
     system: System
+    extensionAccess: ExtensionGrant[] | null
   } = $props()
 
   const panel = $props.id()
@@ -80,7 +84,11 @@
     </div>
 
     <aside class="space-y-8">
-      {#if latest}<Permissions permissions={latest.permissions} {extension} />{/if}
+      {#if extensionAccess}
+        <ExtensionPermissions grants={extensionAccess} />
+      {:else if latest}
+        <Permissions permissions={latest.permissions} {extension} />
+      {/if}
       <Facts {app} {installs} />
       <a href="/report/{app.id}" class="inline-flex items-center gap-2 text-[13px] text-ink-muted hover:text-ink">
         <Flag class="size-3.5" />

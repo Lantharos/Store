@@ -157,7 +157,7 @@
   </div>
 
   <aside class="xl:sticky xl:top-8 xl:self-start">
-    <Preview text={text} {meta} {screenshots} developer={session.account?.developer?.name ?? ""} extension={settings.app.kind === "extension"} />
+    <Preview text={text} {meta} {screenshots} developer={session.account?.developer?.name ?? ""} extension={settings.app.kind === "extension"} appId={settings.app.id} />
   </aside>
 </div>
 

@@ -3,6 +3,7 @@ import { findAppPage, findMirrorApp } from "#lib/api/store.ts"
 import { appSchema } from "#lib/seo/schema.ts"
 import { STOREFRONT_CACHE } from "#lib/server/cache.ts"
 import { renderUserMarkdown } from "#lib/server/markdown.ts"
+import { extensionGrants } from "#lib/store/page/extension.ts"
 
 const KIND_PATH = { app: "apps", extension: "extensions" } as const
 
@@ -27,6 +28,7 @@ export async function load({ params, url, setHeaders }) {
     view: "store" as const,
     app,
     installs: found.installs,
+    extensionAccess: app.releases[0]?.extension ? extensionGrants(app.releases[0].extension) : null,
     path,
     description: renderUserMarkdown(app.listing.en!.description),
     releases: app.releases.map((release) => ({
