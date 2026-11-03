@@ -19,7 +19,7 @@ bun run test
 bun run deploy
 ```
 
-It builds the Pult definitions, applies D1 migrations, deploys, and deploys the definitions to Pult, so run it with the production `PULT_KEY` in the environment. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`; the store signs them on its next hourly run.
+It builds the Pult definitions, applies D1 migrations and deploys. The Worker sends its definitions to Pult itself the first time it runs a new version, using its `PULT_KEY` secret. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`; the store signs them on its next hourly run.
 
 ## Pult
 

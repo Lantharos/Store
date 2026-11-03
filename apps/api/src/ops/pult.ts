@@ -17,3 +17,16 @@ export function backOffice() {
   }
   return office
 }
+
+let definitionsPublished = false
+
+export async function publishDefinitions() {
+  const office = backOffice()
+  if (!office || definitionsPublished) return
+  const marker = new Request(`${env.PUBLIC_URL}/internal/pult-definitions/${project.manifest.version}`)
+  if (!(await caches.default.match(marker))) {
+    await office.pult.deploy()
+    await caches.default.put(marker, new Response(null, { headers: { "cache-control": "max-age=31536000" } }))
+  }
+  definitionsPublished = true
+}

@@ -8,7 +8,7 @@ import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { errorResponse, fail } from "./lib/http.ts"
-import { backOffice } from "./ops/pult.ts"
+import { backOffice, publishDefinitions } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
 import { stepRollouts } from "./releases/rollout.ts"
 import { resign, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
@@ -46,12 +46,13 @@ app.all("*", () => fail(404, "Not found"))
 
 export default {
   fetch(request, environment, context) {
+    context.waitUntil(publishDefinitions())
     if (new URL(request.url).hostname === downloadHost) return serveDownload(request)
     return app.fetch(request, environment, context)
   },
   async scheduled(controller) {
     if (controller.cron === HOURLY) {
-      await Promise.all([stepRollouts(), resignIfRequested()])
+      await Promise.all([stepRollouts(), resignIfRequested(), publishDefinitions()])
       return
     }
     await Promise.all([rollUpDownloads(), recheckNamespaces(), resign({ type: "revocations" })])
