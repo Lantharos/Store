@@ -2,7 +2,7 @@ import adapter from "@sveltejs/adapter-cloudflare"
 import { sveltekit } from "@sveltejs/kit/vite"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "vite"
-import { markdownPages } from "./build/pages.ts"
+import { markdownPages } from "./vite/pages.ts"
 
 const API = "http://localhost:8787"
 

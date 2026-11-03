@@ -43,10 +43,6 @@ const brandRow = h("div", { alignItems: "center", gap: 14, fontSize: 30, fontWei
   h("span", {}, "Schelf"),
 ])
 
-const DRAWABLE = /\.(png|jpe?g|svg)$/i
-
-export const drawable = (url: string) => DRAWABLE.test(new URL(url).pathname)
-
 export interface AppCard {
   name: string
   summary: string

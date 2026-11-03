@@ -27,7 +27,9 @@
   style:--order={order}
   class="tile enter group relative flex flex-col overflow-hidden rounded-tile bg-(--tile) text-(--tile-ink) {large
     ? 'min-h-[22rem] p-6 pb-0 sm:p-9 sm:pb-0'
-    : 'p-6 sm:p-7'}"
+    : screenshot
+      ? 'p-6 pb-0 sm:p-7 sm:pb-0 lg:[contain:size]'
+      : 'p-6 sm:p-7'}"
 >
   <div class="flex items-start gap-4">
     <AppIcon src={app.icon} name={app.name} eager class={large ? "size-14" : "size-12"} />
@@ -39,28 +41,16 @@
       <span class="button shrink-0 bg-(--tile-button) text-(--tile-button-ink) {large ? '' : 'button-sm'}">Get</span>
     {/if}
   </div>
-  {#if large && screenshot}
+  {#if screenshot}
     <img
       src={screenshot}
       alt=""
       loading="eager"
-      fetchpriority="high"
-      class="shot mt-8 w-full translate-y-3 rounded-b-none transition-transform duration-(--spring-smooth-duration) ease-(--spring-smooth) group-hover:translate-y-1"
+      fetchpriority={large ? "high" : "auto"}
+      class="shot w-full translate-y-3 rounded-b-none transition-transform duration-(--spring-smooth-duration) ease-(--spring-smooth) group-hover:translate-y-1 {large ? 'mt-8' : 'mt-6'}"
     />
-  {:else}
-    <div class="mt-auto flex min-h-28 items-end gap-5 pt-5">
-      {#if blurb}
-        <p class="line-clamp-4 flex-1 text-[15px] leading-relaxed text-(--tile-soft) {screenshot ? 'sm:max-w-[48%] lg:max-w-[46%]' : 'max-w-sm'}">{blurb}</p>
-      {/if}
-      {#if screenshot}
-        <img
-          src={screenshot}
-          alt=""
-          loading="eager"
-          class="shot pointer-events-none absolute -right-10 -bottom-12 hidden w-[52%] transition-transform duration-(--spring-smooth-duration) ease-(--spring-smooth) group-hover:-translate-y-1.5 sm:block"
-        />
-      {/if}
-    </div>
+  {:else if blurb}
+    <p class="mt-auto max-w-sm pt-6 text-[15px] leading-relaxed text-(--tile-soft)">{blurb}</p>
   {/if}
 </a>
 

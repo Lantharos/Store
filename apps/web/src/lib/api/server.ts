@@ -34,10 +34,16 @@ export async function post(path: string, body: unknown) {
   })
 }
 
-export async function media(url: string) {
-  const response = await env.API.fetch(url)
+const SCREENSHOT_CARD = { format: "png", width: 1520, fit: "scale-down" } as const
+
+async function dataUrl(response: Response) {
   if (!response.ok) return null
   const type = response.headers.get("content-type") ?? "application/octet-stream"
   const bytes = new Uint8Array(await response.arrayBuffer())
   return `data:${type};base64,${bytes.toBase64()}`
 }
+
+export const icon = async (url: string) => dataUrl(await env.API.fetch(url))
+
+export const screenshotPng = async (url: string) =>
+  dataUrl(await fetch(url, { cf: { image: SCREENSHOT_CARD } } as RequestInit))

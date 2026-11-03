@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AppSettings, ListingMeta, ListingText } from "@schelf/protocol"
+  import type { AppSettings, ListingMeta, ListingSource, ListingText } from "@schelf/protocol"
   import { untrack } from "svelte"
   import { CATEGORY_CHOICES, categoryLabel } from "../../store/categories.ts"
   import ColorField from "../../ui/fields/ColorField.svelte"
@@ -28,6 +28,13 @@
     ja: "Japanese",
   }
   const MAX_CATEGORIES = 4
+  const SOURCE_NOTES: Partial<Record<ListingSource, string>> = {
+    appstream: "From your AppStream file",
+    sabine: "From Sabine.toml",
+  }
+  const textNote = (field: string) =>
+    SOURCE_NOTES[settings.listing_sources[locale]?.[field] ?? "dashboard"] ?? null
+  const metaNote = (field: string) => SOURCE_NOTES[settings.meta_sources[field] ?? "dashboard"] ?? null
 
   let locale = $state("en")
   let listing = $state(untrack(() => $state.snapshot(settings.listing)))
@@ -104,16 +111,16 @@
       {#snippet aside()}
         <div class="w-44"><Select value={locale} options={locales} label="Language" onchange={chooseLocale} /></div>
       {/snippet}
-      <Field label="Name" count={{ used: text.name.length, max: 60 }}>
+      <Field label="Name" note={textNote("name")} count={{ used: text.name.length, max: 60 }}>
         <input class="field" bind:value={listing[locale]!.name} maxlength="60" />
       </Field>
-      <Field label="Summary" count={{ used: text.summary.length, max: 120 }}>
+      <Field label="Summary" note={textNote("summary")} count={{ used: text.summary.length, max: 120 }}>
         <input class="field" bind:value={listing[locale]!.summary} maxlength="120" />
       </Field>
-      <Field label="Description" hint="Plain paragraphs and lists. Links and **bold** work.">
+      <Field label="Description" note={textNote("description")} hint="Plain paragraphs and lists. Links and **bold** work.">
         <textarea class="field min-h-48 resize-y py-3 leading-relaxed" bind:value={listing[locale]!.description} maxlength="10000"></textarea>
       </Field>
-      <Field label="Search words" hint="Other words people might search for, separated by commas.">
+      <Field label="Search words" note={textNote("keywords")} hint="Other words people might search for, separated by commas.">
         <input
           class="field"
           value={text.keywords.join(", ")}
@@ -128,7 +135,7 @@
     </Section>
 
     <Section title="Details">
-      <Field label="Categories" hint="Up to four. The first is the one shown under your name.">
+      <Field label="Categories" note={metaNote("categories")} hint="Up to four. The first is the one shown under your name.">
         <div class="flex flex-wrap gap-2">
           {#each [...new Set([...settings.meta.categories, ...CATEGORY_CHOICES])] as name (name)}
             {@const chosen = meta.categories.includes(name)}
@@ -139,11 +146,11 @@
         </div>
       </Field>
       <div class="grid gap-6 sm:grid-cols-2">
-        <Field label="Website"><input class="field" type="url" placeholder="https://" bind:value={meta.homepage} /></Field>
-        <Field label="Help and support"><input class="field" type="url" placeholder="https://" bind:value={meta.support} /></Field>
-        <Field label="Privacy policy" hint="Needed if your app sends anything about people anywhere."><input class="field" type="url" placeholder="https://" bind:value={meta.privacy_url} /></Field>
+        <Field label="Website" note={metaNote("homepage")}><input class="field" type="url" placeholder="https://" bind:value={meta.homepage} /></Field>
+        <Field label="Help and support" note={metaNote("support")}><input class="field" type="url" placeholder="https://" bind:value={meta.support} /></Field>
+        <Field label="Privacy policy" note={metaNote("privacy_url")} hint="Needed if your app sends anything about people anywhere."><input class="field" type="url" placeholder="https://" bind:value={meta.privacy_url} /></Field>
       </div>
-      <Field label="Colour" hint="Used behind your app when it's featured.">
+      <Field label="Colour" note={metaNote("brand_color")} hint="Used behind your app when it's featured.">
         <ColorField bind:value={meta.brand_color} label="Colour" />
       </Field>
     </Section>

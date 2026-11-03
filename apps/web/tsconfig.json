@@ -7,5 +7,5 @@
     "skipLibCheck": true,
     "types": ["$app/types"]
   },
-  "include": ["src", "build", "*.ts"]
+  "include": ["src", "vite", "*.ts"]
 }

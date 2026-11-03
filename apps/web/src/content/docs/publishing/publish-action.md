@@ -52,9 +52,9 @@ permissions:
 
 jobs:
   build:
-    uses: Lantharos/Sabine/.github/workflows/release-app.yml@v0.68.0
+    uses: Lantharos/Sabine/.github/workflows/release-app.yml@v0.70
     with:
-      sabine_version: v0.68.0
+      sabine_version: v0.70
     secrets: inherit
   publish:
     needs: build

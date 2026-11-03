@@ -2,7 +2,6 @@ import MarkdownIt from "markdown-it"
 import { createCssVariablesTheme, createHighlighter } from "shiki"
 import type { Heading, Page } from "../src/lib/content/page.ts"
 
-
 const theme = createCssVariablesTheme({ name: "schelf", variablePrefix: "--shiki-" })
 const LANGUAGES = { sh: "shellscript", toml: "toml", yaml: "yaml", ts: "typescript", json: "json" } as const
 const highlighter = createHighlighter({ themes: [theme], langs: Object.values(LANGUAGES) })
