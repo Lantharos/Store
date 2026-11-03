@@ -18,5 +18,23 @@ export function categoriesOf(apps: CatalogEntry[]) {
 }
 
 export function inCategory(apps: CatalogEntry[], slug: string) {
-  return apps.filter((app) => app.kind === "app" && app.categories.some((name) => categorySlug(name) === slug))
+  return apps.filter(
+    (app) => app.kind === "app" && app.categories.some((name) => categorySlug(name) === slug),
+  )
 }
+
+export const CATEGORY_CHOICES = [
+  "Productivity",
+  "Photos and video",
+  "Music and audio",
+  "Graphics and design",
+  "Developer tools",
+  "Communication",
+  "Education",
+  "Science",
+  "Finance",
+  "Games",
+  "Utilities",
+  "Weather",
+  "System",
+]

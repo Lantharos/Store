@@ -2,10 +2,7 @@
   import Check from "@lucide/svelte/icons/check"
   import type { Snippet } from "svelte"
 
-  let {
-    checked = $bindable(false),
-    children,
-  }: { checked?: boolean; children: Snippet } = $props()
+  let { checked = $bindable(false), children }: { checked?: boolean; children: Snippet } = $props()
 </script>
 
 <label class="group flex cursor-pointer items-start gap-3 text-[15px] leading-snug">

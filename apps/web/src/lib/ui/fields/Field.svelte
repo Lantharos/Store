@@ -7,7 +7,13 @@
     error,
     count,
     children,
-  }: { label: string; hint?: string; error?: string | null; count?: { used: number; max: number }; children: Snippet } = $props()
+  }: {
+    label: string
+    hint?: string
+    error?: string | null
+    count?: { used: number; max: number }
+    children: Snippet
+  } = $props()
 </script>
 
 <div class="space-y-1.5">

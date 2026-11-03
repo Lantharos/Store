@@ -47,14 +47,19 @@ export function appSchema(app: AppIndex, path: string, installs: number) {
     url: `${STORE_ORIGIN}${path}`,
     image: app.icon ?? undefined,
     screenshot: app.screenshots.map((shot) => shot.url),
-    applicationCategory: app.kind === "extension" ? "UtilitiesApplication" : (app.categories[0] ?? "Application"),
+    applicationCategory:
+      app.kind === "extension" ? "UtilitiesApplication" : (app.categories[0] ?? "Application"),
     operatingSystem: OPERATING_SYSTEMS.filter(([key]) => platforms.has(key))
       .map(([, name]) => name)
       .join(", "),
     softwareVersion: latest?.version,
     datePublished: latest?.published,
     license: app.licence ?? undefined,
-    author: { "@type": "Organization", name: app.developer.name, url: `${STORE_ORIGIN}/developers/${app.developer.slug}` },
+    author: {
+      "@type": "Organization",
+      name: app.developer.name,
+      url: `${STORE_ORIGIN}/developers/${app.developer.slug}`,
+    },
     offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
     interactionStatistic: {
       "@type": "InteractionCounter",

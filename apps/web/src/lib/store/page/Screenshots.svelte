@@ -18,7 +18,10 @@
   }
 
   function page(direction: number) {
-    strip?.scrollBy({ left: direction * strip.clientWidth * 0.8, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
+    strip?.scrollBy({
+      left: direction * strip.clientWidth * 0.8,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    })
   }
 
   $effect(() => {

@@ -2,9 +2,9 @@
   import Download from "@lucide/svelte/icons/download"
   import type { Artifact } from "@schelf/protocol"
   import { onMount } from "svelte"
+  import { bytes } from "../../format.ts"
   import { KIND_NAMES, pickArtifact, schelfLink, systemName } from "../../system/artifacts.ts"
   import { refine, type System } from "../../system/detect.ts"
-  import { bytes } from "../../format.ts"
 
   let {
     id,
@@ -13,7 +13,14 @@
     system: detected,
     others = $bindable(false),
     panel,
-  }: { id: string; extension?: boolean; artifacts: Artifact[]; system: System; others?: boolean; panel: string } = $props()
+  }: {
+    id: string
+    extension?: boolean
+    artifacts: Artifact[]
+    system: System
+    others?: boolean
+    panel: string
+  } = $props()
 
   let refined = $state<System | null>(null)
   const system = $derived(refined ?? detected)

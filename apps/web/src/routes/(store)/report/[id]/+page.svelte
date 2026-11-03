@@ -1,20 +1,29 @@
 <script lang="ts">
   import CircleCheck from "@lucide/svelte/icons/circle-check"
-  import { enhance } from "$app/forms"
+  import { untrack } from "svelte"
   import Meta from "#lib/seo/Meta.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
+  import { enhance } from "$app/forms"
 
   let { data, form } = $props()
 
   const KINDS = [
     { value: "abuse", title: "It's harmful", text: "Malware, a scam, or it does something it doesn't say." },
     { value: "dsa", title: "It's illegal", text: "Content or behaviour that breaks the law where you live." },
-    { value: "dmca", title: "It uses my work", text: "Your code, name, logo or other work without permission." },
-    { value: "security", title: "A security problem", text: "A vulnerability the developer and we should know about." },
+    {
+      value: "dmca",
+      title: "It uses my work",
+      text: "Your code, name, logo or other work without permission.",
+    },
+    {
+      value: "security",
+      title: "A security problem",
+      text: "A vulnerability the developer and we should know about.",
+    },
   ] as const
 
-  let kind = $state<string>(form?.report?.kind ?? "")
+  let kind = $state<string>(untrack(() => form?.report?.kind ?? ""))
   let busy = $state(false)
   const appPath = $derived(`/${data.app.kind === "extension" ? "extensions" : "apps"}/${data.app.id}`)
 </script>

@@ -1,7 +1,7 @@
-import { fail } from "@sveltejs/kit"
 import { REPORT_KINDS, type ReportRequest } from "@schelf/protocol"
-import { appPage } from "#lib/api/store.ts"
+import { fail } from "@sveltejs/kit"
 import { post } from "#lib/api/server.ts"
+import { appPage } from "#lib/api/store.ts"
 
 export async function load({ params }) {
   const { app } = await appPage(params.id)
@@ -26,15 +26,20 @@ export const actions = {
       name: text(form, "name"),
       email: text(form, "email"),
     }
-    if (!kind || !REPORT_KINDS.includes(kind)) return fail(400, { report, error: "Choose what kind of problem it is." })
-    if (!report.reason || !report.explanation) return fail(400, { report, error: "Tell us what's wrong and why." })
+    if (!kind || !REPORT_KINDS.includes(kind))
+      return fail(400, { report, error: "Choose what kind of problem it is." })
+    if (!report.reason || !report.explanation)
+      return fail(400, { report, error: "Tell us what's wrong and why." })
     if (kind === "dmca" && (!report.name || !report.email)) {
       return fail(400, { report, error: "A copyright notice needs your name and email." })
     }
     const response = await post("/reports", report)
     if (!response.ok) {
       const body = (await response.json()) as { error?: string }
-      return fail(response.status, { report, error: body.error ?? "That didn't go through. Try again in a moment." })
+      return fail(response.status, {
+        report,
+        error: body.error ?? "That didn't go through. Try again in a moment.",
+      })
     }
     return { sent: true }
   },

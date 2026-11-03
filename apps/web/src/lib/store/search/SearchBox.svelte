@@ -25,7 +25,8 @@
 
   $effect(() => {
     const shortcut = (event: KeyboardEvent) => {
-      const typing = event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]")
+      const typing =
+        event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]")
       if ((event.key === "/" && !typing) || (event.key === "k" && (event.metaKey || event.ctrlKey))) {
         event.preventDefault()
         input?.focus()

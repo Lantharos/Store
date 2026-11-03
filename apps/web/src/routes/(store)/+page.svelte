@@ -1,10 +1,10 @@
 <script lang="ts">
   import Meta from "#lib/seo/Meta.svelte"
   import AppGrid from "#lib/store/apps/AppGrid.svelte"
-  import FeaturedTile from "#lib/store/apps/FeaturedTile.svelte"
   import CategoryLinks from "#lib/store/apps/CategoryLinks.svelte"
-  import Trust from "#lib/store/home/Trust.svelte"
+  import FeaturedTile from "#lib/store/apps/FeaturedTile.svelte"
   import { categoryHref } from "#lib/store/categories.ts"
+  import Trust from "#lib/store/home/Trust.svelte"
 
   let { data } = $props()
   const [lead, ...rest] = $derived(data.hero)

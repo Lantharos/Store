@@ -164,7 +164,9 @@
   background: var(--well);
   color: var(--ink);
   outline: none;
-  transition: box-shadow var(--motion-quick) linear, background-color var(--motion-quick) linear;
+  transition:
+    box-shadow var(--motion-quick) linear,
+    background-color var(--motion-quick) linear;
 
   &::placeholder {
     color: var(--ink-muted);
@@ -243,15 +245,4 @@
   background: var(--well);
   border-radius: 8px;
   animation: pulse-soft 1.6s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
-    scroll-behavior: auto !important;
-  }
 }

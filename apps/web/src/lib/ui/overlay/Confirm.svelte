@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { Snippet } from "svelte"
   import Dialog from "./Dialog.svelte"
+  import { toasts } from "./toasts.svelte.ts"
 
   let {
     open = $bindable(false),
     title,
     confirm,
     danger = false,
+    ready = true,
     onconfirm,
     children,
   }: {
@@ -14,6 +16,7 @@
     title: string
     confirm: string
     danger?: boolean
+    ready?: boolean
     onconfirm: () => unknown
     children?: Snippet
   } = $props()
@@ -25,6 +28,8 @@
     try {
       await onconfirm()
       open = false
+    } catch (error) {
+      toasts.error(error)
     } finally {
       busy = false
     }
@@ -37,7 +42,7 @@
     {#if children}<div class="mt-2 text-[15px] leading-relaxed text-ink-soft">{@render children()}</div>{/if}
     <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button type="button" class="button button-quiet" onclick={() => (open = false)}>Cancel</button>
-      <button type="button" class="button {danger ? 'button-danger' : 'button-primary'}" disabled={busy} onclick={run}>
+      <button type="button" class="button {danger ? 'button-danger' : 'button-primary'}" disabled={busy || !ready} onclick={run}>
         {confirm}
       </button>
     </div>

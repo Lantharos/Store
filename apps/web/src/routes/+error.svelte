@@ -1,17 +1,25 @@
 <script lang="ts">
-  import { page } from "$app/state"
   import Footer from "#lib/store/layout/Footer.svelte"
   import Header from "#lib/store/layout/Header.svelte"
+  import { page } from "$app/state"
 
   const COPY: Record<number, { title: string; text: string }> = {
     404: { title: "Nothing here", text: "This page doesn't exist, or it moved." },
-    410: { title: "This app is gone", text: "It was removed from Schelf. If you have it installed, Schelf will tell you what to do." },
+    410: {
+      title: "This app is gone",
+      text: "It was removed from Schelf. If you have it installed, Schelf will tell you what to do.",
+    },
   }
 
   const copy = $derived(
-    COPY[page.status] ?? { title: "Something went wrong", text: page.error?.message ?? "Try again in a moment." },
+    COPY[page.status] ?? {
+      title: "Something went wrong",
+      text: page.error?.message ?? "Try again in a moment.",
+    },
   )
-  const message = $derived(page.status in COPY && page.error?.message !== "Not Found" ? page.error?.message : copy.text)
+  const message = $derived(
+    page.status in COPY && page.error?.message !== "Not Found" ? page.error?.message : copy.text,
+  )
 </script>
 
 <svelte:head>

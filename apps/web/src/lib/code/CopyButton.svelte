@@ -2,7 +2,12 @@
   import Check from "@lucide/svelte/icons/check"
   import Copy from "@lucide/svelte/icons/copy"
 
-  let { text, label = "Copy", class: className = "" }: { text: string; label?: string; class?: string } = $props()
+  let {
+    text,
+    label = "Copy",
+    compact = false,
+    class: className = "",
+  }: { text: string; label?: string; compact?: boolean; class?: string } = $props()
   let copied = $state(false)
   let timer: ReturnType<typeof setTimeout>
 
@@ -18,13 +23,14 @@
   type="button"
   onclick={copy}
   aria-label={copied ? "Copied" : label}
-  class="button button-sm button-quiet {className}"
+  title={compact ? label : undefined}
+  class="button button-sm button-quiet shrink-0 {compact ? 'w-8 px-0' : ''} {className}"
 >
   {#if copied}
     <Check class="size-3.5 text-accent" strokeWidth={2.5} />
-    Copied
+    {#if !compact}Copied{/if}
   {:else}
     <Copy class="size-3.5" />
-    {label}
+    {#if !compact}{label}{/if}
   {/if}
 </button>

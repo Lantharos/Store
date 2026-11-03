@@ -5,7 +5,11 @@
   import type { Screenshot } from "@schelf/protocol"
   import { portal } from "../../ui/overlay/floating.ts"
 
-  let { screenshots, name, index = $bindable() }: { screenshots: Screenshot[]; name: string; index: number | null } = $props()
+  let {
+    screenshots,
+    name,
+    index = $bindable(),
+  }: { screenshots: Screenshot[]; name: string; index: number | null } = $props()
 
   let close = $state<HTMLButtonElement>()
   const shot = $derived(index === null ? null : screenshots[index])

@@ -25,7 +25,11 @@ function archFrom(agent: string, archHint: string | null): Arch {
   return "x86_64"
 }
 
-export function detect(agent: string, platformHint: string | null = null, archHint: string | null = null): System {
+export function detect(
+  agent: string,
+  platformHint: string | null = null,
+  archHint: string | null = null,
+): System {
   const os = osFrom(agent, platformHint)
   return { os, arch: os === "macos" ? "aarch64" : archFrom(agent, archHint) }
 }
@@ -46,7 +50,12 @@ export async function refine(system: System): Promise<System> {
   return detect(navigator.userAgent, values.platform ?? null, values.architecture)
 }
 
-const API_OS: Partial<Record<Os, string>> = { windows: "windows", macos: "macos", linux: "linux", luft: "linux" }
+const API_OS: Partial<Record<Os, string>> = {
+  windows: "windows",
+  macos: "macos",
+  linux: "linux",
+  luft: "linux",
+}
 
 export function platformParam(system: System) {
   const os = API_OS[system.os]

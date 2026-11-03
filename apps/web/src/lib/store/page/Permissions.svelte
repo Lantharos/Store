@@ -11,10 +11,14 @@
 
   let { permissions, extension = false }: { permissions: Permissions | null; extension?: boolean } = $props()
 
-  const ICONS = { full: ShieldAlert, folder: Folder, device: Usb, talk: MessagesSquare, network: Globe, offline: GlobeLock } satisfies Record<
-    PermissionIcon,
-    unknown
-  >
+  const ICONS = {
+    full: ShieldAlert,
+    folder: Folder,
+    device: Usb,
+    talk: MessagesSquare,
+    network: Globe,
+    offline: GlobeLock,
+  } satisfies Record<PermissionIcon, unknown>
   const described = $derived(describePermissions(permissions))
 </script>
 

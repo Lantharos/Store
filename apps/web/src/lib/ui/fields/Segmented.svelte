@@ -15,7 +15,12 @@
     onchange?: (value: T) => void
   } = $props()
 
-  const selected = $derived(Math.max(0, options.findIndex((option) => option.value === value)))
+  const selected = $derived(
+    Math.max(
+      0,
+      options.findIndex((option) => option.value === value),
+    ),
+  )
 
   function choose(next: T) {
     value = next
@@ -28,7 +33,9 @@
     event.preventDefault()
     const next = options[(selected + step + options.length) % options.length]!
     choose(next.value)
-    ;(event.currentTarget as HTMLElement).querySelector<HTMLElement>(`[data-index="${options.indexOf(next)}"]`)?.focus()
+    ;(event.currentTarget as HTMLElement)
+      .querySelector<HTMLElement>(`[data-index="${options.indexOf(next)}"]`)
+      ?.focus()
   }
 </script>
 

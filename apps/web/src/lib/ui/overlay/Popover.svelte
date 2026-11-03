@@ -38,20 +38,20 @@
       const target = event.target as Node
       if (!node.contains(target) && !anchor.contains(target)) close()
     }
-    const escape = (event: KeyboardEvent) => {
+    const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
       event.stopPropagation()
       close()
       if (anchor instanceof HTMLElement) anchor.focus()
     }
     document.addEventListener("pointerdown", outside, true)
-    document.addEventListener("keydown", escape, true)
+    document.addEventListener("keydown", onEscape, true)
     return () => {
       observer.disconnect()
       removeEventListener("resize", update)
       removeEventListener("scroll", update, true)
       document.removeEventListener("pointerdown", outside, true)
-      document.removeEventListener("keydown", escape, true)
+      document.removeEventListener("keydown", onEscape, true)
     }
   })
 </script>

@@ -14,7 +14,13 @@
     placeholder = "Choose",
     label,
     onchange,
-  }: { value?: T; options: Option[]; placeholder?: string; label: string; onchange?: (value: T) => void } = $props()
+  }: {
+    value?: T
+    options: Option[]
+    placeholder?: string
+    label: string
+    onchange?: (value: T) => void
+  } = $props()
 
   const id = $props.id()
   let open = $state(false)
@@ -23,7 +29,10 @@
   const current = $derived(options.find((option) => option.value === value))
 
   function show() {
-    active = Math.max(0, options.findIndex((option) => option.value === value))
+    active = Math.max(
+      0,
+      options.findIndex((option) => option.value === value),
+    )
     open = true
   }
 

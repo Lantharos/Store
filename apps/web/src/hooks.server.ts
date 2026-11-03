@@ -1,7 +1,7 @@
-import type { Handle } from "@sveltejs/kit"
-import { building } from "$app/env"
 import { waitUntil } from "cloudflare:workers"
+import type { Handle } from "@sveltejs/kit/hooks"
 import { detect, systemKey } from "#lib/system/detect.ts"
+import { building } from "$app/env"
 
 const UNCACHED = /^\/(dashboard|api)(\/|$)/
 

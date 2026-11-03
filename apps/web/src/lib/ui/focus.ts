@@ -2,7 +2,8 @@ export function focusOnMount(node: HTMLElement) {
   queueMicrotask(() => node.focus())
 }
 
-const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]"
+const FOCUSABLE =
+  "a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]"
 
 export function trapFocus(event: KeyboardEvent, node: HTMLElement) {
   const focusable = [...node.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(

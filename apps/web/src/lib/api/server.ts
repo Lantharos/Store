@@ -1,6 +1,6 @@
-import { error } from "@sveltejs/kit"
-import { API_BASE, DOWNLOAD_ORIGIN, STORE_ORIGIN } from "@schelf/protocol"
 import { env } from "cloudflare:workers"
+import { API_BASE, DOWNLOAD_ORIGIN, STORE_ORIGIN } from "@schelf/protocol"
+import { error } from "@sveltejs/kit"
 
 async function read<T>(url: string, missing: string): Promise<T> {
   const response = await env.API.fetch(url, { headers: { accept: "application/json" } })
@@ -10,7 +10,9 @@ async function read<T>(url: string, missing: string): Promise<T> {
 }
 
 export async function find<T>(path: string): Promise<T | null> {
-  const response = await env.API.fetch(`${STORE_ORIGIN}${API_BASE}${path}`, { headers: { accept: "application/json" } })
+  const response = await env.API.fetch(`${STORE_ORIGIN}${API_BASE}${path}`, {
+    headers: { accept: "application/json" },
+  })
   if (response.status === 404) return null
   if (!response.ok) error(502, "The store didn't answer. Try again in a moment.")
   return response.json()

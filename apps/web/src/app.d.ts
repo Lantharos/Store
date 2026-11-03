@@ -9,10 +9,11 @@ declare global {
 
   namespace Cloudflare {
     interface Env {
-      API: Fetcher
-      ASSETS: Fetcher
+      API: { fetch: typeof fetch }
     }
   }
-}
 
-export {}
+  interface CacheStorage {
+    readonly default: Cache
+  }
+}

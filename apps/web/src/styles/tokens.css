@@ -16,6 +16,8 @@
   --color-hairline: var(--hairline);
   --color-glass: var(--glass);
   --color-danger: var(--danger);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
   --color-caution: var(--caution);
   --color-scrim: var(--scrim);
   --shadow-float: var(--float-shadow);
@@ -33,18 +35,21 @@
   --ink-muted: light-dark(#6f6b62, #a29d93);
   --accent: light-dark(#725b2d, #ddc393);
   --accent-ink: light-dark(#ffffff, #402d00);
+  --series-1: light-dark(#a06f12, #b98527);
+  --series-2: light-dark(#2f6fa8, #4f8fc9);
   --danger: light-dark(#a8402b, #f2967f);
   --caution: light-dark(#8a5a00, #e8b65a);
   --hairline: color-mix(in oklab, var(--ink) 9%, transparent);
   --glass: color-mix(in oklab, var(--canvas) 72%, transparent);
   --scrim: light-dark(rgb(29 27 23 / 0.28), rgb(0 0 0 / 0.55));
-  --float-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 18px 48px -16px light-dark(rgb(29 27 23 / 0.28), rgb(0 0 0 / 0.7));
+  --float-shadow:
+    0 1px 2px rgb(0 0 0 / 0.06), 0 18px 48px -16px light-dark(rgb(29 27 23 / 0.28), rgb(0 0 0 / 0.7));
 }
 
-:root[data-scheme="light"] {
+[data-scheme="light"] {
   color-scheme: light;
 }
 
-:root[data-scheme="dark"] {
+[data-scheme="dark"] {
   color-scheme: dark;
 }

@@ -30,11 +30,19 @@ function folderLine(places: string[], readOnly: boolean): PermissionLine | null 
   const names = places.map((place) => FOLDERS[place.replace(/:ro$/, "")]!).filter(Boolean)
   if (!names.length) return null
   const home = names.includes("your home folder")
-  const subject = home ? "Everything in your home folder" : `${list(names)} ${names.length === 1 ? "folder" : "folders"}`
-  return { icon: "folder", text: readOnly ? `Read ${home ? "everything in your home folder" : `your ${subject}`}` : subject }
+  const subject = home
+    ? "Everything in your home folder"
+    : `${list(names)} ${names.length === 1 ? "folder" : "folders"}`
+  return {
+    icon: "folder",
+    text: readOnly ? `Read ${home ? "everything in your home folder" : `your ${subject}`}` : subject,
+  }
 }
 
-export function describePermissions(permissions: Permissions | null): { full: boolean; lines: PermissionLine[] } {
+export function describePermissions(permissions: Permissions | null): {
+  full: boolean
+  lines: PermissionLine[]
+} {
   if (!permissions || permissions.unsandboxed !== null) {
     return {
       full: true,
@@ -42,7 +50,9 @@ export function describePermissions(permissions: Permissions | null): { full: bo
         {
           icon: "full",
           text: "Full access to your computer",
-          detail: permissions?.unsandboxed ?? "It runs with the same rights as you, like most apps on Windows and macOS.",
+          detail:
+            permissions?.unsandboxed ??
+            "It runs with the same rights as you, like most apps on Windows and macOS.",
         },
       ],
     }
@@ -56,10 +66,17 @@ export function describePermissions(permissions: Permissions | null): { full: bo
   if (permissions.talk.length) {
     lines.push({
       icon: "talk",
-      text: permissions.talk.length === 1 ? "Talk to one other service" : `Talk to ${permissions.talk.length} other services`,
+      text:
+        permissions.talk.length === 1
+          ? "Talk to one other service"
+          : `Talk to ${permissions.talk.length} other services`,
       detail: permissions.talk.join(", "),
     })
   }
-  lines.push(permissions.network ? { icon: "network", text: "The internet" } : { icon: "offline", text: "No internet access" })
+  lines.push(
+    permissions.network
+      ? { icon: "network", text: "The internet" }
+      : { icon: "offline", text: "No internet access" },
+  )
   return { full: false, lines }
 }

@@ -26,7 +26,10 @@ export const KIND_NAMES: Record<ArtifactKind, string> = {
 
 const SYSTEM_NAMES = { windows: "Windows", macos: "Mac", linux: "Linux", luft: "Luft" } as const
 
-const PREFERRED: Record<"windows" | "macos" | "linux", { platforms: (arch: string) => Platform[]; kinds: ArtifactKind[] }> = {
+const PREFERRED: Record<
+  "windows" | "macos" | "linux",
+  { platforms: (arch: string) => Platform[]; kinds: ArtifactKind[] }
+> = {
   windows: {
     platforms: (arch) => (arch === "aarch64" ? ["windows-aarch64", "windows-x86_64"] : ["windows-x86_64"]),
     kinds: ["exe", "msi", "archive"],
@@ -60,7 +63,8 @@ export function fileName(artifact: Artifact) {
 
 export function groupByPlatform(artifacts: Artifact[]) {
   const groups = new Map<Platform, Artifact[]>()
-  for (const artifact of artifacts) groups.set(artifact.platform, [...(groups.get(artifact.platform) ?? []), artifact])
+  for (const artifact of artifacts)
+    groups.set(artifact.platform, [...(groups.get(artifact.platform) ?? []), artifact])
   return [...groups].map(([platform, files]) => ({ platform, name: PLATFORM_NAMES[platform], files }))
 }
 
