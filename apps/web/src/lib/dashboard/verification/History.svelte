@@ -1,12 +1,20 @@
 <script lang="ts">
   import Check from "@lucide/svelte/icons/check"
+  import ChevronDown from "@lucide/svelte/icons/chevron-down"
   import X from "@lucide/svelte/icons/x"
   import type { Verification, VerificationEvent } from "@schelf/protocol"
-  import { date } from "../../format.ts"
+  import { SvelteSet } from "svelte/reactivity"
+  import { date, plural } from "../../format.ts"
   import Group from "../../ui/group/Group.svelte"
   import Step, { type StepState } from "../releases/Step.svelte"
 
   let { verification }: { verification: Verification } = $props()
+  const expanded = new SvelteSet<number>()
+
+  function toggle(index: number) {
+    if (expanded.has(index)) expanded.delete(index)
+    else expanded.add(index)
+  }
 
   const TITLES: Record<VerificationEvent["kind"], string> = {
     submitted: "Sent for review",
@@ -43,7 +51,15 @@
       <Step state={stateOf(event)} title={event.kind === "replied" && event.by ? `${event.by} answered` : TITLES[event.kind]} last={!waiting && index === verification.history.length - 1}>
         <p>{date(event.at)}</p>
         {#if event.checks}
-          <ul class="mt-2 space-y-1">
+          {@const passed = event.checks.every((check) => check.passed)}
+          {@const open = !passed || expanded.has(index)}
+          {#if passed}
+            <button type="button" class="mt-2 flex items-center gap-1.5 hover:text-ink" aria-expanded={open} onclick={() => toggle(index)}>
+              All {plural(event.checks.length, "check")} passed
+              <ChevronDown class="size-4 transition-transform {open ? 'rotate-180' : ''}" />
+            </button>
+          {/if}
+          <ul class="mt-2 space-y-1" hidden={!open}>
             {#each event.checks as check (check.label)}
               <li class="flex items-center gap-2 {check.passed ? '' : 'text-ink-soft'}">
                 {#if check.passed}<Check class="size-4 shrink-0 text-accent" />{:else}<X class="size-4 shrink-0 text-danger" />{/if}

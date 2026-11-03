@@ -61,14 +61,16 @@ export async function releaseBlocks(release: ReleaseView) {
         : undefined,
       "store page": link(appPage({ id: release.appId, kind: release.kind, status: release.appStatus })),
     }),
-    b.table(
-      checks.map((check) => ({
-        check: CHECK_TITLES[check.name],
-        result: CHECK_RESULT[check.status],
-        summary: check.summary,
-      })),
-      { title: "Checks" },
-    ),
+    checks.length && checks.every((check) => check.status === "passed")
+      ? b.fields({ checks: `All ${checks.length} passed` })
+      : b.table(
+          checks.map((check) => ({
+            check: CHECK_TITLES[check.name],
+            result: CHECK_RESULT[check.status],
+            summary: check.summary,
+          })),
+          { title: "Checks" },
+        ),
     ...(await checkDetailBlocks(checks)),
     b.table(
       artifacts.map((artifact) => ({

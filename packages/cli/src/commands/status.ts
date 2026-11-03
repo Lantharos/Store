@@ -13,6 +13,10 @@ const MARKS = { passed: good("✓"), warning: warn("!"), failed: bad("✕") }
 export function printChecks(checks: CheckResult[]) {
   if (!checks.length) return
   blank()
+  if (checks.every((check) => check.status === "passed")) {
+    line(`${MARKS.passed} All ${checks.length} checks passed`)
+    return
+  }
   for (const check of checks) line(`${MARKS[check.status]} ${check.name.padEnd(15)}${muted(check.summary)}`)
 }
 

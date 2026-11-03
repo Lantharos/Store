@@ -65,7 +65,7 @@
           ? `Passed with ${plural(warnings.length, "warning")}`
           : checking
             ? `${release.checks.length} done, more running`
-            : `All ${release.checks.length} passed`,
+            : `All ${plural(release.checks.length, "check")} passed`,
   )
 </script>
 

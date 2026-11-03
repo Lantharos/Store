@@ -24,7 +24,9 @@ export async function writeSummary(
     ],
     ...artifacts.map((artifact) => [artifact.name, artifact.platform, megabytes(artifact.size)]),
   ])
-  if (completed.checks.length) {
+  if (completed.checks.length && completed.checks.every((check) => check.status === "passed"))
+    core.summary.addRaw(`All ${completed.checks.length} checks passed.`).addBreak()
+  else if (completed.checks.length)
     core.summary.addTable([
       [
         { data: "Check", header: true },
@@ -33,7 +35,6 @@ export async function writeSummary(
       ],
       ...completed.checks.map((check) => [check.name, check.status, check.summary]),
     ])
-  }
   await core.summary
     .addRaw(
       "The malware scan, inspection and source diff follow in a few minutes; the dashboard shows them as they land.",
