@@ -1,6 +1,6 @@
 import type { FieldSources } from "@schelf/protocol"
 import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core"
-import { app } from "./developers.ts"
+import { app } from "./apps.ts"
 
 export const listing = sqliteTable(
   "listing",
@@ -59,7 +59,7 @@ export const mirrorApp = sqliteTable(
     summary: text("summary").notNull(),
     icon: text("icon"),
     categories: text("categories", { mode: "json" }).$type<string[]>().notNull(),
-    developer: text("developer").notNull(),
+    publisher: text("developer").notNull(),
     verified: integer("verified", { mode: "boolean" }).notNull(),
     installs30d: integer("installs_30d").notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),

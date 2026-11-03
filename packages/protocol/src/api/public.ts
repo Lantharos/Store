@@ -47,9 +47,13 @@ export interface AppPage {
   installs: Installs
 }
 
-export interface DeveloperPage {
+export interface PublisherPage {
   name: string
   slug: string
+  kind: "person" | "organisation"
+  description: string
+  website: string | null
+  logo: string | null
   verified: boolean
   apps: CatalogEntry[]
 }

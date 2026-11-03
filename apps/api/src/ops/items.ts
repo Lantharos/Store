@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { releases } from "./data/records.ts"
 import { reports, submissions, updates } from "./define/inboxes.ts"
+import { verification } from "./define/verification.ts"
 
 const FLAGGING_CHECKS: Partial<Record<string, string>> = {
   malware: "malware",
@@ -28,7 +29,7 @@ export async function sendRelease(pult: Pult, releaseId: string, kind: "submissi
     fingerprint: release.id,
     record: release.id,
     tags: await tagsFor(release),
-    data: { app: release.appId, name: release.name, version: release.version, developer: release.developer },
+    data: { app: release.appId, name: release.name, version: release.version, publisher: release.publisher },
   })
   await db.update(schema.review).set({ pultItem: sent.id }).where(eq(schema.review.releaseId, release.id))
 }
@@ -47,4 +48,40 @@ export async function sendReport(pult: Pult, reportId: string) {
     data: { app: report.appId, kind: report.kind, email: report.reporterEmail, ...details },
   })
   await db.update(schema.report).set({ pultItem: sent.id }).where(eq(schema.report.id, report.id))
+}
+
+export async function sendVerification(
+  pult: Pult,
+  verificationId: string,
+  message?: { from: string; text: string },
+) {
+  const row = await db.query.publisherVerification.findFirst({
+    where: eq(schema.publisherVerification.id, verificationId),
+  })
+  if (!row) return
+  const publisher = await db.query.publisher.findFirst({ where: eq(schema.publisher.id, row.publisherId) })
+  if (!publisher) return
+  const failed = row.facts.filter((fact) => fact.result === "failed")
+  const sent = await pult.send(verification, {
+    fingerprint: row.id,
+    record: publisher.id,
+    tags: [
+      ...(failed.length ? ["unproven"] : []),
+      ...(failed.some((fact) => fact.check === "Impersonation" || fact.check === "Name")
+        ? ["impersonation"]
+        : []),
+    ],
+    data: {
+      verification: row.id,
+      name: publisher.name,
+      legalName: row.legalName,
+      email: row.contactEmail ?? "",
+    },
+  })
+  if (row.pultItem !== sent.id)
+    await db
+      .update(schema.publisherVerification)
+      .set({ pultItem: sent.id })
+      .where(eq(schema.publisherVerification.id, row.id))
+  if (message) await pult.receive({ thread: sent.id, from: message.from, text: message.text })
 }

@@ -2,6 +2,7 @@ import { type AppStatus, DEFAULT_LOCALE } from "@schelf/protocol"
 import { and, desc, eq, like, or, sql } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 import { installsSince } from "../../signing/records.ts"
+import { latestVerification } from "../../verification/records.ts"
 
 const name = sql<string>`coalesce(${schema.listing.name}, ${schema.app.id})`
 
@@ -15,12 +16,12 @@ function appQuery() {
       status: schema.app.status,
       repository: schema.app.repository,
       licence: schema.app.licence,
-      developerId: schema.developer.id,
-      developer: schema.developer.name,
+      publisherId: schema.publisher.id,
+      publisher: schema.publisher.name,
       createdAt: schema.app.createdAt,
     })
     .from(schema.app)
-    .innerJoin(schema.developer, eq(schema.developer.id, schema.app.developerId))
+    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
     .leftJoin(
       schema.listing,
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
@@ -67,14 +68,14 @@ function releaseQuery() {
     .select({
       release: schema.release,
       name,
-      developerId: schema.app.developerId,
-      developer: schema.developer.name,
+      publisherId: schema.app.publisherId,
+      publisher: schema.publisher.name,
       repository: schema.app.repository,
       format: schema.app.format,
     })
     .from(schema.release)
     .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
-    .innerJoin(schema.developer, eq(schema.developer.id, schema.app.developerId))
+    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
     .leftJoin(
       schema.listing,
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
@@ -90,8 +91,8 @@ export const releases = {
       ? {
           ...row.release,
           name: row.name,
-          developerId: row.developerId,
-          developer: row.developer,
+          publisherId: row.publisherId,
+          publisher: row.publisher,
           repository: row.repository,
           format: row.format,
         }
@@ -105,8 +106,8 @@ export const releases = {
     return rows.map((row) => ({
       ...row.release,
       name: row.name,
-      developerId: row.developerId,
-      developer: row.developer,
+      publisherId: row.publisherId,
+      publisher: row.publisher,
       repository: row.repository,
       format: row.format,
     }))
@@ -119,30 +120,42 @@ export const releases = {
   },
 }
 
-export const developers = {
+export const publishers = {
   async byId(id: string) {
-    const row = await db.query.developer.findFirst({ where: eq(schema.developer.id, id) })
-    return row ?? null
+    const row = await db.query.publisher.findFirst({ where: eq(schema.publisher.id, id) })
+    if (!row) return null
+    const verification = await latestVerification(id)
+    return { ...row, verification: verification?.status ?? null }
   },
-  search(query: string, limit: number) {
+  async search(query: string, limit: number) {
     const pattern = `%${query}%`
-    return db
+    const rows = await db
       .select()
-      .from(schema.developer)
-      .where(or(like(schema.developer.name, pattern), like(schema.developer.slug, pattern)))
+      .from(schema.publisher)
+      .where(or(like(schema.publisher.name, pattern), like(schema.publisher.slug, pattern)))
       .limit(limit)
+    return rows.map((row) => ({ ...row, verification: null }))
   },
   namespaces(id: string) {
-    return db.select().from(schema.namespace).where(eq(schema.namespace.developerId, id))
+    return db.select().from(schema.namespace).where(eq(schema.namespace.publisherId, id))
+  },
+  members(id: string) {
+    return db
+      .select({ name: schema.user.name, email: schema.user.email, role: schema.member.role })
+      .from(schema.member)
+      .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
+      .where(eq(schema.member.publisherId, id))
   },
   apps(id: string) {
-    return appQuery().where(eq(schema.app.developerId, id))
+    return appQuery().where(eq(schema.app.publisherId, id))
   },
-  publishers(id: string) {
+  trustedPublishers(id: string) {
     return db
       .select({ publisher: schema.trustedPublisher })
       .from(schema.trustedPublisher)
       .innerJoin(schema.app, eq(schema.app.id, schema.trustedPublisher.appId))
-      .where(eq(schema.app.developerId, id))
+      .where(eq(schema.app.publisherId, id))
   },
 }
+
+export type PublisherView = NonNullable<Awaited<ReturnType<typeof publishers.byId>>>

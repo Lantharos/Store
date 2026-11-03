@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
   import type { AppIndex, Installs } from "@schelf/protocol"
   import { pickArtifact } from "../../system/artifacts.ts"
@@ -47,7 +48,9 @@
         <h1 class="text-[32px] leading-none font-semibold tracking-[-0.03em] sm:text-[44px]">{listing.name}</h1>
         <p class="mt-2 text-ink-soft sm:mt-3 sm:text-lg">{listing.summary}</p>
         <p class="mt-1.5 text-[15px] text-ink-muted">
-          <a href="/developers/{app.developer.slug}" class="hover:text-ink">{app.developer.name}</a>
+          <a href="/publishers/{app.publisher.slug}" class="inline-flex items-center gap-1 align-bottom hover:text-ink">
+            {app.publisher.name}{#if app.publisher.verified}<BadgeCheck class="size-4 text-accent" aria-label="Verified publisher" />{/if}
+          </a>
           {#each app.categories.slice(0, 1) as category (category)}
             · <a href={extension ? "/extensions" : categoryHref(category)} class="hover:text-ink">{categoryLabel(category)}</a>
           {/each}

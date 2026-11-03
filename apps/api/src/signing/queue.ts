@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { rebuildApp, rebuildCatalog, rebuildRevocations } from "./rebuild.ts"
 import { RESIGN_REQUEST } from "./resign-request.ts"
@@ -31,6 +31,21 @@ export async function resignIfRequested() {
     .where(eq(schema.storeState.key, RESIGN_REQUEST))
     .returning()
   if (request) await resignEverything()
+}
+
+export async function resignPublisher(publisherId: string) {
+  const apps = await db
+    .select({ id: schema.app.id })
+    .from(schema.app)
+    .where(
+      and(
+        eq(schema.app.publisherId, publisherId),
+        inArray(schema.app.status, ["listed", "delisted", "pulled"]),
+      ),
+    )
+  if (apps.length)
+    await resign(...apps.map((app) => ({ type: "app" as const, id: app.id })), { type: "catalog" })
+  return apps.map((app) => app.id)
 }
 
 export function resignApp(id: string) {

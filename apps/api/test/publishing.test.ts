@@ -11,7 +11,7 @@ import {
 import { describe, expect, test } from "vitest"
 import { approve } from "../src/releases/review.ts"
 import { rebuildApp } from "../src/signing/rebuild.ts"
-import { bytesOf, developerWithApp, schelfToml } from "./fixtures.ts"
+import { bytesOf, publisherWithApp, schelfToml } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
 const PERMISSIONS = '[sandbox]\nfilesystems = ["xdg-documents"]\n'
@@ -53,7 +53,7 @@ function upload(started: PublishResponse, body: Uint8Array<ArrayBuffer>) {
 
 describe("publishing with a dashboard token", () => {
   test("a release uploads, passes the quick checks, waits for review and is signed on approval", async () => {
-    const { appId, token } = await developerWithApp()
+    const { appId, token } = await publisherWithApp()
     const file = bytesOf("an AppImage, honestly")
     const started = await publish(token, appId, file)
     expect(started.version).toBe("1.0.0")
@@ -91,7 +91,7 @@ describe("publishing with a dashboard token", () => {
   })
 
   test("a file that doesn't match its announced SHA-256 is refused and removed", async () => {
-    const { appId, token } = await developerWithApp()
+    const { appId, token } = await publisherWithApp()
     const file = bytesOf("the real build")
     const started = await publish(token, appId, file, await sha256Hex(bytesOf("a different build")))
     const response = await upload(started, file)
@@ -99,9 +99,9 @@ describe("publishing with a dashboard token", () => {
     expect(await env.BUCKET.head(paths.artifact(appId, "1.0.0", "linux-x86_64", "notes.AppImage"))).toBeNull()
   })
 
-  test("a token can't publish another developer's app", async () => {
-    const mine = await developerWithApp()
-    const theirs = await developerWithApp()
+  test("a token can't publish another publisher's app", async () => {
+    const mine = await publisherWithApp()
+    const theirs = await publisherWithApp()
     const response = await exports.default.fetch(
       new Request(`${API}/publish`, {
         method: "POST",

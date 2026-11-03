@@ -16,7 +16,7 @@ export async function GET() {
     { path: "/extensions" },
     ...categoriesOf(apps).map((category) => ({ path: categoryHref(category.name) })),
     ...apps.map((app) => ({ path: appHref(app), updated: app.updated })),
-    ...[...new Set(apps.map((app) => app.developer.slug))].map((slug) => ({ path: `/developers/${slug}` })),
+    ...[...new Set(apps.map((app) => app.publisher.slug))].map((slug) => ({ path: `/publishers/${slug}` })),
     ...DOC_ORDER.map((slug) => ({ path: docHref(slug) })),
     ...LEGAL_SLUGS.map((slug) => ({ path: `/legal/${slug}` })),
   ]

@@ -12,7 +12,9 @@ To report a problem with a specific app, use the **Report a problem** link on it
 
 ## Imprint
 
-Schelf is operated by Kristof Imeri, trading as Lantharos.
+Schelf is run by Lantharos, the trading name of Kristof Imeri, a sole trader.
+
+Address: [to be added]
 
 Email: [legal@schelf.store](mailto:legal@schelf.store)
 

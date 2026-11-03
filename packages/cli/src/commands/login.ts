@@ -8,7 +8,7 @@ export async function login(args: Args) {
   title("Sign in to Schelf")
   const { account } = await signIn(api)
   greet(account)
-  if (!account.developer) note("Run schelf init in an app's repository to become a developer and set it up.")
+  if (!account.publishers.length) note("Run schelf init in an app's repository to start publishing it.")
   blank()
   return 0
 }

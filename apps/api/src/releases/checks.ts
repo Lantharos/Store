@@ -13,7 +13,7 @@ import { type WorkflowClaims, workflowPath } from "../github/oidc.ts"
 import { fail } from "../lib/http.ts"
 import { saveChecks } from "../publishing/complete.ts"
 import { type AppRow, type ArtifactRow, fileUrl, type ReleaseRow } from "../signing/records.ts"
-import { notifyDeveloper } from "./notify.ts"
+import { notifyPublisher } from "./notify.ts"
 import { sendToReview } from "./review.ts"
 
 export const CHECKS_EVENT = "schelf-checks"
@@ -75,7 +75,7 @@ export async function acceptChecks(releaseId: string, report: ChecksReport) {
     })
   if (report.checks.some((check) => check.status === "failed")) {
     await db.update(schema.release).set({ status: "failed" }).where(eq(schema.release.id, release.id))
-    await notifyDeveloper(release.id, "failed")
+    await notifyPublisher(release.id, "failed")
     return "failed" as const
   }
   await sendToReview(release.id)

@@ -6,13 +6,12 @@
 
   let open = $state(false)
   let trigger = $state<HTMLButtonElement>()
-  const name = $derived(session.account?.developer?.name ?? session.account?.user.name ?? "")
+  const name = $derived(session.account?.user.name ?? "")
 
   $effect(() => scheme.load())
 
   const items: MenuItem[] = $derived([
     { label: "Account", onselect: () => goto("/dashboard/account") },
-    { label: "Your public page", onselect: () => goto(`/developers/${session.account?.developer?.slug}`) },
     { label: "Light", selected: scheme.value === "light", onselect: () => scheme.set("light") },
     { label: "Dark", selected: scheme.value === "dark", onselect: () => scheme.set("dark") },
     { label: "Match the system", selected: scheme.value === "system", onselect: () => scheme.set("system") },

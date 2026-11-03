@@ -8,6 +8,7 @@
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
+  import { session } from "../api/session.svelte.ts"
 
   let { appId, publishers = $bindable() }: { appId: string; publishers: TrustedPublisher[] } = $props()
 
@@ -23,7 +24,7 @@
     busy = true
     error = null
     try {
-      const created = await api.post<TrustedPublisher>(endpoints.publishers(appId), {
+      const created = await api.post<TrustedPublisher>(endpoints.trustedPublishers(appId), {
         repository: form.repository.trim().replace(/^https:\/\/github\.com\//, ""),
         workflow: form.workflow.trim(),
         environment: form.environment.trim() || undefined,
@@ -40,7 +41,7 @@
 
   async function remove() {
     const publisher = removing!
-    await api.delete(endpoints.publisher(appId, publisher.id))
+    await api.delete(endpoints.trustedPublisher(appId, publisher.id))
     publishers = publishers.filter((item) => item.id !== publisher.id)
     toasts.show("Trusted publisher removed")
   }
@@ -52,7 +53,7 @@
       <h2 class="text-xl font-semibold">Trusted publishers</h2>
       <p class="mt-1 max-w-xl text-[15px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
     </div>
-    <button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: SCHELF_WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>
+    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: SCHELF_WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>{/if}
   </div>
   <ul class="mt-4 divide-y divide-hairline">
     {#each publishers as publisher (publisher.id)}
@@ -63,7 +64,7 @@
           <p class="truncate font-mono text-[13px] text-ink-muted">{publisher.workflow}{publisher.environment ? ` · environment ${publisher.environment}` : ""}</p>
         </div>
         <span class="text-[13px] text-ink-muted">Added {date(publisher.created_at)}</span>
-        <button type="button" class="button button-sm button-danger" onclick={() => ((removing = publisher), (removeOpen = true))}>Remove</button>
+        {#if session.can("apps")}<button type="button" class="button button-sm button-danger" onclick={() => ((removing = publisher), (removeOpen = true))}>Remove</button>{/if}
       </li>
     {:else}
       <li class="py-6 text-[15px] text-ink-muted">No workflow can publish this app yet. Add one, or run <span class="font-mono text-[13px]">bunx schelf init</span> in the repository.</li>

@@ -1,11 +1,18 @@
 import { waitUntil } from "cloudflare:workers"
 import { rolloutsFrozen, submissionsOpen } from "./define/flags.ts"
-import { sendRelease, sendReport } from "./items.ts"
 import { backOffice } from "./pult.ts"
 
 export type OpsEvent =
   | { type: "release"; release: string; kind: "submission" | "update" }
   | { type: "report"; report: string }
+  | { type: "verification"; verification: string; message?: { from: string; text: string } }
+
+async function deliver(pult: NonNullable<ReturnType<typeof backOffice>>["pult"], event: OpsEvent) {
+  const { sendRelease, sendReport, sendVerification } = await import("./items.ts")
+  if (event.type === "release") return sendRelease(pult, event.release, event.kind)
+  if (event.type === "report") return sendReport(pult, event.report)
+  return sendVerification(pult, event.verification, event.message)
+}
 
 export function tellOps(event: OpsEvent) {
   const office = backOffice()
@@ -13,12 +20,7 @@ export function tellOps(event: OpsEvent) {
     console.log(`Pult isn't connected, so this waits in the store: ${JSON.stringify(event)}`)
     return
   }
-  waitUntil(
-    (event.type === "release"
-      ? sendRelease(office.pult, event.release, event.kind)
-      : sendReport(office.pult, event.report)
-    ).catch((error) => console.error(error)),
-  )
+  waitUntil(deliver(office.pult, event).catch((error) => console.error(error)))
 }
 
 export async function acceptingSubmissions() {

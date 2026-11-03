@@ -1,12 +1,12 @@
 import { z } from "zod"
 import { access, format, kind, platform } from "../platforms.ts"
 
-export const developerSummary = z.object({
+export const publisherSummary = z.object({
   name: z.string(),
   slug: z.string(),
   verified: z.boolean(),
 })
-export type DeveloperSummary = z.infer<typeof developerSummary>
+export type PublisherSummary = z.infer<typeof publisherSummary>
 
 export const platformRelease = z.object({
   version: z.string(),
@@ -23,7 +23,7 @@ export const catalogEntry = z.object({
   summary: z.string(),
   icon: z.string().nullable(),
   categories: z.array(z.string()),
-  developer: developerSummary,
+  publisher: publisherSummary,
   platforms: z.partialRecord(platform, platformRelease),
   access,
   updated: z.iso.datetime(),
@@ -53,7 +53,7 @@ const mirrorBase = z.object({
   summary: z.string(),
   icon: z.string().nullable(),
   categories: z.array(z.string()),
-  developer: z.object({ name: z.string(), verified: z.boolean() }),
+  publisher: z.object({ name: z.string(), verified: z.boolean() }),
   updated: z.iso.datetime(),
   installs_30d: z.number().int().nonnegative(),
   rank: z.number(),

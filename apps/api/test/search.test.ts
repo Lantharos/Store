@@ -11,7 +11,7 @@ const apps = [
 
 describe("search", () => {
   test("finds apps by the start of their name and despite typos", async () => {
-    await env.DB.batch(indexStatements(apps.map((app) => ({ ...app, keywords: [], developer: "Someone" }))))
+    await env.DB.batch(indexStatements(apps.map((app) => ({ ...app, keywords: [], publisher: "Someone" }))))
     const keys = async (query: string) => (await searchKeys(query, 10)).map((hit) => hit.key)
     expect(await keys("ma")).toEqual(
       expect.arrayContaining([

@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { DEFAULT_LOCALE, namespaceCovers, SHIPPED_STATUSES } from "@schelf/protocol"
+import { DEFAULT_LOCALE, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm"
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core"
 import { db, schema } from "../db/client.ts"
@@ -14,7 +14,7 @@ export type IndexedArtifact = ArtifactRow & {
 
 export interface AppRecord {
   app: AppRow
-  developer: { name: string; slug: string; verified: boolean }
+  publisher: { name: string; slug: string; verified: boolean }
   listing: (typeof schema.listing.$inferSelect)[]
   meta: typeof schema.listingMeta.$inferSelect | null
   screenshots: (typeof schema.screenshot.$inferSelect)[]
@@ -91,26 +91,24 @@ export async function installsSince(appIds: string[], days: number) {
 export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
   if (apps.length === 0) return []
   const ids = apps.map((app) => app.id)
-  const developerIds = [...new Set(apps.map((app) => app.developerId))]
-  const [developers, namespaces, listings, metas, screenshots, releases, blocked, installs] =
-    await Promise.all([
-      db.select().from(schema.developer).where(within(schema.developer.id, developerIds)),
-      db.select().from(schema.namespace).where(within(schema.namespace.developerId, developerIds)),
-      db.select().from(schema.listing).where(within(schema.listing.appId, ids)),
-      db.select().from(schema.listingMeta).where(within(schema.listingMeta.appId, ids)),
-      db
-        .select()
-        .from(schema.screenshot)
-        .where(within(schema.screenshot.appId, ids))
-        .orderBy(schema.screenshot.position),
-      db
-        .select()
-        .from(schema.release)
-        .where(and(within(schema.release.appId, ids), inArray(schema.release.status, [...SHIPPED_STATUSES])))
-        .orderBy(desc(schema.release.approvedAt)),
-      blockedReleaseIds(ids),
-      installsSince(ids, 30),
-    ])
+  const publisherIds = [...new Set(apps.map((app) => app.publisherId))]
+  const [publishers, listings, metas, screenshots, releases, blocked, installs] = await Promise.all([
+    db.select().from(schema.publisher).where(within(schema.publisher.id, publisherIds)),
+    db.select().from(schema.listing).where(within(schema.listing.appId, ids)),
+    db.select().from(schema.listingMeta).where(within(schema.listingMeta.appId, ids)),
+    db
+      .select()
+      .from(schema.screenshot)
+      .where(within(schema.screenshot.appId, ids))
+      .orderBy(schema.screenshot.position),
+    db
+      .select()
+      .from(schema.release)
+      .where(and(within(schema.release.appId, ids), inArray(schema.release.status, [...SHIPPED_STATUSES])))
+      .orderBy(desc(schema.release.approvedAt)),
+    blockedReleaseIds(ids),
+    installsSince(ids, 30),
+  ])
   const shipped = groupBy(
     releases.filter((release) => !blocked.releases.has(release.id)),
     (release) => release.appId,
@@ -147,19 +145,15 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       : [],
     (delta) => delta.artifactId,
   )
-  const developerById = new Map(developers.map((developer) => [developer.id, developer]))
+  const publisherById = new Map(publishers.map((publisher) => [publisher.id, publisher]))
   const listingsByApp = groupBy(listings, (row) => row.appId)
   const metaByApp = new Map(metas.map((meta) => [meta.appId, meta]))
   const screenshotsByApp = groupBy(screenshots, (row) => row.appId)
   return apps.map((app) => {
-    const developer = developerById.get(app.developerId)!
-    const verified = namespaces.some(
-      (entry) =>
-        entry.developerId === app.developerId && entry.verifiedAt && namespaceCovers(entry.prefix, app.id),
-    )
+    const publisher = publisherById.get(app.publisherId)!
     return {
       app,
-      developer: { name: developer.name, slug: developer.slug, verified },
+      publisher: { name: publisher.name, slug: publisher.slug, verified: publisher.verifiedAt !== null },
       listing: listingsByApp.get(app.id) ?? [],
       meta: metaByApp.get(app.id) ?? null,
       screenshots: screenshotsByApp.get(app.id) ?? [],

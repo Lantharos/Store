@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { SCHELF_WORKFLOW, type SetupInput } from "@schelf/protocol"
 import { greet, session } from "../api/auth.ts"
 import { dashboard } from "../api/dashboard.ts"
-import { type Args, apiOrigin } from "../args.ts"
+import { type Args, apiOrigin, flag } from "../args.ts"
 import { detectProject, type Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
 import { repositoryRoot } from "../project/git.ts"
@@ -12,7 +12,7 @@ import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
 import { importListing } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
-import { ensureDeveloper, registerApp } from "../setup/register.ts"
+import { choosePublisher, registerApp, registeredApp } from "../setup/register.ts"
 import { blank, done, Failure, field, next, note, step, title } from "../ui/output.ts"
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
@@ -79,9 +79,13 @@ export async function init(args: Args) {
   const { token, account: current } = await session(api)
   greet(current)
   const account = dashboard(api, token)
-  await ensureDeveloper(api, account, current)
-  await ensureNamespace(account, identity.id)
-  const created = await registerApp(account, {
+  const existing = await registeredApp(account, identity.id)
+  const publisher =
+    current.publishers.find((candidate) => candidate.id === existing?.app.publisher) ??
+    (await choosePublisher(api, account, current, flag(args, "publisher")))
+  done(`Publishing as ${bold(publisher.name)}`)
+  await ensureNamespace(account, publisher.id, identity.id)
+  const created = await registerApp(account, publisher, existing, {
     ...identity,
     kind: project.kind,
     format: project.format,

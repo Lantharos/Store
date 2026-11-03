@@ -48,7 +48,7 @@ export interface AppCard {
   summary: string
   icon: string | null
   screenshot: string | null
-  developer: string
+  publisher: string
 }
 
 export function appCard(app: AppCard) {
@@ -76,7 +76,7 @@ export function appCard(app: AppCard) {
         ),
     h("div", { fontSize: 68, fontWeight: 600, color: INK, letterSpacing: -2, lineHeight: 1.05 }, app.name),
     h("div", { fontSize: 32, color: SOFT, lineHeight: 1.35 }, app.summary),
-    h("div", { fontSize: 24, color: "#6f6b62" }, `By ${app.developer}`),
+    h("div", { fontSize: 24, color: "#6f6b62" }, `By ${app.publisher}`),
   ])
   const shot = app.screenshot
     ? h(

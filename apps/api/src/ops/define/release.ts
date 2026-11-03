@@ -14,7 +14,7 @@ export async function releaseBlocks(release: ReleaseView) {
   return [
     b.fields({
       app: b.ref("app", release.appId, release.name),
-      developer: b.ref("developer", release.developerId, release.developer),
+      publisher: b.ref("publisher", release.publisherId, release.publisher),
       version: release.version,
       status: release.status,
       built: release.origin === "oidc" ? "on GitHub Actions" : "uploaded by the developer",
@@ -94,7 +94,7 @@ export const release = resource("release", {
       run: ({ record, input, actor }) => requestChanges(record.id, actor.name, input.message),
     }),
     reject: action({
-      description: "Rejects the release and sends the developer the reason as a statement of reasons.",
+      description: "Rejects the release and sends the publisher the reason as a statement of reasons.",
       input: reasonInput,
       danger: "confirm",
       when: waiting,

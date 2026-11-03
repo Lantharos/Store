@@ -4,39 +4,12 @@ import type { Permissions } from "../permissions.ts"
 import { appId, distribution, format, kind, type Platform, platform } from "../platforms.ts"
 import type { AppStatus, CheckResult, Origin, ReleaseStatus } from "../releases.ts"
 
-export const AGREEMENT_VERSION = "2026-11"
 export const CLI_CLIENT_ID = "schelf-cli"
-export const DEVELOPER_KINDS = ["person", "organisation"] as const
 export const PROOF_METHODS = ["dns", "well-known", "github"] as const
 export type ProofMethod = (typeof PROOF_METHODS)[number]
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const
 export const MAX_ICON_BYTES = 1024 * 1024
 export const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024
-
-export interface Developer {
-  id: string
-  name: string
-  slug: string
-  kind: (typeof DEVELOPER_KINDS)[number]
-  github_login: string | null
-  agreement_version: string
-  status: "active" | "suspended"
-}
-
-export interface Account {
-  user: { id: string; name: string; email: string; image: string | null }
-  developer: Developer | null
-  github: string | null
-  passkeys: number
-  agreement: { current: string; accepted: string | null }
-}
-
-export const becomeDeveloper = z.object({
-  name: z.string().trim().min(1).max(80),
-  kind: z.enum(DEVELOPER_KINDS),
-  agreement: z.literal(AGREEMENT_VERSION),
-})
-export type BecomeDeveloper = z.infer<typeof becomeDeveloper>
 
 export interface Namespace {
   prefix: string
@@ -59,6 +32,7 @@ export const verifyNamespace = z.object({ method: z.enum(PROOF_METHODS) })
 
 export interface DashboardApp {
   id: string
+  publisher: string
   kind: z.infer<typeof kind>
   format: z.infer<typeof format>
   name: string
@@ -173,7 +147,7 @@ export interface AppSettings {
   meta_sources: FieldSources
   meta: ListingMeta
   screenshots: DashboardScreenshot[]
-  publishers: TrustedPublisher[]
+  trusted_publishers: TrustedPublisher[]
   tokens: DashboardToken[]
   setup: SetupFiles
 }

@@ -6,12 +6,13 @@ const project: Project<never> = {
   manifest: manifest as Manifest<never>,
   modules: {
     "src/ops/define/app.ts": () => import("../src/ops/define/app.ts"),
-    "src/ops/define/developer.ts": () => import("../src/ops/define/developer.ts"),
     "src/ops/define/flags.ts": () => import("../src/ops/define/flags.ts"),
     "src/ops/define/inboxes.ts": () => import("../src/ops/define/inboxes.ts"),
     "src/ops/define/pages.ts": () => import("../src/ops/define/pages.ts"),
+    "src/ops/define/publisher.ts": () => import("../src/ops/define/publisher.ts"),
     "src/ops/define/release.ts": () => import("../src/ops/define/release.ts"),
     "src/ops/define/store.ts": () => import("../src/ops/define/store.ts"),
+    "src/ops/define/verification.ts": () => import("../src/ops/define/verification.ts"),
   },
 }
 

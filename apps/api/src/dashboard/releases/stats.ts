@@ -2,19 +2,19 @@ import { type Platform, type Stats, statsQuery } from "@schelf/protocol"
 import { and, eq, gte, sql } from "drizzle-orm"
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { readQuery } from "../../lib/http.ts"
 import { DAY_MS, dayOf } from "../../lib/time.ts"
-import { ownedApp } from "../access.ts"
+import { appAccess } from "../../publishers/access.ts"
 
-export const statsRoutes = new Hono<DeveloperVars>()
+export const statsRoutes = new Hono<SignedInVars>()
 
 const installs = sql<number>`sum(${schema.countDaily.installs})`
 const updates = sql<number>`sum(${schema.countDaily.updates})`
 
 statsRoutes.get("/:id/stats", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"))
   const { days } = readQuery(c, statsQuery)
   const since = and(
     eq(schema.countDaily.appId, app.id),

@@ -10,7 +10,7 @@ interface DnsAnswer {
 
 const TXT = 16
 
-async function dnsHas(domain: string, token: string) {
+export async function dnsHas(domain: string, token: string) {
   const response = await fetch(
     `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=TXT`,
     {
@@ -27,7 +27,7 @@ async function dnsHas(domain: string, token: string) {
   )
 }
 
-async function wellKnownHas(domain: string, token: string) {
+export async function wellKnownHas(domain: string, token: string) {
   const response = await fetch(`https://${domain}/.well-known/schelf-store.txt`, {
     redirect: "manual",
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -40,7 +40,7 @@ export function githubOwnerOf(prefix: string) {
   return io === "io" && github === "github" && owner && rest.length === 0 ? owner : null
 }
 
-async function githubOwns(owner: string, account: { login: string; token: string } | null) {
+export async function githubOwns(owner: string, account: { login: string; token: string } | null) {
   if (!account) return false
   if (account.login.toLowerCase() === owner.toLowerCase()) return true
   const membership = await maybeGithub<{ role: string; state: string }>(`/user/memberships/orgs/${owner}`, {

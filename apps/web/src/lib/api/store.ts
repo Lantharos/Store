@@ -1,9 +1,9 @@
 import {
   type AppPage,
   type Catalog,
-  type DeveloperPage,
   type FeaturedResponse,
   type MirrorEntry,
+  type PublisherPage,
   paths,
   type SearchResponse,
 } from "@schelf/protocol"
@@ -30,7 +30,7 @@ export const findAppPage = (id: string) => find<AppPage>(`/apps/${encodeURICompo
 
 export const findMirrorApp = (id: string) => find<MirrorEntry>(`/mirror/${encodeURIComponent(id)}`)
 
-export const developer = (slug: string) =>
-  get<DeveloperPage>(`/developers/${encodeURIComponent(slug)}`, "There's no developer by that name.")
+export const publisher = (slug: string) =>
+  get<PublisherPage>(`/publishers/${encodeURIComponent(slug)}`, "There's no publisher by that name.")
 
 export const catalog = () => file<Catalog>(paths.catalog)

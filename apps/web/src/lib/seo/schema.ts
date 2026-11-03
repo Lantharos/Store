@@ -1,4 +1,4 @@
-import { type AppIndex, STORE_ORIGIN } from "@schelf/protocol"
+import { type AppIndex, type PublisherPage, STORE_ORIGIN } from "@schelf/protocol"
 
 const organization = {
   "@type": "Organization",
@@ -72,8 +72,8 @@ export function appSchema(app: AppIndex, path: string, installs: number) {
     license: app.licence ?? undefined,
     author: {
       "@type": "Organization",
-      name: app.developer.name,
-      url: `${STORE_ORIGIN}/developers/${app.developer.slug}`,
+      name: app.publisher.name,
+      url: `${STORE_ORIGIN}/publishers/${app.publisher.slug}`,
     },
     offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
     interactionStatistic: {
@@ -82,5 +82,19 @@ export function appSchema(app: AppIndex, path: string, installs: number) {
       userInteractionCount: installs,
     },
     ...(app.repository && { codeRepository: app.repository }),
+  }
+}
+
+export function publisherSchema(publisher: PublisherPage, path: string) {
+  const url = `${STORE_ORIGIN}${path}`
+  return {
+    "@context": "https://schema.org",
+    "@type": publisher.kind === "person" ? "Person" : "Organization",
+    "@id": `${url}#publisher`,
+    name: publisher.name,
+    url,
+    description: publisher.description || undefined,
+    ...(publisher.logo && { [publisher.kind === "person" ? "image" : "logo"]: publisher.logo }),
+    ...(publisher.website && { sameAs: [publisher.website] }),
   }
 }

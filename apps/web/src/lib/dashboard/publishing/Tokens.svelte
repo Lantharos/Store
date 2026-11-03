@@ -10,6 +10,7 @@
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
+  import { session } from "../api/session.svelte.ts"
 
   let { appId, tokens = $bindable() }: { appId: string; tokens: DashboardToken[] } = $props()
 
@@ -51,7 +52,7 @@
         For <span class="font-mono text-[13px]">schelf publish</span> outside GitHub Actions. Releases sent with a token are marked as uploaded by you.
       </p>
     </div>
-    <button type="button" class="button button-sm button-quiet" onclick={() => ((name = ""), (created = null), (creating = true))}>Create a token</button>
+    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((name = ""), (created = null), (creating = true))}>Create a token</button>{/if}
   </div>
   <ul class="mt-4 divide-y divide-hairline">
     {#each active as token (token.id)}
@@ -61,7 +62,7 @@
           <p class="font-medium">{token.name}</p>
           <p class="text-[13px] text-ink-muted">{token.last_used_at ? `Last used ${ago(token.last_used_at)}` : "Never used"} · expires {date(token.expires_at)}</p>
         </div>
-        <button type="button" class="button button-sm button-danger" onclick={() => ((revoking = token), (revokeOpen = true))}>Revoke</button>
+        {#if session.can("apps")}<button type="button" class="button button-sm button-danger" onclick={() => ((revoking = token), (revokeOpen = true))}>Revoke</button>{/if}
       </li>
     {:else}
       <li class="py-6 text-[15px] text-ink-muted">No tokens. You only need one to publish from somewhere other than GitHub Actions.</li>

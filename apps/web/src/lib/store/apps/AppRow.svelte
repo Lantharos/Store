@@ -14,7 +14,7 @@
   const soon = $derived("platforms" in app && Object.keys(app.platforms).length === 0)
   const meta = $derived(
     detail ??
-      (origin ? `From ${origin}` : app.categories[0] ? categoryLabel(app.categories[0]) : app.developer.name),
+      (origin ? `From ${origin}` : app.categories[0] ? categoryLabel(app.categories[0]) : app.publisher.name),
   )
 </script>
 

@@ -1,49 +1,31 @@
 import { sql } from "drizzle-orm"
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
-import { user } from "./auth.ts"
 import { createdAt } from "./columns.ts"
-
-export const developer = sqliteTable("developer", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .unique()
-    .references(() => user.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  kind: text("kind", { enum: ["person", "organisation"] }).notNull(),
-  githubLogin: text("github_login"),
-  agreementVersion: text("agreement_version").notNull(),
-  agreementAt: integer("agreement_at", { mode: "timestamp_ms" }).notNull(),
-  status: text("status", { enum: ["active", "suspended"] })
-    .notNull()
-    .default("active"),
-  createdAt: createdAt(),
-})
+import { publisher } from "./publishers.ts"
 
 export const namespace = sqliteTable(
   "namespace",
   {
     prefix: text("prefix").primaryKey(),
-    developerId: text("developer_id")
+    publisherId: text("publisher_id")
       .notNull()
-      .references(() => developer.id, { onDelete: "cascade" }),
+      .references(() => publisher.id, { onDelete: "cascade" }),
     proof: text("proof", { enum: ["dns", "well-known", "github", "manual"] }),
     proofValue: text("proof_value").notNull(),
     verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
     checkedAt: integer("checked_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
   },
-  (table) => [index("namespace_developer").on(table.developerId)],
+  (table) => [index("namespace_publisher").on(table.publisherId)],
 )
 
 export const app = sqliteTable(
   "app",
   {
     id: text("id").primaryKey(),
-    developerId: text("developer_id")
+    publisherId: text("publisher_id")
       .notNull()
-      .references(() => developer.id, { onDelete: "cascade" }),
+      .references(() => publisher.id, { onDelete: "cascade" }),
     kind: text("kind", { enum: ["app", "extension"] }).notNull(),
     format: text("format", { enum: ["sabine", "appimage", "luft-extension"] }).notNull(),
     repository: text("repository"),
@@ -59,7 +41,7 @@ export const app = sqliteTable(
   },
   (table) => [
     uniqueIndex("app_id_folded").on(sql`lower(${table.id})`),
-    index("app_developer").on(table.developerId),
+    index("app_publisher").on(table.publisherId),
   ],
 )
 
@@ -87,9 +69,9 @@ export const token = sqliteTable(
     appId: text("app_id")
       .notNull()
       .references(() => app.id, { onDelete: "cascade" }),
-    developerId: text("developer_id")
+    publisherId: text("publisher_id")
       .notNull()
-      .references(() => developer.id, { onDelete: "cascade" }),
+      .references(() => publisher.id, { onDelete: "cascade" }),
     hash: text("hash").notNull().unique(),
     name: text("name").notNull(),
     lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),

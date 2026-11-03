@@ -4,6 +4,7 @@
   import type { Snippet } from "svelte"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
+  import { session } from "#lib/dashboard/api/session.svelte.ts"
   import { provideAppSettings } from "#lib/dashboard/apps/context.ts"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
@@ -15,6 +16,11 @@
   const id = $derived(page.params.id!)
   const settings = $derived(resource<AppSettings>(endpoints.app(id)))
   provideAppSettings(() => settings)
+
+  $effect(() => {
+    const owner = settings.data?.app.publisher
+    if (owner) void session.use(owner)
+  })
 
   const base = $derived(`/dashboard/apps/${id}`)
   const tabs = $derived([

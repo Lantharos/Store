@@ -17,6 +17,6 @@ export async function GET({ params }) {
     summary: listing.summary,
     icon: iconData || null,
     screenshot: shot || null,
-    developer: app.developer.name,
+    publisher: app.publisher.name,
   })
 }

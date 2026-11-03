@@ -15,7 +15,7 @@ export const app = resource("app", {
   },
   title: (app) => app.name,
   subtitle: (app) => `${app.id} · ${app.status}`,
-  fields: (app) => ({ status: app.status, kind: app.kind, developer: app.developer, created: app.createdAt }),
+  fields: (app) => ({ status: app.status, kind: app.kind, publisher: app.publisher, created: app.createdAt }),
   related: {
     releases: { resource: "release", list: (app) => apps.releases(app.id) },
   },
@@ -25,7 +25,7 @@ export const app = resource("app", {
       b.stats({ "Installs, 30 days": installs, Releases: releases.length }),
       b.fields({
         id: app.id,
-        developer: b.ref("developer", app.developerId, app.developer),
+        publisher: b.ref("publisher", app.publisherId, app.publisher),
         kind: app.kind,
         format: app.format,
         status: app.status,

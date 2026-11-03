@@ -22,8 +22,8 @@ const OPENINGS: Record<Outcome, string> = {
   pulled: "It was blocked from installing and starting, for this reason:",
 }
 
-async function recipient(releaseId: string) {
-  const [row] = await db
+function recipients(releaseId: string) {
+  return db
     .select({
       email: schema.user.email,
       app: schema.release.appId,
@@ -31,24 +31,25 @@ async function recipient(releaseId: string) {
     })
     .from(schema.release)
     .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
-    .innerJoin(schema.developer, eq(schema.developer.id, schema.app.developerId))
-    .innerJoin(schema.user, eq(schema.user.id, schema.developer.userId))
+    .innerJoin(schema.member, eq(schema.member.publisherId, schema.app.publisherId))
+    .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
     .where(eq(schema.release.id, releaseId))
-  return row
 }
 
-export function notifyDeveloper(releaseId: string, outcome: Outcome, message?: string) {
+export function notifyPublisher(releaseId: string, outcome: Outcome, message?: string) {
   waitUntil(
-    recipient(releaseId).then((row) => {
-      if (!row) return
-      const page = `${env.PUBLIC_URL}/dashboard/apps/${row.app}/releases/${releaseId}`
-      const body = [OPENINGS[outcome], message, `\n${page}`].filter(Boolean).join("\n\n")
-      return env.EMAIL.send({
-        from: env.NOTIFY_FROM,
-        to: row.email,
-        subject: SUBJECTS[outcome](row.app, row.version),
-        text: body,
-      })
-    }),
+    recipients(releaseId).then((rows) =>
+      Promise.all(
+        rows.map((row) => {
+          const page = `${env.PUBLIC_URL}/dashboard/apps/${row.app}/releases/${releaseId}`
+          return env.EMAIL.send({
+            from: env.NOTIFY_FROM,
+            to: row.email,
+            subject: SUBJECTS[outcome](row.app, row.version),
+            text: [OPENINGS[outcome], message, `\n${page}`].filter(Boolean).join("\n\n"),
+          })
+        }),
+      ),
+    ),
   )
 }

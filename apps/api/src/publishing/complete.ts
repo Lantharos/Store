@@ -112,7 +112,7 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
       ),
       orderBy: desc(schema.release.approvedAt),
     }),
-    db.select().from(schema.namespace).where(eq(schema.namespace.developerId, app.developerId)),
+    db.select().from(schema.namespace).where(eq(schema.namespace.publisherId, app.publisherId)),
     db.select().from(schema.listing).where(eq(schema.listing.appId, app.id)),
     db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) }),
     db.$count(schema.screenshot, eq(schema.screenshot.appId, app.id)),

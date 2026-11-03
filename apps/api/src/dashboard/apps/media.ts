@@ -10,35 +10,45 @@ import {
 } from "@schelf/protocol"
 import { and, eq, max } from "drizzle-orm"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { fail, readBody, readQuery } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
+import { appAccess } from "../../publishers/access.ts"
 import { fileUrl } from "../../signing/records.ts"
-import { ownedApp } from "../access.ts"
 import { sniffImage } from "./images.ts"
 import { listingChanged } from "./listing.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
 const MIN_SCREENSHOT_EDGE = 640
 
-export const mediaRoutes = new Hono<DeveloperVars>()
+export const mediaRoutes = new Hono<SignedInVars>()
 
-async function storeImage(request: Request, appId: string, limit: number, allowSvg: boolean) {
+export async function storeImage(
+  request: Request,
+  keyFor: (hash: string, extension: string) => string,
+  limit: number,
+  allowSvg: boolean,
+) {
   const length = Number(request.headers.get("content-length"))
   if (!length || length > limit) fail(413, `Images can be up to ${Math.round(limit / 1024 / 1024)} MB`)
   const bytes = new Uint8Array(await request.arrayBuffer())
   if (bytes.length > limit) fail(413, `Images can be up to ${Math.round(limit / 1024 / 1024)} MB`)
   const image = sniffImage(bytes, allowSvg)
   if (!image) fail(422, allowSvg ? "Upload a PNG, JPEG, WebP or SVG" : "Upload a PNG, JPEG or WebP")
-  const key = paths.media(appId, await sha256Hex(bytes), image.extension)
+  const key = keyFor(await sha256Hex(bytes), image.extension)
   await env.BUCKET.put(key, bytes, { httpMetadata: { contentType: image.type, cacheControl: IMMUTABLE } })
   return { key, image }
 }
 
 mediaRoutes.put("/:id/icon", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
-  const { key, image } = await storeImage(c.req.raw, app.id, MAX_ICON_BYTES, true)
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  const { key, image } = await storeImage(
+    c.req.raw,
+    (hash, extension) => paths.media(app.id, hash, extension),
+    MAX_ICON_BYTES,
+    true,
+  )
   if (image.width !== image.height) fail(422, "Icons are square")
   await db
     .insert(schema.listingMeta)
@@ -49,9 +59,14 @@ mediaRoutes.put("/:id/icon", async (c) => {
 })
 
 mediaRoutes.post("/:id/screenshots", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   const options = readQuery(c, screenshotUpload)
-  const { key, image } = await storeImage(c.req.raw, app.id, MAX_SCREENSHOT_BYTES, false)
+  const { key, image } = await storeImage(
+    c.req.raw,
+    (hash, extension) => paths.media(app.id, hash, extension),
+    MAX_SCREENSHOT_BYTES,
+    false,
+  )
   if (Math.min(image.width, image.height) < MIN_SCREENSHOT_EDGE)
     fail(422, `Screenshots are at least ${MIN_SCREENSHOT_EDGE} pixels on each side`)
   const [last] = await db
@@ -85,7 +100,7 @@ mediaRoutes.post("/:id/screenshots", async (c) => {
 })
 
 mediaRoutes.put("/:id/screenshots/order", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   const { ids } = await readBody(c, reorderScreenshots)
   await db.batch(
     ids.map((id, position) =>
@@ -100,7 +115,7 @@ mediaRoutes.put("/:id/screenshots/order", async (c) => {
 })
 
 mediaRoutes.delete("/:id/screenshots/:shot", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   await db
     .delete(schema.screenshot)
     .where(and(eq(schema.screenshot.id, c.req.param("shot")), eq(schema.screenshot.appId, app.id)))

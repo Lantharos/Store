@@ -2,31 +2,32 @@ import { DEFAULT_LOCALE, sha256Hex, TOKEN_PREFIX, utf8 } from "@schelf/protocol"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
 
-export async function developerWithApp(format: "sabine" | "appimage" | "luft-extension" = "appimage") {
+export async function publisherWithApp(format: "sabine" | "appimage" | "luft-extension" = "appimage") {
   const suffix = randomId(6)
   const userId = randomId()
-  const developerId = randomId()
+  const publisherId = randomId()
   const prefix = `com.example${suffix}`
   const appId = `${prefix}.Notes`
   const token = `${TOKEN_PREFIX}${randomId(32)}`
   const now = new Date()
   await db.batch([
     db.insert(schema.user).values({ id: userId, name: "Mira", email: `mira-${suffix}@example.com` }),
-    db.insert(schema.developer).values({
-      id: developerId,
-      userId,
+    db.insert(schema.publisher).values({
+      id: publisherId,
+      ownerId: userId,
       name: `Mira ${suffix}`,
       slug: `mira-${suffix}`,
       kind: "person",
       agreementVersion: "2026-11",
       agreementAt: now,
     }),
+    db.insert(schema.member).values({ publisherId, userId, role: "owner" }),
     db
       .insert(schema.namespace)
-      .values({ prefix, developerId, proof: "dns", proofValue: "x", verifiedAt: now, checkedAt: now }),
+      .values({ prefix, publisherId, proof: "dns", proofValue: "x", verifiedAt: now, checkedAt: now }),
     db.insert(schema.app).values({
       id: appId,
-      developerId,
+      publisherId,
       kind: format === "luft-extension" ? "extension" : "app",
       format,
       repository: "mira/notes",
@@ -43,13 +44,13 @@ export async function developerWithApp(format: "sabine" | "appimage" | "luft-ext
     db.insert(schema.token).values({
       id: randomId(),
       appId,
-      developerId,
+      publisherId,
       hash: await sha256Hex(token),
       name: "laptop",
       expiresAt: new Date(now.getTime() + 86_400_000),
     }),
   ])
-  return { appId, developerId, token }
+  return { appId, publisherId, userId, token }
 }
 
 export function schelfToml(appId: string, format = "appimage") {

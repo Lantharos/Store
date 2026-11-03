@@ -8,15 +8,15 @@ import {
 } from "@schelf/protocol"
 import { desc, eq } from "drizzle-orm"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { readBody } from "../../lib/http.ts"
 import { iso } from "../../lib/time.ts"
+import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
 import type { ArtifactRow, ReleaseRow } from "../../signing/records.ts"
-import { ownedApp, ownedRelease } from "../access.ts"
 
-export const releaseRoutes = new Hono<DeveloperVars>()
+export const releaseRoutes = new Hono<SignedInVars>()
 
 const NEXT_STEPS: Partial<Record<ReleaseRow["status"], string>> = {
   uploading: "The upload didn't finish. Run the workflow again to publish this tag.",
@@ -45,7 +45,7 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
 }
 
 releaseRoutes.get("/:id/releases", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"))
   const [releases, artifacts] = await Promise.all([
     db
       .select()
@@ -138,12 +138,12 @@ async function detail(release: ReleaseRow): Promise<ReleaseDetail> {
 }
 
 releaseRoutes.get("/:id/releases/:release", async (c) => {
-  const { release } = await ownedRelease(c.var.developer, c.req.param("id"), c.req.param("release"))
+  const { release } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"))
   return c.json(await detail(release))
 })
 
 releaseRoutes.post("/:id/releases/:release/rollout", async (c) => {
-  const { release } = await ownedRelease(c.var.developer, c.req.param("id"), c.req.param("release"))
+  const { release } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"), "releases")
   await controlRollout(release, await readBody(c, rolloutRequest))
   const updated = (await db.query.release.findFirst({ where: eq(schema.release.id, release.id) }))!
   return c.json(await detail(updated))

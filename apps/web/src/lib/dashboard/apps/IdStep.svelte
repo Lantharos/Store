@@ -5,6 +5,7 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import type { Resource } from "../api/resource.svelte.ts"
+  import { session } from "../api/session.svelte.ts"
   import Proof from "../namespaces/Proof.svelte"
 
   let {
@@ -32,7 +33,7 @@
     claiming = true
     claimError = null
     try {
-      const created = await api.post<Namespace>(endpoints.namespaces, { prefix })
+      const created = await api.post<Namespace>(endpoints.namespaces(session.publisher!.id), { prefix })
       namespaces.set([...(namespaces.data ?? []), created])
     } catch (error) {
       claimError = (error as Error).message

@@ -73,7 +73,7 @@
       </p>
     {:else}
       <h1 class="mt-6 text-[26px] font-semibold tracking-[-0.02em]">Publish on Schelf</h1>
-      <p class="mt-1.5 text-[15px] leading-relaxed text-ink-soft">Sign in to manage your apps. New here? This creates your account.</p>
+      <p class="mt-1.5 text-[15px] leading-relaxed text-ink-soft">Put your apps and Luft extensions in front of people on Luft, Linux, Windows and macOS. Releases are built in your own GitHub workflow and checked by a person before anyone gets them. Signing in for the first time creates your account.</p>
 
       <button type="button" class="button button-ink mt-7 w-full" disabled={busy !== null} onclick={github}>
         {#if busy === "github"}

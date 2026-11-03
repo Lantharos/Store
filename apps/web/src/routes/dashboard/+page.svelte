@@ -2,6 +2,7 @@
   import ArrowRight from "@lucide/svelte/icons/arrow-right"
   import Plus from "@lucide/svelte/icons/plus"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import PendingInvites from "#lib/dashboard/publishers/PendingInvites.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "#lib/dashboard/releases/status.ts"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { count } from "#lib/format.ts"
@@ -14,11 +15,13 @@
   )
 </script>
 
-<PageHeader title="Your apps">
+<PageHeader title={session.publisher?.kind === "person" ? "Your apps" : `${session.publisher?.name}'s apps`}>
   {#snippet actions()}
-    <a href="/dashboard/apps/new" class="button button-primary"><Plus class="size-4" />Add an app</a>
+    {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-primary"><Plus class="size-4" />Add an app</a>{/if}
   {/snippet}
 </PageHeader>
+
+<div class="mt-6 empty:hidden"><PendingInvites /></div>
 
 {#each attention as app (app.id)}
   <a href="/dashboard/apps/{app.id}" class="enter group mt-6 flex items-center gap-4 rounded-2xl bg-[color-mix(in_oklab,var(--danger)_9%,var(--canvas))] p-4">
@@ -65,7 +68,7 @@
     <div>
       <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put your first app on Schelf</h2>
       <p class="mt-2 leading-relaxed text-ink-soft">Connect a GitHub repository once. After that, every GitHub release you publish is built in your own workflow, checked, and sent to review.</p>
-      <a href="/dashboard/apps/new" class="button button-primary mt-6">Add an app</a>
+      {#if session.can("apps")}<a href="/dashboard/apps/new" class="button button-primary mt-6">Add an app</a>{/if}
     </div>
     <ol class="space-y-4 text-[15px]">
       {#each ["Claim your app id", "Connect your repository", "Commit two files", "Publish a GitHub release"] as step, index (step)}

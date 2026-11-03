@@ -1,6 +1,8 @@
 export const DOWNLOAD_ORIGIN = "https://dl.schelf.store"
 export const STORE_ORIGIN = "https://schelf.store"
 
+export const PRIVATE_PREFIX = "private/"
+
 export const paths = {
   catalog: "index/v1/catalog.json",
   app: (id: string) => `index/v1/apps/${id}.json`,
@@ -15,6 +17,10 @@ export const paths = {
   delta: (id: string, from: string, to: string, platform: string) =>
     `apps/${id}/deltas/${from}-${to}/${platform}.zst`,
   media: (id: string, hash: string, extension: string) => `media/${id}/${hash}.${extension}`,
+  publisherLogo: (id: string, hash: string, extension: string) =>
+    `media/publishers/${id}/${hash}.${extension}`,
+  verificationDocument: (id: string, hash: string, extension: string) =>
+    `${PRIVATE_PREFIX}verification/${id}/${hash}.${extension}`,
   signature: (key: string) => `${key}.sig`,
 }
 

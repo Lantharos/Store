@@ -27,7 +27,7 @@ export function parseArgs(argv: string[]): Args {
   return { positionals, flags }
 }
 
-const VALUED = new Set(["api", "token", "tag", "notes", "config", "workflow", "id", "name"])
+const VALUED = new Set(["api", "token", "tag", "notes", "config", "workflow", "id", "name", "publisher"])
 
 export function flag(args: Args, name: string) {
   const value = args.flags.get(name)

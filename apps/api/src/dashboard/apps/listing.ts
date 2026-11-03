@@ -7,13 +7,13 @@ import {
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { fail, readBody } from "../../lib/http.ts"
+import { appAccess } from "../../publishers/access.ts"
 import { resignApp } from "../../signing/queue.ts"
 import type { AppRow } from "../../signing/records.ts"
 import { reindexApp } from "../../storefront/indexing.ts"
-import { ownedApp } from "../access.ts"
 import { appSettings } from "./settings.ts"
 
 const LOCALE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/
@@ -37,10 +37,10 @@ function traced(
   return next
 }
 
-export const listingRoutes = new Hono<DeveloperVars>()
+export const listingRoutes = new Hono<SignedInVars>()
 
 listingRoutes.put("/:id/listing/:locale", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   const locale = c.req.param("locale")
   if (!LOCALE.test(locale)) fail(422, "That isn't a locale")
   const { source, ...text } = await readBody(c, updateListing)
@@ -57,7 +57,7 @@ listingRoutes.put("/:id/listing/:locale", async (c) => {
 })
 
 listingRoutes.delete("/:id/listing/:locale", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   const locale = c.req.param("locale")
   if (locale === DEFAULT_LOCALE) fail(422, "The English listing is required")
   await db
@@ -68,7 +68,7 @@ listingRoutes.delete("/:id/listing/:locale", async (c) => {
 })
 
 listingRoutes.patch("/:id/meta", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   const { source, ...input } = await readBody(c, updateMeta)
   const existing = await db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) })
   const fields = {

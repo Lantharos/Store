@@ -5,7 +5,7 @@
   import { page } from "$app/state"
 
   let { children }: { children: Snippet } = $props()
-  const bare = $derived(!session.signedIn || page.url.pathname === "/dashboard/welcome")
+  const bare = $derived(!session.signedIn || !session.publisher)
 </script>
 
 <svelte:head>

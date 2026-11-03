@@ -21,7 +21,7 @@ const MAIN_CATEGORIES = new Set([
   "Utility",
 ])
 
-const DEVELOPER = { id: "lantharos", userId: "lantharos-owner", name: "Lantharos", slug: "lantharos" }
+const PUBLISHER = { id: "lantharos", userId: "lantharos-owner", name: "Lantharos", slug: "lantharos" }
 const REPOSITORY = { name: "Lantharos/luft", id: "1250156825" }
 
 interface SeedApp {
@@ -127,12 +127,14 @@ if (!OWNER_EMAIL) throw new Error("Set OWNER_EMAIL to the account that should ow
 const now = Date.now()
 const uploads = new Map<string, string>()
 const statements = [
-  `INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (${sql(DEVELOPER.userId)}, 'Lantharos', ${sql(OWNER_EMAIL)}, 1, ${now}, ${now}) ON CONFLICT (id) DO UPDATE SET email = excluded.email;`,
-  `INSERT INTO developer (id, user_id, name, slug, kind, github_login, agreement_version, agreement_at, status, created_at)
-   SELECT ${sql(DEVELOPER.id)}, id, ${sql(DEVELOPER.name)}, ${sql(DEVELOPER.slug)}, 'organisation', 'Lantharos', '2026-11', ${now}, 'active', ${now} FROM user WHERE email = ${sql(OWNER_EMAIL)}
+  `INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (${sql(PUBLISHER.userId)}, 'Lantharos', ${sql(OWNER_EMAIL)}, 1, ${now}, ${now}) ON CONFLICT (id) DO UPDATE SET email = excluded.email;`,
+  `INSERT INTO publisher (id, owner_id, name, slug, kind, agreement_version, agreement_at, status, verified_at, created_at)
+   SELECT ${sql(PUBLISHER.id)}, id, ${sql(PUBLISHER.name)}, ${sql(PUBLISHER.slug)}, 'organisation', '2026-11', ${now}, 'active', ${now}, ${now} FROM user WHERE email = ${sql(OWNER_EMAIL)}
    ON CONFLICT (id) DO UPDATE SET name = excluded.name;`,
-  `INSERT INTO namespace (prefix, developer_id, proof, proof_value, verified_at, checked_at, created_at) VALUES ('com.lantharos', ${sql(DEVELOPER.id)}, 'manual', '', ${now}, ${now}, ${now})
-   ON CONFLICT (prefix) DO UPDATE SET developer_id = excluded.developer_id, proof = 'manual', verified_at = excluded.verified_at;`,
+  `INSERT INTO member (publisher_id, user_id, role, created_at) SELECT ${sql(PUBLISHER.id)}, id, 'owner', ${now} FROM user WHERE email = ${sql(OWNER_EMAIL)}
+   ON CONFLICT DO NOTHING;`,
+  `INSERT INTO namespace (prefix, publisher_id, proof, proof_value, verified_at, checked_at, created_at) VALUES ('com.lantharos', ${sql(PUBLISHER.id)}, 'manual', '', ${now}, ${now}, ${now})
+   ON CONFLICT (prefix) DO UPDATE SET publisher_id = excluded.publisher_id, proof = 'manual', verified_at = excluded.verified_at;`,
 ]
 
 for (const seed of APPS) {
@@ -140,7 +142,7 @@ for (const seed of APPS) {
   const icon = await media(manifest.id, `apps/${seed.folder}/public/favicon.svg`, uploads)
   const categories = manifest.categories.filter((name) => MAIN_CATEGORIES.has(name))
   statements.push(
-    `INSERT INTO app (id, developer_id, kind, format, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(DEVELOPER.id)}, 'app', 'sabine', ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-only', 'open', 'listed', ${now})
+    `INSERT INTO app (id, publisher_id, kind, format, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(PUBLISHER.id)}, 'app', 'sabine', ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-only', 'open', 'listed', ${now})
      ON CONFLICT (id) DO UPDATE SET status = 'listed';`,
     `INSERT INTO listing (app_id, locale, name, summary, description, keywords) VALUES (${sql(manifest.id)}, 'en', ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(seed.description)}, ${sql(JSON.stringify(manifest.keywords.slice(0, 20)))})
      ON CONFLICT (app_id, locale) DO UPDATE SET name = excluded.name, summary = excluded.summary, description = excluded.description, keywords = excluded.keywords;`,
@@ -148,7 +150,7 @@ for (const seed of APPS) {
      ON CONFLICT (app_id) DO UPDATE SET icon_key = excluded.icon_key, categories = excluded.categories;`,
     `DELETE FROM screenshot WHERE app_id = ${sql(manifest.id)};`,
     `DELETE FROM search WHERE key = ${sql(`schelf:${manifest.id}`)};`,
-    `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(manifest.keywords.join(" "))}, ${sql(DEVELOPER.name)});`,
+    `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(manifest.keywords.join(" "))}, ${sql(PUBLISHER.name)});`,
   )
   for (const [position, file] of seed.shots.entries()) {
     const shot = await media(manifest.id, file, uploads)

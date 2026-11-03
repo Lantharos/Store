@@ -2,7 +2,7 @@ import { b, choice, inbox, noul, run, score, tag, triage } from "@lantharos/pult
 import { z } from "zod"
 import { releases } from "../data/records.ts"
 import { app } from "./app.ts"
-import { developer } from "./developer.ts"
+import { publisher } from "./publisher.ts"
 import { release, releaseBlocks } from "./release.ts"
 
 const REVIEW_STATES = ["open", "changes requested", "approved", "rejected"]
@@ -59,7 +59,7 @@ const releaseData = z.object({
   app: z.string(),
   name: z.string(),
   version: z.string(),
-  developer: z.string(),
+  publisher: z.string(),
 })
 
 async function renderRelease(id: string | null) {
@@ -74,7 +74,7 @@ export const submissions = inbox("submissions", {
   closed: ["approved", "rejected"],
   sla: { open: "2d" },
   data: releaseData,
-  title: (data) => `${data.name} ${data.version} from ${data.developer}`,
+  title: (data) => `${data.name} ${data.version} from ${data.publisher}`,
   triage: triage({ instructions: INSTRUCTIONS, questions: firstLook, rules: firstLookRules }),
   render: (item) => renderRelease(item.record),
 })
@@ -145,7 +145,7 @@ export const reports = inbox("reports", {
 
 export const claims = inbox("claims", {
   icon: "scale",
-  resource: developer,
+  resource: publisher,
   states: ["open", "granted", "declined"],
   closed: ["granted", "declined"],
   data: z.object({ claimant: z.string(), subject: z.string(), evidence: z.string() }),

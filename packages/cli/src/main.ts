@@ -9,13 +9,14 @@ import { login, logout } from "./commands/login.ts"
 import { publish } from "./commands/publish.ts"
 import { rollout } from "./commands/rollout.ts"
 import { status } from "./commands/status.ts"
+import { whoami } from "./commands/whoami.ts"
 import { blank, Failure, failure, field, note, title } from "./ui/output.ts"
 
 const COMMANDS: Record<
   string,
   { run: (args: Args) => Promise<number | undefined>; usage: string; about: string }
 > = {
-  init: { run: init, usage: "init", about: "Set up this app or extension for Schelf" },
+  init: { run: init, usage: "init [--publisher <slug>]", about: "Set up this app or extension for Schelf" },
   check: { run: check, usage: "check", about: "Check schelf.toml and preview the store page" },
   publish: { run: publish, usage: "publish [files…]", about: "Publish a release from CI or with a token" },
   status: { run: status, usage: "status [version]", about: "Where a release is: checks, review, rollout" },
@@ -25,6 +26,7 @@ const COMMANDS: Record<
     about: "Set a percentage, pause, resume or release to all",
   },
   login: { run: login, usage: "login", about: "Sign in through the browser" },
+  whoami: { run: whoami, usage: "whoami", about: "The account you're signed in as and its publishers" },
   logout: { run: logout, usage: "logout", about: "Forget this computer's sign-in" },
 }
 

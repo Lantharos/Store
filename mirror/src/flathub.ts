@@ -114,7 +114,7 @@ export function flathubEntry(candidate: Candidate, now: Date): MirrorEntry {
     summary: candidate.summary,
     icon: candidate.icon,
     categories: candidate.categories,
-    developer: { name: candidate.developer, verified: candidate.verified },
+    publisher: { name: candidate.developer, verified: candidate.verified },
     updated: (candidate.lastRelease ?? candidate.lastBuild ?? now).toISOString(),
     installs_30d: candidate.installs30d ?? 0,
     rank: rank(candidate, now),

@@ -7,6 +7,7 @@ export const user = sqliteTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
+  githubLogin: text("github_login"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

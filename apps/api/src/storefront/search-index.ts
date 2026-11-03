@@ -8,7 +8,7 @@ export interface SearchDocument {
   name: string
   summary: string
   keywords: string[]
-  developer: string
+  publisher: string
 }
 
 export function storeKey(id: string) {
@@ -43,7 +43,7 @@ export function indexStatements(documents: SearchDocument[]) {
       document.name,
       document.summary,
       document.keywords.join(" "),
-      document.developer,
+      document.publisher,
     ),
   ])
 }

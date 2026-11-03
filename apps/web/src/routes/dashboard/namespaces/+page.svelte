@@ -4,6 +4,7 @@
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
+  import { session } from "#lib/dashboard/api/session.svelte.ts"
   import Proof from "#lib/dashboard/namespaces/Proof.svelte"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
@@ -11,7 +12,7 @@
   import { date } from "#lib/format.ts"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
-  const namespaces = resource<Namespace[]>(endpoints.namespaces)
+  const namespaces = $derived(resource<Namespace[]>(endpoints.namespaces(session.publisher!.id)))
   let prefix = $state("")
   let error = $state<string | null>(null)
   let busy = $state(false)
@@ -34,7 +35,7 @@
     busy = true
     error = null
     try {
-      const created = await api.post<Namespace>(endpoints.namespaces, parsed.data)
+      const created = await api.post<Namespace>(endpoints.namespaces(session.publisher!.id), parsed.data)
       namespaces.set([...(namespaces.data ?? []), created])
       open = created.prefix
       prefix = ""
@@ -51,13 +52,15 @@
   }
 </script>
 
-<PageHeader title="Namespaces" text="You can publish app ids under any namespace you've proven. GitHub namespaces are proven when you sign in with GitHub; for a domain, add a DNS record or a file." />
+<PageHeader title="Namespaces" text="{session.publisher?.name} can publish app ids under any namespace it has proven. GitHub namespaces are proven when you sign in with GitHub; for a domain, add a DNS record or a file." />
 
+{#if session.can("apps")}
 <form class="mt-8 flex max-w-xl flex-col gap-2 sm:flex-row" onsubmit={claim}>
   <input bind:value={prefix} class="field font-mono text-[15px]" placeholder="com.example" aria-label="Namespace" autocomplete="off" spellcheck="false" />
   <button class="button button-primary shrink-0" disabled={busy || !prefix.trim()}>Claim</button>
 </form>
 {#if error}<p class="mt-2 text-[15px] text-danger" role="alert">{error}</p>{:else}<p class="mt-2 text-[13px] text-ink-muted">Your domain, reversed: example.com becomes com.example.</p>{/if}
+{/if}
 
 <div class="mt-10">
   {#if namespaces.error}

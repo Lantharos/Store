@@ -11,7 +11,7 @@ export function suggestedNamespace(id: string) {
 
 const isGithubNamespace = (prefix: string) => prefix.startsWith("io.github.")
 
-async function proveDomain(account: Dashboard, namespace: Namespace): Promise<Namespace> {
+async function proveDomain(account: Dashboard, owner: string, namespace: Namespace): Promise<Namespace> {
   const domain = namespace.prefix.split(".").reverse().join(".")
   blank()
   line(`Prove you own ${bold(domain)} with either of these:`)
@@ -29,15 +29,15 @@ async function proveDomain(account: Dashboard, namespace: Namespace): Promise<Na
   for (;;) {
     await ask("Press Enter once it's in place")
     const checked = await step(`Checking ${domain}`, () =>
-      account.verifyNamespace(namespace.prefix, method),
+      account.verifyNamespace(owner, namespace.prefix, method),
     ).catch(() => undefined)
     if (checked?.verified) return checked
     note("Not visible yet. DNS changes can take a few minutes to spread.")
   }
 }
 
-export async function ensureNamespace(account: Dashboard, id: string): Promise<string> {
-  const namespaces = await account.namespaces()
+export async function ensureNamespace(account: Dashboard, owner: string, id: string): Promise<string> {
+  const namespaces = await account.namespaces(owner)
   const proven = namespaces.find((namespace) => namespace.verified && namespaceCovers(namespace.prefix, id))
   if (proven) {
     done(`${bold(proven.prefix)} is yours`)
@@ -50,10 +50,10 @@ export async function ensureNamespace(account: Dashboard, id: string): Promise<s
   }
   const claimed =
     namespaces.find((namespace) => namespace.prefix === prefix) ??
-    (await step(`Claiming ${prefix}`, () => account.claimNamespace(prefix)))
+    (await step(`Claiming ${prefix}`, () => account.claimNamespace(owner, prefix)))
   if (isGithubNamespace(prefix)) {
     const verified = await step(`Proving ${prefix} through GitHub`, () =>
-      account.verifyNamespace(prefix, "github"),
+      account.verifyNamespace(owner, prefix, "github"),
     )
     if (!verified.verified) {
       throw new Failure(
@@ -63,7 +63,7 @@ export async function ensureNamespace(account: Dashboard, id: string): Promise<s
     }
     return prefix
   }
-  await proveDomain(account, claimed)
+  await proveDomain(account, owner, claimed)
   done(`${bold(prefix)} is yours`)
   return prefix
 }

@@ -19,7 +19,7 @@
   import Field from "#lib/ui/fields/Field.svelte"
 
   const STEPS = ["What it is", "Its id", "Where it's built", "Commit the files"]
-  const namespaces = resource<Namespace[]>(endpoints.namespaces)
+  const namespaces = $derived(resource<Namespace[]>(endpoints.namespaces(session.publisher!.id)))
   const github = session.account?.github
 
   let step = $state(0)
@@ -57,7 +57,7 @@
     busy = true
     error = null
     try {
-      created = await api.post<AppSettings>(endpoints.apps, parsed.data)
+      created = await api.post<AppSettings>(endpoints.apps(session.publisher!.id), parsed.data)
       await session.refreshApps()
       step = 3
     } catch (failure) {

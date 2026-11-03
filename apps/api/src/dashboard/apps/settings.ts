@@ -33,6 +33,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
   return {
     app: {
       id: app.id,
+      publisher: app.publisherId,
       kind: app.kind,
       format: app.format,
       name: english?.name ?? app.id,
@@ -77,7 +78,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       height: shot.height,
       caption: shot.caption,
     })),
-    publishers: publishers.map((row) => ({
+    trusted_publishers: publishers.map((row) => ({
       id: row.id,
       owner_id: row.ownerId,
       repository_id: row.repositoryId,

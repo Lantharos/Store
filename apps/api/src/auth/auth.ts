@@ -3,8 +3,11 @@ import { passkey } from "@better-auth/passkey"
 import { CLI_CLIENT_ID } from "@schelf/protocol"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { APIError } from "better-auth/api"
 import { bearer, deviceAuthorization, emailOTP } from "better-auth/plugins"
+import { HTTPException } from "hono/http-exception"
 import { db, schema } from "../db/client.ts"
+import { releaseOwnerships } from "../publishers/ownership.ts"
 import { CODE_MINUTES, sendCode } from "./mail.ts"
 
 const publicUrl = new URL(env.PUBLIC_URL)
@@ -18,7 +21,19 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
   session: { cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS } },
   account: { accountLinking: { enabled: true, trustedProviders: ["github"] } },
-  user: { deleteUser: { enabled: true } },
+  user: {
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        try {
+          await releaseOwnerships(user.id)
+        } catch (error) {
+          if (error instanceof HTTPException) throw new APIError("CONFLICT", { message: error.message })
+          throw error
+        }
+      },
+    },
+  },
   socialProviders: {
     github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET, scope: ["read:org"] },
   },

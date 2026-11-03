@@ -8,18 +8,20 @@ import {
 } from "@schelf/protocol"
 import { and, desc, eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { repository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
+import { active, allow, appAccess, type PublisherVars } from "../../publishers/access.ts"
 import { installsSince, mediaUrl } from "../../signing/records.ts"
-import { githubAccount, ownedApp } from "../access.ts"
+import { githubAccount } from "../access.ts"
 import { appSettings } from "./settings.ts"
 
-export const appRoutes = new Hono<DeveloperVars>()
+export const publisherAppRoutes = new Hono<PublisherVars>()
+export const appRoutes = new Hono<SignedInVars>()
 
-appRoutes.get("/", async (c) => {
+publisherAppRoutes.get("/", async (c) => {
   const apps = await db
     .select({
       app: schema.app,
@@ -32,14 +34,14 @@ appRoutes.get("/", async (c) => {
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
     )
     .leftJoin(schema.listingMeta, eq(schema.listingMeta.appId, schema.app.id))
-    .where(eq(schema.app.developerId, c.var.developer.id))
+    .where(eq(schema.app.publisherId, c.var.publisher.id))
   const ids = apps.map((row) => row.app.id)
   const [releases, installs] = await Promise.all([
     db
       .select({ appId: schema.release.appId, version: schema.release.version, status: schema.release.status })
       .from(schema.release)
       .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
-      .where(eq(schema.app.developerId, c.var.developer.id))
+      .where(eq(schema.app.publisherId, c.var.publisher.id))
       .orderBy(desc(schema.release.createdAt)),
     installsSince(ids, 7),
   ])
@@ -48,6 +50,7 @@ appRoutes.get("/", async (c) => {
   return c.json(
     apps.map(({ app, name, iconKey }) => ({
       id: app.id,
+      publisher: app.publisherId,
       kind: app.kind,
       format: app.format,
       name: name ?? app.id,
@@ -60,14 +63,16 @@ appRoutes.get("/", async (c) => {
   )
 })
 
-appRoutes.post("/", async (c) => {
+publisherAppRoutes.post("/", async (c) => {
+  allow(c.var.role, "apps")
+  active(c.var.publisher)
   const input = await readBody(c, createApp)
-  const developer = c.var.developer
+  const publisher = c.var.publisher
   if (!formatFits(input.kind, input.format)) fail(422, `A ${input.kind} can't be a ${input.format}`)
   const namespaces = await db
     .select()
     .from(schema.namespace)
-    .where(eq(schema.namespace.developerId, developer.id))
+    .where(eq(schema.namespace.publisherId, publisher.id))
   if (!namespaces.some((entry) => entry.verifiedAt && namespaceCovers(entry.prefix, input.id)))
     fail(403, `Prove you own the namespace of ${input.id} first`)
   const taken = await db.$count(schema.app, sql`lower(${schema.app.id}) = lower(${input.id})`)
@@ -80,7 +85,7 @@ appRoutes.post("/", async (c) => {
   await db.batch([
     db.insert(schema.app).values({
       id: input.id,
-      developerId: developer.id,
+      publisherId: publisher.id,
       kind: input.kind,
       format: input.format,
       repository: repo.full_name,
@@ -106,9 +111,10 @@ appRoutes.post("/", async (c) => {
       createdAt: now,
     }),
   ])
-  return c.json(await appSettings(await ownedApp(developer, input.id)), 201)
+  return c.json(await appSettings((await appAccess(c.var.viewer, input.id)).app), 201)
 })
 
 appRoutes.get("/:id", async (c) => {
-  return c.json((await appSettings(await ownedApp(c.var.developer, c.req.param("id")))) satisfies AppSettings)
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"))
+  return c.json((await appSettings(app)) satisfies AppSettings)
 })

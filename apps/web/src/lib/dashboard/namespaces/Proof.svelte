@@ -8,6 +8,7 @@
   import Segmented from "../../ui/fields/Segmented.svelte"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
+  import { session } from "../api/session.svelte.ts"
 
   let { namespace, onverified }: { namespace: Namespace; onverified: (namespace: Namespace) => void } =
     $props()
@@ -23,7 +24,9 @@
     checking = true
     failed = null
     try {
-      current = await api.post<Namespace>(endpoints.verifyNamespace(current.prefix), { method })
+      current = await api.post<Namespace>(endpoints.verifyNamespace(session.publisher!.id, current.prefix), {
+        method,
+      })
       if (current.verified) onverified(current)
       else
         failed =

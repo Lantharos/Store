@@ -97,7 +97,7 @@ export function fedoraEntry(
     summary: candidate.summary,
     icon,
     categories: candidate.categories,
-    developer: { name: candidate.developer, verified: false },
+    publisher: { name: candidate.developer, verified: false },
     updated: (candidate.lastRelease ?? now).toISOString(),
     installs_30d: 0,
     rank: rank(candidate, now),

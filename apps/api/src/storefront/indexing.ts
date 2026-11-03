@@ -10,10 +10,10 @@ export async function reindexApp(id: string) {
       name: schema.listing.name,
       summary: schema.listing.summary,
       keywords: schema.listing.keywords,
-      developer: schema.developer.name,
+      publisher: schema.publisher.name,
     })
     .from(schema.app)
-    .innerJoin(schema.developer, eq(schema.developer.id, schema.app.developerId))
+    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
     .leftJoin(
       schema.listing,
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
@@ -30,7 +30,7 @@ export async function reindexApp(id: string) {
         name: row.name,
         summary: row.summary ?? "",
         keywords: row.keywords ?? [],
-        developer: row.developer,
+        publisher: row.publisher,
       },
     ]),
   )

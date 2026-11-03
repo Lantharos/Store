@@ -94,8 +94,8 @@ export async function startRelease(
       `${app.id} is registered as a ${app.format} ${app.kind}, not a ${manifest.format} ${manifest.kind}`,
     )
   const publisher: Publisher = await identifyPublisher(credential, app, body.tag)
-  const developer = await db.query.developer.findFirst({ where: eq(schema.developer.id, app.developerId) })
-  if (developer?.status !== "active") fail(403, "This developer account can't publish right now")
+  const owner = await db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) })
+  if (owner?.status !== "active") fail(403, `${owner?.name ?? "This publisher"} can't publish right now`)
   if (!(await acceptingSubmissions())) fail(503, "schelf.store isn't taking new releases for a little while")
 
   const version = body.version ?? versionFromTag(body.tag)

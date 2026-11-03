@@ -6,11 +6,11 @@ Schelf is where people get apps on Luft. Its catalog is schelf.store: the store'
 
 One catalog, three ways to install:
 
-| Origin | Installed as | Updated by |
-| --- | --- | --- |
-| Schelf | Sabine apps through Sabine's service with `install_mode = "store"`; AppImages in `~/Applications` in Luft's AppImage sandbox; extensions into Kestrel ([extensions](extensions.md)) | Schelf, from the signed index, following the rollout |
-| Flathub | Flatpak for the user | Flatpak, through Schelf's update check |
-| Fedora | A system package merged over Luft's image | Luft's system updates |
+| Origin  | Installed as                                                                                                                                                                        | Updated by                                           |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Schelf  | Sabine apps through Sabine's service with `install_mode = "store"`; AppImages in `~/Applications` in Luft's AppImage sandbox; extensions into Kestrel ([extensions](extensions.md)) | Schelf, from the signed index, following the rollout |
+| Flathub | Flatpak for the user                                                                                                                                                                | Flatpak, through Schelf's update check               |
+| Fedora  | A system package merged over Luft's image                                                                                                                                           | Luft's system updates                                |
 
 An app that's in more than one place shows once: the store's listing wins over Flathub, and Flathub over Fedora. The Fedora mirror only carries desktop apps that aren't on Flathub. Opening files the Schelf app handles today (`.flatpakref`, `.rpm`, `.AppImage`, `.deb`) and the command line (`schelf install`, Toolbox tools, added RPM repositories) keep working the same way; they just aren't part of browsing.
 
@@ -20,13 +20,13 @@ A scheduled workflow in this repository (`mirror/`) runs every six hours on GitH
 
 A Flathub app is **left out** when any of these is true:
 
-| Rule | Why |
-| --- | --- |
-| No release in its AppStream data in the last 24 months, and no commit to its manifest in the last 12 | Abandoned. |
-| No screenshots, summary or icon | Nobody can tell what it is. |
-| Marked end-of-life, or renamed to another id | The other id shows instead. |
-| A runtime, extension, BaseApp or theme | Not an app. |
-| Fewer than 50 installs in the last month, unless verified | Mostly tests and forks. |
+| Rule                                                                                                 | Why                         |
+| ---------------------------------------------------------------------------------------------------- | --------------------------- |
+| No release in its AppStream data in the last 24 months, and no commit to its manifest in the last 12 | Abandoned.                  |
+| No screenshots, summary or icon                                                                      | Nobody can tell what it is. |
+| Marked end-of-life, or renamed to another id                                                         | The other id shows instead. |
+| A runtime, extension, BaseApp or theme                                                               | Not an app.                 |
+| Fewer than 50 installs in the last month, unless verified                                            | Mostly tests and forks.     |
 
 It's **ranked lower** when it's unverified, uses a deprecated runtime, or has had no release in 12 months. Fedora apps follow the same rules where the data exists, plus: no desktop entry, or a package that only exists as a library.
 
@@ -60,16 +60,16 @@ in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<
 
 `schelf.store` is one SvelteKit app on Workers, server-rendered so every app page is fast and indexable, with the dashboard as client-rendered routes under `/dashboard`. API calls go to the api Worker through a service binding.
 
-| Address | What |
-| --- | --- |
-| `/` | Featured apps, categories, new and updated. |
-| `/apps/<id>` | One page per app: name, summary, screenshots, description, permissions in plain words, a download button for the visitor's system, other systems, size, licence and source, version history with notes, install counts, the developer. On Luft the button opens Schelf. |
-| `/categories/<name>`, `/search?q=` | Browsing. Flathub and Fedora apps appear for visitors on Linux, marked with where they come from and with "Open in Schelf"; their pages aren't indexed. |
-| `/extensions`, `/extensions/<id>` | Luft extensions. They never appear in the other lists. |
-| `/developers/<name>` | A developer's apps. |
-| `/dashboard/…` | The developer dashboard. |
-| `/docs/…` | Developer documentation. |
-| `/legal/…`, `/report/<id>` | Terms, privacy, developer agreement, guidelines; the notice form. |
+| Address                            | What                                                                                                                                                                                                                                                                                           |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                | Featured apps, categories, new and updated.                                                                                                                                                                                                                                                    |
+| `/apps/<id>`                       | One page per app: name, summary, screenshots, description, permissions in plain words, a download button for the visitor's system, other systems, size, licence and source, version history with notes, install counts, the publisher with its verified mark. On Luft the button opens Schelf. |
+| `/categories/<name>`, `/search?q=` | Browsing. Flathub and Fedora apps appear for visitors on Linux, marked with where they come from and with "Open in Schelf"; their pages aren't indexed.                                                                                                                                        |
+| `/extensions`, `/extensions/<id>`  | Luft extensions. They never appear in the other lists.                                                                                                                                                                                                                                         |
+| `/publishers/<slug>`               | A publisher's page: logo, name, a short description, website, the verified mark, and its apps and extensions, with `Organization` (or `Person`) structured data.                                                                                                                               |
+| `/dashboard/…`                     | The dashboard. Signed-out visitors land on its sign-in, which says what publishing on Schelf means. The header's **Dashboard** link goes here; the docs are linked from its sidebar and the footer.                                                                                            |
+| `/docs/…`                          | Developer documentation.                                                                                                                                                                                                                                                                       |
+| `/legal/…`, `/report/<id>`         | Terms, privacy, developer agreement, guidelines; the notice form.                                                                                                                                                                                                                              |
 
 **Downloads.** The button picks the artifact for the visitor's system from the user agent (and client hints for architecture): the installer on Windows, the disk image on macOS, the AppImage or package on other Linux. "Other systems" lists every artifact.
 
@@ -79,11 +79,16 @@ in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<
 
 Everything a developer does lives here, and every screen answers "where is my release and what do I do next" without reading docs.
 
-| Area | What it shows and does |
-| --- | --- |
-| Apps | Every app and extension with its current version, release state and installs this week. Adding one walks through id, namespace proof, repository and workflow, and shows the exact files to commit. |
-| Releases | A timeline per release: uploaded, each check with its result and detail, review, rollout. Rollout controls (pause, resume, set a percentage, release to everyone, roll back). Failed checks say what to change. |
-| Listing | Edit name, summary, description, categories, screenshots and translations with a live preview of the store page on each system; what came from AppStream is shown as such. |
-| Publishing | Trusted publishers, dashboard tokens, the workflow file to copy. |
-| Stats | Installs and updates by day, version and system. No per-user data exists to show. |
-| Account | Namespaces and their proofs, sign-in methods, the developer agreement, deleting the account. |
+| Area         | What it shows and does                                                                                                                                                                                          |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Apps         | Every app and extension with its current version, release state and installs this week. Adding one walks through id, namespace proof, repository and workflow, and shows the exact files to commit.             |
+| Releases     | A timeline per release: uploaded, each check with its result and detail, review, rollout. Rollout controls (pause, resume, set a percentage, release to everyone, roll back). Failed checks say what to change. |
+| Listing      | Edit name, summary, description, categories, screenshots and translations with a live preview of the store page on each system; what came from AppStream is shown as such.                                      |
+| Publishing   | Trusted publishers, dashboard tokens, the workflow file to copy.                                                                                                                                                |
+| Stats        | Installs and updates by day, version and system. No per-user data exists to show.                                                                                                                               |
+| Publisher    | A switcher at the top of the sidebar between the personal publisher and each organisation, and creating organisations. Everything else in the dashboard is for the publisher picked there.                      |
+| Public page  | Logo (cropped to a square on upload), name, address, description, website, and the developer agreement.                                                                                                         |
+| Members      | Members and their roles, invitations by email or GitHub username, removing, leaving and handing over ownership.                                                                                                 |
+| Namespaces   | Namespaces and their proofs.                                                                                                                                                                                    |
+| Verification | The request for the verified mark, its status, and the conversation with the reviewer when they ask for more.                                                                                                   |
+| Account      | Sign-in methods, the publishers you belong to, deleting the account.                                                                                                                                            |

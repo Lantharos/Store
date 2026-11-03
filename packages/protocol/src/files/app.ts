@@ -3,7 +3,7 @@ import { extensionAccess } from "../extensions.ts"
 import { requires } from "../manifest.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
-import { developerSummary } from "./catalog.ts"
+import { publisherSummary } from "./catalog.ts"
 
 export const DEFAULT_LOCALE = "en"
 
@@ -74,7 +74,7 @@ export const appIndex = z.object({
   id: z.string(),
   kind,
   format,
-  developer: developerSummary,
+  publisher: publisherSummary,
   listing: z.record(z.string(), listingText),
   icon: z.string().nullable(),
   screenshots: z.array(screenshot),

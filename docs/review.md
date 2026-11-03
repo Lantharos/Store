@@ -16,56 +16,79 @@ The store is a Pult app like any other, wired the way Pult runs its own back off
 
 ## What the store defines in Pult
 
-| Kind | Name | What it is |
-| --- | --- | --- |
-| Resource | `app` | An app id with its listing, developer, releases, installs and history. Actions below. |
-| Resource | `release` | One version: artifacts, facts, review report, rollout. |
-| Resource | `developer` | An account, its verified namespaces, trusted publishers and tokens. |
-| Inbox | `submissions` | First release of a new app id. States: open, changes requested, approved, rejected. |
-| Inbox | `updates` | Every later release. Same states. |
-| Inbox | `reports` | Notices from users and rights holders (DSA, DMCA, abuse). States: open, actioned, dismissed. |
-| Inbox | `claims` | Disputes over an app id, a name or a namespace. |
-| Page | `home` | Queue counts, releases rolling out, recently pulled apps. |
-| Flag | `submissions-open` | Pauses new submissions with a message, for a flood or a holiday. |
-| Flag | `rollouts-frozen` | Stops every rollout from advancing, store-wide. |
+| Kind     | Name               | What it is                                                                                            |
+| -------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
+| Resource | `app`              | An app id with its listing, publisher, releases, installs and history. Actions below.                 |
+| Resource | `release`          | One version: artifacts, facts, review report, rollout.                                                |
+| Resource | `publisher`        | A personal publisher or an organisation: members, namespaces, apps, trusted publishers, verification. |
+| Inbox    | `submissions`      | First release of a new app id. States: open, changes requested, approved, rejected.                   |
+| Inbox    | `updates`          | Every later release. Same states.                                                                     |
+| Inbox    | `reports`          | Notices from users and rights holders (DSA, DMCA, abuse). States: open, actioned, dismissed.          |
+| Inbox    | `claims`           | Disputes over an app id, a name or a namespace.                                                       |
+| Inbox    | `verification`     | Requests for the verified mark. States: open, more requested, approved, rejected.                     |
+| Page     | `home`             | Queue counts (new apps, updates, reports, verification) and the open items.                           |
+| Flag     | `submissions-open` | Pauses new submissions with a message, for a flood or a holiday.                                      |
+| Flag     | `rollouts-frozen`  | Stops every rollout from advancing, store-wide.                                                       |
 
 Actions, all running in the store:
 
-| Action | On | Guardrail |
-| --- | --- | --- |
-| Approve | release | confirm |
-| Request changes (message to developer) | release | none |
-| Reject (reason, sent as statement of reasons) | release | confirm |
-| Pause, resume, roll back rollout | release | confirm |
-| Delist (hide from catalog, installs keep working) | app | confirm |
-| Pull (block from launching, offer removal) | app or release | reauth |
-| Unpull | app or release | reauth |
-| Remove trusted publisher, revoke tokens | developer | reauth |
-| Suspend developer | developer | reauth |
-| Grant namespace manually (after a claim) | developer | confirm |
-| Ask Claude to review | release | none; shows the command to run |
-| Re-sign the index | store | confirm |
-| Prepare a new store key | store | confirm; the key is made and sealed inside the store, and shown for the root to sign |
-| Publish store keys | store | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
+| Action                                            | On                                  | Guardrail                                                                                                   |
+| ------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Approve                                           | release                             | confirm                                                                                                     |
+| Request changes (message to developer)            | release                             | none                                                                                                        |
+| Reject (reason, sent as statement of reasons)     | release                             | confirm                                                                                                     |
+| Pause, resume, roll back rollout                  | release                             | confirm                                                                                                     |
+| Delist (hide from catalog, installs keep working) | app                                 | confirm                                                                                                     |
+| Pull (block from launching, offer removal)        | app or release                      | reauth                                                                                                      |
+| Unpull                                            | app or release                      | reauth                                                                                                      |
+| Remove trusted publishers, revoke tokens          | publisher                           | reauth                                                                                                      |
+| Suspend, reinstate                                | publisher                           | reauth, confirm                                                                                             |
+| Grant namespace manually (after a claim)          | publisher                           | confirm                                                                                                     |
+| Approve verification                              | publisher, from a verification item | confirm                                                                                                     |
+| Ask for more (message to the publisher)           | publisher, from a verification item | none                                                                                                        |
+| Reject verification (reason, emailed)             | publisher, from a verification item | confirm                                                                                                     |
+| Check again (re-run the verification facts)       | publisher                           | none                                                                                                        |
+| Revoke verification (reason, emailed)             | publisher                           | reauth                                                                                                      |
+| Ask Claude to review                              | release                             | none; shows the command to run                                                                              |
+| Re-sign the index                                 | store                               | confirm                                                                                                     |
+| Prepare a new store key                           | store                               | confirm; the key is made and sealed inside the store, and shown for the root to sign                        |
+| Publish store keys                                | store                               | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
 
 Approve, Request changes and Reject move the item to approved, changes requested or rejected. Triage can run Reject and Request changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them.
 
 The owner is the only reviewer today, so nothing needs `approval: true`. When a second reviewer joins, Pull, Revoke and Suspend get it.
 
+## Verification
+
+The verified mark is given by a person, and only for publishers that ask. An owner fills in the request in the dashboard (legal or trading name, website, domains, a contact email confirmed by code, optionally a GitHub organisation, a note and documents) and sends it. The store then checks what it can and sends one item to the `verification` inbox, its fingerprint the request's id and its record the publisher. The item shows the details, the documents as attachments, and the checks as a table of passed, failed and noted facts:
+
+| Fact                         | How                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Owns each domain             | A proven namespace that covers it, or the request's token as a TXT record or in `/.well-known/schelf-store.txt` |
+| Age of each domain           | The registration date from RDAP; younger than six months fails                                                  |
+| Website, email on the domain | The website's host and the contact address are on one of the domains                                            |
+| Contact email                | Confirmed by a code sent to it                                                                                  |
+| GitHub organisation          | The person asking is one of its owners, through their GitHub sign-in; its age                                   |
+| Namespaces                   | Each proven namespace, and whether it matches a domain given                                                    |
+| Apps                         | Listed apps and installs over 30 days                                                                           |
+| Impersonation, name, domains | Any impersonation flag on its apps, another publisher with the same name, another request with the same domains |
+
+Items with a failed fact are tagged `unproven`, and `impersonation` when that's what failed. **Ask for more** moves the item to "more requested" (a closed state, so it leaves the queue) and puts the message in the publisher's dashboard. Their answer re-runs the checks, re-sends the item with the same fingerprint so its blocks are current, and adds the answer to the item's timeline with `receive`, which reopens it. Writing in the item's Email tab works too: the message lands in the same thread in the dashboard and is emailed to the owners. **Approve** sets the mark and re-signs the publisher's apps; **Revoke**, on the publisher, takes it away the same way.
+
 ## The facts
 
 Each submission item carries everything needed to decide without leaving Pult. The Worker and the checks workflow produce them as one JSON document per release (stored in R2 next to the build, summarised into D1), and the item renders them as blocks.
 
-| Fact | How it's produced | Shown as |
-| --- | --- | --- |
-| Malware scan | ClamAV with current signatures, plus YARA rules (the store's own set, kept in `checks/`) over every file in every artifact, unpacked. | Clean, or each hit with file and rule. |
-| Permissions | Declared permissions from the listing, set against what the binary shows: linked libraries, D-Bus names, portals, device paths, URLs and executables it names, `setuid` bits, bundled kernel modules or helpers. Each detected capability maps to a permission. | Table: permission, declared, detected, evidence. Detected-but-undeclared rows first. |
-| Licence | SPDX id from the repository (LICENSE file, `Sabine.toml`, AppStream), checked against the OSI and FSF lists, and against the licences of bundled dependencies where a lockfile says. | Licence, OSI or FSF approved, conflicts. |
-| Listing | Name, summary, description, icon at all sizes, at least two screenshots per platform, categories, homepage, support link, content rating, privacy notes. | Checklist with what's missing. |
-| Build provenance | Repository, workflow, run, commit and tag from the OIDC token; each file's verified attestation; whether the tag is signed and the commit is on the default branch; or "uploaded by the developer" for token uploads. | Fields with links to the run and commit. |
-| Impersonation | Name distance to the 2,000 most installed apps on the store and Flathub and a list of well-known product names; icon perceptual hash distance to every listed icon; whether the id's namespace is verified for this developer. | Closest matches with scores, both icons side by side. |
-| Repository health | Age, stars, contributors, recent commits, whether the repo is a fork, and whether the developer account is new. | Fields. |
-| Size and platforms | Artifact sizes and platforms built. | Fields. |
+| Fact               | How it's produced                                                                                                                                                                                                                                               | Shown as                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Malware scan       | ClamAV with current signatures, plus YARA rules (the store's own set, kept in `checks/`) over every file in every artifact, unpacked.                                                                                                                           | Clean, or each hit with file and rule.                                               |
+| Permissions        | Declared permissions from the listing, set against what the binary shows: linked libraries, D-Bus names, portals, device paths, URLs and executables it names, `setuid` bits, bundled kernel modules or helpers. Each detected capability maps to a permission. | Table: permission, declared, detected, evidence. Detected-but-undeclared rows first. |
+| Licence            | SPDX id from the repository (LICENSE file, `Sabine.toml`, AppStream), checked against the OSI and FSF lists, and against the licences of bundled dependencies where a lockfile says.                                                                            | Licence, OSI or FSF approved, conflicts.                                             |
+| Listing            | Name, summary, description, icon at all sizes, at least two screenshots per platform, categories, homepage, support link, content rating, privacy notes.                                                                                                        | Checklist with what's missing.                                                       |
+| Build provenance   | Repository, workflow, run, commit and tag from the OIDC token; each file's verified attestation; whether the tag is signed and the commit is on the default branch; or "uploaded by the developer" for token uploads.                                           | Fields with links to the run and commit.                                             |
+| Impersonation      | Name distance to the 2,000 most installed apps on the store and Flathub and a list of well-known product names; icon perceptual hash distance to every listed icon; whether the id's namespace is verified for this developer.                                  | Closest matches with scores, both icons side by side.                                |
+| Repository health  | Age, stars, contributors, recent commits, whether the repo is a fork, and whether the developer account is new.                                                                                                                                                 | Fields.                                                                              |
+| Size and platforms | Artifact sizes and platforms built.                                                                                                                                                                                                                             | Fields.                                                                              |
 
 Screenshots in the listing are attached so they show inline; Pult already renders image attachments.
 
@@ -73,23 +96,23 @@ Screenshots in the listing are attached so they show inline; Pult already render
 
 Triage is the cheap first pass, running Jev in Pult on the same facts the item shows. The questions:
 
-| Question | Type | Asked |
-| --- | --- | --- |
-| `junk`: is this an empty, broken, placeholder or spam submission? | noul | always |
-| `kind`: genuine app, copycat of another app, malware suspect, incomplete listing | choice | always |
-| `quality`: how finished does the listing look? low, fair, good | score | always |
-| `risky`: does the update add network endpoints, obfuscated or binary blobs, new install or build scripts, or code unrelated to the app's purpose? | noul | updates |
-| `scope`: routine, feature, rewrite | choice | updates |
+| Question                                                                                                                                          | Type   | Asked   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| `junk`: is this an empty, broken, placeholder or spam submission?                                                                                 | noul   | always  |
+| `kind`: genuine app, copycat of another app, malware suspect, incomplete listing                                                                  | choice | always  |
+| `quality`: how finished does the listing look? low, fair, good                                                                                    | score  | always  |
+| `risky`: does the update add network endpoints, obfuscated or binary blobs, new install or build scripts, or code unrelated to the app's purpose? | noul   | updates |
+| `scope`: routine, feature, rewrite                                                                                                                | choice | updates |
 
 Rules start as watch-only and go live once their agreement rate earns it:
 
-| Rule | When | Then |
-| --- | --- | --- |
-| Close junk | `junk > 0.95` and confidence > 0.9, no malware hit | Decline with an automated statement of reasons; the developer can appeal |
-| Flag malware suspects | any ClamAV or YARA hit, or `kind = malware` | tag `malware`, keep open, notify |
-| Flag copycats | `kind = copycat` or impersonation score above threshold | tag `impersonation` |
-| Flag incomplete | `quality < 0.7` | Request changes with the listing checklist |
-| Fast lane for routine updates | `scope = routine`, `risky < 0.05`, no new permissions, clean scan | tag `routine` |
+| Rule                          | When                                                              | Then                                                                     |
+| ----------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Close junk                    | `junk > 0.95` and confidence > 0.9, no malware hit                | Decline with an automated statement of reasons; the developer can appeal |
+| Flag malware suspects         | any ClamAV or YARA hit, or `kind = malware`                       | tag `malware`, keep open, notify                                         |
+| Flag copycats                 | `kind = copycat` or impersonation score above threshold           | tag `impersonation`                                                      |
+| Flag incomplete               | `quality < 0.7`                                                   | Request changes with the listing checklist                               |
+| Fast lane for routine updates | `scope = routine`, `risky < 0.05`, no new permissions, clean scan | tag `routine`                                                            |
 
 Triage never approves. It declines only obvious junk, and the statement says so. A routine update still waits for a person; the tag puts it in a view the owner can clear in a minute.
 
@@ -130,11 +153,11 @@ Windows builds are reviewed the same way once there's a Windows VM image with Sa
 
 These are proposals for the owner to approve. The store works without them, but worse where noted.
 
-| Proposal | Why | Without it |
-| --- | --- | --- |
-| Notes with blocks and files: `POST /items/:id/notes` takes `blocks`, including attachments | The review report is screenshots, findings and a verdict on the item's timeline. | The store re-sends the item to refresh its blocks, which counts as an occurrence and muddles the timeline. |
-| App-initiated re-render: the app can ask Pult to render an item again | Facts arrive in stages (scan, then diff, then review); the item should show the latest. | Same workaround as above. |
-| Gallery block: several images with a viewer, light and dark side by side | Screenshots are the fastest way to judge an app. | Attachments one by one. |
-| Diff block, with file headers and syntax colours | Reading the riskiest hunks in Pult. | Code blocks per hunk. |
-| A larger triage input per inbox, or triage that reads one named attachment | Diffs of big updates get cut down to the digest. | The digest only, which is likely enough. |
-| Side-by-side compare block (two images or two field sets) | Icon and name impersonation checks. | Two attachments in columns. |
+| Proposal                                                                                   | Why                                                                                     | Without it                                                                                                 |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Notes with blocks and files: `POST /items/:id/notes` takes `blocks`, including attachments | The review report is screenshots, findings and a verdict on the item's timeline.        | The store re-sends the item to refresh its blocks, which counts as an occurrence and muddles the timeline. |
+| App-initiated re-render: the app can ask Pult to render an item again                      | Facts arrive in stages (scan, then diff, then review); the item should show the latest. | Same workaround as above.                                                                                  |
+| Gallery block: several images with a viewer, light and dark side by side                   | Screenshots are the fastest way to judge an app.                                        | Attachments one by one.                                                                                    |
+| Diff block, with file headers and syntax colours                                           | Reading the riskiest hunks in Pult.                                                     | Code blocks per hunk.                                                                                      |
+| A larger triage input per inbox, or triage that reads one named attachment                 | Diffs of big updates get cut down to the digest.                                        | The digest only, which is likely enough.                                                                   |
+| Side-by-side compare block (two images or two field sets)                                  | Icon and name impersonation checks.                                                     | Two attachments in columns.                                                                                |

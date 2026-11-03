@@ -12,7 +12,7 @@
 
 <div class="grid gap-12 xl:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
   <div class="min-w-0 space-y-12">
-    <Publishers appId={data.app.id} bind:publishers={data.publishers} />
+    <Publishers appId={data.app.id} bind:publishers={data.trusted_publishers} />
     <Tokens appId={data.app.id} bind:tokens={data.tokens} />
   </div>
   <section class="min-w-0">

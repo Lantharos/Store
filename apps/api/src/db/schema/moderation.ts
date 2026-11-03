@@ -1,6 +1,6 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
+import { app } from "./apps.ts"
 import { createdAt } from "./columns.ts"
-import { app } from "./developers.ts"
 import { release } from "./releases.ts"
 
 export const review = sqliteTable(

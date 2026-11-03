@@ -53,7 +53,16 @@
       : []
     const pages: Command[] = [
       { id: "new", label: "Add an app", group: "Go to", run: go("/dashboard/apps/new") },
+      { id: "publisher", label: "Public page", group: "Go to", run: go("/dashboard/publisher") },
+      { id: "members", label: "Members", group: "Go to", run: go("/dashboard/members") },
       { id: "namespaces", label: "Namespaces", group: "Go to", run: go("/dashboard/namespaces") },
+      { id: "verification", label: "Verification", group: "Go to", run: go("/dashboard/verification") },
+      {
+        id: "organisation",
+        label: "New organisation",
+        group: "Go to",
+        run: go("/dashboard/organisations/new"),
+      },
       { id: "account", label: "Account", group: "Go to", run: go("/dashboard/account") },
       { id: "docs", label: "Documentation", group: "Go to", run: go("/docs") },
       { id: "store", label: "The store", group: "Go to", run: go("/") },
@@ -66,7 +75,16 @@
         run: () => scheme.set("system"),
       },
     ]
-    return [...sections, ...appCommands, ...pages]
+    const publishers = (session.account?.publishers ?? [])
+      .filter((publisher) => publisher.id !== session.publisher?.id)
+      .map((publisher) => ({
+        id: `publisher:${publisher.id}`,
+        label: `Switch to ${publisher.name}`,
+        group: "Publishers",
+        icon: { src: publisher.logo, name: publisher.name },
+        run: () => session.use(publisher.id).then(() => goto("/dashboard")),
+      }))
+    return [...sections, ...appCommands, ...publishers, ...pages]
   })
 
   function score(command: Command, words: string[]) {

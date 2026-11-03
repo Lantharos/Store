@@ -3,11 +3,11 @@ import {
   type AppIndex,
   type AppPage,
   type CatalogEntry,
-  type DeveloperPage,
   type FeaturedResponse,
   type FeaturedSection,
   featuredQuery,
   type MirrorEntry,
+  type PublisherPage,
   paths,
   type ReportResponse,
   reportRequest,
@@ -21,7 +21,7 @@ import { db, schema } from "../db/client.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
-import { installsSince } from "../signing/records.ts"
+import { installsSince, mediaUrl } from "../signing/records.ts"
 import { currentCatalog } from "./catalog.ts"
 import { mirrorEntry, mirrorHits } from "./mirror.ts"
 import { confirmReport } from "./report-mail.ts"
@@ -129,20 +129,23 @@ storefrontRoutes.get("/mirror/:id", async (c) => {
   return c.json(entry satisfies MirrorEntry)
 })
 
-storefrontRoutes.get("/developers/:slug", async (c) => {
-  const developer = await db.query.developer.findFirst({
-    where: eq(schema.developer.slug, c.req.param("slug")),
+storefrontRoutes.get("/publishers/:slug", async (c) => {
+  const publisher = await db.query.publisher.findFirst({
+    where: eq(schema.publisher.slug, c.req.param("slug")),
   })
-  if (!developer) fail(404, "There's no developer with that name")
+  if (!publisher) fail(404, "There's no publisher by that name")
   const { catalog } = await currentCatalog()
-  const apps = catalog.apps.filter((entry) => entry.developer.slug === developer.slug)
   c.header("cache-control", PUBLIC_CACHE)
   return c.json({
-    name: developer.name,
-    slug: developer.slug,
-    verified: apps.some((entry) => entry.developer.verified),
-    apps,
-  } satisfies DeveloperPage)
+    name: publisher.name,
+    slug: publisher.slug,
+    kind: publisher.kind,
+    description: publisher.description,
+    website: publisher.website,
+    logo: mediaUrl(publisher.logoKey),
+    verified: publisher.verifiedAt !== null,
+    apps: catalog.apps.filter((entry) => entry.publisher.slug === publisher.slug),
+  } satisfies PublisherPage)
 })
 
 storefrontRoutes.post("/reports", async (c) => {

@@ -29,7 +29,7 @@
       <div class="min-w-0 flex-1">
         <h1 class="text-[32px] leading-none font-semibold tracking-[-0.03em] sm:text-[44px]">{app.name}</h1>
         <p class="mt-2 text-ink-soft sm:mt-3 sm:text-lg">{app.summary}</p>
-        <p class="mt-1.5 text-[15px] text-ink-muted">{app.developer.name} · From {origin}</p>
+        <p class="mt-1.5 text-[15px] text-ink-muted">{app.publisher.name} · From {origin}</p>
       </div>
     </div>
     <div class="flex flex-col items-stretch gap-2.5 sm:items-end">

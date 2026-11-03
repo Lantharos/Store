@@ -14,8 +14,8 @@
     {
       title: "Developers",
       links: [
-        ["/docs", "Publish an app"],
         ["/dashboard", "Dashboard"],
+        ["/docs", "Docs"],
         ["/docs/review-guidelines", "Review guidelines"],
       ],
     },
@@ -49,5 +49,5 @@
       </nav>
     {/each}
   </div>
-  <p class="mt-10 text-[13px] text-ink-muted">Schelf is made by Lantharos. Apps belong to their developers.</p>
+  <p class="mt-10 text-[13px] text-ink-muted">Schelf is made by Lantharos. Apps belong to their publishers.</p>
 </footer>

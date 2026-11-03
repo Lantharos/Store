@@ -1,40 +1,17 @@
 <script lang="ts">
   import Mail from "@lucide/svelte/icons/mail"
-  import { onMount } from "svelte"
+  import { ROLE_NAMES } from "@schelf/protocol"
   import Passkeys from "#lib/dashboard/account/Passkeys.svelte"
   import { auth } from "#lib/dashboard/api/auth.ts"
-  import { api } from "#lib/dashboard/api/client.ts"
-  import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import PublisherMark from "#lib/dashboard/publishers/PublisherMark.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
-  import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
   import { goto } from "$app/navigation"
 
   const account = $derived(session.account!)
-  const developer = $derived(account.developer!)
-  const outdated = $derived(account.agreement.accepted !== account.agreement.current)
   let deleting = $state(false)
   let typed = $state("")
-
-  async function acceptAgreement() {
-    try {
-      await api.post(endpoints.developer, {
-        name: developer.name,
-        kind: developer.kind,
-        agreement: account.agreement.current,
-      })
-      await session.load()
-      toasts.show("Thanks. You're on the current agreement.")
-    } catch (error) {
-      toasts.error(error)
-    }
-  }
-
-  onMount(() => {
-    if (account.github && !developer.github_login)
-      void api.post(endpoints.githubLogin).then(() => session.load())
-  })
 
   async function linkGitHub() {
     await auth.linkSocial({ provider: "github", callbackURL: `${location.origin}/dashboard/account` })
@@ -53,13 +30,25 @@
 <section class="mt-8">
   <h2 class="text-xl font-semibold">You</h2>
   <dl class="mt-4 grid max-w-xl grid-cols-[8rem_1fr] gap-y-3 text-[15px]">
-    <dt class="text-ink-muted">Shown as</dt>
-    <dd><a href="/developers/{developer.slug}" class="hover:underline">{developer.name}</a></dd>
-    <dt class="text-ink-muted">Publishing as</dt>
-    <dd>{developer.kind === "person" ? "A person" : "An organisation"}</dd>
+    <dt class="text-ink-muted">Name</dt>
+    <dd class="truncate">{account.user.name}</dd>
     <dt class="text-ink-muted">Email</dt>
     <dd class="truncate">{account.user.email}</dd>
   </dl>
+</section>
+
+<section class="mt-12 max-w-2xl">
+  <h2 class="text-xl font-semibold">Publishers</h2>
+  <ul class="mt-2 divide-y divide-hairline">
+    {#each account.publishers as publisher (publisher.id)}
+      <li class="flex items-center gap-4 py-3">
+        <PublisherMark logo={publisher.logo} name={publisher.name} />
+        <span class="min-w-0 flex-1 truncate">{publisher.name}</span>
+        <span class="text-[15px] text-ink-muted">{publisher.kind === "person" ? "You" : ROLE_NAMES[publisher.role].label}</span>
+      </li>
+    {/each}
+  </ul>
+  <a href="/dashboard/organisations/new" class="button button-sm button-quiet mt-3">New organisation</a>
 </section>
 
 <section class="mt-12 max-w-2xl">
@@ -85,18 +74,8 @@
 </section>
 
 <section class="mt-12 max-w-2xl">
-  <h2 class="text-xl font-semibold">Developer agreement</h2>
-  {#if outdated}
-    <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">The agreement changed since you accepted it. New releases wait until you've read <a href="/legal/developer-agreement" target="_blank" class="link">version {account.agreement.current}</a> and accepted it.</p>
-    <button type="button" class="button button-sm button-primary mt-4" onclick={acceptAgreement}>Accept version {account.agreement.current}</button>
-  {:else}
-    <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">You accepted <a href="/legal/developer-agreement" class="link">version {account.agreement.current}</a>, the current one.</p>
-  {/if}
-</section>
-
-<section class="mt-12 max-w-2xl">
   <h2 class="text-xl font-semibold">Delete your account</h2>
-  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Your apps are delisted, and people who have them keep them. Your details are deleted within 30 days. This can't be undone.</p>
+  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Your personal apps are delisted, and people who have them keep them. Organisations you own with others need another owner first. Your details are deleted within 30 days. This can't be undone.</p>
   <button type="button" class="button button-sm button-danger mt-4" onclick={() => ((typed = ""), (deleting = true))}>Delete account</button>
 </section>
 

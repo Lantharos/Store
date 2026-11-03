@@ -40,7 +40,7 @@
   <div class="ml-auto hidden w-full max-w-80 md:block">
     <SearchBox />
   </div>
-  <a href="/docs" class="hidden text-[15px] whitespace-nowrap text-ink-soft transition-colors hover:text-ink lg:block">For developers</a>
+  <a href="/dashboard" class="hidden text-[15px] whitespace-nowrap text-ink-soft transition-colors hover:text-ink lg:block">Dashboard</a>
   <div class="ml-auto flex gap-1 md:hidden">
     <button type="button" class="button size-10 p-0 hover:bg-well" aria-label="Search" onclick={() => (sheet = sheet === "search" ? null : "search")}>
       <Search class="size-5" />
@@ -63,7 +63,7 @@
       <SearchBox autofocus onnavigate={() => (sheet = null)} />
     {:else}
       <nav aria-label="Store" class="flex flex-col text-lg">
-        {#each [...NAV, { href: "/docs", label: "For developers", match: (value: string) => value.startsWith("/docs") }] as item (item.href)}
+        {#each [...NAV, { href: "/dashboard", label: "Dashboard", match: () => false }] as item (item.href)}
           <a href={item.href} aria-current={item.match(path) ? "page" : undefined} class="border-b border-hairline py-3.5 aria-[current=page]:font-semibold">{item.label}</a>
         {/each}
       </nav>

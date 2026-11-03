@@ -6,7 +6,7 @@ import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
 import { resignApp } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
-import { notifyDeveloper } from "./notify.ts"
+import { notifyPublisher } from "./notify.ts"
 
 export type Decision = "approved" | "changes-requested" | "rejected"
 const FIRST_STEP = ROLLOUT_STEPS[0]
@@ -69,7 +69,7 @@ export async function approve(releaseId: string, by: string, { security = false 
   ])
   await recordDecision(release.id, "approved", by, null)
   await Promise.all([resignApp(release.appId), reindexApp(release.appId)])
-  notifyDeveloper(release.id, "approved")
+  notifyPublisher(release.id, "approved")
   return `${release.appId} ${release.version} is approved and rolling out to ${percent}%`
 }
 
@@ -92,7 +92,7 @@ async function decline(
       .set({ status: "draft" })
       .where(and(eq(schema.app.id, release.appId), eq(schema.app.status, "in-review")))
   await recordDecision(release.id, decision, by, reason)
-  notifyDeveloper(release.id, decision, reason)
+  notifyPublisher(release.id, decision, reason)
   return release
 }
 

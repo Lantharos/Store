@@ -3,7 +3,7 @@ import { db, schema } from "../db/client.ts"
 import { randomId } from "../lib/ids.ts"
 import { resign } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
-import { notifyDeveloper } from "./notify.ts"
+import { notifyPublisher } from "./notify.ts"
 
 async function resignEverything(appId: string) {
   await Promise.all([
@@ -40,7 +40,7 @@ export async function pull(target: { app: string; release?: string }, reason: st
     .orderBy(desc(schema.release.createdAt))
     .limit(1)
   const notified = target.release ?? latest?.id
-  if (notified) notifyDeveloper(notified, "pulled", note)
+  if (notified) notifyPublisher(notified, "pulled", note)
 }
 
 export async function unpull(target: { app: string; release?: string }) {

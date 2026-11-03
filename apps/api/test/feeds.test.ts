@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
 import { rebuildApp } from "../src/signing/rebuild.ts"
-import { developerWithApp } from "./fixtures.ts"
+import { publisherWithApp } from "./fixtures.ts"
 
 async function sabineRelease(appId: string, version: string, percent: number, approvedAt: Date) {
   const id = randomId()
@@ -48,7 +48,7 @@ async function sabineRelease(appId: string, version: string, percent: number, ap
 
 describe("Sabine update feeds", () => {
   test("follow the newest approved release with its rollout, signed so Sabine accepts it", async () => {
-    const { appId } = await developerWithApp("sabine")
+    const { appId } = await publisherWithApp("sabine")
     await db.update(schema.app).set({ status: "listed" })
     await sabineRelease(appId, "1.0.0", 100, new Date("2026-10-01T00:00:00Z"))
     await sabineRelease(appId, "1.1.0", 25, new Date("2026-11-01T00:00:00Z"))

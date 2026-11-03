@@ -48,7 +48,7 @@ export function catalogEntry(record: AppRecord): CatalogEntry {
     summary: english.summary,
     icon: mediaUrl(record.meta?.iconKey),
     categories: record.meta?.categories ?? [],
-    developer: record.developer,
+    publisher: record.publisher,
     platforms,
     access: accessFor(record, record.releases[0]?.release),
     updated: updatedAt(record),
@@ -104,7 +104,7 @@ export function appIndex(record: AppRecord): AppIndex {
     id: record.app.id,
     kind: record.app.kind,
     format: record.app.format,
-    developer: record.developer,
+    publisher: record.publisher,
     listing: Object.fromEntries(
       record.listing.map((entry) => [
         entry.locale,

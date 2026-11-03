@@ -3,12 +3,12 @@ import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
 import { stepRollouts } from "../src/releases/rollout.ts"
-import { developerWithApp } from "./fixtures.ts"
+import { publisherWithApp } from "./fixtures.ts"
 
 const HOUR = 3_600_000
 
 async function approvedRelease(percent: number, steppedAt: Date, paused = false) {
-  const { appId } = await developerWithApp()
+  const { appId } = await publisherWithApp()
   const id = randomId()
   await db.insert(schema.release).values({
     id,

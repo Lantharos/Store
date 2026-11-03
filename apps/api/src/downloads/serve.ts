@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers"
+import { PRIVATE_PREFIX } from "@schelf/protocol"
 import { INDEX_CACHE } from "../signing/write.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
@@ -44,7 +45,11 @@ export async function serveDownload(request: Request) {
     return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } })
   const url = new URL(request.url)
   const key = decodeURIComponent(url.pathname.slice(1))
-  if (!key || key.split("/").some((segment) => segment === "" || segment === "." || segment === ".."))
+  if (
+    !key ||
+    key.startsWith(PRIVATE_PREFIX) ||
+    key.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
+  )
     return new Response("Not found", { status: 404 })
 
   const object =

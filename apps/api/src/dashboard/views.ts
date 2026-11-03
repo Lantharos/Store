@@ -1,18 +1,6 @@
-import type { Developer, Namespace } from "@schelf/protocol"
+import type { Namespace } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
 import { iso } from "../lib/time.ts"
-
-export function developerView(row: typeof schema.developer.$inferSelect): Developer {
-  return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    kind: row.kind,
-    github_login: row.githubLogin,
-    agreement_version: row.agreementVersion,
-    status: row.status,
-  }
-}
 
 export function domainOf(prefix: string) {
   return prefix.split(".").reverse().join(".")

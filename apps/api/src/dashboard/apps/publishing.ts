@@ -8,21 +8,22 @@ import {
 } from "@schelf/protocol"
 import { and, eq, isNull } from "drizzle-orm"
 import { Hono } from "hono"
-import type { DeveloperVars } from "../../auth/session.ts"
+import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { repository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
 import { DAY_MS } from "../../lib/time.ts"
-import { githubAccount, ownedApp } from "../access.ts"
+import { appAccess } from "../../publishers/access.ts"
+import { githubAccount } from "../access.ts"
 
 const TOKEN_DAYS = 365
 const TOKEN_BYTES = 32
 
-export const publishingRoutes = new Hono<DeveloperVars>()
+export const publishingRoutes = new Hono<SignedInVars>()
 
-publishingRoutes.post("/:id/publishers", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+publishingRoutes.post("/:id/trusted-publishers", async (c) => {
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   const input = await readBody(c, addTrustedPublisher)
   const account = await githubAccount(c.var.viewer.id)
   const repo = await repository(input.repository, account?.token)
@@ -52,8 +53,8 @@ publishingRoutes.post("/:id/publishers", async (c) => {
   )
 })
 
-publishingRoutes.delete("/:id/publishers/:publisher", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+publishingRoutes.delete("/:id/trusted-publishers/:publisher", async (c) => {
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   await db
     .delete(schema.trustedPublisher)
     .where(
@@ -66,14 +67,14 @@ publishingRoutes.delete("/:id/publishers/:publisher", async (c) => {
 })
 
 publishingRoutes.post("/:id/tokens", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   const { name } = await readBody(c, createToken)
   const token = `${TOKEN_PREFIX}${randomId(TOKEN_BYTES)}`
   const now = new Date()
   const row = {
     id: randomId(),
     appId: app.id,
-    developerId: c.var.developer.id,
+    publisherId: app.publisherId,
     hash: await sha256Hex(token),
     name,
     expiresAt: new Date(now.getTime() + TOKEN_DAYS * DAY_MS),
@@ -94,7 +95,7 @@ publishingRoutes.post("/:id/tokens", async (c) => {
 })
 
 publishingRoutes.delete("/:id/tokens/:token", async (c) => {
-  const app = await ownedApp(c.var.developer, c.req.param("id"))
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   await db
     .update(schema.token)
     .set({ revokedAt: new Date() })

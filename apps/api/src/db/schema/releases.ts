@@ -1,7 +1,7 @@
 import type { CheckName, CheckStatus, ExtensionAccess, Permissions, Requires } from "@schelf/protocol"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
+import { app } from "./apps.ts"
 import { createdAt } from "./columns.ts"
-import { app } from "./developers.ts"
 
 export const release = sqliteTable(
   "release",
