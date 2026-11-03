@@ -16,46 +16,53 @@ The store is a Pult app like any other, wired the way Pult runs its own back off
 
 ## What the store defines in Pult
 
-| Kind     | Name               | What it is                                                                                            |
-| -------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
-| Resource | `app`              | An app id with its listing, publisher, releases, installs and history. Actions below.                 |
-| Resource | `release`          | One version: artifacts, facts, review report, rollout.                                                |
-| Resource | `publisher`        | A personal publisher or an organisation: members, namespaces, apps, trusted publishers, verification. |
-| Inbox    | `submissions`      | First release of a new app id. States: open, changes requested, approved, rejected.                   |
-| Inbox    | `updates`          | Every later release. Same states.                                                                     |
-| Inbox    | `reports`          | Notices from users and rights holders (DSA, DMCA, abuse). States: open, actioned, dismissed.          |
-| Inbox    | `claims`           | Disputes over an app id, a name or a namespace.                                                       |
-| Inbox    | `verification`     | Requests for the verified mark. States: open, more requested, approved, rejected.                     |
-| Inbox    | `mail`             | Email to the store's addresses, see [Email](#email). States: open, handled, spam.                     |
-| Page     | `home`             | Queue counts (new apps, updates, reports, verification) and the open items.                           |
-| Flag     | `submissions-open` | Pauses new submissions with a message, for a flood or a holiday.                                      |
-| Flag     | `rollouts-frozen`  | Stops every rollout from advancing, store-wide.                                                       |
+| Kind     | Name               | What it is                                                                                                                                                           |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resource | `app`              | An app id: installs, open reports, publisher, repository, what's pulled, trusted publishers, upload tokens, the listing and its releases. Browse by status and kind. |
+| Resource | `release`          | One version: checks with their details, files and attestations, provenance, decisions, permissions, facts, listing and rollout. Browse by status.                    |
+| Resource | `publisher`        | A person or an organisation: owner, members, namespaces, trusted publishers, upload tokens, verification history and apps. Browse by status, kind and verified.      |
+| Inbox    | `submissions`      | First release of a new app id. States: open, changes requested, approved, rejected.                                                                                  |
+| Inbox    | `updates`          | Every later release. Same states.                                                                                                                                    |
+| Inbox    | `reports`          | Reports from people and rights holders, tagged by kind. States: open, actioned, dismissed; the store's own record follows the item.                                  |
+| Inbox    | `verification`     | Requests for the verified mark. States: open, more requested, approved, rejected.                                                                                    |
+| Inbox    | `mail`             | Email to the store's addresses, see [Email](#email). States: open, handled, spam.                                                                                    |
+| View     | `routine-updates`  | Open updates triage tagged `routine`, oldest first.                                                                                                                  |
+| Page     | `home`             | Queue counts (new apps, updates, routine updates, reports, verification, mail), the open items and both flags.                                                       |
+| Page     | `store`            | Listed apps, publishers, installs, every rollout in progress, everything pulled, suspended publishers, and the signing actions.                                      |
+| Flag     | `submissions-open` | Pauses new submissions with a message, for a flood or a holiday.                                                                                                     |
+| Flag     | `rollouts-frozen`  | Stops every rollout from advancing, store-wide.                                                                                                                      |
 
-Actions, all running in the store:
+Search finds apps by id, name or publisher; releases by id, version, app or commit; publishers by name, slug, namespace, or a member's name or email. Every record links to its public page where there is one.
 
-| Action                                            | On                                  | Guardrail                                                                                                   |
-| ------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Approve                                           | release                             | confirm                                                                                                     |
-| Request changes (message to developer)            | release                             | none                                                                                                        |
-| Reject (reason, sent as statement of reasons)     | release                             | confirm                                                                                                     |
-| Pause, resume, roll back rollout                  | release                             | confirm                                                                                                     |
-| Delist (hide from catalog, installs keep working) | app                                 | confirm                                                                                                     |
-| Pull (block from launching, offer removal)        | app or release                      | reauth                                                                                                      |
-| Unpull                                            | app or release                      | reauth                                                                                                      |
-| Remove trusted publishers, revoke tokens          | publisher                           | reauth                                                                                                      |
-| Suspend, reinstate                                | publisher                           | reauth, confirm                                                                                             |
-| Grant namespace manually (after a claim)          | publisher                           | confirm                                                                                                     |
-| Approve verification                              | publisher, from a verification item | confirm                                                                                                     |
-| Ask for more (message to the publisher)           | publisher, from a verification item | none                                                                                                        |
-| Reject verification (reason, emailed)             | publisher, from a verification item | confirm                                                                                                     |
-| Check again (re-run the verification facts)       | publisher                           | none                                                                                                        |
-| Revoke verification (reason, emailed)             | publisher                           | reauth                                                                                                      |
-| Ask Claude to review                              | release                             | none; shows the command to run                                                                              |
-| Re-sign the index                                 | store                               | confirm                                                                                                     |
-| Prepare a new store key                           | store                               | confirm; the key is made and sealed inside the store, and shown for the root to sign                        |
-| Publish store keys                                | store                               | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
+Actions, all running in the store. Each one only shows while it applies: Pause only on a rollout that's running, Undo pull only on something pulled, the verification actions only while a request waits.
 
-Approve, Request changes and Reject move the item to approved, changes requested or rejected. Triage can run Reject and Request changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them.
+| Action                                                    | On                                  | Guardrail                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Approve, Approve as a security fix                        | release in review                   | confirm                                                                                                     |
+| Ask for changes (message to the developer)                | release in review                   | none                                                                                                        |
+| Reject (reason, sent as statement of reasons)             | release in review                   | confirm                                                                                                     |
+| Pause, resume, send to everyone, set rollout, roll back   | release rolling out or live         | confirm (resume: none)                                                                                      |
+| Delist, list again                                        | listed or delisted app              | confirm                                                                                                     |
+| Pull (block from starting, with a public note), undo pull | app or release                      | reauth                                                                                                      |
+| Revoke a token, remove a trusted publisher                | app                                 | confirm                                                                                                     |
+| Remove all trusted publishers, revoke all tokens          | publisher                           | reauth                                                                                                      |
+| Suspend, reinstate                                        | publisher                           | reauth, confirm                                                                                             |
+| Grant a namespace (after a dispute)                       | publisher                           | confirm                                                                                                     |
+| Verify                                                    | publisher, from a verification item | confirm                                                                                                     |
+| Ask for more (message to the publisher)                   | publisher, from a verification item | none                                                                                                        |
+| Decline verification (reason, emailed)                    | publisher, from a verification item | confirm                                                                                                     |
+| Check again (re-run the verification facts)               | publisher with a request waiting    | none                                                                                                        |
+| Revoke verification (reason, emailed)                     | verified publisher                  | reauth                                                                                                      |
+| Review with Claude                                        | release                             | none; shows the command to run                                                                              |
+| Re-sign the index                                         | store                               | confirm                                                                                                     |
+| Prepare a new store key                                   | store                               | confirm; the key is made and sealed inside the store, and shown for the root to sign                        |
+| Publish store keys                                        | store                               | reauth; takes the root-signed `store-keys.json`, switches signing to its newest key and re-signs everything |
+
+Approve, Ask for changes and Reject move the item to approved, changes requested or rejected; all three are closed, since a fixed release arrives as a new item. Triage can run Reject and Ask for changes, which is how its junk and incomplete-listing rules act once they go live; the store tags items `malware`, `impersonation`, `permissions` and `uploaded` from its own checks when it sends them.
+
+A record's history shows what was done in Pult, and the store adds what happened on its side: a release sent for review or failing its checks, each rollout step and rollout changes from the dashboard, apps added, trusted publishers and upload tokens added or removed, namespaces claimed, proved or given up, and verification requests sent.
+
+Disputes over an app id, a name or a namespace come in by email to legal@schelf.store; Grant a namespace settles one.
 
 The owner is the only reviewer today, so nothing needs `approval: true`. When a second reviewer joins, Pull, Revoke and Suspend get it.
 
@@ -74,7 +81,7 @@ The verified mark is given by a person, and only for publishers that ask. An own
 | Apps                         | Listed apps and installs over 30 days                                                                           |
 | Impersonation, name, domains | Any impersonation flag on its apps, another publisher with the same name, another request with the same domains |
 
-Items with a failed fact are tagged `unproven`, and `impersonation` when that's what failed. **Ask for more** moves the item to "more requested" (a closed state, so it leaves the queue) and puts the message in the publisher's dashboard. Their answer re-runs the checks, re-sends the item with the same fingerprint so its blocks are current, and adds the answer to the item's timeline with `receive`, which reopens it. Writing in the item's Email tab works too: the message lands in the same thread in the dashboard and is emailed to the owners. **Approve** sets the mark and re-signs the publisher's apps; **Revoke**, on the publisher, takes it away the same way.
+Items with a failed fact are tagged `unproven`, and `impersonation` when that's what failed. **Ask for more** moves the item to "more requested" (a closed state, so it leaves the queue) and puts the message in the publisher's dashboard. Their answer re-runs the checks, re-sends the item with the same fingerprint so its blocks are current, and adds the answer to the item's timeline with `receive`, which reopens it. Writing in the item's Email tab works too: the message lands in the same thread in the dashboard and is emailed to the owners. **Verify** sets the mark and re-signs the publisher's apps; **Revoke verification**, on the publisher, takes it away the same way.
 
 ## The facts
 

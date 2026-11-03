@@ -2,9 +2,8 @@
   import CircleCheck from "@lucide/svelte/icons/circle-check"
   import CircleX from "@lucide/svelte/icons/circle-x"
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert"
-  import type { CheckResult } from "@schelf/protocol"
+  import { CHECK_TITLES, type CheckResult } from "@schelf/protocol"
   import { CHECK_FIXES } from "./checks.ts"
-  import { CHECK_TITLES } from "./status.ts"
 
   let { check, appId, widened }: { check: CheckResult; appId: string; widened: boolean } = $props()
   const fix = $derived(check.status === "passed" && !widened ? null : CHECK_FIXES[check.name])

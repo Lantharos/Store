@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers"
 import {
   type ArtifactKind,
+  CHECK_TITLES,
+  type CheckResult,
   type ChecksDispatch,
   type ChecksReport,
   type Platform,
@@ -11,6 +13,7 @@ import { db, schema } from "../db/client.ts"
 import { github } from "../github/api.ts"
 import { type WorkflowClaims, workflowPath } from "../github/oidc.ts"
 import { fail } from "../lib/http.ts"
+import { recordHistory } from "../ops/events.ts"
 import { saveChecks } from "../publishing/complete.ts"
 import { type AppRow, type ArtifactRow, fileUrl, type ReleaseRow } from "../signing/records.ts"
 import { notifyPublisher } from "./notify.ts"
@@ -75,9 +78,15 @@ export async function acceptChecks(releaseId: string, report: ChecksReport) {
     })
   if (report.checks.some((check) => check.status === "failed")) {
     await db.update(schema.release).set({ status: "failed" }).where(eq(schema.release.id, release.id))
+    recordHistory("release", release.id, failedChecks(report.checks))
     await notifyPublisher(release.id, "failed")
     return "failed" as const
   }
   await sendToReview(release.id)
   return "in-review" as const
+}
+
+export function failedChecks(checks: Pick<CheckResult, "name" | "status">[]) {
+  const failed = checks.filter((check) => check.status === "failed").map((check) => CHECK_TITLES[check.name])
+  return `Failed its checks: ${failed.join(", ")}`
 }

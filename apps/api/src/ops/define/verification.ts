@@ -5,12 +5,14 @@ import { db, schema } from "../../db/client.ts"
 import type { VerificationFact } from "../../db/schema/verification.ts"
 import { storeMessage } from "../../verification/decisions.ts"
 import { documentFiles } from "../../verification/documents.ts"
+import { link, publisherPage } from "../data/links.ts"
+import { emailHint } from "../render/publisher.ts"
 import { publisher } from "./publisher.ts"
 
-const MARKS: Record<VerificationFact["result"], string> = {
-  passed: "passed",
-  failed: "failed",
-  noted: "noted",
+const RESULT: Record<VerificationFact["result"], string> = {
+  passed: "Passed",
+  failed: "Failed",
+  noted: "Noted",
 }
 
 export async function verificationBlocks(id: string) {
@@ -27,28 +29,30 @@ export async function verificationBlocks(id: string) {
       .orderBy(schema.verificationMessage.createdAt),
     documentFiles(id),
   ])
-  const failed = verification.facts.filter((fact) => fact.result === "failed").length
+  const count = (result: VerificationFact["result"]) =>
+    verification.facts.filter((fact) => fact.result === result).length
   return [
-    b.stats({
-      Passed: verification.facts.filter((fact) => fact.result === "passed").length,
-      Failed: failed,
-      Messages: messages.length,
-    }),
+    b.stats({ Passed: count("passed"), Failed: count("failed"), Messages: messages.length }),
     b.fields({
       publisher: b.ref("publisher", verification.publisherId, owner?.name),
       "legal name": verification.legalName,
-      website: verification.website ?? undefined,
+      website: link(verification.website),
       domains: verification.domains.map((domain) => domain.name).join(", "),
-      contact: verification.contactEmail ? b.sensitive(verification.contactEmail) : undefined,
-      github: verification.githubOrg ? `https://github.com/${verification.githubOrg}` : undefined,
-      page: owner ? `https://schelf.store/publishers/${owner.slug}` : undefined,
+      contact: verification.contactEmail
+        ? b.sensitive(verification.contactEmail, { hint: emailHint(verification.contactEmail) })
+        : undefined,
+      github: verification.githubOrg
+        ? b.link(`https://github.com/${verification.githubOrg}`, verification.githubOrg)
+        : undefined,
+      "store page": owner ? b.link(publisherPage(owner), owner.name) : undefined,
     }),
     b.table(
       verification.facts.map((fact) => ({
         check: fact.check,
-        result: MARKS[fact.result],
+        result: RESULT[fact.result],
         detail: fact.detail,
       })),
+      { title: "Checks" },
     ),
     ...(verification.note ? [b.markdown(`**In their words**\n\n${verification.note}`)] : []),
     ...documents.map((document) => b.attachment(document)),

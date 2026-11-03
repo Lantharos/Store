@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { randomId } from "../lib/ids.ts"
 import { resign } from "../signing/queue.ts"
@@ -55,7 +55,12 @@ export async function unpull(target: { app: string; release?: string }) {
       ),
     )
   if (target.release)
-    await db.update(schema.release).set({ status: "live" }).where(eq(schema.release.id, target.release))
+    await db
+      .update(schema.release)
+      .set({
+        status: sql`case when ${schema.release.rolloutPercent} = 100 then 'live' else 'rolling-out' end`,
+      })
+      .where(eq(schema.release.id, target.release))
   else await db.update(schema.app).set({ status: "listed" }).where(eq(schema.app.id, target.app))
   await resignEverything(target.app)
 }

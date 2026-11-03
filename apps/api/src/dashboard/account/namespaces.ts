@@ -5,6 +5,8 @@ import { db, schema } from "../../db/client.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
 import { DAY_MS } from "../../lib/time.ts"
+import { NAMESPACE_PROOF } from "../../ops/data/labels.ts"
+import { recordHistory } from "../../ops/events.ts"
 import { active, allow, type PublisherVars } from "../../publishers/access.ts"
 import { githubAccount } from "../access.ts"
 import { namespaceView } from "../views.ts"
@@ -31,7 +33,8 @@ namespaceRoutes.post("/", async (c) => {
     fail(422, "A GitHub namespace is io.github.<user or organisation>")
   const existing = await db.query.namespace.findFirst({ where: eq(schema.namespace.prefix, prefix) })
   if (existing?.publisherId === c.var.publisher.id) return c.json(namespaceView(existing))
-  if (existing?.proof) fail(409, `${prefix} belongs to another publisher; open a claim if it's yours`)
+  if (existing?.proof)
+    fail(409, `${prefix} belongs to another publisher; write to legal@schelf.store if it's yours`)
   const row = {
     prefix,
     publisherId: c.var.publisher.id,
@@ -48,6 +51,7 @@ namespaceRoutes.post("/", async (c) => {
       target: schema.namespace.prefix,
       set: { publisherId: row.publisherId, proofValue: row.proofValue },
     })
+  recordHistory("publisher", c.var.publisher.id, `Claimed ${prefix}`, c.var.viewer.name)
   return c.json(namespaceView(row), 201)
 })
 
@@ -75,6 +79,12 @@ namespaceRoutes.post("/:prefix/verify", async (c) => {
     .update(schema.namespace)
     .set({ proof: method, verifiedAt: now, checkedAt: now })
     .where(eq(schema.namespace.prefix, row.prefix))
+  recordHistory(
+    "publisher",
+    c.var.publisher.id,
+    `Proved ${row.prefix} with ${NAMESPACE_PROOF[method]}`,
+    c.var.viewer.name,
+  )
   return c.json(namespaceView(verified))
 })
 
@@ -93,6 +103,7 @@ namespaceRoutes.delete("/:prefix", async (c) => {
   await db
     .delete(schema.namespace)
     .where(and(eq(schema.namespace.prefix, prefix), eq(schema.namespace.publisherId, c.var.publisher.id)))
+  recordHistory("publisher", c.var.publisher.id, `Gave up ${prefix}`, c.var.viewer.name)
   return c.body(null, 204)
 })
 

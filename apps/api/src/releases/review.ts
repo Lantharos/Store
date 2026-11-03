@@ -3,7 +3,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
-import { tellOps } from "../ops/events.ts"
+import { recordHistory, tellOps } from "../ops/events.ts"
 import { resignApp } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 import { notifyPublisher } from "./notify.ts"
@@ -36,6 +36,11 @@ export async function sendToReview(releaseId: string) {
     db.insert(schema.review).values({ id: randomId(), releaseId: release.id, kind }),
   ])
   tellOps({ type: "release", release: release.id, kind })
+  recordHistory(
+    "release",
+    release.id,
+    kind === "submission" ? "Sent for review as a new app" : "Sent for review",
+  )
 }
 
 async function recordDecision(releaseId: string, decision: Decision, by: string, reason: string | null) {

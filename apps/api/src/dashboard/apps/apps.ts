@@ -13,6 +13,7 @@ import { db, schema } from "../../db/client.ts"
 import { repository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
+import { recordHistory } from "../../ops/events.ts"
 import { active, allow, appAccess, type PublisherVars } from "../../publishers/access.ts"
 import { installsSince, mediaUrl } from "../../signing/records.ts"
 import { githubAccount } from "../access.ts"
@@ -111,6 +112,7 @@ publisherAppRoutes.post("/", async (c) => {
       createdAt: now,
     }),
   ])
+  recordHistory("app", input.id, `Added, published from ${repo.full_name}`, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, input.id)).app), 201)
 })
 

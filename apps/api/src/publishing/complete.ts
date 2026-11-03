@@ -5,7 +5,8 @@ import { db, schema } from "../db/client.ts"
 import { GitHubError, repository } from "../github/api.ts"
 import { type Attestation, findAttestation } from "../github/attestations.ts"
 import { fail } from "../lib/http.ts"
-import { dispatchChecks } from "../releases/checks.ts"
+import { recordHistory } from "../ops/events.ts"
+import { dispatchChecks, failedChecks } from "../releases/checks.ts"
 import { sendToReview } from "../releases/review.ts"
 import type { ArtifactRow, ReleaseRow } from "../signing/records.ts"
 import { searchKeys, storeKey } from "../storefront/search-index.ts"
@@ -150,6 +151,7 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
   )
   const failedCheck = checks.some((check) => check.status === "failed")
   const status = failedCheck ? "failed" : "checking"
+  if (failedCheck) recordHistory("release", release.id, failedChecks(checks))
   await db
     .update(schema.release)
     .set({ status, permissionsWidened: widened })

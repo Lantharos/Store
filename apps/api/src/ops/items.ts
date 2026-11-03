@@ -1,9 +1,15 @@
 import type { Pult } from "@lantharos/pult"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { releases } from "./data/records.ts"
+import { releases } from "./data/releases.ts"
+import { app } from "./define/app.ts"
 import { reports, submissions, updates } from "./define/inboxes.ts"
+import { publisher } from "./define/publisher.ts"
+import { release as releaseResource } from "./define/release.ts"
 import { verification } from "./define/verification.ts"
+import type { HistoryEvent } from "./events.ts"
+
+const RESOURCES = { app, release: releaseResource, publisher }
 
 const FLAGGING_CHECKS: Partial<Record<string, string>> = {
   malware: "malware",
@@ -45,6 +51,7 @@ export async function sendReport(pult: Pult, reportId: string) {
   }
   const sent = await pult.send(reports, {
     record: report.appId,
+    tags: [report.kind],
     data: { app: report.appId, kind: report.kind, email: report.reporterEmail, ...details },
   })
   await db.update(schema.report).set({ pultItem: sent.id }).where(eq(schema.report.id, report.id))
@@ -84,4 +91,8 @@ export async function sendVerification(
       .set({ pultItem: sent.id })
       .where(eq(schema.publisherVerification.id, row.id))
   if (message) await pult.receive({ thread: sent.id, from: message.from, text: message.text })
+}
+
+export function logHistory(pult: Pult, event: HistoryEvent) {
+  return pult.log(RESOURCES[event.resource], event.id, event.text, { by: event.by })
 }

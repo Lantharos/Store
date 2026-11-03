@@ -2,7 +2,7 @@ import { nextRolloutStep, type RolloutRequest, rolloutDue } from "@schelf/protoc
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
-import { rolloutsAreFrozen } from "../ops/events.ts"
+import { recordHistory, rolloutsAreFrozen } from "../ops/events.ts"
 import { resign, resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
 import { notifyPublisher } from "./notify.ts"
@@ -64,6 +64,11 @@ export async function stepRollouts(now = new Date()) {
     const percent = nextRolloutStep(release.rolloutPercent)
     await db.update(schema.release).set(percentUpdate(percent, now)).where(eq(schema.release.id, release.id))
     if (percent === 100) notifyPublisher(release.id, "live")
+    recordHistory(
+      "release",
+      release.id,
+      percent === 100 ? "Rolled out to everyone" : `Rolled out to ${percent}%`,
+    )
   }
   const apps = [...new Set(due.map((release) => release.appId))]
   if (apps.length) await resign(...apps.map((id) => ({ type: "app" as const, id })), { type: "catalog" })

@@ -3,6 +3,9 @@ import { DEFAULT_LOCALE } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 import { fileUrl, mediaUrl } from "../../signing/records.ts"
+import { link } from "../data/links.ts"
+
+const MISSING = "Missing"
 
 export async function listingBlocks(appId: string) {
   const [listing, meta, screenshots] = await Promise.all([
@@ -19,14 +22,15 @@ export async function listingBlocks(appId: string) {
   const icon = mediaUrl(meta?.iconKey)
   return [
     b.fields({
-      name: listing?.name ?? "missing",
-      summary: listing?.summary ?? "missing",
-      categories: meta?.categories.join(", ") || "missing",
-      homepage: meta?.homepage ?? undefined,
-      support: meta?.support ?? undefined,
+      "listed as": listing?.name ?? MISSING,
+      summary: listing?.summary ?? MISSING,
+      categories: meta?.categories.join(", ") || MISSING,
+      homepage: link(meta?.homepage),
+      support: link(meta?.support),
+      screenshots: screenshots.length,
     }),
     ...(listing?.description ? [b.markdown(listing.description)] : []),
-    ...(icon ? [b.attachment({ name: "icon", url: icon })] : []),
+    ...(icon ? [b.attachment({ name: "Icon", url: icon })] : []),
     ...screenshots.map((shot) =>
       b.attachment({ name: shot.caption ?? `Screenshot ${shot.position + 1}`, url: fileUrl(shot.key) }),
     ),

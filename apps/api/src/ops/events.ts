@@ -6,9 +6,19 @@ export type OpsEvent =
   | { type: "release"; release: string; kind: "submission" | "update" }
   | { type: "report"; report: string }
   | { type: "verification"; verification: string; message?: { from: string; text: string } }
+  | HistoryEvent
+
+export interface HistoryEvent {
+  type: "history"
+  resource: "app" | "release" | "publisher"
+  id: string
+  text: string
+  by?: string
+}
 
 async function deliver(pult: NonNullable<ReturnType<typeof backOffice>>["pult"], event: OpsEvent) {
-  const { sendRelease, sendReport, sendVerification } = await import("./items.ts")
+  const { logHistory, sendRelease, sendReport, sendVerification } = await import("./items.ts")
+  if (event.type === "history") return logHistory(pult, event)
   if (event.type === "release") return sendRelease(pult, event.release, event.kind)
   if (event.type === "report") return sendReport(pult, event.report)
   return sendVerification(pult, event.verification, event.message)
@@ -17,10 +27,15 @@ async function deliver(pult: NonNullable<ReturnType<typeof backOffice>>["pult"],
 export function tellOps(event: OpsEvent) {
   const office = backOffice()
   if (!office) {
-    console.log(`Pult isn't connected, so this waits in the store: ${JSON.stringify(event)}`)
+    if (event.type !== "history")
+      console.log(`Pult isn't connected, so this waits in the store: ${JSON.stringify(event)}`)
     return
   }
   waitUntil(deliver(office.pult, event).catch((error) => console.error(error)))
+}
+
+export function recordHistory(resource: HistoryEvent["resource"], id: string, text: string, by?: string) {
+  tellOps({ type: "history", resource, id, text, by })
 }
 
 export async function acceptingSubmissions() {

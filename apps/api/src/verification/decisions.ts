@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
-import { tellOps } from "../ops/events.ts"
+import { recordHistory, tellOps } from "../ops/events.ts"
 import type { PublisherRow } from "../publishers/access.ts"
 import { resignPublisher } from "../signing/queue.ts"
 import { checkDomains, gatherFacts, type VerificationRow } from "./facts.ts"
@@ -55,6 +55,7 @@ export async function submit(publisher: PublisherRow, verification: Verification
     recordEvent(verification.id, "checked", { checks: checksOf({ ...verification, ...update }) }),
   ])
   tellOps({ type: "verification", verification: verification.id })
+  recordHistory("publisher", publisher.id, `Asked to be verified as ${verification.legalName}`)
   return { ...verification, ...update }
 }
 

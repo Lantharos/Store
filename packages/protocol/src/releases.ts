@@ -45,6 +45,22 @@ export const CHECK_NAMES = [...QUICK_CHECKS, ...DEEP_CHECKS] as const
 export const checkName = z.enum(CHECK_NAMES)
 export type CheckName = z.infer<typeof checkName>
 
+export const CHECK_TITLES: Record<CheckName, string> = {
+  namespace: "Namespace",
+  version: "Version",
+  platforms: "Systems",
+  files: "Files",
+  attestation: "Build provenance",
+  listing: "Listing",
+  permissions: "Permissions",
+  impersonation: "Name and icon",
+  extension: "Extension manifest",
+  malware: "Malware scan",
+  inspection: "What the app can do",
+  diff: "Source changes",
+  licence: "Licence",
+}
+
 export const checkResult = z.object({
   name: checkName,
   status: checkStatus,

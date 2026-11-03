@@ -12,6 +12,7 @@ import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { readBody } from "../../lib/http.ts"
 import { iso } from "../../lib/time.ts"
+import { recordHistory } from "../../ops/events.ts"
 import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
 import type { ArtifactRow, ReleaseRow } from "../../signing/records.ts"
@@ -144,7 +145,8 @@ releaseRoutes.get("/:id/releases/:release", async (c) => {
 
 releaseRoutes.post("/:id/releases/:release/rollout", async (c) => {
   const { release } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"), "releases")
-  await controlRollout(release, await readBody(c, rolloutRequest))
+  const done = await controlRollout(release, await readBody(c, rolloutRequest))
+  recordHistory("release", release.id, done, c.var.viewer.name)
   const updated = (await db.query.release.findFirst({ where: eq(schema.release.id, release.id) }))!
   return c.json(await detail(updated))
 })

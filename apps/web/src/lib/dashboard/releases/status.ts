@@ -1,4 +1,4 @@
-import type { CheckName, ReleaseStatus } from "@schelf/protocol"
+import type { ReleaseStatus } from "@schelf/protocol"
 
 export type Tone = "done" | "active" | "attention" | "quiet"
 
@@ -20,20 +20,4 @@ export const TONE_DOT: Record<Tone, string> = {
   active: "bg-caution",
   attention: "bg-danger",
   quiet: "bg-ink-muted/50",
-}
-
-export const CHECK_TITLES: Record<CheckName, string> = {
-  namespace: "Namespace",
-  version: "Version",
-  platforms: "Systems",
-  files: "Files",
-  attestation: "Build provenance",
-  listing: "Listing",
-  permissions: "Permissions",
-  impersonation: "Name and icon",
-  extension: "Extension manifest",
-  malware: "Malware scan",
-  inspection: "What the app can do",
-  diff: "Source changes",
-  licence: "Licence",
 }

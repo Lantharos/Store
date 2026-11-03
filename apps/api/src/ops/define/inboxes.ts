@@ -1,9 +1,14 @@
 import { b, choice, inbox, noul, run, score, tag, triage } from "@lantharos/pult"
+import { REPORT_KINDS } from "@schelf/protocol"
+import { eq } from "drizzle-orm"
 import { z } from "zod"
-import { releases } from "../data/records.ts"
+import { db, schema } from "../../db/client.ts"
+import { REPORT_KIND } from "../data/labels.ts"
+import { releases } from "../data/releases.ts"
+import { emailHint } from "../render/publisher.ts"
+import { releaseBlocks } from "../render/release.ts"
 import { app } from "./app.ts"
-import { publisher } from "./publisher.ts"
-import { release, releaseBlocks } from "./release.ts"
+import { release } from "./release.ts"
 
 const REVIEW_STATES = ["open", "changes requested", "approved", "rejected"]
 
@@ -55,6 +60,7 @@ const firstLookRules = [
     then: run(release.actions.requestChanges, { message: INCOMPLETE_MESSAGE }),
   },
 ]
+
 const releaseData = z.object({
   app: z.string(),
   name: z.string(),
@@ -71,7 +77,7 @@ export const submissions = inbox("submissions", {
   icon: "inbox",
   resource: release,
   states: REVIEW_STATES,
-  closed: ["approved", "rejected"],
+  closed: ["changes requested", "approved", "rejected"],
   sla: { open: "2d" },
   data: releaseData,
   title: (data) => `${data.name} ${data.version} from ${data.publisher}`,
@@ -83,7 +89,7 @@ export const updates = inbox("updates", {
   icon: "refresh",
   resource: release,
   states: REVIEW_STATES,
-  closed: ["approved", "rejected"],
+  closed: ["changes requested", "approved", "rejected"],
   sla: { open: "1d" },
   data: releaseData,
   title: (data) => `${data.name} ${data.version}`,
@@ -123,35 +129,28 @@ export const reports = inbox("reports", {
   sla: { open: "1d" },
   data: z.object({
     app: z.string(),
-    kind: z.string(),
+    kind: z.enum(REPORT_KINDS),
     reason: z.string(),
     explanation: z.string(),
     location: z.string().nullable(),
     name: z.string().nullable(),
     email: z.string().nullable(),
   }),
-  title: (data) => `${data.kind.toUpperCase()} report on ${data.app}: ${data.reason}`,
+  title: (data) => `${data.reason} (${data.app})`,
+  onState: async ({ item, to }) => {
+    await db
+      .update(schema.report)
+      .set({ status: to as "open" | "actioned" | "dismissed" })
+      .where(eq(schema.report.pultItem, item.id))
+  },
   render: (item) => [
     b.fields({
       app: b.ref("app", item.data.app, item.data.app),
-      kind: item.data.kind,
+      about: REPORT_KIND[item.data.kind],
       where: item.data.location ?? undefined,
       from: item.data.name ?? undefined,
-      email: item.data.email ? b.sensitive(item.data.email) : undefined,
+      email: item.data.email ? b.sensitive(item.data.email, { hint: emailHint(item.data.email) }) : undefined,
     }),
     b.markdown(item.data.explanation),
-  ],
-})
-
-export const claims = inbox("claims", {
-  icon: "scale",
-  resource: publisher,
-  states: ["open", "granted", "declined"],
-  closed: ["granted", "declined"],
-  data: z.object({ claimant: z.string(), subject: z.string(), evidence: z.string() }),
-  title: (data) => `${data.claimant} claims ${data.subject}`,
-  render: (item) => [
-    b.fields({ claimant: item.data.claimant, subject: item.data.subject }),
-    b.markdown(item.data.evidence),
   ],
 })

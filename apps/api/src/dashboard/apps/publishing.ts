@@ -14,6 +14,7 @@ import { repository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
 import { DAY_MS } from "../../lib/time.ts"
+import { recordHistory } from "../../ops/events.ts"
 import { appAccess } from "../../publishers/access.ts"
 import { githubAccount } from "../access.ts"
 
@@ -39,6 +40,7 @@ publishingRoutes.post("/:id/trusted-publishers", async (c) => {
     createdAt: new Date(),
   }
   await db.insert(schema.trustedPublisher).values(row)
+  recordHistory("app", app.id, `Trusted ${row.repository}, ${row.workflow} to publish`, c.var.viewer.name)
   return c.json(
     {
       id: row.id,
@@ -55,7 +57,7 @@ publishingRoutes.post("/:id/trusted-publishers", async (c) => {
 
 publishingRoutes.delete("/:id/trusted-publishers/:publisher", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
-  await db
+  const [removed] = await db
     .delete(schema.trustedPublisher)
     .where(
       and(
@@ -63,6 +65,8 @@ publishingRoutes.delete("/:id/trusted-publishers/:publisher", async (c) => {
         eq(schema.trustedPublisher.appId, app.id),
       ),
     )
+    .returning({ repository: schema.trustedPublisher.repository })
+  if (removed) recordHistory("app", app.id, `Stopped trusting ${removed.repository}`, c.var.viewer.name)
   return c.body(null, 204)
 })
 
@@ -81,6 +85,7 @@ publishingRoutes.post("/:id/tokens", async (c) => {
     createdAt: now,
   }
   await db.insert(schema.token).values(row)
+  recordHistory("app", app.id, `Made the upload token ${name}`, c.var.viewer.name)
   return c.json(
     {
       id: row.id,
@@ -96,7 +101,7 @@ publishingRoutes.post("/:id/tokens", async (c) => {
 
 publishingRoutes.delete("/:id/tokens/:token", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
-  await db
+  const [revoked] = await db
     .update(schema.token)
     .set({ revokedAt: new Date() })
     .where(
@@ -106,5 +111,7 @@ publishingRoutes.delete("/:id/tokens/:token", async (c) => {
         isNull(schema.token.revokedAt),
       ),
     )
+    .returning({ name: schema.token.name })
+  if (revoked) recordHistory("app", app.id, `Revoked the upload token ${revoked.name}`, c.var.viewer.name)
   return c.body(null, 204)
 })
