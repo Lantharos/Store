@@ -48,8 +48,10 @@ export async function dispatchChecks(
     app: app.id,
     version: release.version,
     repository: app.distribution === "open" ? app.repository : null,
-    source: app.distribution === "open" ? "open" : "closed",
-    strict: release.origin === "manual",
+    scrutiny: {
+      source: app.distribution === "open" ? "open" : "closed",
+      strict: release.origin === "manual",
+    },
     tag: release.tag,
     previous_tag: previous?.tag ?? null,
     permissions: release.permissions,

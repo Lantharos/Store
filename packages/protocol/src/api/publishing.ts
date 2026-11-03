@@ -97,8 +97,7 @@ export interface ChecksDispatch {
   app: string
   version: string
   repository: string | null
-  source: "open" | "closed"
-  strict: boolean
+  scrutiny: { source: "open" | "closed"; strict: boolean }
   tag: string | null
   previous_tag: string | null
   permissions: Permissions | null

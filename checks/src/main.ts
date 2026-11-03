@@ -15,7 +15,7 @@ const payload = JSON.parse(process.env.PAYLOAD!) as ChecksDispatch
 const work = join(process.env.RUNNER_TEMP ?? "/tmp", "schelf-checks")
 const facts: Record<string, unknown> = {}
 
-const closedSource = payload.source === "closed"
+const closedSource = payload.scrutiny.source === "closed"
 
 async function attempt(name: CheckResult["name"], work: () => Promise<CheckResult>): Promise<CheckResult> {
   try {
@@ -24,7 +24,7 @@ async function attempt(name: CheckResult["name"], work: () => Promise<CheckResul
     console.error(`${name}:`, error)
     return {
       name,
-      status: payload.strict && name === "malware" ? "failed" : "warning",
+      status: payload.scrutiny.strict && name === "malware" ? "failed" : "warning",
       summary: `Couldn't finish: ${(error as Error).message.slice(0, 300)}`,
     }
   }
@@ -66,7 +66,7 @@ const checks = await Promise.all([
       inspections[file.name] = await inspectArtifact(file.unpacked, payload.permissions)
     facts.inspection = inspections
     const unopened = downloads.filter((file) => !opened.includes(file))
-    if (payload.strict && unopened.length)
+    if (payload.scrutiny.strict && unopened.length)
       return {
         name: "inspection",
         status: "warning",

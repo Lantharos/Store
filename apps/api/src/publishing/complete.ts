@@ -161,7 +161,13 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
     .set({ status, permissionsWidened: widened })
     .where(eq(schema.release.id, release.id))
   if (!failedCheck) {
-    const dispatched = await dispatchChecks({ ...release, status }, app, artifacts, previous ?? null)
+    const dispatched = await dispatchChecks({ ...release, status }, app, artifacts, previous ?? null).catch(
+      (error: unknown) => {
+        if (!(error instanceof GitHubError)) throw error
+        console.error(`Couldn't start the checks for ${app.id} ${release.version}: ${error.message}`)
+        return false
+      },
+    )
     if (!dispatched) await routeRelease(release.id)
   }
   const current = await db.query.release.findFirst({ where: eq(schema.release.id, release.id) })

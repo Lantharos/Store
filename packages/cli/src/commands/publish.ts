@@ -45,7 +45,7 @@ export async function publish(args: Args) {
   blank()
 
   const token = await credential(args)
-  const commit = context.commit ?? (await git(root, "rev-parse", "HEAD"))
+  const commit = context.commit ?? (await git(root, "rev-parse", "HEAD").catch(() => undefined))
   const result = await step(
     `Uploading ${artifacts.length} file${artifacts.length === 1 ? "" : "s"}`,
     async () =>
