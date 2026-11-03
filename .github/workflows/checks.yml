@@ -35,6 +35,7 @@ jobs:
           restore-keys: clamav-
       - name: Update virus signatures
         run: |
+          sudo apparmor_parser --remove /etc/apparmor.d/usr.bin.freshclam
           mkdir -p "$CLAMAV_DATABASE"
           printf 'DatabaseDirectory %s\nDatabaseMirror database.clamav.net\n' "$CLAMAV_DATABASE" > "$RUNNER_TEMP/freshclam.conf"
           freshclam --quiet --config-file="$RUNNER_TEMP/freshclam.conf"
