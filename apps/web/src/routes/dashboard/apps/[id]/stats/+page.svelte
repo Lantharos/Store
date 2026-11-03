@@ -34,7 +34,7 @@
   <div class="mt-6 grid gap-4 sm:grid-cols-2"><div class="placeholder h-24"></div><div class="placeholder h-24"></div></div>
   <div class="placeholder mt-6 h-72"></div>
 {:else}
-  <dl class="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-4" class:opacity-60={stats.loading}>
+  <dl class="mt-8 grid grid-cols-2 gap-6 rounded-group bg-raised p-5 transition-opacity sm:grid-cols-4 sm:p-7" class:opacity-60={stats.loading}>
     <div><dt class="text-[13px] text-ink-muted">Installs</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(data.total.installs)}</dd></div>
     <div><dt class="text-[13px] text-ink-muted">Updates</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(data.total.updates)}</dd></div>
     <div><dt class="text-[13px] text-ink-muted">Busiest day</dt><dd class="mt-1 text-[28px] font-semibold tabular">{count(Math.max(0, ...data.days.map((day) => day.installs)))}</dd></div>
@@ -61,7 +61,7 @@
     </div>
   </section>
 
-  <div class="mt-6 flex items-center justify-between gap-3">
+  <div class="mt-10 flex items-center justify-between gap-3 px-1">
     <h2 class="font-semibold">Where they are</h2>
     <Segmented bind:value={measure} label="Measure" size="sm" options={[{ value: "installs", label: "Installs" }, { value: "updates", label: "Updates" }]} />
   </div>
@@ -75,5 +75,5 @@
       <BarList measure={measure === "installs" ? "Installs" : "Updates"} rows={data.platforms.map((row) => ({ label: PLATFORM_NAMES[row.platform], value: row[measure] })).sort((a, b) => b.value - a.value)} />
     </section>
   </div>
-  <p class="mt-6 text-[13px] text-ink-muted">Counted from downloads, a day at a time. Schelf keeps nothing about who installed it.</p>
+  <p class="mt-4 px-1 text-[13px] text-ink-muted">Counted from downloads, a day at a time. Schelf keeps nothing about who installed it.</p>
 {/if}

@@ -48,22 +48,35 @@ verificationRoutes.get("/", async (c) => c.json(await state(c)))
 
 verificationRoutes.post("/", async (c) => {
   const publisher = c.var.publisher
-  if (!startsOver((await latestVerification(publisher.id))?.status)) fail(409, "There's already a request")
+  const previous = await latestVerification(publisher.id)
+  if (!startsOver(previous?.status)) fail(409, "There's already a request")
   const namespaces = await db
     .select({ prefix: schema.namespace.prefix })
     .from(schema.namespace)
     .where(and(eq(schema.namespace.publisherId, publisher.id), isNotNull(schema.namespace.verifiedAt)))
+  const namespaceProofs = namespaceDomains(namespaces.map((row) => row.prefix)).map(
+    (name): VerificationDomain => ({ name, proof: "namespace", checked_at: null }),
+  )
   await db.insert(schema.publisherVerification).values({
     id: randomId(),
     publisherId: publisher.id,
-    legalName: publisher.kind === "organisation" ? publisher.name : "",
-    website: publisher.website,
-    domains: namespaceDomains(namespaces.map((row) => row.prefix)).map((name) => ({
-      name,
-      proof: "namespace",
-      checked_at: null,
-    })),
-    proofToken: randomId(24),
+    proofToken: previous?.proofToken ?? randomId(24),
+    ...(previous
+      ? {
+          legalName: previous.legalName,
+          website: previous.website,
+          domains: previous.domains,
+          contactEmail: previous.contactEmail,
+          contactConfirmedAt: previous.contactConfirmedAt,
+          githubOrg: previous.githubOrg,
+          githubOrgProvenAt: previous.githubOrgProvenAt,
+          note: previous.note,
+        }
+      : {
+          legalName: publisher.kind === "organisation" ? publisher.name : "",
+          website: publisher.website,
+          domains: namespaceProofs,
+        }),
   })
   return c.json(await state(c), 201)
 })

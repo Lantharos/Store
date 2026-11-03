@@ -1,4 +1,9 @@
-import { VERIFICATION_STATUSES, type VerificationDomain } from "@schelf/protocol"
+import {
+  VERIFICATION_EVENTS,
+  VERIFICATION_STATUSES,
+  type VerificationCheck,
+  type VerificationDomain,
+} from "@schelf/protocol"
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import { createdAt, updatedAt } from "./columns.ts"
 import { publisher } from "./publishers.ts"
@@ -65,4 +70,20 @@ export const verificationDocument = sqliteTable(
     createdAt: createdAt(),
   },
   (table) => [index("verification_document_verification").on(table.verificationId)],
+)
+
+export const verificationEvent = sqliteTable(
+  "verification_event",
+  {
+    id: text("id").primaryKey(),
+    verificationId: text("verification_id")
+      .notNull()
+      .references(() => publisherVerification.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: VERIFICATION_EVENTS }).notNull(),
+    by: text("by"),
+    text: text("text"),
+    checks: text("checks", { mode: "json" }).$type<VerificationCheck[]>(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("verification_event_verification").on(table.verificationId, table.createdAt)],
 )

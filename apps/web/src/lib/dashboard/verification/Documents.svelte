@@ -23,23 +23,25 @@
   }
 </script>
 
-{#if verification.documents.length}
-  <ul class="mb-3 divide-y divide-hairline">
-    {#each verification.documents as document (document.id)}
-      <li class="flex items-center gap-3 py-2.5">
-        <FileText class="size-[18px] shrink-0 text-ink-muted" />
-        <span class="min-w-0 flex-1 truncate">{document.name}</span>
-        <span class="text-[13px] text-ink-muted tabular">{bytes(document.size)}</span>
-        {#if editable}
-          <button type="button" class="button size-8 p-0 text-ink-muted hover:bg-well hover:text-ink" aria-label="Remove {document.name}" onclick={() => flow.detach(document.id)}><X class="size-4" /></button>
-        {/if}
-      </li>
-    {/each}
-  </ul>
-{/if}
-{#if editable && verification.documents.length < MAX_DOCUMENTS}
-  <button type="button" class="button button-sm button-quiet" disabled={flow.busy !== null} onclick={() => picker?.click()}>
-    {#if flow.busy === "attach"}<LoaderCircle class="size-3.5 animate-spin" />Attaching{:else}Attach a document{/if}
-  </button>
-  <input bind:this={picker} type="file" accept="application/pdf,image/png,image/jpeg" multiple hidden onchange={(event) => attach(event.currentTarget.files)} />
-{/if}
+<div>
+  {#if verification.documents.length}
+    <ul class="mb-3 divide-y divide-hairline">
+      {#each verification.documents as document (document.id)}
+        <li class="flex items-center gap-3 py-2.5">
+          <FileText class="size-[18px] shrink-0 text-ink-muted" />
+          <span class="min-w-0 flex-1 truncate">{document.name}</span>
+          <span class="text-[13px] text-ink-muted tabular">{bytes(document.size)}</span>
+          {#if editable}
+            <button type="button" class="button size-8 p-0 text-ink-muted hover:bg-well hover:text-ink" aria-label="Remove {document.name}" onclick={() => flow.detach(document.id)}><X class="size-4" /></button>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+  {/if}
+  {#if editable && verification.documents.length < MAX_DOCUMENTS}
+    <button type="button" class="button button-sm button-quiet" disabled={flow.busy !== null} onclick={() => picker?.click()}>
+      {#if flow.busy === "attach"}<LoaderCircle class="size-3.5 animate-spin" />Attaching{:else}Attach a document{/if}
+    </button>
+    <input bind:this={picker} type="file" accept="application/pdf,image/png,image/jpeg" multiple hidden onchange={(event) => attach(event.currentTarget.files)} />
+  {/if}
+</div>

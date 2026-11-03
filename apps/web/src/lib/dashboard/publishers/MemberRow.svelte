@@ -37,7 +37,7 @@
   ])
 </script>
 
-<li class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4">
+<div class="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5">
   <Avatar src={member.image} name={member.name} />
   <div class="min-w-0 flex-1">
     <p class="truncate font-medium">{member.name}{#if you}<span class="font-normal text-ink-muted">{" (you)"}</span>{/if}</p>
@@ -58,4 +58,4 @@
     <span class="size-9"></span>
   {/if}
   </div>
-</li>
+</div>

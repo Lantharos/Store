@@ -35,14 +35,14 @@
 {/each}
 
 {#if session.apps.length}
-  <ul class="mt-8 divide-y divide-hairline">
-    <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_8rem] gap-4 px-3 pb-2 text-[13px] text-ink-muted md:grid" aria-hidden="true">
+  <ul class="mt-8 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
+    <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_8rem] gap-4 px-5 pt-4 pb-2.5 text-[13px] text-ink-muted md:grid" aria-hidden="true">
       <span>App</span><span>Version</span><span>Latest release</span><span class="text-right">Installs this week</span>
     </li>
     {#each session.apps as app, index (app.id)}
       {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}
       <li class="enter" style:--order={index}>
-        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl px-3 py-4 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_8rem]">
+        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_8rem]">
           <span class="flex min-w-0 items-center gap-4">
             <AppIcon src={app.icon} name={app.name} class="size-11" />
             <span class="min-w-0">
@@ -64,7 +64,7 @@
     {/each}
   </ul>
 {:else}
-  <section class="enter mt-10 grid gap-8 rounded-tile bg-well p-7 sm:p-10 lg:grid-cols-[1fr_1fr]">
+  <section class="enter mt-8 grid gap-8 rounded-group bg-raised p-7 sm:p-10 lg:grid-cols-[1fr_1fr]">
     <div>
       <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put your first app on Schelf</h2>
       <p class="mt-2 leading-relaxed text-ink-soft">Connect a GitHub repository once. After that, every GitHub release you publish is built in your own workflow, checked, and sent to review.</p>
@@ -73,7 +73,7 @@
     <ol class="space-y-4 text-[15px]">
       {#each ["Claim your app id", "Connect your repository", "Commit two files", "Publish a GitHub release"] as step, index (step)}
         <li class="flex items-center gap-3">
-          <span class="grid size-7 place-items-center rounded-full bg-raised text-[13px] font-semibold tabular">{index + 1}</span>
+          <span class="grid size-7 place-items-center rounded-full bg-well text-[13px] font-semibold tabular">{index + 1}</span>
           {step}
         </li>
       {/each}

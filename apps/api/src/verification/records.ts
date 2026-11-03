@@ -5,6 +5,7 @@ import { fail } from "../lib/http.ts"
 import { iso } from "../lib/time.ts"
 import type { PublisherRow } from "../publishers/access.ts"
 import type { VerificationRow } from "./facts.ts"
+import { historyOf } from "./history.ts"
 
 export async function latestVerification(publisherId: string) {
   const row = await db.query.publisherVerification.findFirst({
@@ -21,12 +22,8 @@ export async function currentVerification(publisherId: string) {
 }
 
 export async function verificationView(row: VerificationRow): Promise<Verification> {
-  const [messages, documents] = await Promise.all([
-    db
-      .select()
-      .from(schema.verificationMessage)
-      .where(eq(schema.verificationMessage.verificationId, row.id))
-      .orderBy(asc(schema.verificationMessage.createdAt)),
+  const [history, documents] = await Promise.all([
+    historyOf(row.id),
     db
       .select()
       .from(schema.verificationDocument)
@@ -46,12 +43,7 @@ export async function verificationView(row: VerificationRow): Promise<Verificati
     github_org_proven: row.githubOrgProvenAt !== null,
     note: row.note,
     documents: documents.map((document) => ({ id: document.id, name: document.name, size: document.size })),
-    messages: messages.map((message) => ({
-      from: message.author,
-      name: message.name,
-      text: message.text,
-      at: message.createdAt.toISOString(),
-    })),
+    history,
     reason: row.reason,
     submitted_at: iso(row.submittedAt),
     decided_at: iso(row.decidedAt),

@@ -34,10 +34,10 @@ Alongside what you send, the reviewer sees:
 
 ## After you send it
 
-Requests are usually answered within three days, by email and in the dashboard. The reviewer can:
+Requests are usually answered within three days, by email and in the dashboard, which shows what you sent and the request's history: what was checked, every question and answer, and the decision. The reviewer can:
 
 - **approve** it, and the checkmark appears within a minute;
 - **ask for more**, with a message. Answer in the dashboard; you can change your details before you do, and your answer sends the request back for review;
-- **decline** it, with the reason. You can ask again once you've sorted it out.
+- **decline** it, with the reason. You can ask again once you've sorted it out; your new request starts from what you sent last time.
 
 Verification can be removed later, for example if a domain changes hands, and you're told why. If your name, domains or the people behind your organisation change, write to [legal@schelf.store](mailto:legal@schelf.store).

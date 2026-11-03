@@ -7,9 +7,10 @@ import { tellOps } from "../ops/events.ts"
 import type { PublisherRow } from "../publishers/access.ts"
 import { resignPublisher } from "../signing/queue.ts"
 import { checkDomains, gatherFacts, type VerificationRow } from "./facts.ts"
+import { checksOf, recordEvent } from "./history.ts"
 import { notifyVerification } from "./mail.ts"
 import { currentVerification } from "./records.ts"
-import { moved, type VerificationMove } from "./states.ts"
+import { moved } from "./states.ts"
 
 type Author = { from: "publisher" | "store"; name: string }
 
@@ -45,10 +46,14 @@ export async function submit(publisher: PublisherRow, verification: Verification
   ready(verification)
   const status = moved(verification.status, "submit")
   const update = { ...(await refreshed(publisher, verification)), status, submittedAt: new Date() }
-  await db
-    .update(schema.publisherVerification)
-    .set(update)
-    .where(eq(schema.publisherVerification.id, verification.id))
+  await db.batch([
+    db
+      .update(schema.publisherVerification)
+      .set(update)
+      .where(eq(schema.publisherVerification.id, verification.id)),
+    recordEvent(verification.id, "submitted"),
+    recordEvent(verification.id, "checked", { checks: checksOf({ ...verification, ...update }) }),
+  ])
   tellOps({ type: "verification", verification: verification.id })
   return { ...verification, ...update }
 }
@@ -67,19 +72,26 @@ export async function reply(
       .set(update)
       .where(eq(schema.publisherVerification.id, verification.id)),
     message(verification.id, author, text),
+    recordEvent(verification.id, "replied", { by: author.name, text }),
+    recordEvent(verification.id, "checked", { checks: checksOf({ ...verification, ...update }) }),
   ])
   tellOps({ type: "verification", verification: verification.id, message: { from: author.email, text } })
   return { ...verification, ...update }
 }
 
-async function decide(publisherId: string, move: VerificationMove, by: string, reason: string | null) {
+const DECISIONS = { approve: "approved", reject: "rejected", revoke: "revoked" } as const
+
+async function decide(publisherId: string, move: keyof typeof DECISIONS, by: string, reason: string | null) {
   const verification = await currentVerification(publisherId)
   const status = moved(verification.status, move)
   const now = new Date()
-  await db
-    .update(schema.publisherVerification)
-    .set({ status, decidedBy: by, decidedAt: now, reason })
-    .where(eq(schema.publisherVerification.id, verification.id))
+  await db.batch([
+    db
+      .update(schema.publisherVerification)
+      .set({ status, decidedBy: by, decidedAt: now, reason })
+      .where(eq(schema.publisherVerification.id, verification.id)),
+    recordEvent(verification.id, DECISIONS[move], { by, text: reason }),
+  ])
   return { verification, now }
 }
 
@@ -118,6 +130,7 @@ export async function askForMore(publisherId: string, by: string, text: string) 
       .set({ status })
       .where(eq(schema.publisherVerification.id, verification.id)),
     message(verification.id, { from: "store", name: by }, text),
+    recordEvent(verification.id, "more-requested", { by, text }),
   ])
   notifyVerification(publisherId, "more-requested", text)
   return `Asked ${publisher.name} for more`
@@ -128,17 +141,24 @@ export async function storeMessage(verificationId: string, by: string, text: str
     where: eq(schema.publisherVerification.id, verificationId),
   })
   if (!verification) return
-  await message(verification.id, { from: "store", name: by }, text)
+  await db.batch([
+    message(verification.id, { from: "store", name: by }, text),
+    recordEvent(verification.id, "message", { by, text }),
+  ])
   notifyVerification(verification.publisherId, "message", text)
 }
 
 export async function recheck(publisherId: string) {
   const publisher = await publisherOf(publisherId)
   const verification = await currentVerification(publisherId)
-  await db
-    .update(schema.publisherVerification)
-    .set(await refreshed(publisher, verification))
-    .where(eq(schema.publisherVerification.id, verification.id))
+  const update = await refreshed(publisher, verification)
+  await db.batch([
+    db
+      .update(schema.publisherVerification)
+      .set(update)
+      .where(eq(schema.publisherVerification.id, verification.id)),
+    recordEvent(verification.id, "checked", { checks: checksOf({ ...verification, ...update }) }),
+  ])
   tellOps({ type: "verification", verification: verification.id })
   return `Checked ${publisher.name} again`
 }

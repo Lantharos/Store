@@ -8,6 +8,7 @@
   import LogoField from "#lib/dashboard/publishers/LogoField.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
+  import Group from "#lib/ui/group/Group.svelte"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
   const publisher = $derived(session.publisher!)
@@ -61,10 +62,9 @@
   {/snippet}
 </PageHeader>
 
-<div class="mt-10 space-y-10">
-  <LogoField {publisher} {editable} />
-
-  <form class="space-y-6" onsubmit={save}>
+<form class="mt-8" onsubmit={save}>
+  <Group>
+    <LogoField {publisher} {editable} />
     <fieldset class="space-y-6" disabled={!editable}>
       <Field label="Name">
         <input bind:value={form.name} class="field" maxlength="80" required />
@@ -83,7 +83,6 @@
       </Field>
     </fieldset>
     {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
-    {#if editable}<button class="button button-primary" disabled={!changed || busy}>Save</button>{/if}
-  </form>
-
-</div>
+  </Group>
+  {#if editable}<button class="button button-primary mt-5" disabled={!changed || busy}>Save</button>{/if}
+</form>

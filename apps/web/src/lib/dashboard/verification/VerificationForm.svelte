@@ -3,6 +3,7 @@
   import { type SaveVerification, saveVerification, type Verification } from "@schelf/protocol"
   import { untrack } from "svelte"
   import Field from "../../ui/fields/Field.svelte"
+  import Group from "../../ui/group/Group.svelte"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { session } from "../api/session.svelte.ts"
   import ContactField from "./ContactField.svelte"
@@ -35,30 +36,28 @@
   }
 </script>
 
-<div class="space-y-9">
-  <Field label="Legal or trading name" hint="The name you trade under, as it appears in a company register or on invoices.">
-    <input bind:value={text.legal_name} class="field" maxlength="200" disabled={!editable} onchange={() => keep({ legal_name: text.legal_name })} />
-  </Field>
+<div class="space-y-10">
+  <Group title="About you">
+    <Field label="Legal or trading name" hint="The name you trade under, as it appears in a company register or on invoices.">
+      <input bind:value={text.legal_name} class="field" maxlength="200" disabled={!editable} onchange={() => keep({ legal_name: text.legal_name })} />
+    </Field>
+    <Field label="Website">
+      <input bind:value={text.website} class="field" type="url" placeholder="https://example.com" disabled={!editable} onchange={() => keep({ website: text.website.trim() || null })} />
+    </Field>
+    <Field label="Who you are" count={{ used: text.note.length, max: 2000 }} hint="A few sentences on who's behind the apps, and anything that helps us check it.">
+      <textarea bind:value={text.note} class="field h-36 resize-y py-3 leading-relaxed" maxlength="2000" disabled={!editable} onchange={() => keep({ note: text.note })}></textarea>
+    </Field>
+  </Group>
 
-  <Field label="Website">
-    <input bind:value={text.website} class="field" type="url" placeholder="https://example.com" disabled={!editable} onchange={() => keep({ website: text.website.trim() || null })} />
-  </Field>
-
-  <section class="space-y-2">
-    <h3 class="text-[15px] font-medium">Domains</h3>
-    <p class="text-[13px] leading-relaxed text-ink-muted">The domains you publish under. Domains of namespaces you've already proven count right away.</p>
+  <Group title="Domains" description="The domains you publish under. Domains of namespaces you've already proven count right away.">
     <DomainList {flow} {verification} {editable} />
-  </section>
+  </Group>
 
-  <section class="space-y-2">
-    <h3 class="text-[15px] font-medium">Contact email</h3>
-    <p class="text-[13px] leading-relaxed text-ink-muted">An address on one of your domains. We send it a code to confirm it reaches you.</p>
+  <Group title="Contact email" description="An address on one of your domains. We send it a code to confirm it reaches you.">
     <ContactField {flow} {verification} {editable} />
-  </section>
+  </Group>
 
-  <section class="space-y-2">
-    <h3 class="text-[15px] font-medium">GitHub organisation <span class="ml-1 text-[13px] font-normal text-ink-muted">Optional</span></h3>
-    <p class="text-[13px] leading-relaxed text-ink-muted">Proven when you're one of its owners on GitHub, through the GitHub account connected to yours.</p>
+  <Group title="GitHub organisation" description="Optional. Proven when you're one of its owners on GitHub, through the GitHub account connected to yours.">
     {#if verification.github_org_proven}
       <p class="flex items-center gap-3"><CircleCheck class="size-[18px] text-accent" />github.com/{verification.github_org}</p>
     {:else}
@@ -73,15 +72,9 @@
         {/if}
       </div>
     {/if}
-  </section>
+  </Group>
 
-  <Field label="Who you are" count={{ used: text.note.length, max: 2000 }} hint="A few sentences on who's behind the apps, and anything that helps us check it.">
-    <textarea bind:value={text.note} class="field h-36 resize-y py-3 leading-relaxed" maxlength="2000" disabled={!editable} onchange={() => keep({ note: text.note })}></textarea>
-  </Field>
-
-  <section class="space-y-2">
-    <h3 class="text-[15px] font-medium">Documents <span class="ml-1 text-[13px] font-normal text-ink-muted">Optional</span></h3>
-    <p class="text-[13px] leading-relaxed text-ink-muted">A company register extract or a trademark, as PDF, PNG or JPEG. Only the people reviewing your request see them.</p>
+  <Group title="Documents" description="Optional. A company register extract or a trademark, as PDF, PNG or JPEG. Only the people reviewing your request see them.">
     <Documents {flow} {verification} {editable} />
-  </section>
+  </Group>
 </div>

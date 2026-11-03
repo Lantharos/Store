@@ -48,16 +48,16 @@
 </script>
 
 <section>
-  <div class="flex flex-wrap items-end justify-between gap-4">
+  <div class="flex flex-wrap items-end justify-between gap-4 px-1">
     <div>
-      <h2 class="text-xl font-semibold">Trusted publishers</h2>
-      <p class="mt-1 max-w-xl text-[15px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
+      <h2 class="font-semibold">Trusted publishers</h2>
+      <p class="mt-0.5 max-w-xl text-[13px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
     </div>
     {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: SCHELF_WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>{/if}
   </div>
-  <ul class="mt-4 divide-y divide-hairline">
+  <ul class="mt-4 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
     {#each publishers as publisher (publisher.id)}
-      <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
+      <li class="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
         <GitBranch class="size-5 shrink-0 text-ink-muted" />
         <div class="min-w-0 flex-1">
           <a href="https://github.com/{publisher.repository}" target="_blank" rel="noreferrer" class="font-medium hover:underline">{publisher.repository}</a>
@@ -67,14 +67,14 @@
         {#if session.can("apps")}<button type="button" class="button button-sm button-danger" onclick={() => ((removing = publisher), (removeOpen = true))}>Remove</button>{/if}
       </li>
     {:else}
-      <li class="py-6 text-[15px] text-ink-muted">No workflow can publish this app yet. Add one, or run <span class="font-mono text-[13px]">bunx schelf init</span> in the repository.</li>
+      <li class="px-5 py-5 text-[15px] text-ink-muted">No workflow can publish this app yet. Add one, or run <span class="font-mono text-[13px]">bunx schelf init</span> in the repository.</li>
     {/each}
   </ul>
 </section>
 
 <Dialog bind:open={adding}>
   <form class="space-y-5 p-6 sm:p-7" onsubmit={add}>
-    <h2 class="text-xl font-semibold">Add a trusted publisher</h2>
+    <h2 class="font-semibold">Add a trusted publisher</h2>
     <Field label="Repository" hint="owner/name on GitHub">
       <input class="field" bind:value={form.repository} placeholder="alice/notes" required autocomplete="off" />
     </Field>

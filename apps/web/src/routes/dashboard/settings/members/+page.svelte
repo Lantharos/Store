@@ -13,6 +13,7 @@
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { ago } from "#lib/format.ts"
+  import Group from "#lib/ui/group/Group.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
   import { goto } from "$app/navigation"
@@ -74,19 +75,19 @@
 
 <PageHeader title="Members" text="Everyone who works on {publisher.name}'s apps, and what each of them can do." />
 
-{#if session.can("members")}
-  <section class="mt-8">
-    <InviteForm oninvited={() => members.refresh()} />
-  </section>
-{/if}
+<div class="mt-8 space-y-10">
+  {#if session.can("members")}
+    <Group title="Invite someone">
+      <InviteForm oninvited={() => members.refresh()} />
+    </Group>
+  {/if}
 
-<div class="mt-10">
   {#if members.error}
     <Failed error={members.error} retry={() => members.refresh()} />
   {:else if !members.data}
     <Loading />
   {:else}
-    <ul class="divide-y divide-hairline">
+    <Group title="Members" rows>
       {#each members.data.members as member (member.user_id)}
         <MemberRow
           {member}
@@ -95,13 +96,12 @@
           ontransfer={() => ((transferring = member), (transferOpen = true))}
         />
       {/each}
-    </ul>
+    </Group>
 
     {#if members.data.invites.length}
-      <h2 class="mt-12 text-xl font-semibold">Invited</h2>
-      <ul class="mt-2 divide-y divide-hairline">
+      <Group title="Invited" rows>
         {#each members.data.invites as invite (invite.id)}
-          <li class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5">
             {#if invite.avatar}
               <Avatar src={invite.avatar} name={invite.github ?? ""} />
             {:else}
@@ -114,9 +114,9 @@
             {#if session.can("members")}
               <div class="max-sm:w-full max-sm:pl-13"><button type="button" class="button button-sm button-quiet" onclick={() => revoke(invite.id)}>Cancel invitation</button></div>
             {/if}
-          </li>
+          </div>
         {/each}
-      </ul>
+      </Group>
     {/if}
   {/if}
 </div>

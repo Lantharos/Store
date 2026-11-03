@@ -1,12 +1,13 @@
 <script lang="ts">
   import Mail from "@lucide/svelte/icons/mail"
-  import MethodRow from "#lib/dashboard/account/MethodRow.svelte"
   import Passkeys from "#lib/dashboard/account/Passkeys.svelte"
   import PictureField from "#lib/dashboard/account/PictureField.svelte"
   import { auth } from "#lib/dashboard/api/auth.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import GitHubMark from "#lib/ui/GitHubMark.svelte"
+  import Group from "#lib/ui/group/Group.svelte"
+  import Row from "#lib/ui/group/Row.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
   import { goto } from "$app/navigation"
 
@@ -31,37 +32,31 @@
 
 <PageHeader title="Account" />
 
-<section class="mt-8">
-  <PictureField />
-</section>
+<div class="mt-8 space-y-10">
+  <Group>
+    <PictureField />
+  </Group>
 
-<section class="mt-12">
-  <h2 class="text-xl font-semibold">Signing in</h2>
-  <div class="mt-2 divide-y divide-hairline">
-    <MethodRow title="GitHub" text={account.github ? `Connected as ${account.github}, which proves io.github.${account.github}.` : "Connect it to prove io.github namespaces and show your GitHub picture."}>
-      {#snippet icon()}<GitHubMark class="size-5" />{/snippet}
-      {#snippet action()}
-        {#if !account.github}<button type="button" class="button button-sm button-quiet" onclick={linkGitHub}>Connect</button>{/if}
-      {/snippet}
-    </MethodRow>
+  <Group title="Signing in" rows>
+    <Row title="GitHub" description={account.github ? `Connected as ${account.github}, which proves io.github.${account.github}.` : "Connect it to prove io.github namespaces and show your GitHub picture."}>
+      {#snippet leading()}<GitHubMark class="size-5" />{/snippet}
+      {#if !account.github}<button type="button" class="button button-sm button-quiet" onclick={linkGitHub}>Connect</button>{/if}
+    </Row>
     <Passkeys />
-    <MethodRow title="Email codes" text="Always on, sent to {account.user.email}.">
-      {#snippet icon()}<Mail class="size-5" />{/snippet}
-    </MethodRow>
-  </div>
-</section>
+    <Row title="Email codes" description="Always on, sent to {account.user.email}.">
+      {#snippet leading()}<Mail class="size-5" />{/snippet}
+    </Row>
+  </Group>
 
-<section class="mt-12">
-  <h2 class="text-xl font-semibold">Sign out</h2>
-  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Signs you out in this browser. The schelf command stays signed in until you run schelf logout.</p>
-  <button type="button" class="button button-sm button-quiet mt-4" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>
-</section>
-
-<section class="mt-12">
-  <h2 class="text-xl font-semibold">Delete your account</h2>
-  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Your personal apps are delisted, and people who have them keep them. Organisations you own with others need another owner first. Your details are deleted within 30 days. This can't be undone.</p>
-  <button type="button" class="button button-sm button-danger mt-4" onclick={() => ((typed = ""), (deleting = true))}>Delete account</button>
-</section>
+  <Group rows>
+    <Row title="Sign out" description="Signs you out in this browser. The schelf command stays signed in until you run schelf logout.">
+      <button type="button" class="button button-sm button-quiet" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>
+    </Row>
+    <Row title="Delete your account" description="Your personal apps are delisted, and people who have them keep them. Organisations you own with others need another owner first. Your details are deleted within 30 days. This can't be undone.">
+      <button type="button" class="button button-sm button-danger" onclick={() => ((typed = ""), (deleting = true))}>Delete account</button>
+    </Row>
+  </Group>
+</div>
 
 <Confirm bind:open={deleting} title="Delete your account?" confirm="Delete account" danger ready={typed === account.user.email} onconfirm={remove}>
   <p>Type your email to confirm.</p>

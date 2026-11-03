@@ -10,6 +10,7 @@
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { date } from "#lib/format.ts"
+  import Group from "#lib/ui/group/Group.svelte"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
   const namespaces = $derived(resource<Namespace[]>(endpoints.namespaces(session.publisher!.id)))
@@ -54,25 +55,27 @@
 
 <PageHeader title="Namespaces" text="{session.publisher?.name} can publish app ids under any namespace it has proven. GitHub namespaces are proven when you sign in with GitHub; for a domain, add a DNS record or a file." />
 
-{#if session.can("apps")}
-<form class="mt-8 flex flex-col gap-2 sm:flex-row" onsubmit={claim}>
-  <input bind:value={prefix} class="field font-mono text-[15px]" placeholder="com.example" aria-label="Namespace" autocomplete="off" spellcheck="false" />
-  <button class="button button-primary shrink-0" disabled={busy || !prefix.trim()}>Claim</button>
-</form>
-{#if error}<p class="mt-2 text-[15px] text-danger" role="alert">{error}</p>{:else}<p class="mt-2 text-[13px] text-ink-muted">Your domain, reversed: example.com becomes com.example.</p>{/if}
-{/if}
+<div class="mt-8 space-y-10">
+  {#if session.can("apps")}
+    <Group title="Claim a namespace" description="Your domain, reversed: example.com becomes com.example.">
+      <form class="flex flex-col gap-2 sm:flex-row" onsubmit={claim}>
+        <input bind:value={prefix} class="field font-mono text-[15px]" placeholder="com.example" aria-label="Namespace" autocomplete="off" spellcheck="false" />
+        <button class="button button-primary shrink-0" disabled={busy || !prefix.trim()}>Claim</button>
+      </form>
+      {#if error}<p class="-mt-3 text-[15px] text-danger" role="alert">{error}</p>{/if}
+    </Group>
+  {/if}
 
-<div class="mt-10">
   {#if namespaces.error}
     <Failed error={namespaces.error} retry={() => namespaces.refresh()} />
   {:else if !namespaces.data}
     <Loading />
   {:else}
-    <ul class="divide-y divide-hairline">
+    <Group title="Your namespaces" rows>
       {#each namespaces.data as namespace (namespace.prefix)}
         {@const expanded = open === namespace.prefix || (!namespace.verified && open === null)}
-        <li class="py-4">
-          <button type="button" class="flex w-full items-center gap-4 text-left" aria-expanded={expanded} onclick={() => (open = expanded ? "" : namespace.prefix)}>
+        <div>
+          <button type="button" class="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-well/50" aria-expanded={expanded} onclick={() => (open = expanded ? "" : namespace.prefix)}>
             <span class="size-2 shrink-0 rounded-full {namespace.verified ? 'bg-accent' : 'bg-caution'}"></span>
             <span class="min-w-0 flex-1">
               <span class="block truncate font-mono text-[15px]">{namespace.prefix}.*</span>
@@ -83,7 +86,7 @@
             <ChevronDown class="size-4 text-ink-muted transition-transform {expanded ? 'rotate-180' : ''}" />
           </button>
           {#if expanded}
-            <div class="mt-4 pl-6">
+            <div class="px-5 pb-5 pl-11">
               {#if namespace.verified}
                 <p class="text-[15px] leading-relaxed text-ink-soft">Checked again every month{namespace.checked_at ? `, last on ${date(namespace.checked_at)}` : ""}. If the proof goes away, your apps stay listed but new releases wait until it's back.</p>
               {:else}
@@ -91,10 +94,10 @@
               {/if}
             </div>
           {/if}
-        </li>
+        </div>
       {:else}
-        <li class="py-6 text-[15px] text-ink-muted">No namespaces yet. Claim one above, or sign in with GitHub to get io.github.yourname.</li>
+        <p class="px-5 py-5 text-[15px] text-ink-muted">No namespaces yet. Claim one above, or sign in with GitHub to get io.github.yourname.</p>
       {/each}
-    </ul>
+    </Group>
   {/if}
 </div>

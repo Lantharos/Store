@@ -48,7 +48,7 @@
       {/if}
 
       {#if rolling && rollingDetail?.data}
-        <h2 class="mt-10 mb-3 px-1 text-[15px] font-medium">Rolling out now</h2>
+        <h2 class="mt-10 mb-2.5 px-1 font-semibold">Rolling out now</h2>
         <Timeline appId={id} release={rollingDetail.data} previous={previousShipped(releases.data, rolling.id)} onchange={(next) => rollingDetail.set(next)}>
           {#snippet header()}<ReleaseHeader release={rollingDetail.data!} href="/dashboard/apps/{id}/releases/{encodeURIComponent(rolling.id)}" />{/snippet}
         </Timeline>
@@ -56,8 +56,8 @@
 
       {#if releases.data.length > 1}
         <section class="mt-10">
-          <h2 class="px-3 text-[15px] font-medium">Earlier releases</h2>
-          <div class="mt-2"><ReleaseList appId={id} releases={releases.data.slice(1)} /></div>
+          <h2 class="px-1 font-semibold">Earlier releases</h2>
+          <div class="mt-2.5"><ReleaseList appId={id} releases={releases.data.slice(1)} /></div>
         </section>
       {/if}
     </div>

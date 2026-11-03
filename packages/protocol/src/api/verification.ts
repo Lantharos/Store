@@ -23,10 +23,28 @@ export interface VerificationDomain {
   checked_at: string | null
 }
 
-export interface VerificationMessage {
-  from: "publisher" | "store"
-  name: string
-  text: string
+export const VERIFICATION_EVENTS = [
+  "submitted",
+  "checked",
+  "more-requested",
+  "replied",
+  "message",
+  "approved",
+  "rejected",
+  "revoked",
+] as const
+export type VerificationEventKind = (typeof VERIFICATION_EVENTS)[number]
+
+export interface VerificationCheck {
+  label: string
+  passed: boolean
+}
+
+export interface VerificationEvent {
+  kind: VerificationEventKind
+  by: string | null
+  text: string | null
+  checks: VerificationCheck[] | null
   at: string
 }
 
@@ -49,7 +67,7 @@ export interface Verification {
   github_org_proven: boolean
   note: string
   documents: VerificationDocument[]
-  messages: VerificationMessage[]
+  history: VerificationEvent[]
   reason: string | null
   submitted_at: string | null
   decided_at: string | null

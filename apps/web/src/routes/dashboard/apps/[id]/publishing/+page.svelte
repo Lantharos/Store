@@ -16,8 +16,8 @@
     <Tokens appId={data.app.id} bind:tokens={data.tokens} />
   </div>
   <section class="min-w-0">
-    <h2 class="text-xl font-semibold">The files in your repository</h2>
-    <p class="mt-1 text-[15px] leading-relaxed text-ink-muted">What <span class="font-mono text-[13px]">bunx schelf init</span> writes, if you'd rather copy them yourself.</p>
-    <div class="mt-5"><SetupFiles setup={data.setup} /></div>
+    <h2 class="px-1 font-semibold">The files in your repository</h2>
+    <p class="mt-0.5 px-1 text-[13px] leading-relaxed text-ink-muted">What <span class="font-mono text-[13px]">bunx schelf init</span> writes, if you'd rather copy them yourself.</p>
+    <div class="mt-4"><SetupFiles setup={data.setup} /></div>
   </section>
 </div>
