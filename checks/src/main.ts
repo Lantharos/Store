@@ -15,12 +15,18 @@ const payload = JSON.parse(process.env.PAYLOAD!) as ChecksDispatch
 const work = join(process.env.RUNNER_TEMP ?? "/tmp", "schelf-checks")
 const facts: Record<string, unknown> = {}
 
+const closedSource = payload.source === "closed"
+
 async function attempt(name: CheckResult["name"], work: () => Promise<CheckResult>): Promise<CheckResult> {
   try {
     return await work()
   } catch (error) {
     console.error(`${name}:`, error)
-    return { name, status: "warning", summary: `Couldn't finish: ${(error as Error).message.slice(0, 300)}` }
+    return {
+      name,
+      status: payload.strict && name === "malware" ? "failed" : "warning",
+      summary: `Couldn't finish: ${(error as Error).message.slice(0, 300)}`,
+    }
   }
 }
 
@@ -59,6 +65,13 @@ const checks = await Promise.all([
     for (const file of opened)
       inspections[file.name] = await inspectArtifact(file.unpacked, payload.permissions)
     facts.inspection = inspections
+    const unopened = downloads.filter((file) => !opened.includes(file))
+    if (payload.strict && unopened.length)
+      return {
+        name: "inspection",
+        status: "warning",
+        summary: `Couldn't look inside ${unopened.map((file) => file.name).join(", ")}, so a reviewer checks it by hand`,
+      }
     return inspectionResult(inspections)
   }),
   attempt("diff", async () => {
@@ -66,7 +79,9 @@ const checks = await Promise.all([
       return {
         name: "diff",
         status: "passed",
-        summary: "The source isn't public, so review looks at the build",
+        summary: closedSource
+          ? "Closed source, so review looks at the build"
+          : "The source isn't public, so review looks at the build",
       }
     if (!payload.previous_tag)
       return { name: "diff", status: "passed", summary: "First release; nothing to compare" }
@@ -80,6 +95,8 @@ const checks = await Promise.all([
 
 checks.push(
   await attempt("licence", async () => {
+    if (closedSource)
+      return { name: "licence", status: "passed", summary: "Closed source, so there's no licence to check" }
     const files = repository && payload.tag ? await repository.licenceFiles(payload.tag) : []
     const declared = Object.values(inspections).find((inspection) => inspection.licence)?.licence ?? null
     const licence = judgeLicence(declared, files)

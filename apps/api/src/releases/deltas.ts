@@ -1,13 +1,17 @@
 import { env } from "cloudflare:workers"
-import { type DeltaReport, MAX_ARTIFACT_SIZE, paths, platform as platformSchema } from "@schelf/protocol"
+import {
+  DELTA_KINDS,
+  type DeltaReport,
+  MAX_ARTIFACT_SIZE,
+  paths,
+  platform as platformSchema,
+} from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { storeHashed } from "../publishing/hashing.ts"
 import { fileUrl } from "../signing/records.ts"
-
-const UPDATED_KIND = { sabine: "archive", appimage: "appimage", "luft-extension": "extension" } as const
 
 export async function receiveDelta(
   releaseId: string,
@@ -20,12 +24,14 @@ export async function receiveDelta(
   if (!release) fail(404, "That release doesn't exist")
   if (release.status !== "checking") fail(409, "This release isn't waiting for checks")
   const app = (await db.query.app.findFirst({ where: eq(schema.app.id, release.appId) }))!
+  const kind = DELTA_KINDS[release.format]
+  if (!kind) fail(422, `${release.format} releases don't take deltas`)
   const [artifact, previous] = await Promise.all([
     db.query.artifact.findFirst({
       where: and(
         eq(schema.artifact.releaseId, release.id),
         eq(schema.artifact.platform, platform),
-        eq(schema.artifact.kind, UPDATED_KIND[app.format]),
+        eq(schema.artifact.kind, kind),
       ),
     }),
     from

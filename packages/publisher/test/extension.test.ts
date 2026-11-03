@@ -53,6 +53,7 @@ beforeAll(async () => {
             release: "r1",
             app: "com.lantharos.Rain",
             version: "1.0.0",
+            channel: "stable",
             status: "uploading",
             dashboard: "",
             upload_token: "upload",

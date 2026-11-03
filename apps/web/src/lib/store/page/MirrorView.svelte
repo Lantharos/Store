@@ -1,8 +1,7 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
-  import type { MirrorEntry } from "@schelf/protocol"
+  import type { MirrorEntry, System } from "@schelf/protocol"
   import { schelfLink } from "../../system/artifacts.ts"
-  import type { System } from "../../system/detect.ts"
   import AppIcon from "../apps/AppIcon.svelte"
   import { ORIGIN_NAMES } from "../links.ts"
 

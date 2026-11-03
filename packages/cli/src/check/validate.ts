@@ -64,7 +64,7 @@ function identityIssues(project: Project, manifest: SchelfToml): Issue[] {
     [project.appstream?.path, project.appstream?.component.id.replace(/\.desktop$/, "")],
   ] as const
   for (const [file, id] of declared) {
-    if (file && id && !sameAppId(id, manifest.id))
+    if (file && id && manifest.id && !sameAppId(id, manifest.id))
       issues.push({
         level: file.endsWith(".xml") ? "warning" : "error",
         message: `${file} says the id is ${id}, schelf.toml says ${manifest.id}`,

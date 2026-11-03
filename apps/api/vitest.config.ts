@@ -11,7 +11,7 @@ export default defineConfig({
     cloudflareTest(async () => ({
       wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
-        d1Databases: ["MIGRATION_DB"],
+        d1Databases: ["MIGRATION_DB", "HOSTING_MIGRATION_DB"],
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, "migrations")),
           BETTER_AUTH_SECRET: "test-auth-secret-that-is-long-enough-for-better-auth",

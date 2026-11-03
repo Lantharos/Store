@@ -5,6 +5,7 @@ import {
   DEFAULT_LOCALE,
   formatFits,
   namespaceCovers,
+  slugFromId,
 } from "@schelf/protocol"
 import { and, desc, eq, inArray, sql } from "drizzle-orm"
 import { Hono } from "hono"
@@ -17,6 +18,7 @@ import { recordHistory } from "../../ops/events.ts"
 import { active, allow, appAccess, type PublisherVars } from "../../publishers/access.ts"
 import { installsSince, mediaUrl } from "../../signing/records.ts"
 import { githubAccount } from "../access.ts"
+import { addProject, freeAppSlug } from "./projects.ts"
 import { appSettings } from "./settings.ts"
 
 export const publisherAppRoutes = new Hono<PublisherVars>()
@@ -60,10 +62,15 @@ publisherAppRoutes.get("/", async (c) => {
   return c.json(
     apps.map(({ app, name, iconKey }) => ({
       id: app.id,
+      slug: app.slug,
       publisher: app.publisherId,
+      publisher_slug: c.var.publisher.slug,
+      visibility: app.visibility,
+      listing_requested: app.listingRequestedAt !== null,
+      updater: app.updater,
       kind: app.kind,
       format: app.format,
-      name: name ?? app.id,
+      name: name ?? app.slug,
       icon: mediaUrl(iconKey),
       art: mediaUrl(artByApp.get(app.id)),
       status: app.status,
@@ -96,9 +103,11 @@ publisherAppRoutes.post("/", async (c) => {
   await db.batch([
     db.insert(schema.app).values({
       id: input.id,
+      slug: await freeAppSlug(publisher.id, slugFromId(input.id)),
       publisherId: publisher.id,
       kind: input.kind,
       format: input.format,
+      updater: input.format === "sabine" ? "sabine" : null,
       repository: repo.full_name,
       repositoryId: String(repo.id),
       distribution: repo.private ? "proprietary" : "open",
@@ -125,6 +134,8 @@ publisherAppRoutes.post("/", async (c) => {
   recordHistory("app", input.id, `Added, published from ${repo.full_name}`, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, input.id)).app), 201)
 })
+
+publisherAppRoutes.post("/projects", addProject)
 
 appRoutes.get("/:id", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"))

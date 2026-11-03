@@ -1,7 +1,7 @@
 import { waitUntil } from "cloudflare:workers"
+import { detect, systemKey } from "@schelf/protocol"
 import type { Handle, HandleServerError } from "@sveltejs/kit/hooks"
 import { storeVersion } from "#lib/server/cache.ts"
-import { detect, systemKey } from "#lib/system/detect.ts"
 import { building, version } from "$app/env"
 
 const UNCACHED = /^\/(dashboard|api)(\/|$)/

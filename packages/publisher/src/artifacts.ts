@@ -1,6 +1,14 @@
 import { open, readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
-import type { ArtifactKind, Format, Platform } from "@schelf/protocol"
+import {
+  type ArtifactKind,
+  type Format,
+  GENERATED_FEEDS,
+  inferFile,
+  type Platform,
+  platform as platformSchema,
+  UnknownFile,
+} from "@schelf/protocol"
 
 export interface InferredArtifact {
   path: string
@@ -8,6 +16,7 @@ export interface InferredArtifact {
   platform: Platform
   kind: ArtifactKind
   executable?: string
+  signature?: string
 }
 
 const SABINE_NAME =
@@ -22,7 +31,7 @@ const SABINE_KINDS: Record<string, ArtifactKind> = {
 }
 const ELF_MACHINES: Record<number, string> = { 62: "x86_64", 183: "aarch64" }
 const ARCH_IN_NAME = /(?:^|[-_.])(x86_64|amd64|x64|aarch64|arm64)(?:[-_.]|$)/i
-const IGNORED = [/\.executable$/, /^sabine-update\.json$/]
+const IGNORED = [/\.executable$/, /^sabine-update\.json$/, ...GENERATED_FEEDS]
 
 export const ignoredFile = (path: string) => IGNORED.some((pattern) => pattern.test(basename(path)))
 
@@ -84,9 +93,35 @@ function extensionArtifact(path: string, name: string): InferredArtifact {
   return { path, name, platform: arch ? (`luft-${arch}` as Platform) : "luft", kind: "extension" }
 }
 
+async function generalArtifact(path: string, name: string): Promise<InferredArtifact> {
+  try {
+    const inferred = inferFile(name)
+    const linux = inferred.kind === "appimage" || inferred.kind === "binary"
+    const arch = linux ? await elfArchitecture(path) : undefined
+    return {
+      path,
+      name,
+      kind: inferred.kind,
+      platform: arch ? (`linux-${arch}` as Platform) : inferred.platform,
+    }
+  } catch (error) {
+    if (error instanceof UnknownFile) throw new ArtifactError(error.message)
+    throw error
+  }
+}
+
 export function inferArtifact(path: string, format: Format): Promise<InferredArtifact> {
   const name = basename(path)
   if (format === "sabine") return sabineArtifact(path, name)
   if (format === "appimage") return appImageArtifact(path, name)
+  if (format === "files") return generalArtifact(path, name)
   return Promise.resolve(extensionArtifact(path, name))
+}
+
+export function splitPlatform(entry: string) {
+  const at = entry.lastIndexOf("#")
+  if (at < 0) return { pattern: entry, platform: undefined }
+  const parsed = platformSchema.safeParse(entry.slice(at + 1))
+  if (!parsed.success) throw new ArtifactError(`${entry.slice(at + 1)} isn't a system Schelf knows`)
+  return { pattern: entry.slice(0, at), platform: parsed.data }
 }

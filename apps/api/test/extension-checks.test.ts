@@ -6,6 +6,7 @@ function checks(platforms: string[], helper: boolean, iconKey: string | null = n
     app: { id: "com.example.Rain", kind: "extension", format: "luft-extension" },
     release: {
       version: "1.0.0",
+      format: "luft-extension",
       requires: { extension_api: 1 },
       permissions: null,
       extensionAccess: { permissions: ["wallpaper"], helper },

@@ -17,13 +17,42 @@ export type ReleaseStatus = z.infer<typeof releaseStatus>
 
 export const SHIPPED_STATUSES = ["rolling-out", "live"] as const satisfies ReleaseStatus[]
 
-export const APP_STATUSES = ["draft", "in-review", "listed", "delisted", "pulled"] as const
+export const APP_STATUSES = ["draft", "in-review", "published", "delisted", "pulled"] as const
 export const appStatus = z.enum(APP_STATUSES)
 export type AppStatus = z.infer<typeof appStatus>
 
-export const ORIGINS = ["oidc", "token"] as const
+export const ORIGINS = ["oidc", "manual"] as const
 export const origin = z.enum(ORIGINS)
 export type Origin = z.infer<typeof origin>
+
+export const STABLE = "stable"
+export const NIGHTLY = "nightly"
+export const NIGHTLY_KEEP = 10
+export const channelName = z
+  .string()
+  .regex(/^[a-z][a-z0-9-]{0,19}$/, "A channel is a short lowercase name, like beta or nightly")
+export const PRERELEASE_CHANNELS: Record<string, string> = {
+  alpha: "alpha",
+  beta: "beta",
+  rc: "beta",
+  nightly: NIGHTLY,
+  canary: NIGHTLY,
+}
+
+export function channelFromVersion(version: string) {
+  const word = VERSION.exec(version)?.[4]?.split(/[.-]/)[0]?.toLowerCase()
+  return (word && PRERELEASE_CHANNELS[word]) || STABLE
+}
+
+export const UPDATERS = ["sabine", "electron", "tauri"] as const
+export const updater = z.enum(UPDATERS)
+export type Updater = z.infer<typeof updater>
+
+export const UPDATER_NAMES: Record<Updater, string> = {
+  sabine: "Sabine",
+  electron: "electron-updater",
+  tauri: "Tauri's updater",
+}
 
 export const CHECK_STATUSES = ["passed", "warning", "failed"] as const
 export const checkStatus = z.enum(CHECK_STATUSES)

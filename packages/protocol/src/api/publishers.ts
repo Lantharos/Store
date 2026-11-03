@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { RESERVED_SLUGS } from "../projects.ts"
 
 export const AGREEMENT_VERSION = "2026-11"
 export const PUBLISHER_KINDS = ["person", "organisation"] as const
@@ -70,6 +71,7 @@ export const slug = z
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers and dashes")
   .min(2)
   .max(40)
+  .refine((value) => !RESERVED_SLUGS.has(value), "That address is reserved")
 
 export const createPublisher = z.object({
   kind: z.enum(PUBLISHER_KINDS),

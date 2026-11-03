@@ -1,12 +1,25 @@
 import { type AppSettings, DEFAULT_LOCALE } from "@schelf/protocol"
-import { desc, eq } from "drizzle-orm"
+import { count, desc, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
+import { projectLinks } from "../../hosting/addresses.ts"
 import { iso } from "../../lib/time.ts"
 import { type AppRow, fileUrl, installsSince, mediaUrl } from "../../signing/records.ts"
 import { setupFiles } from "./setup.ts"
 
 export async function appSettings(app: AppRow): Promise<AppSettings> {
-  const [listings, meta, screenshots, publishers, tokens, [latest], installs] = await Promise.all([
+  const [
+    listings,
+    meta,
+    screenshots,
+    publishers,
+    tokens,
+    [latest],
+    installs,
+    owner,
+    channels,
+    counts,
+    switches,
+  ] = await Promise.all([
     db.select().from(schema.listing).where(eq(schema.listing.appId, app.id)),
     db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) }),
     db
@@ -27,13 +40,33 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       .orderBy(desc(schema.release.createdAt))
       .limit(1),
     installsSince([app.id], 7),
+    db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
+    db.select().from(schema.channel).where(eq(schema.channel.appId, app.id)),
+    db
+      .select({ channel: schema.release.channel, releases: count() })
+      .from(schema.release)
+      .where(eq(schema.release.appId, app.id))
+      .groupBy(schema.release.channel),
+    db
+      .select()
+      .from(schema.updaterSwitch)
+      .where(eq(schema.updaterSwitch.appId, app.id))
+      .orderBy(desc(schema.updaterSwitch.createdAt)),
   ])
+  const publisherSlug = owner!.slug
+  const releasesIn = new Map(counts.map((row) => [row.channel, row.releases]))
+  const channelNames = [...new Set(["stable", ...channels.map((row) => row.name)])]
   const english = listings.find((entry) => entry.locale === DEFAULT_LOCALE)
   const publisher = publishers[0]
   return {
     app: {
       id: app.id,
+      slug: app.slug,
       publisher: app.publisherId,
+      publisher_slug: publisherSlug,
+      visibility: app.visibility,
+      listing_requested: app.listingRequestedAt !== null,
+      updater: app.updater,
       kind: app.kind,
       format: app.format,
       name: english?.name ?? app.id,
@@ -46,8 +79,27 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       repository: app.repository,
       licence: app.licence,
       distribution: app.distribution,
+      page_indexed: app.pageIndexed,
+      latest_follows_rollout: app.latestFollowsRollout,
       created_at: app.createdAt.toISOString(),
     },
+    links: projectLinks(app, publisherSlug),
+    channels: channelNames.map((name) => ({
+      name,
+      keep: channels.find((row) => row.name === name)?.keep ?? null,
+      releases: releasesIn.get(name) ?? 0,
+    })),
+    switches: switches.map((row) => ({
+      id: row.id,
+      from: row.fromUpdater,
+      to: row.toUpdater,
+      from_format: row.fromFormat,
+      to_format: row.toFormat,
+      started_at: row.createdAt.toISOString(),
+      first_release: row.firstReleaseId,
+      bridge_release: row.bridgeReleaseId,
+      completed_at: iso(row.completedAt),
+    })),
     listing: Object.fromEntries(
       listings.map((entry) => [
         entry.locale,
@@ -97,6 +149,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
     })),
     setup: setupFiles(
       app,
+      publisherSlug,
       publisher?.workflow ?? ".github/workflows/schelf.yml",
       publisher?.environment ?? null,
     ),

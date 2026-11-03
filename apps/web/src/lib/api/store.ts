@@ -5,9 +5,10 @@ import {
   type MirrorEntry,
   type PublisherPage,
   paths,
+  platformParam,
   type SearchResponse,
+  type System,
 } from "@schelf/protocol"
-import { platformParam, type System } from "../system/detect.ts"
 import { file, find, get } from "./server.ts"
 
 function query(params: Record<string, string | null | undefined>) {

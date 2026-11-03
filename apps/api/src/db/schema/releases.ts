@@ -1,4 +1,13 @@
-import type { CheckName, CheckStatus, ExtensionAccess, Permissions, Requires } from "@schelf/protocol"
+import {
+  type CheckName,
+  type CheckStatus,
+  type ExtensionAccess,
+  FORMATS,
+  ORIGINS,
+  type Permissions,
+  type Requires,
+  UPDATERS,
+} from "@schelf/protocol"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { app } from "./apps.ts"
 import { createdAt } from "./columns.ts"
@@ -16,7 +25,11 @@ export const release = sqliteTable(
     commit: text("commit"),
     runUrl: text("run_url"),
     workflow: text("workflow"),
-    origin: text("origin", { enum: ["oidc", "token"] }).notNull(),
+    origin: text("origin", { enum: ORIGINS }).notNull(),
+    format: text("format", { enum: FORMATS }).notNull(),
+    updater: text("updater", { enum: UPDATERS }),
+    bridge: integer("bridge", { mode: "boolean" }).notNull().default(false),
+    promotedFrom: text("promoted_from"),
     notes: text("notes").notNull().default(""),
     manifest: text("manifest").notNull(),
     permissions: text("permissions", { mode: "json" }).$type<Permissions | null>(),
@@ -64,6 +77,8 @@ export const artifact = sqliteTable(
     key: text("key").notNull(),
     size: integer("size").notNull(),
     sha256: text("sha256").notNull(),
+    sha512: text("sha512"),
+    signature: text("signature"),
     executable: text("executable"),
     uploadId: text("upload_id"),
     uploadedAt: integer("uploaded_at", { mode: "timestamp_ms" }),

@@ -1,9 +1,8 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
-  import type { AppIndex, Installs } from "@schelf/protocol"
+  import type { AppIndex, Installs, System } from "@schelf/protocol"
   import { pickArtifact } from "../../system/artifacts.ts"
-  import type { System } from "../../system/detect.ts"
   import AppIcon from "../apps/AppIcon.svelte"
   import ExtensionArt from "../apps/ExtensionArt.svelte"
   import { categoryHref, categoryLabel } from "../categories.ts"

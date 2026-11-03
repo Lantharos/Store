@@ -1,5 +1,5 @@
-import { DEFAULT_LOCALE, type ReleaseStatus } from "@schelf/protocol"
-import { and, desc, eq, isNull, like, or, type SQL } from "drizzle-orm"
+import { DEFAULT_LOCALE, type ReleaseStatus, SHIPPED_STATUSES } from "@schelf/protocol"
+import { and, desc, eq, inArray, isNull, like, or, type SQL } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 
 function releaseQuery() {
@@ -11,8 +11,11 @@ function releaseQuery() {
       appStatus: schema.app.status,
       publisherId: schema.app.publisherId,
       publisher: schema.publisher.name,
+      publisherSlug: schema.publisher.slug,
       repository: schema.app.repository,
-      format: schema.app.format,
+      slug: schema.app.slug,
+      visibility: schema.app.visibility,
+      distribution: schema.app.distribution,
     })
     .from(schema.release)
     .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
@@ -70,6 +73,13 @@ export const releases = {
       .orderBy(desc(schema.release.createdAt))
       .limit(limit)
     return rows.map(view)
+  },
+  async latestShipped(appId: string) {
+    const [row] = await releaseQuery()
+      .where(and(eq(schema.release.appId, appId), inArray(schema.release.status, [...SHIPPED_STATUSES])))
+      .orderBy(desc(schema.release.approvedAt))
+      .limit(1)
+    return row ? view(row) : null
   },
   checks(id: string) {
     return db.select().from(schema.check).where(eq(schema.check.releaseId, id))

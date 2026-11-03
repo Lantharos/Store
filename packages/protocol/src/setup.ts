@@ -9,6 +9,7 @@ export const SCHELF_SABINE_VERSION = "v0.70"
 
 export interface SetupInput {
   id: string
+  project?: string
   kind: Kind
   format: Format
   permissions?: string
@@ -27,7 +28,7 @@ export function schelfTomlFor(input: SetupInput) {
     ...(input.extensionApi !== undefined && { extension_api: input.extensionApi }),
   }
   return stringify({
-    id: input.id,
+    ...(input.project ? { project: input.project } : { id: input.id }),
     kind: input.kind,
     format: input.format,
     ...(permissions && { permissions }),
@@ -135,9 +136,19 @@ function extensionWorkflow(id: string, environment: string | null | undefined) {
 const sabineVersionOf = (input: SetupInput) =>
   input.format === "sabine" ? (input.sabineVersion ?? SCHELF_SABINE_VERSION) : undefined
 
+function filesWorkflow(environment: string | null | undefined) {
+  return `${header(PUBLISH_PERMISSIONS)}${publishJob(environment)}    steps:
+      - uses: actions/checkout@v7
+      - uses: ${PUBLISH_ACTION}
+        with:
+          release-assets: "*"
+`
+}
+
 export function workflowFor(input: SetupInput) {
   if (input.format === "sabine") return sabineWorkflow(sabineVersionOf(input)!, input.environment)
   if (input.format === "appimage") return appImageWorkflow(input.environment)
+  if (input.format === "files") return filesWorkflow(input.environment)
   return input.helper
     ? extensionWithHelperWorkflow(input.id, input.helper, input.environment)
     : extensionWorkflow(input.id, input.environment)

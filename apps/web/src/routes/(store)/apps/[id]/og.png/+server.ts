@@ -6,7 +6,7 @@ import { appCard } from "#lib/seo/og/card.ts"
 
 export async function GET({ params }) {
   const { app, status } = await appPage(params.id)
-  if (status !== "listed") error(404, "Nothing here")
+  if (status !== "published") error(404, "Nothing here")
   const listing = app.listing.en!
   const screenshot = app.screenshots[0]
   const [iconData, shot] = await Promise.all([

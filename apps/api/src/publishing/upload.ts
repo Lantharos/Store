@@ -36,14 +36,14 @@ export async function receiveFile(
 
   if (parts === 1) {
     if (length !== artifact.size) fail(422, `${name} should be ${artifact.size} bytes, not ${length}`)
-    const { sha256 } = await storeHashed(env.BUCKET, artifact.key, request.body, artifact.size)
+    const { sha256, sha512 } = await storeHashed(env.BUCKET, artifact.key, request.body, artifact.size)
     if (sha256 !== artifact.sha256) {
       await env.BUCKET.delete(artifact.key)
       fail(422, `${name} doesn't match the SHA-256 it was announced with`)
     }
     await db
       .update(schema.artifact)
-      .set({ uploadedAt: new Date() })
+      .set({ uploadedAt: new Date(), sha512 })
       .where(eq(schema.artifact.id, artifact.id))
     return { name, part: null, received: artifact.size }
   }

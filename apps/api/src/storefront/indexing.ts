@@ -7,6 +7,7 @@ export async function reindexApp(id: string) {
   const [row] = await db
     .select({
       status: schema.app.status,
+      visibility: schema.app.visibility,
       name: schema.listing.name,
       summary: schema.listing.summary,
       keywords: schema.listing.keywords,
@@ -19,7 +20,7 @@ export async function reindexApp(id: string) {
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
     )
     .where(eq(schema.app.id, id))
-  if (row?.status !== "listed" || !row.name) {
+  if (row?.status !== "published" || row.visibility !== "listed" || !row.name) {
     await unindexStatement(storeKey(id)).run()
     return
   }

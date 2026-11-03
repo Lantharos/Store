@@ -29,13 +29,15 @@ export const release = resource("release", {
     run: ({ query, filters, cursor, limit }) => releases.browse(query, filters.status, cursor, limit),
   },
   title: (release) => `${release.name} ${release.version}`,
-  subtitle: (release) => `${release.appId} · ${releaseState(release)}`,
+  subtitle: (release) => `${release.appId} · ${release.channel} · ${releaseState(release)}`,
   fields: (release) => ({
     status: RELEASE_STATUS[release.status],
+    channel: release.channel,
     rollout: shipped(release) ? `${release.rolloutPercent}%${release.rolloutPaused ? ", paused" : ""}` : "",
     published: release.createdAt,
   }),
-  url: (release) => appPage({ id: release.appId, kind: release.kind, status: release.appStatus }),
+  url: (release) =>
+    appPage({ ...release, id: release.appId, status: release.appStatus }, release.publisherSlug),
   render: (release) => releaseBlocks(release),
   actions: (action) => ({
     approve: action({

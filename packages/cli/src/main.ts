@@ -16,9 +16,17 @@ const COMMANDS: Record<
   string,
   { run: (args: Args) => Promise<number | undefined>; usage: string; about: string }
 > = {
-  init: { run: init, usage: "init [--publisher <slug>]", about: "Set up this app or extension for Schelf" },
+  init: {
+    run: init,
+    usage: "init [--publisher <slug>]",
+    about: "Set up this app, extension or project for Schelf",
+  },
   check: { run: check, usage: "check", about: "Check schelf.toml and preview the store page" },
-  publish: { run: publish, usage: "publish [files…]", about: "Publish a release from CI or with a token" },
+  publish: {
+    run: publish,
+    usage: "publish [files…] [--channel <name>]",
+    about: "Publish a release from CI or with a token",
+  },
   status: { run: status, usage: "status [version]", about: "Where a release is: checks, review, rollout" },
   rollout: {
     run: rollout,

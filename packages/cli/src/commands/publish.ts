@@ -1,5 +1,5 @@
 import { join } from "node:path"
-import { SCHELF_TOML } from "@schelf/protocol"
+import { manifestName, SCHELF_TOML } from "@schelf/protocol"
 import {
   collectArtifacts,
   githubOidcToken,
@@ -34,9 +34,12 @@ export async function publish(args: Args) {
     (await git(root, "describe", "--tags", "--exact-match").catch(() => undefined))
   if (!tag) throw new Failure("This commit has no tag", "Tag the release, or pass --tag.")
   if (!args.positionals.length)
-    throw new Failure("Name the files to publish", "For example: schelf publish dist/*.AppImage")
+    throw new Failure(
+      "Name the files to publish",
+      "For example: schelf publish dist/*.AppImage, or dist/app.tar.gz#macos-aarch64 to say which system a file is for",
+    )
 
-  title(`Publishing ${context.manifest.id} ${tag}`)
+  title(`Publishing ${manifestName(context.manifest)} ${tag}`)
   const artifacts = await collectArtifacts(args.positionals, context.manifest.format)
   for (const artifact of artifacts) field(artifact.platform, artifact.name, 18)
   blank()
@@ -50,6 +53,8 @@ export async function publish(args: Args) {
         api,
         token,
         tag,
+        channel: flag(args, "channel"),
+        bridge: args.flags.has("bridge"),
         commit,
         schelfToml: context.schelfToml,
         permissionsToml: context.permissionsToml,

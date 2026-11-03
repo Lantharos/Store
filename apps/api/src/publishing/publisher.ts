@@ -18,7 +18,7 @@ const LAST_USED_GRANULARITY_MS = 60_000
 
 export type Publisher =
   | { origin: "oidc"; tag: string; commit: string; runUrl: string; workflow: string; claims: WorkflowClaims }
-  | { origin: "token"; tokenId: string }
+  | { origin: "manual"; tokenId: string | null }
 
 export async function workflowClaims(token: string) {
   try {
@@ -37,10 +37,10 @@ async function dashboardToken(token: string, app: AppRow): Promise<Publisher> {
   if (row.appId !== app.id) fail(403, `That token publishes ${row.appId}, not ${app.id}`)
   if (!row.lastUsedAt || now.getTime() - row.lastUsedAt.getTime() > LAST_USED_GRANULARITY_MS)
     waitUntil(db.update(schema.token).set({ lastUsedAt: now }).where(eq(schema.token.id, row.id)))
-  return { origin: "token", tokenId: row.id }
+  return { origin: "manual", tokenId: row.id }
 }
 
-async function trustedWorkflow(token: string, app: AppRow, requestedTag: string): Promise<Publisher> {
+async function trustedWorkflow(token: string, app: AppRow, requestedTag: string | null): Promise<Publisher> {
   const claims = await workflowClaims(token)
   const rules = await db
     .select()
@@ -53,7 +53,7 @@ async function trustedWorkflow(token: string, app: AppRow, requestedTag: string)
     )
   const tag = tagOf(claims.ref)
   if (!tag) fail(403, "Releases are published from a tag, and this run isn't for one")
-  if (tag !== requestedTag) fail(403, `This run is for ${tag}, not ${requestedTag}`)
+  if (requestedTag && tag !== requestedTag) fail(403, `This run is for ${tag}, not ${requestedTag}`)
   return {
     origin: "oidc",
     tag,
@@ -64,7 +64,7 @@ async function trustedWorkflow(token: string, app: AppRow, requestedTag: string)
   }
 }
 
-export function identifyPublisher(credential: string | null, app: AppRow, tag: string) {
+export function identifyPublisher(credential: string | null, app: AppRow, tag: string | null) {
   if (!credential) fail(401, "Publish with a GitHub identity token or a dashboard token")
   return credential.startsWith(TOKEN_PREFIX)
     ? dashboardToken(credential, app)

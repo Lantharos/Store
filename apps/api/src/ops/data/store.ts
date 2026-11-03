@@ -6,7 +6,7 @@ import { DAY_MS, dayOf } from "../../lib/time.ts"
 export async function storeTotals() {
   const since = dayOf(new Date(Date.now() - 30 * DAY_MS))
   const [listed, publishers, verified, installs] = await Promise.all([
-    db.$count(schema.app, eq(schema.app.status, "listed")),
+    db.$count(schema.app, eq(schema.app.status, "published")),
     db.$count(schema.publisher),
     db.$count(schema.publisher, isNotNull(schema.publisher.verifiedAt)),
     db

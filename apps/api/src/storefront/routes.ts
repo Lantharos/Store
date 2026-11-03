@@ -19,10 +19,12 @@ import { eq, sum } from "drizzle-orm"
 import { Hono } from "hono"
 import { avatarUrl } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
+import { projectSummary } from "../hosting/addresses.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
-import { installsSince, mediaUrl } from "../signing/records.ts"
+import { appByProject } from "../publishing/start.ts"
+import { type AppRow, installsSince, mediaUrl } from "../signing/records.ts"
 import { currentCatalog } from "./catalog.ts"
 import { mirrorEntry, mirrorHits } from "./mirror.ts"
 import { confirmReport } from "./report-mail.ts"
@@ -101,26 +103,37 @@ storefrontRoutes.get("/featured", async (c) => {
   } satisfies FeaturedResponse)
 })
 
-storefrontRoutes.get("/apps/:id", async (c) => {
-  const id = c.req.param("id")
-  const app = await db.query.app.findFirst({ where: eq(schema.app.id, id) })
-  if (!app || (app.status !== "listed" && app.status !== "delisted" && app.status !== "pulled"))
+async function appPage(app: AppRow | undefined): Promise<AppPage> {
+  if (!app || (app.status !== "published" && app.status !== "delisted" && app.status !== "pulled"))
     fail(404, "There's no app with that id")
-  const object = await env.BUCKET.get(paths.app(app.id))
-  if (!object) fail(404, "There's no app with that id")
-  const [last30, [total]] = await Promise.all([
+  const [object, owner, last30, [total]] = await Promise.all([
+    env.BUCKET.get(paths.app(app.id)),
+    db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
     installsSince([app.id], 30),
     db
       .select({ installs: sum(schema.countDaily.installs) })
       .from(schema.countDaily)
       .where(eq(schema.countDaily.appId, app.id)),
   ])
-  c.header("cache-control", PUBLIC_CACHE)
-  return c.json({
+  if (!object) fail(404, "There's no app with that id")
+  return {
     app: await object.json<AppIndex>(),
     status: app.status,
     installs: { last_30_days: last30.get(app.id) ?? 0, total: Number(total?.installs ?? 0) },
-  } satisfies AppPage)
+    project: projectSummary(app, owner!.slug),
+  }
+}
+
+storefrontRoutes.get("/apps/:id", async (c) => {
+  const page = await appPage(await db.query.app.findFirst({ where: eq(schema.app.id, c.req.param("id")) }))
+  c.header("cache-control", PUBLIC_CACHE)
+  return c.json(page satisfies AppPage)
+})
+
+storefrontRoutes.get("/projects/:publisher/:project", async (c) => {
+  const page = await appPage(await appByProject(c.req.param("publisher"), c.req.param("project")))
+  c.header("cache-control", PUBLIC_CACHE)
+  return c.json(page satisfies AppPage)
 })
 
 storefrontRoutes.get("/mirror/:id", async (c) => {

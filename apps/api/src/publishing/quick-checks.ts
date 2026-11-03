@@ -7,9 +7,10 @@ import {
   extensionLabels,
   extensionWidens,
   formatFits,
+  isProjectId,
+  kindsFor,
   namespaceCovers,
   platformsFor,
-  SABINE_ARTIFACT_KINDS,
   widens,
 } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
@@ -52,6 +53,7 @@ const failed = (name: CheckResult["name"], summary: string, detail?: unknown): C
 })
 
 function namespaceCheck({ app, namespaces }: QuickCheckInput) {
+  if (isProjectId(app.id)) return passed("namespace", "Named under the publisher, so no namespace to prove")
   const proven = namespaces.find((entry) => entry.verifiedAt && namespaceCovers(entry.prefix, app.id))
   return proven
     ? passed("namespace", `The ${proven.prefix} namespace is yours`)
@@ -77,23 +79,18 @@ function extensionPlatforms(platforms: string[], helper: boolean) {
 }
 
 function platformCheck({ app, release, artifacts }: QuickCheckInput) {
-  if (!formatFits(app.kind, app.format)) return failed("platforms", `A ${app.kind} can't be a ${app.format}`)
-  const allowed = platformsFor(app.kind)
+  const format = release.format
+  if (!formatFits(app.kind, format)) return failed("platforms", `A ${app.kind} can't be a ${format}`)
+  const allowed = platformsFor(format)
+  const kinds = kindsFor(format)
   for (const artifact of artifacts) {
     if (!allowed.includes(artifact.platform as never))
-      return failed(
-        "platforms",
-        `${artifact.name} is for ${artifact.platform}, which a ${app.kind} can't target`,
-      )
-    const kindFits =
-      app.format === "sabine"
-        ? (SABINE_ARTIFACT_KINDS as readonly string[]).includes(artifact.kind)
-        : artifact.kind === (app.format === "appimage" ? "appimage" : "extension")
-    if (!kindFits)
-      return failed("platforms", `${artifact.name} is a ${artifact.kind}, which a ${app.format} doesn't ship`)
-    if (app.format === "appimage" && !artifact.platform.startsWith("linux-"))
+      return failed("platforms", `${artifact.name} is for ${artifact.platform}, which ${format} can't target`)
+    if (!kinds.includes(artifact.kind as never))
+      return failed("platforms", `${artifact.name} is a ${artifact.kind}, which ${format} doesn't ship`)
+    if (format === "appimage" && !artifact.platform.startsWith("linux-"))
       return failed("platforms", `${artifact.name}: AppImages are for Linux`)
-    if (app.format === "sabine" && artifact.kind === "archive" && !artifact.executable)
+    if (format === "sabine" && artifact.kind === "archive" && !artifact.executable)
       return failed("platforms", `${artifact.name} is an archive; say which program inside it starts the app`)
   }
   const platforms = [...new Set(artifacts.map((artifact) => artifact.platform))]
@@ -104,7 +101,7 @@ function platformCheck({ app, release, artifacts }: QuickCheckInput) {
 }
 
 function attestationCheck({ release, artifacts, attestations }: QuickCheckInput) {
-  if (release.origin === "token")
+  if (release.origin === "manual")
     return warning("attestation", "Uploaded by the developer, not built on GitHub Actions")
   const missing = artifacts.filter((artifact) => attestations.get(artifact.id) === null)
   if (missing.length)
@@ -121,6 +118,7 @@ function attestationCheck({ release, artifacts, attestations }: QuickCheckInput)
 }
 
 function listingCheck({ app, listing, meta, screenshots }: QuickCheckInput) {
+  if (app.visibility === "unlisted") return passed("listing", "Unlisted, so the listing can wait")
   const english = listing.find((entry) => entry.locale === DEFAULT_LOCALE)
   if (!english) return failed("listing", "Add a name and summary in English")
   if (app.kind === "extension" && !meta?.iconKey)
@@ -151,7 +149,9 @@ function extensionPermissionCheck({ release, previous }: QuickCheckInput) {
 function permissionCheck(input: QuickCheckInput) {
   const { app, release, previous } = input
   if (app.kind === "extension") return extensionPermissionCheck(input)
-  if (app.format === "sabine") return passed("permissions", "Sabine apps run with full access for now")
+  if (release.format === "sabine") return passed("permissions", "Sabine apps run with full access for now")
+  if (release.format === "files")
+    return passed("permissions", "Downloads run as the system they're installed on allows")
   if (!release.permissions) return warning("permissions", "Asks for full access")
   if (previous && widens(previous.permissions, release.permissions))
     return warning("permissions", "Asks for more than the last approved release", {

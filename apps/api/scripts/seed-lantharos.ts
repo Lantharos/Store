@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { paths, rasterIcon, sha256Hex } from "@schelf/protocol"
+import { paths, rasterIcon, sha256Hex, slugFromId } from "@schelf/protocol"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
 import { sniffImage } from "../src/dashboard/apps/images.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
@@ -175,8 +175,8 @@ for (const seed of APPS) {
   const icon = manifest.icon && (await iconWithPng(manifest.id, manifest.icon, uploads))
   const categories = manifest.categories.filter((name) => MAIN_CATEGORIES.has(name))
   statements.push(
-    `INSERT INTO app (id, publisher_id, kind, format, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'listed', ${now})
-     ON CONFLICT (id) DO UPDATE SET status = 'listed', repository = excluded.repository;`,
+    `INSERT INTO app (id, slug, publisher_id, kind, format, updater, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(slugFromId(manifest.id))}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${manifest.format === "sabine" ? "'sabine'" : "NULL"}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'published', ${now})
+     ON CONFLICT (id) DO UPDATE SET status = 'published', repository = excluded.repository;`,
     `INSERT INTO trusted_publisher (id, app_id, owner_id, repository_id, repository, workflow, environment, created_at) VALUES (${sql(`${manifest.id}:store`)}, ${sql(manifest.id)}, ${sql(REPOSITORY.ownerId)}, ${sql(REPOSITORY.id)}, ${sql(REPOSITORY.name)}, ${sql(STORE_WORKFLOW)}, NULL, ${now})
      ON CONFLICT (id) DO UPDATE SET workflow = excluded.workflow, repository = excluded.repository;`,
     `INSERT INTO listing (app_id, locale, name, summary, description, keywords) VALUES (${sql(manifest.id)}, 'en', ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(seed.description)}, ${sql(JSON.stringify(manifest.keywords.slice(0, 20)))})

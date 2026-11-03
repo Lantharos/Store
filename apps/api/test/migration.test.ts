@@ -3,9 +3,10 @@ import { env } from "cloudflare:workers"
 import { describe, expect, test } from "vitest"
 
 const BEFORE_ORGANISATIONS = 5
+const BEFORE_HOSTING = 9
 
-async function rows<T>(query: string) {
-  return (await env.MIGRATION_DB.prepare(query).all<T>()).results
+async function rows<T>(query: string, db = env.MIGRATION_DB) {
+  return (await db.prepare(query).all<T>()).results
 }
 
 describe("the organisations migration", () => {
@@ -57,5 +58,41 @@ describe("the organisations migration", () => {
     expect(await rows("SELECT count(*) AS listings FROM listing")).toEqual([{ listings: 1 }])
     expect(await rows("SELECT count(*) AS releases FROM release")).toEqual([{ releases: 1 }])
     expect(await rows("PRAGMA foreign_key_check")).toEqual([])
+  })
+})
+
+describe("the hosting migration", () => {
+  test("names every app by the end of its id, marks them published and gives Sabine apps their updater", async () => {
+    const db = env.HOSTING_MIGRATION_DB
+    await applyD1Migrations(db, env.TEST_MIGRATIONS.slice(0, BEFORE_HOSTING))
+    await db.batch([
+      db.prepare(
+        "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('owner', 'Mira', 'mira@example.com', 1, 1, 1)",
+      ),
+      db.prepare(
+        "INSERT INTO publisher (id, kind, owner_id, name, slug, agreement_version, agreement_at, created_at) VALUES ('lantharos', 'organisation', 'owner', 'Lantharos', 'lantharos', '2026-11', 1, 1)",
+      ),
+      db.prepare(
+        "INSERT INTO app (id, publisher_id, kind, format, status, created_at) VALUES ('com.lantharos.Rain', 'lantharos', 'extension', 'luft-extension', 'listed', 1), ('com.lantharos.draft', 'lantharos', 'app', 'sabine', 'listed', 1)",
+      ),
+      db.prepare(
+        "INSERT INTO release (id, app_id, version, origin, manifest, requires, status, created_at) VALUES ('r1', 'com.lantharos.draft', '1.0.0', 'token', '', '{}', 'live', 1)",
+      ),
+    ])
+    await applyD1Migrations(db, env.TEST_MIGRATIONS)
+
+    expect(await rows("SELECT id, slug, status, visibility, updater FROM app ORDER BY id", db)).toEqual([
+      { id: "com.lantharos.Rain", slug: "rain", status: "published", visibility: "listed", updater: null },
+      {
+        id: "com.lantharos.draft",
+        slug: "draft",
+        status: "published",
+        visibility: "listed",
+        updater: "sabine",
+      },
+    ])
+    expect(await rows("SELECT origin, format, updater, channel FROM release", db)).toEqual([
+      { origin: "manual", format: "sabine", updater: "sabine", channel: "stable" },
+    ])
   })
 })

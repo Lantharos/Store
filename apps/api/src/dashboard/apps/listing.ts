@@ -17,7 +17,7 @@ import { reindexApp } from "../../storefront/indexing.ts"
 import { appSettings } from "./settings.ts"
 
 const LOCALE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/
-const INDEXED = new Set(["listed", "delisted", "pulled"])
+const INDEXED = new Set(["published", "delisted", "pulled"])
 
 export async function listingChanged(app: AppRow) {
   if (INDEXED.has(app.status)) await Promise.all([resignApp(app.id), reindexApp(app.id)])

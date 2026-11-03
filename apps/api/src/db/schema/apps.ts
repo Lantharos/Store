@@ -1,5 +1,6 @@
+import { FORMATS, UPDATERS, VISIBILITIES } from "@schelf/protocol"
 import { sql } from "drizzle-orm"
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { createdAt } from "./columns.ts"
 import { publisher } from "./publishers.ts"
 
@@ -26,23 +27,63 @@ export const app = sqliteTable(
     publisherId: text("publisher_id")
       .notNull()
       .references(() => publisher.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
     kind: text("kind", { enum: ["app", "extension"] }).notNull(),
-    format: text("format", { enum: ["sabine", "appimage", "luft-extension"] }).notNull(),
+    format: text("format", { enum: FORMATS }).notNull(),
     repository: text("repository"),
     repositoryId: text("repository_id"),
     licence: text("licence"),
     distribution: text("distribution", { enum: ["open", "proprietary"] })
       .notNull()
       .default("open"),
-    status: text("status", { enum: ["draft", "in-review", "listed", "delisted", "pulled"] })
+    status: text("status", { enum: ["draft", "in-review", "published", "delisted", "pulled"] })
       .notNull()
       .default("draft"),
+    visibility: text("visibility", { enum: VISIBILITIES }).notNull().default("listed"),
+    pageIndexed: integer("page_indexed", { mode: "boolean" }).notNull().default(false),
+    latestFollowsRollout: integer("latest_follows_rollout", { mode: "boolean" }).notNull().default(false),
+    updater: text("updater", { enum: UPDATERS }),
+    listingRequestedAt: integer("listing_requested_at", { mode: "timestamp_ms" }),
+    listingItem: text("listing_item"),
     createdAt: createdAt(),
   },
   (table) => [
     uniqueIndex("app_id_folded").on(sql`lower(${table.id})`),
-    index("app_publisher").on(table.publisherId),
+    uniqueIndex("app_slug").on(table.publisherId, table.slug),
   ],
+)
+
+export const channel = sqliteTable(
+  "channel",
+  {
+    appId: text("app_id")
+      .notNull()
+      .references(() => app.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    keep: integer("keep"),
+    createdAt: createdAt(),
+  },
+  (table) => [primaryKey({ columns: [table.appId, table.name] })],
+)
+
+export const updaterSwitch = sqliteTable(
+  "updater_switch",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => app.id, { onDelete: "cascade" }),
+    fromUpdater: text("from_updater", { enum: UPDATERS }).notNull(),
+    toUpdater: text("to_updater", { enum: UPDATERS }).notNull(),
+    fromFormat: text("from_format", { enum: FORMATS }).notNull(),
+    toFormat: text("to_format", { enum: FORMATS }).notNull(),
+    startedBy: text("started_by").notNull(),
+    firstReleaseId: text("first_release_id"),
+    bridgeReleaseId: text("bridge_release_id"),
+    completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (table) => [index("updater_switch_app").on(table.appId)],
 )
 
 export const trustedPublisher = sqliteTable(

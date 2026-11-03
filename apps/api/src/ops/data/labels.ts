@@ -12,7 +12,7 @@ import type {
 export const APP_STATUS: Record<AppStatus, string> = {
   draft: "Not submitted",
   "in-review": "In review",
-  listed: "Listed",
+  published: "Published",
   delisted: "Delisted",
   pulled: "Pulled",
 }
@@ -23,7 +23,14 @@ export const APP_FORMAT = {
   sabine: "Sabine",
   appimage: "AppImage",
   "luft-extension": "Luft extension",
+  files: "Files",
 } as const
+
+export const VISIBILITY = { listed: "Listed", unlisted: "Unlisted" } as const
+
+export const SOURCE = { open: "Open source", proprietary: "Closed source" } as const
+
+export const ORIGIN = { oidc: "Built on GitHub Actions", manual: "Uploaded by the developer" } as const
 
 export const RELEASE_STATUS: Record<ReleaseStatus, string> = {
   uploading: "Uploading",

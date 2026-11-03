@@ -125,6 +125,25 @@ export const updates = inbox("updates", {
   render: (item) => renderRelease(item.record),
 })
 
+export const listings = inbox("listings", {
+  icon: "list",
+  resource: app,
+  states: ["open", "listed", "kept unlisted"],
+  closed: ["listed", "kept unlisted"],
+  sla: { open: "3d" },
+  data: z.object({ app: z.string(), name: z.string(), publisher: z.string() }),
+  title: (data) => `${data.name} from ${data.publisher} asks to be listed`,
+  render: async (item) => {
+    const latest = item.record ? await releases.latestShipped(item.record) : null
+    return [
+      b.markdown(
+        "The project already hosts its releases on Schelf, unlisted. Listing puts it in the catalog, search and the Schelf app, and every release from now on is reviewed by a person.",
+      ),
+      ...(latest ? await releaseBlocks(latest) : [b.markdown("It has no shipped release any more.")]),
+    ]
+  },
+})
+
 export const reports = inbox("reports", {
   icon: "flag",
   resource: app,

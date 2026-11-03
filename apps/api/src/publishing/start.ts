@@ -1,20 +1,29 @@
 import { env } from "cloudflare:workers"
 import {
+  channelFromVersion,
   EXTENSION_MANIFEST,
+  type Format,
+  manifestName,
   PART_SIZE,
+  type PublishFile,
   type PublishRequest,
   type PublishResponse,
   partsFor,
   paths,
+  type Requires,
   readExtensionAccess,
   readPermissions,
   readSchelfToml,
   type SchelfToml,
+  splitProjectPath,
   versionFromTag,
 } from "@schelf/protocol"
 import { and, eq, sql } from "drizzle-orm"
 import { ZodError } from "zod"
 import { db, schema } from "../db/client.ts"
+import { ensureChannel } from "../hosting/channels.ts"
+import { limitManualUploads } from "../hosting/limits.ts"
+import { releaseLine } from "../hosting/switches.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { acceptingSubmissions } from "../ops/events.ts"
@@ -51,16 +60,31 @@ export async function appById(id: string) {
   return db.query.app.findFirst({ where: sql`lower(${schema.app.id}) = lower(${id})` })
 }
 
+export async function appByProject(publisherSlug: string, slug: string) {
+  const [row] = await db
+    .select({ app: schema.app })
+    .from(schema.app)
+    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
+    .where(and(eq(schema.publisher.slug, publisherSlug), eq(schema.app.slug, slug)))
+  return row?.app
+}
+
+function appOfManifest(manifest: SchelfToml) {
+  if (manifest.id) return appById(manifest.id)
+  const path = splitProjectPath(manifest.project!)!
+  return appByProject(path.publisher, path.project)
+}
+
 async function clearAbandoned(app: AppRow, version: string) {
   const existing = await db.query.release.findFirst({
-    where: and(
-      eq(schema.release.appId, app.id),
-      eq(schema.release.channel, "stable"),
-      eq(schema.release.version, version),
-    ),
+    where: and(eq(schema.release.appId, app.id), eq(schema.release.version, version)),
   })
   if (!existing) return
-  if (!RETRYABLE.has(existing.status)) fail(409, `${app.id} ${version} was already published`)
+  if (!RETRYABLE.has(existing.status))
+    fail(
+      409,
+      `${version} was already published on ${existing.channel}; promote it to another channel instead`,
+    )
   const artifacts = await db.select().from(schema.artifact).where(eq(schema.artifact.releaseId, existing.id))
   await Promise.all(
     artifacts.map((artifact) =>
@@ -76,37 +100,43 @@ export function dashboardUrl(app: string, release: string) {
   return `${env.PUBLIC_URL}/dashboard/apps/${app}/releases/${release}`
 }
 
-export async function startRelease(
-  credential: string | null,
-  body: PublishRequest,
-): Promise<PublishResponse> {
-  const manifest = readManifest(body.schelf_toml)
-  const app = await appById(manifest.id)
-  if (!app)
-    fail(
-      404,
-      `${manifest.id} isn't registered on schelf.store yet; add it in the dashboard or run schelf init`,
-    )
+export async function publishable(app: AppRow) {
   if (app.status === "pulled") fail(403, `${app.id} was pulled from the store`)
-  if (app.kind !== manifest.kind || app.format !== manifest.format)
-    fail(
-      422,
-      `${app.id} is registered as a ${app.format} ${app.kind}, not a ${manifest.format} ${manifest.kind}`,
-    )
-  const publisher: Publisher = await identifyPublisher(credential, app, body.tag)
   const owner = await db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) })
   if (owner?.status !== "active") fail(403, `${owner?.name ?? "This publisher"} can't publish right now`)
   if (!(await acceptingSubmissions())) fail(503, "schelf.store isn't taking new releases for a little while")
+  return owner
+}
 
-  const version = body.version ?? versionFromTag(body.tag)
-  if (!version) fail(422, `${body.tag} doesn't look like a version; pass the version explicitly`)
-  const names = new Set(body.files.map((file) => file.name))
-  if (names.size !== body.files.length) fail(422, "Two files have the same name")
+export interface NewRelease {
+  app: AppRow
+  publisher: Publisher
+  version: string
+  tag: string | null
+  commit: string | null
+  notes: string
+  manifest: string
+  format: Format
+  declared: ReturnType<typeof declared>
+  requires: Requires
+  channel: string | undefined
+  bridge: boolean
+  files: PublishFile[]
+}
+
+export async function createRelease(input: NewRelease): Promise<PublishResponse> {
+  const { app, publisher, version } = input
+  const names = new Set(input.files.map((file) => file.name))
+  if (names.size !== input.files.length) fail(422, "Two files have the same name")
+  const line = await releaseLine(app, input.format, input.bridge)
+  if (publisher.origin === "manual") await limitManualUploads(app.publisherId)
+  const channel = input.channel ?? channelFromVersion(version)
   await clearAbandoned(app, version)
+  await ensureChannel(app.id, channel)
 
   const releaseId = randomId()
   const artifacts = await Promise.all(
-    body.files.map(async (file) => {
+    input.files.map(async (file) => {
       const key = paths.artifact(app.id, version, file.platform, file.name)
       const parts = partsFor(file.size)
       const uploadId = parts > 1 ? (await env.BUCKET.createMultipartUpload(key)).uploadId : null
@@ -115,30 +145,36 @@ export async function startRelease(
         releaseId,
         name: file.name,
         platform: file.platform,
-        format: app.format,
+        format: input.format,
         kind: file.kind,
         key,
         size: file.size,
         sha256: file.sha256,
+        signature: file.signature ?? null,
         executable: file.executable ?? null,
         uploadId,
       }
     }),
   )
+  const oidc = publisher.origin === "oidc" ? publisher : null
   await db.batch([
     db.insert(schema.release).values({
       id: releaseId,
       appId: app.id,
       version,
-      tag: body.tag,
-      commit: publisher.origin === "oidc" ? publisher.commit : (body.commit ?? null),
-      runUrl: publisher.origin === "oidc" ? publisher.runUrl : null,
-      workflow: publisher.origin === "oidc" ? publisher.workflow : null,
+      channel,
+      tag: oidc?.tag ?? input.tag,
+      commit: oidc?.commit ?? input.commit,
+      runUrl: oidc?.runUrl ?? null,
+      workflow: oidc?.workflow ?? null,
       origin: publisher.origin,
-      notes: body.notes,
-      manifest: body.schelf_toml,
-      ...declared(manifest, body.permissions_toml),
-      requires: manifest.requires,
+      format: input.format,
+      updater: line.updater,
+      bridge: line.bridge,
+      notes: input.notes,
+      manifest: input.manifest,
+      ...input.declared,
+      requires: input.requires,
       status: "uploading",
     }),
     db.insert(schema.artifact).values(artifacts),
@@ -149,6 +185,7 @@ export async function startRelease(
     release: releaseId,
     app: app.id,
     version,
+    channel,
     status: "uploading",
     dashboard: dashboardUrl(app.id, releaseId),
     upload_token: upload.token,
@@ -160,4 +197,38 @@ export async function startRelease(
       part_size: PART_SIZE,
     })),
   }
+}
+
+export async function startRelease(
+  credential: string | null,
+  body: PublishRequest,
+): Promise<PublishResponse> {
+  const manifest = readManifest(body.schelf_toml)
+  const app = await appOfManifest(manifest)
+  if (!app)
+    fail(
+      404,
+      `${manifestName(manifest)} isn't on schelf.store yet; add it in the dashboard or run schelf init`,
+    )
+  if (app.kind !== manifest.kind)
+    fail(422, `${app.id} is registered as an ${app.kind}, not an ${manifest.kind}`)
+  const publisher = await identifyPublisher(credential, app, body.tag ?? null)
+  await publishable(app)
+  const version = body.version ?? versionFromTag(body.tag!)
+  if (!version) fail(422, `${body.tag} doesn't look like a version; pass the version explicitly`)
+  return createRelease({
+    app,
+    publisher,
+    version,
+    tag: body.tag ?? null,
+    commit: body.commit ?? null,
+    notes: body.notes,
+    manifest: body.schelf_toml,
+    format: manifest.format,
+    declared: declared(manifest, body.permissions_toml),
+    requires: manifest.requires,
+    channel: body.channel,
+    bridge: body.bridge,
+    files: body.files,
+  })
 }

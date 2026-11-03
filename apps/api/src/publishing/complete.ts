@@ -7,10 +7,10 @@ import { type Attestation, findAttestation } from "../github/attestations.ts"
 import { fail } from "../lib/http.ts"
 import { recordHistory } from "../ops/events.ts"
 import { dispatchChecks, failedChecks } from "../releases/checks.ts"
-import { sendToReview } from "../releases/review.ts"
+import { routeRelease } from "../releases/review.ts"
 import type { ArtifactRow, ReleaseRow } from "../signing/records.ts"
 import { searchKeys, storeKey } from "../storefront/search-index.ts"
-import { sha256OfStream } from "./hashing.ts"
+import { digestsOfStream } from "./hashing.ts"
 import { quickChecks } from "./quick-checks.ts"
 import { dashboardUrl } from "./start.ts"
 
@@ -23,11 +23,15 @@ async function finishMultipart(artifact: ArtifactRow) {
       .map((part) => ({ partNumber: part.part, etag: part.etag })),
   )
   const object = await env.BUCKET.get(artifact.key)
-  if (!object || (await sha256OfStream(object.body)) !== artifact.sha256) {
+  const digests = object && (await digestsOfStream(object.body))
+  if (!digests || digests.sha256 !== artifact.sha256) {
     await env.BUCKET.delete(artifact.key)
     fail(422, `${artifact.name} doesn't match the SHA-256 it was announced with`)
   }
-  await db.update(schema.artifact).set({ uploadedAt: new Date() }).where(eq(schema.artifact.id, artifact.id))
+  await db
+    .update(schema.artifact)
+    .set({ uploadedAt: new Date(), sha512: digests.sha512 })
+    .where(eq(schema.artifact.id, artifact.id))
 }
 
 async function attestationsFor(release: ReleaseRow, artifacts: ArtifactRow[], repositoryName: string | null) {
@@ -158,7 +162,7 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
     .where(eq(schema.release.id, release.id))
   if (!failedCheck) {
     const dispatched = await dispatchChecks({ ...release, status }, app, artifacts, previous ?? null)
-    if (!dispatched) await sendToReview(release.id)
+    if (!dispatched) await routeRelease(release.id)
   }
   const current = await db.query.release.findFirst({ where: eq(schema.release.id, release.id) })
   return { release: release.id, status: current!.status, checks, dashboard: dashboardUrl(app.id, release.id) }

@@ -1,7 +1,7 @@
 import { b } from "@lantharos/pult"
 import { CHECK_TITLES } from "@schelf/protocol"
 import { fileUrl } from "../../signing/records.ts"
-import { CHECK_RESULT, RELEASE_STATUS } from "../data/labels.ts"
+import { CHECK_RESULT, ORIGIN, RELEASE_STATUS, SOURCE, VISIBILITY } from "../data/labels.ts"
 import { appPage, link } from "../data/links.ts"
 import { type ReleaseView, releases } from "../data/releases.ts"
 import { checkDetailBlocks, factBlocks } from "./facts.ts"
@@ -21,9 +21,9 @@ function megabytes(bytes: number) {
 }
 
 function provenance(release: ReleaseView) {
-  if (release.origin === "token") return { built: "Uploaded by hand with a token" }
+  if (release.origin === "manual") return { built: ORIGIN.manual }
   return {
-    built: "On GitHub Actions",
+    built: ORIGIN.oidc,
     workflow: release.workflow ?? undefined,
     run: link(release.runUrl, "Build run"),
     commit:
@@ -51,6 +51,11 @@ export async function releaseBlocks(release: ReleaseView) {
       publisher: b.ref("publisher", release.publisherId, release.publisher),
       version: release.version,
       channel: release.channel === "stable" ? undefined : release.channel,
+      project: `${VISIBILITY[release.visibility]}, ${SOURCE[release.distribution].toLowerCase()}`,
+      updates: release.bridge
+        ? "Bridge: the last build in the old framework, handing over to the new one"
+        : undefined,
+      "promoted from": release.promotedFrom ? b.ref("release", release.promotedFrom) : undefined,
       status: releaseState(release),
       "pulled because": block?.reason,
       "public note": block?.publicNote ?? undefined,
@@ -59,7 +64,9 @@ export async function releaseBlocks(release: ReleaseView) {
       approved: release.approvedAt
         ? `${release.approvedAt.toISOString().slice(0, 10)} by ${release.approvedBy}`
         : undefined,
-      "store page": link(appPage({ id: release.appId, kind: release.kind, status: release.appStatus })),
+      "store page": link(
+        appPage({ ...release, id: release.appId, status: release.appStatus }, release.publisherSlug),
+      ),
     }),
     checks.length && checks.every((check) => check.status === "passed")
       ? b.fields({ checks: `All ${checks.length} passed` })
@@ -76,6 +83,7 @@ export async function releaseBlocks(release: ReleaseView) {
       artifacts.map((artifact) => ({
         file: b.link(fileUrl(artifact.key), artifact.name),
         system: artifact.platform,
+        kind: artifact.kind,
         size: megabytes(artifact.size),
         attestation: artifact.attestationUrl ? b.link(artifact.attestationUrl, "Verified") : "None",
       })),

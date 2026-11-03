@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
 import { type Catalog, paths, type Revocations, signSabineFeed } from "@schelf/protocol"
-import { eq, isNull, sql } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { appIndex, catalogEntry, sabineFeeds } from "./documents.ts"
 import { signingKey } from "./keys.ts"
@@ -8,7 +8,7 @@ import { loadApps } from "./records.ts"
 import { writeFeed, writeSigned } from "./write.ts"
 
 const REVOCATION_SERIAL = "revocations.serial"
-const INDEXED_APP_STATUSES = new Set(["listed", "delisted", "pulled"])
+const INDEXED_APP_STATUSES = new Set(["published", "delisted", "pulled"])
 
 export async function rebuildApp(id: string) {
   const app = await db.query.app.findFirst({ where: eq(schema.app.id, id) })
@@ -24,7 +24,10 @@ export async function rebuildApp(id: string) {
 }
 
 export async function rebuildCatalog() {
-  const listed = await db.select().from(schema.app).where(eq(schema.app.status, "listed"))
+  const listed = await db
+    .select()
+    .from(schema.app)
+    .where(and(eq(schema.app.status, "published"), eq(schema.app.visibility, "listed")))
   const records = await loadApps(listed)
   const catalog: Catalog = {
     version: 1,

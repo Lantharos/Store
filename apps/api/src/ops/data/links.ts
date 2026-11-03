@@ -1,9 +1,14 @@
 import { env } from "cloudflare:workers"
 import { b } from "@lantharos/pult"
+import { pageUrl } from "../../hosting/addresses.ts"
+import type { AppRow } from "../../signing/records.ts"
 
-export function appPage(app: { id: string; kind: "app" | "extension"; status: string }) {
-  if (app.status !== "listed") return undefined
-  return `${env.PUBLIC_URL}/${app.kind === "extension" ? "extensions" : "apps"}/${app.id}`
+export function appPage(
+  app: Pick<AppRow, "id" | "kind" | "slug" | "visibility" | "status">,
+  publisherSlug: string,
+) {
+  if (app.status !== "published") return undefined
+  return pageUrl(app, publisherSlug)
 }
 
 export function publisherPage(publisher: { slug: string }) {

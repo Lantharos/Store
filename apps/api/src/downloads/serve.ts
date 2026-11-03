@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers"
 import { PRIVATE_PREFIX } from "@schelf/protocol"
+import { embedScript } from "../hosting/embed.ts"
+import { isProjectPath, serveProject } from "../hosting/serve.ts"
 import { INDEX_CACHE } from "../signing/write.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
@@ -29,7 +31,7 @@ function count(download: Download, url: URL) {
       download.app,
       download.version,
       download.platform,
-      url.searchParams.get("for") === "update" ? "update" : "install",
+      url.searchParams.get("reason") === "update" ? "update" : "install",
     ],
     doubles: [1],
     indexes: [download.app],
@@ -45,6 +47,9 @@ export async function serveDownload(request: Request) {
     return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } })
   const url = new URL(request.url)
   const key = decodeURIComponent(url.pathname.slice(1))
+  if (key === "embed.js") return embedScript()
+  const segments = key.split("/")
+  if (isProjectPath(segments)) return serveProject(request, segments)
   if (
     !key ||
     key.startsWith(PRIVATE_PREFIX) ||

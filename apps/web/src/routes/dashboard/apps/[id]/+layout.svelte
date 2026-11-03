@@ -58,7 +58,7 @@
         </p>
       </div>
     </div>
-    {#if app.status === "listed" || app.status === "delisted"}
+    {#if app.status === "published" || app.status === "delisted"}
       <a href={storePath} target="_blank" class="button button-quiet self-start sm:self-auto">View page<ArrowUpRight class="size-4" /></a>
     {/if}
   </header>

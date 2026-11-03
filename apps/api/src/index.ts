@@ -7,6 +7,7 @@ import { recheckNamespaces } from "./dashboard/account/namespaces.ts"
 import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
+import { pruneChannels } from "./hosting/channels.ts"
 import { errorResponse, fail } from "./lib/http.ts"
 import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
@@ -57,6 +58,7 @@ export default {
       const office = backOffice()
       await Promise.all([
         stepRollouts(),
+        pruneChannels(),
         resignIfRequested(),
         publishDefinitions(),
         office && deliverPending(office.pult),

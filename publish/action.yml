@@ -7,7 +7,7 @@ branding:
 
 inputs:
   files:
-    description: Files to publish, one glob per line
+    description: Files to publish, one glob per line. Add #platform to a line to say which system its files are for, like dist/*.app.tar.gz#macos-aarch64
     required: false
   release-assets:
     description: Names of this GitHub release's assets to publish, one glob per line, for builds that attach their files to the release. Waits for them to finish uploading.
@@ -18,6 +18,12 @@ inputs:
   notes:
     description: Release notes. Defaults to the GitHub release's description.
     required: false
+  channel:
+    description: The channel to release on, such as beta or nightly. Defaults to stable, or to the channel a pre-release version names, like 2.0.0-beta.1.
+    required: false
+  bridge:
+    description: Publish this as the bridge, the last build in the old framework when moving to a new one
+    default: "false"
   api:
     description: The store to publish to
     default: https://schelf.store

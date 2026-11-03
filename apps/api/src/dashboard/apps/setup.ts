@@ -1,11 +1,17 @@
-import { type SetupFiles, schelfTomlFor, workflowFor } from "@schelf/protocol"
+import { isProjectId, type SetupFiles, schelfTomlFor, workflowFor } from "@schelf/protocol"
 import type { AppRow } from "../../signing/records.ts"
 
 const FIRST_EXTENSION_API = 1
 
-export function setupFiles(app: AppRow, workflow: string, environment: string | null): SetupFiles {
+export function setupFiles(
+  app: AppRow,
+  publisherSlug: string,
+  workflow: string,
+  environment: string | null,
+): SetupFiles {
   const input = {
     id: app.id,
+    project: isProjectId(app.id) ? `${publisherSlug}/${app.slug}` : undefined,
     kind: app.kind,
     format: app.format,
     environment,

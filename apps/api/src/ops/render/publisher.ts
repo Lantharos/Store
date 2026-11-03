@@ -44,7 +44,7 @@ export async function publisherBlocks(publisher: PublisherView) {
   return [
     b.stats({
       Apps: owned.length,
-      Listed: owned.filter((app) => app.status === "listed").length,
+      Listed: owned.filter((app) => app.status === "published").length,
       "Installs, 30 days": [...installs.values()].reduce((sum, count) => sum + count, 0),
     }),
     b.fields({

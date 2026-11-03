@@ -1,6 +1,9 @@
 import { join } from "node:path"
 import { type Component, parseMetainfo } from "@schelf/appstream"
 import type { Format, Kind } from "@schelf/protocol"
+
+export type Framework = { updater: "electron" | "tauri"; evidence: string }
+
 import { type ExtensionManifest, readExtension } from "./extension.ts"
 import { findFiles, readOptional } from "./files.ts"
 import { githubRepository, type Repository } from "./git.ts"
@@ -20,6 +23,7 @@ export interface Project {
   extension?: ExtensionManifest
   appstream?: { path: string; component: Component }
   appImageEvidence?: string
+  framework?: Framework
   repository?: Repository
   found: string[]
 }
@@ -66,6 +70,19 @@ async function findAppImageBuild(root: string) {
   return undefined
 }
 
+async function findFramework(root: string): Promise<Framework | undefined> {
+  if (await readOptional(join(root, "src-tauri", "tauri.conf.json")))
+    return { updater: "tauri", evidence: "src-tauri/tauri.conf.json" }
+  const packageJson = await readOptional(join(root, "package.json"))
+  if (!packageJson) return undefined
+  const manifest = JSON.parse(packageJson) as {
+    dependencies?: Record<string, string>
+    devDependencies?: Record<string, string>
+  }
+  const dependencies = { ...manifest.dependencies, ...manifest.devDependencies }
+  return "electron" in dependencies ? { updater: "electron", evidence: "package.json" } : undefined
+}
+
 async function findLicence(root: string, component?: Component) {
   if (component?.projectLicense) return component.projectLicense
   const packageJson = await readOptional(join(root, "package.json"))
@@ -103,11 +120,19 @@ export async function detectProject(root: string): Promise<Project> {
   if (extension) found.push("extension.toml")
   const appstream = await findMetainfo(root, sabine?.id ?? extension?.id)
   if (appstream) found.push(appstream.path)
-  const appImageEvidence = sabine || extension ? undefined : await findAppImageBuild(root)
+  const framework = sabine || extension ? undefined : await findFramework(root)
+  if (framework) found.push(framework.evidence)
+  const appImageEvidence = sabine || extension || framework ? undefined : await findAppImageBuild(root)
   if (appImageEvidence) found.push(appImageEvidence)
 
   const kind: Kind = extension ? "extension" : "app"
-  const format: Format = extension ? "luft-extension" : sabine ? "sabine" : "appimage"
+  const format: Format = extension
+    ? "luft-extension"
+    : sabine
+      ? "sabine"
+      : framework || !appImageEvidence
+        ? "files"
+        : "appimage"
   const component = appstream?.component
   const id = extension?.id ?? sabine?.id ?? component?.id.replace(/\.desktop$/, "")
   return {
@@ -124,6 +149,7 @@ export async function detectProject(root: string): Promise<Project> {
     extension,
     appstream,
     appImageEvidence,
+    framework,
     repository,
     found,
   }

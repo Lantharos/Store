@@ -5,9 +5,9 @@ import {
   type ArtifactKind,
   appIndex,
   compareVersions,
+  DELTA_KINDS,
   type DeltaReport,
   downloadUrl,
-  type Format,
   paths,
 } from "@schelf/protocol"
 import { download } from "./download.ts"
@@ -15,11 +15,6 @@ import { runChecked } from "./run.ts"
 
 const PREVIOUS_RELEASES = 3
 const WORTHWHILE_SHARE = 0.6
-const UPDATED_KIND: Record<Format, ArtifactKind> = {
-  sabine: "archive",
-  appimage: "appimage",
-  "luft-extension": "extension",
-}
 
 export interface DeltaTarget {
   platform: string
@@ -43,7 +38,8 @@ export async function makeDeltas(options: {
 }): Promise<DeltaReport[]> {
   const index = await publishedIndex(options.app)
   if (!index) return []
-  const kind = UPDATED_KIND[index.format]
+  const kind = DELTA_KINDS[index.format]
+  if (!kind) return []
   const previous = index.releases
     .filter((release) => compareVersions(release.version, options.version) < 0)
     .sort((left, right) => compareVersions(right.version, left.version))

@@ -1,4 +1,5 @@
 import {
+  type ArtifactKind,
   type CheckResult,
   type Platform,
   type ReleaseDetail,
@@ -15,12 +16,12 @@ import { iso } from "../../lib/time.ts"
 import { recordHistory } from "../../ops/events.ts"
 import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
-import type { ArtifactRow, ReleaseRow } from "../../signing/records.ts"
+import { type ArtifactRow, fileUrl, type ReleaseRow } from "../../signing/records.ts"
 
 export const releaseRoutes = new Hono<SignedInVars>()
 
 const NEXT_STEPS: Partial<Record<ReleaseRow["status"], string>> = {
-  uploading: "The upload didn't finish. Run the workflow again to publish this tag.",
+  uploading: "The upload didn't finish. Publish it again to start over.",
   checking: "The checks are running; this usually takes a few minutes.",
   failed: "Fix what the failed check says and publish a new release.",
   "in-review": "A person is reviewing the release. You'll get an email when they decide.",
@@ -36,6 +37,9 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
     channel: release.channel,
     tag: release.tag,
     origin: release.origin,
+    updater: release.updater,
+    bridge: release.bridge,
+    promoted_from: release.promotedFrom,
     status: release.status,
     rollout_percent: release.rolloutPercent,
     rollout_paused: release.rolloutPaused,
@@ -127,10 +131,12 @@ async function detail(release: ReleaseRow): Promise<ReleaseDetail> {
     permissions_widened: release.permissionsWidened,
     artifacts: artifacts.map((artifact) => ({
       platform: artifact.platform as Platform,
+      kind: artifact.kind as ArtifactKind,
       name: artifact.name,
       size: artifact.size,
       sha256: artifact.sha256,
-      attested: artifact.attestationUrl !== null,
+      url: fileUrl(artifact.key),
+      attestation: artifact.attestationUrl,
     })),
     checks: checkResults,
     timeline,

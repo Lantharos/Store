@@ -1,6 +1,7 @@
 import { parse } from "smol-toml"
 import { z } from "zod"
 import { appId, format, formatFits, kind } from "./platforms.ts"
+import { projectPath } from "./projects.ts"
 
 export const SCHELF_TOML = "schelf.toml"
 
@@ -14,7 +15,8 @@ export type Requires = z.infer<typeof requires>
 
 export const schelfToml = z
   .strictObject({
-    id: appId,
+    id: appId.optional(),
+    project: projectPath.optional(),
     kind: kind.default("app"),
     format,
     permissions: z.string().min(1).optional(),
@@ -22,6 +24,14 @@ export const schelfToml = z
     requires: requires.default({}),
   })
   .superRefine((manifest, context) => {
+    if (!manifest.id === !manifest.project)
+      context.addIssue({
+        code: "custom",
+        path: ["project"],
+        message: 'Name it with either id = "io.github.alice.Notes" or project = "alice/notes"',
+      })
+    if (manifest.kind === "extension" && !manifest.id)
+      context.addIssue({ code: "custom", path: ["id"], message: "An extension has a reverse-DNS id" })
     if (!formatFits(manifest.kind, manifest.format))
       context.addIssue({
         code: "custom",
@@ -39,6 +49,10 @@ export const schelfToml = z
       })
   })
 export type SchelfToml = z.infer<typeof schelfToml>
+
+export function manifestName(manifest: Pick<SchelfToml, "id" | "project">) {
+  return (manifest.id ?? manifest.project)!
+}
 
 export function readSchelfToml(text: string): SchelfToml {
   return schelfToml.parse(parse(text))

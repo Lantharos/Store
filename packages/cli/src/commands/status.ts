@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { type CheckResult, readSchelfToml, SCHELF_TOML } from "@schelf/protocol"
+import { type CheckResult, manifestName, readSchelfToml, SCHELF_TOML } from "@schelf/protocol"
 import { session } from "../api/auth.ts"
 import { type Dashboard, dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
@@ -25,7 +25,7 @@ export async function appIdHere(args: Args) {
   const text = await readFile(config, "utf8").catch(() => {
     throw new Failure("There's no schelf.toml here", "Run this in the app's repository, or pass --config.")
   })
-  return readSchelfToml(text).id
+  return manifestName(readSchelfToml(text))
 }
 
 const ago = (iso: string) => {

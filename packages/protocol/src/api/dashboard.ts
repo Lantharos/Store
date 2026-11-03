@@ -1,8 +1,17 @@
 import { z } from "zod"
 import { listingText, type Screenshot } from "../files/app.ts"
 import type { Permissions } from "../permissions.ts"
-import { appId, distribution, format, kind, type Platform, platform } from "../platforms.ts"
-import type { AppStatus, CheckResult, Origin, ReleaseStatus } from "../releases.ts"
+import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
+import { projectSlug, type Visibility } from "../projects.ts"
+import {
+  type AppStatus,
+  type CheckResult,
+  channelName,
+  type Origin,
+  type ReleaseStatus,
+  type Updater,
+  updater,
+} from "../releases.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
 export const PROOF_METHODS = ["dns", "well-known", "github"] as const
@@ -32,7 +41,12 @@ export const verifyNamespace = z.object({ method: z.enum(PROOF_METHODS) })
 
 export interface DashboardApp {
   id: string
+  slug: string
   publisher: string
+  publisher_slug: string
+  visibility: Visibility
+  listing_requested: boolean
+  updater: Updater | null
   kind: z.infer<typeof kind>
   format: z.infer<typeof format>
   name: string
@@ -55,6 +69,84 @@ export const createApp = z.object({
   summary: z.string().trim().min(1).max(120),
 })
 export type CreateApp = z.infer<typeof createApp>
+
+export const createProject = z.object({
+  name: z.string().trim().min(1).max(60),
+  slug: projectSlug.min(1),
+  distribution,
+  licence: z.string().trim().max(100).optional(),
+  repository: z
+    .string()
+    .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "A repository is owner/name")
+    .optional(),
+})
+export type CreateProject = z.infer<typeof createProject>
+
+export const updateHosting = z.object({
+  slug: projectSlug.min(1).optional(),
+  page_indexed: z.boolean().optional(),
+  latest_follows_rollout: z.boolean().optional(),
+})
+export type UpdateHosting = z.infer<typeof updateHosting>
+
+export const listingRequest = z.object({ note: z.string().trim().max(1000).default("") })
+
+export interface Links {
+  page: string
+  latest: string
+  json: string
+  embed: string
+  feeds: { name: string; url: string }[]
+}
+
+export interface Channel {
+  name: string
+  keep: number | null
+  releases: number
+}
+export const updateChannel = z.object({ keep: z.number().int().min(1).max(100).nullable() })
+export const promoteRelease = z.object({ channel: channelName })
+
+export interface UpdaterSwitch {
+  id: string
+  from: Updater
+  to: Updater
+  from_format: z.infer<typeof format>
+  to_format: z.infer<typeof format>
+  started_at: string
+  first_release: string | null
+  bridge_release: string | null
+  completed_at: string | null
+}
+export const startSwitch = z.object({ to: updater })
+
+export const manualUpload = z.object({
+  version: z.string().trim().min(1).max(64),
+  channel: channelName.optional(),
+  notes: z.string().max(20_000).default(""),
+  bridge: z.boolean().default(false),
+  files: z
+    .array(
+      z.object({
+        name: z
+          .string()
+          .min(1)
+          .max(200)
+          .regex(
+            /^[A-Za-z0-9][A-Za-z0-9._+-]*$/,
+            "File names are letters, digits, dots, dashes and underscores",
+          ),
+        platform,
+        kind: artifactKind,
+        size: z.number().int().positive(),
+        sha256: z.string().regex(/^[0-9a-f]{64}$/),
+        signature: z.string().max(4096).optional(),
+      }),
+    )
+    .min(1)
+    .max(20),
+})
+export type ManualUpload = z.infer<typeof manualUpload>
 
 export interface SetupFiles {
   schelf_toml: string
@@ -141,8 +233,13 @@ export interface AppSettings {
     repository: string | null
     licence: string | null
     distribution: z.infer<typeof distribution>
+    page_indexed: boolean
+    latest_follows_rollout: boolean
     created_at: string
   }
+  links: Links
+  channels: Channel[]
+  switches: UpdaterSwitch[]
   listing: Record<string, z.infer<typeof listingText>>
   listing_sources: Record<string, FieldSources>
   meta_sources: FieldSources
@@ -159,6 +256,9 @@ export interface ReleaseSummary {
   channel: string
   tag: string | null
   origin: Origin
+  updater: Updater | null
+  bridge: boolean
+  promoted_from: string | null
   status: ReleaseStatus
   rollout_percent: number
   rollout_paused: boolean
@@ -179,7 +279,15 @@ export interface ReleaseDetail extends ReleaseSummary {
   run_url: string | null
   permissions: Permissions | null
   permissions_widened: boolean
-  artifacts: { platform: Platform; name: string; size: number; sha256: string; attested: boolean }[]
+  artifacts: {
+    platform: Platform
+    kind: z.infer<typeof artifactKind>
+    name: string
+    size: number
+    sha256: string
+    url: string
+    attestation: string | null
+  }[]
   checks: CheckResult[]
   timeline: TimelineStep[]
   next: string | null

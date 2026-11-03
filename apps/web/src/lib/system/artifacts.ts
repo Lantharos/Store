@@ -1,5 +1,4 @@
-import type { Artifact, ArtifactKind, Platform } from "@schelf/protocol"
-import type { System } from "./detect.ts"
+import type { Artifact, ArtifactKind, Platform, System } from "@schelf/protocol"
 
 export const PLATFORM_NAMES: Record<Platform, string> = {
   "windows-x86_64": "Windows",

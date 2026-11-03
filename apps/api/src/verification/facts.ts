@@ -127,7 +127,7 @@ async function appFacts(publisherId: string) {
   const apps = await db
     .select({ id: schema.app.id })
     .from(schema.app)
-    .where(and(eq(schema.app.publisherId, publisherId), eq(schema.app.status, "listed")))
+    .where(and(eq(schema.app.publisherId, publisherId), eq(schema.app.status, "published")))
   const installs = await installsSince(
     apps.map((app) => app.id),
     30,

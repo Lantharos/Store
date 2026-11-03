@@ -1,9 +1,9 @@
 <script lang="ts">
   import LoaderCircle from "@lucide/svelte/icons/loader-circle"
   import Search from "@lucide/svelte/icons/search"
+  import { platformParam } from "@schelf/protocol"
   import { goto } from "$app/navigation"
   import { page } from "$app/state"
-  import { platformParam } from "../../system/detect.ts"
   import Kbd from "../../ui/Kbd.svelte"
   import AppIcon from "../apps/AppIcon.svelte"
   import { appHref, originOf } from "../links.ts"

@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { type AppIndex, DEFAULT_LOCALE } from "../files/app.ts"
 import type { CatalogEntry, MirrorEntry } from "../files/catalog.ts"
-import { kind, platform } from "../platforms.ts"
+import { type ArtifactKind, kind, type Platform, platform } from "../platforms.ts"
 import type { AppStatus } from "../releases.ts"
 
 export const API_BASE = "/api/v1"
@@ -43,8 +43,41 @@ export interface Installs {
 
 export interface AppPage {
   app: AppIndex
-  status: Extract<AppStatus, "listed" | "delisted" | "pulled">
+  status: Extract<AppStatus, "published" | "delisted" | "pulled">
   installs: Installs
+  project: ProjectSummary
+}
+
+export interface ProjectSummary {
+  publisher: string
+  slug: string
+  listed: boolean
+  indexed: boolean
+  page: string
+  latest: string
+}
+
+export interface ProjectFile {
+  version: string
+  name: string
+  platform: Platform
+  kind: ArtifactKind
+  size: number
+  sha256: string
+  url: string
+  link: string
+  attestation: string | null
+}
+
+export interface ProjectDownloads {
+  project: string
+  name: string
+  channel: string
+  version: string
+  published: string
+  notes: string
+  page: string
+  files: ProjectFile[]
 }
 
 export interface PublisherPage {

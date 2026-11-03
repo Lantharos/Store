@@ -14,8 +14,10 @@ import { request } from "./http.ts"
 export interface ReleaseInput {
   api: string
   token: string
-  tag: string
+  tag?: string
   version?: string
+  channel?: string
+  bridge?: boolean
   commit?: string
   schelfToml: string
   permissionsToml?: string
@@ -74,6 +76,8 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
     schelf_toml: input.schelfToml,
     permissions_toml: input.permissionsToml,
     notes: input.notes,
+    channel: input.channel,
+    bridge: input.bridge ?? false,
     files: input.artifacts.map((artifact) => ({
       name: artifact.name,
       platform: artifact.platform,
@@ -81,6 +85,7 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
       size: artifact.size,
       sha256: artifact.sha256,
       executable: artifact.executable,
+      signature: artifact.signature,
     })),
   }
   const release = await request<PublishResponse>(`${input.api}${API_BASE}/publish`, {

@@ -1,11 +1,12 @@
 import { b, resource } from "@lantharos/pult"
-import { APP_STATUSES } from "@schelf/protocol"
+import { APP_STATUSES, UPDATER_NAMES, VISIBILITIES } from "@schelf/protocol"
 import { and, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { db, schema } from "../../db/client.ts"
+import { decideListing } from "../../hosting/listing.ts"
 import { delist, pull, unpull } from "../../releases/moderation.ts"
 import { type AppView, apps } from "../data/apps.ts"
-import { APP_FORMAT, APP_KIND, APP_STATUS } from "../data/labels.ts"
+import { APP_FORMAT, APP_KIND, APP_STATUS, SOURCE, VISIBILITY } from "../data/labels.ts"
 import { appPage, link, repositoryLink } from "../data/links.ts"
 import { releases } from "../data/releases.ts"
 import { listingBlocks } from "../render/listing.ts"
@@ -15,7 +16,8 @@ const pullInput = z.object({
   note: z.string().trim().min(1).max(500).describe("Shown to everyone who installed it"),
 })
 
-const shown = (app: AppView) => app.status === "listed" || app.status === "delisted"
+const shown = (app: AppView) => app.status === "published" || app.status === "delisted"
+const page = (app: AppView) => appPage(app, app.publisherSlug)
 
 async function blockRows(app: AppView) {
   const blocks = await apps.blocks(app.id)
@@ -37,18 +39,21 @@ export const app = resource("app", {
     filters: z.object({
       status: z.enum(APP_STATUSES).optional(),
       kind: z.enum(["app", "extension"]).optional(),
+      visibility: z.enum(VISIBILITIES).optional(),
     }),
     run: ({ query, filters, cursor, limit }) => apps.browse(query, filters, cursor, limit),
   },
   title: (app) => app.name,
-  subtitle: (app) => `${app.id} · ${APP_STATUS[app.status]}`,
+  subtitle: (app) =>
+    `${app.publisherSlug}/${app.slug} · ${APP_STATUS[app.status]} · ${VISIBILITY[app.visibility]}`,
   fields: (app) => ({
     status: APP_STATUS[app.status],
+    visibility: VISIBILITY[app.visibility],
     kind: APP_KIND[app.kind],
     publisher: app.publisher,
     added: app.createdAt,
   }),
-  url: (app) => appPage(app),
+  url: page,
   related: {
     releases: { resource: "release", list: (app, limit) => releases.ofApp(app.id, limit ?? 50) },
   },
@@ -64,15 +69,19 @@ export const app = resource("app", {
       b.stats({ "Installs, 30 days": installs, "Open reports": reports }),
       b.fields({
         id: app.id,
+        project: `${app.publisherSlug}/${app.slug}`,
         publisher: b.ref("publisher", app.publisherId, app.publisher),
         status: APP_STATUS[app.status],
+        visibility: VISIBILITY[app.visibility],
+        "asks to be listed": app.listingRequestedAt ?? undefined,
         kind: APP_KIND[app.kind],
         format: APP_FORMAT[app.format],
-        source: app.distribution === "open" ? "Open source" : "Proprietary",
+        updates: app.updater ? UPDATER_NAMES[app.updater] : "Downloads only",
+        source: SOURCE[app.distribution],
         repository: repositoryLink(app.repository),
         licence: app.licence ?? undefined,
         added: app.createdAt,
-        "store page": link(appPage(app)),
+        page: link(page(app)),
       }),
       b.table(blocks, { title: "Pulled" }),
       b.table(
@@ -96,10 +105,34 @@ export const app = resource("app", {
     ]
   },
   actions: (action) => ({
+    list: action({
+      label: "List it",
+      description: "Puts the project in the catalog, search and the Schelf app.",
+      danger: "confirm",
+      when: (app) => app.listingRequestedAt !== null,
+      moves: "listed",
+      run: async ({ record, actor }) => {
+        await decideListing(record.id, { listed: true, by: actor.name })
+        return `${record.name} is listed`
+      },
+    }),
+    keepUnlisted: action({
+      label: "Keep unlisted",
+      description:
+        "Declines the request to be listed and tells the publisher why. The project keeps working as it is.",
+      input: z.object({ reason: z.string().trim().min(1).max(2000).describe("Sent to the publisher") }),
+      danger: "confirm",
+      when: (app) => app.listingRequestedAt !== null,
+      moves: "kept unlisted",
+      run: async ({ record, input, actor }) => {
+        await decideListing(record.id, { listed: false, by: actor.name, reason: input.reason })
+        return `${record.name} stays unlisted`
+      },
+    }),
     delist: action({
       description: "Hides the app from the catalog and search. Installs and updates keep working.",
       danger: "confirm",
-      when: (app) => app.status === "listed",
+      when: (app) => app.status === "published",
       run: async ({ record }) => {
         await delist(record.id, false)
         return `${record.name} is delisted`

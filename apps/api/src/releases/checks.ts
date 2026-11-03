@@ -17,7 +17,7 @@ import { recordHistory } from "../ops/events.ts"
 import { saveChecks } from "../publishing/complete.ts"
 import { type AppRow, type ArtifactRow, fileUrl, type ReleaseRow } from "../signing/records.ts"
 import { notifyPublisher } from "./notify.ts"
-import { sendToReview } from "./review.ts"
+import { routeRelease } from "./review.ts"
 
 export const CHECKS_EVENT = "schelf-checks"
 export const CHECKS_WORKFLOW = ".github/workflows/checks.yml"
@@ -47,7 +47,9 @@ export async function dispatchChecks(
     release: release.id,
     app: app.id,
     version: release.version,
-    repository: app.repository,
+    repository: app.distribution === "open" ? app.repository : null,
+    source: app.distribution === "open" ? "open" : "closed",
+    strict: release.origin === "manual",
     tag: release.tag,
     previous_tag: previous?.tag ?? null,
     permissions: release.permissions,
@@ -82,8 +84,8 @@ export async function acceptChecks(releaseId: string, report: ChecksReport) {
     await notifyPublisher(release.id, "failed")
     return "failed" as const
   }
-  await sendToReview(release.id)
-  return "in-review" as const
+  await routeRelease(release.id)
+  return (await db.query.release.findFirst({ where: eq(schema.release.id, release.id) }))!.status
 }
 
 export function failedChecks(checks: Pick<CheckResult, "name" | "status">[]) {

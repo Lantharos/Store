@@ -1,4 +1,4 @@
-import { type Ability, can, type Role } from "@schelf/protocol"
+import { type Ability, can, type Role, splitProjectPath } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { createMiddleware } from "hono/factory"
 import type { Viewer } from "../auth/session.ts"
@@ -43,6 +43,13 @@ export const asMember = createMiddleware<PublisherVars>(async (c, next) => {
   await next()
 })
 
+function appMatching(id: string) {
+  const project = splitProjectPath(id)
+  return project
+    ? and(eq(schema.publisher.slug, project.publisher), eq(schema.app.slug, project.project))
+    : eq(schema.app.id, id)
+}
+
 export async function appAccess(viewer: Viewer, id: string, ability?: Ability) {
   const [row] = await db
     .select({ app: schema.app, publisher: schema.publisher, role: schema.member.role })
@@ -52,7 +59,7 @@ export async function appAccess(viewer: Viewer, id: string, ability?: Ability) {
       schema.member,
       and(eq(schema.member.publisherId, schema.app.publisherId), eq(schema.member.userId, viewer.id)),
     )
-    .where(eq(schema.app.id, id))
+    .where(appMatching(id))
   if (!row) fail(404, "You don't have an app with that id")
   if (ability) {
     allow(row.role, ability)

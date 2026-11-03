@@ -3,6 +3,7 @@ import {
   API_BASE,
   type AppSettings,
   type CreateApp,
+  type CreateProject,
   type CreatePublisher,
   type DashboardApp,
   type DashboardPublisher,
@@ -14,6 +15,7 @@ import {
   type TrustedPublisher,
   type UpdateListing,
   type UpdateMeta,
+  type Updater,
 } from "@schelf/protocol"
 import { request } from "@schelf/publisher"
 
@@ -39,7 +41,10 @@ export function dashboard(api: string, token: string) {
       post<Namespace>(`${publisher(owner)}/namespaces/${encodeURIComponent(prefix)}/verify`, { method }),
     apps: (owner: string) => get<DashboardApp[]>(`${publisher(owner)}/apps`),
     createApp: (owner: string, body: CreateApp) => post<AppSettings>(`${publisher(owner)}/apps`, body),
+    createProject: (owner: string, body: CreateProject) =>
+      post<AppSettings>(`${publisher(owner)}/apps/projects`, body),
     app: (id: string) => get<AppSettings>(app(id)),
+    switchUpdater: (id: string, to: Updater) => post<AppSettings>(`${app(id)}/switch`, { to }),
     addTrustedPublisher: (id: string, body: { repository: string; workflow: string }) =>
       post<TrustedPublisher>(`${app(id)}/trusted-publishers`, body),
     putListing: (id: string, locale: string, body: UpdateListing) =>

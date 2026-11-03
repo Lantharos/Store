@@ -12,12 +12,18 @@ import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
 import { importListing } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
+import { initProject } from "../setup/project.ts"
 import { choosePublisher, registerApp, registeredApp } from "../setup/register.ts"
 import { blank, done, Failure, field, next, note, step, title } from "../ui/output.ts"
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
 
-const FORMAT_NAMES = { sabine: "a Sabine app", appimage: "an AppImage", "luft-extension": "a Luft extension" }
+const FORMAT_NAMES = {
+  sabine: "a Sabine app",
+  appimage: "an AppImage",
+  "luft-extension": "a Luft extension",
+  files: "a project",
+}
 
 function describe(project: Project) {
   const what = FORMAT_NAMES[project.format]
@@ -56,16 +62,18 @@ export async function init(args: Args) {
   title("Set up for Schelf")
 
   const project = await step("Reading the project", () => detectProject(root), describe)
-  if (!project.found.length && !project.appImageEvidence) {
-    note(
-      "Nothing here builds a Sabine app, an AppImage or a Luft extension, so this sets it up as an AppImage.",
-    )
-  }
   if (!project.repository) {
     throw new Failure(
       "This repository has no GitHub remote",
       "Schelf publishes from GitHub Actions. Push the project to GitHub, then run schelf init again.",
     )
+  }
+  if (project.format === "files") {
+    if (!project.framework)
+      note(
+        "Nothing here builds a Sabine app or a Luft extension, so Schelf hosts its release files as they are.",
+      )
+    return initProject(api, project, flag(args, "publisher"))
   }
   const repository = `${project.repository.owner}/${project.repository.name}`
   const identity = await settleIdentity(project)

@@ -1,4 +1,5 @@
-import { mkdir, open } from "node:fs/promises"
+import { copyFile, mkdir, open } from "node:fs/promises"
+import { basename, join } from "node:path"
 import { runChecked } from "./run.ts"
 
 async function squashfsOffset(path: string) {
@@ -31,9 +32,10 @@ const UNPACKERS: [RegExp, (path: string, into: string) => Promise<unknown>][] = 
   [/\.msi$/i, (path, into) => runChecked("msiextract", ["-C", into, path])],
   [/\.(exe|dmg)$/i, (path, into) => runChecked("7z", ["x", "-y", "-bd", `-o${into}`, path])],
   [
-    /\.(rpm|zip|tar\.gz|tgz|tar\.zst|tar\.xz)$/i,
+    /\.(rpm|zip|apk|pkg|tar\.gz|tgz|tar\.zst|tar\.xz|txz|tar\.bz2|tbz2)$/i,
     (path, into) => runChecked("bsdtar", ["-xf", path, "-C", into]),
   ],
+  [/(^|\/)[^./]+$|\.(bin|run)$/i, (path, into) => copyFile(path, join(into, basename(path)))],
 ]
 
 export async function unpack(path: string, into: string) {

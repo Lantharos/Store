@@ -1,9 +1,10 @@
 import type { Pult } from "@lantharos/pult"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { apps } from "./data/apps.ts"
 import { releases } from "./data/releases.ts"
 import { app } from "./define/app.ts"
-import { reports, submissions, updates } from "./define/inboxes.ts"
+import { listings, reports, submissions, updates } from "./define/inboxes.ts"
 import { publisher } from "./define/publisher.ts"
 import { release as releaseResource } from "./define/release.ts"
 import { verification } from "./define/verification.ts"
@@ -20,7 +21,11 @@ async function tagsFor(release: NonNullable<Awaited<ReturnType<typeof releases.b
   const checks = await releases.checks(release.id)
   return [
     ...(release.permissionsWidened ? ["permissions"] : []),
-    ...(release.origin === "token" ? ["uploaded"] : []),
+    ...(release.origin === "manual" ? ["uploaded"] : []),
+    ...(release.visibility === "unlisted" ? ["unlisted"] : []),
+    ...(release.distribution === "proprietary" ? ["closed-source"] : []),
+    ...(release.channel === "stable" ? [] : [release.channel]),
+    ...(release.bridge ? ["bridge"] : []),
     ...checks.flatMap((check) => {
       const flag = FLAGGING_CHECKS[check.name]
       return flag && check.status !== "passed" ? [flag] : []
@@ -38,6 +43,18 @@ export async function sendRelease(pult: Pult, releaseId: string, kind: "submissi
     data: { app: release.appId, name: release.name, version: release.version, publisher: release.publisher },
   })
   await db.update(schema.review).set({ pultItem: sent.id }).where(eq(schema.review.releaseId, release.id))
+}
+
+export async function sendListing(pult: Pult, appId: string) {
+  const app = await apps.byId(appId)
+  if (!app?.listingRequestedAt) return
+  const sent = await pult.send(listings, {
+    fingerprint: `${app.id}:${app.listingRequestedAt.getTime()}`,
+    record: app.id,
+    tags: app.distribution === "proprietary" ? ["closed-source"] : [],
+    data: { app: app.id, name: app.name, publisher: app.publisher },
+  })
+  await db.update(schema.app).set({ listingItem: sent.id }).where(eq(schema.app.id, app.id))
 }
 
 export async function sendReport(pult: Pult, reportId: string) {

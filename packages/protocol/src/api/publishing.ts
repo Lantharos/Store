@@ -2,7 +2,7 @@ import { z } from "zod"
 import { mirrorEntry } from "../files/catalog.ts"
 import type { Permissions } from "../permissions.ts"
 import { type ArtifactKind, artifactKind, type Platform, platform } from "../platforms.ts"
-import { type CheckResult, checkResult, type ReleaseStatus } from "../releases.ts"
+import { type CheckResult, channelName, checkResult, type ReleaseStatus } from "../releases.ts"
 
 export const OIDC_AUDIENCE = "schelf.store"
 export const MULTIPART_THRESHOLD = 95_000_000
@@ -26,21 +26,29 @@ export const publishFile = z.object({
   size: z.number().int().positive(),
   sha256: z.string().regex(/^[0-9a-f]{64}$/, "A SHA-256 is 64 lowercase hex digits"),
   executable: z.string().max(500).optional(),
+  signature: z.string().max(4096).optional(),
 })
 export type PublishFile = z.infer<typeof publishFile>
 
-export const publishRequest = z.object({
-  tag: z.string().min(1).max(200),
-  version: z.string().min(1).max(64).optional(),
-  commit: z
-    .string()
-    .regex(/^[0-9a-f]{40}$/)
-    .optional(),
-  schelf_toml: z.string().max(20_000),
-  permissions_toml: z.string().max(20_000).optional(),
-  notes: z.string().max(20_000).default(""),
-  files: z.array(publishFile).min(1).max(20),
-})
+export const publishRequest = z
+  .object({
+    tag: z.string().min(1).max(200).optional(),
+    version: z.string().min(1).max(64).optional(),
+    commit: z
+      .string()
+      .regex(/^[0-9a-f]{40}$/)
+      .optional(),
+    schelf_toml: z.string().max(20_000),
+    permissions_toml: z.string().max(20_000).optional(),
+    notes: z.string().max(20_000).default(""),
+    channel: channelName.optional(),
+    bridge: z.boolean().default(false),
+    files: z.array(publishFile).min(1).max(20),
+  })
+  .refine((body) => body.tag || body.version, {
+    message: "Give the release a tag or a version",
+    path: ["version"],
+  })
 export type PublishRequest = z.infer<typeof publishRequest>
 
 export interface UploadTarget {
@@ -54,6 +62,7 @@ export interface PublishResponse {
   release: string
   app: string
   version: string
+  channel: string
   status: ReleaseStatus
   dashboard: string
   upload_token: string
@@ -88,6 +97,8 @@ export interface ChecksDispatch {
   app: string
   version: string
   repository: string | null
+  source: "open" | "closed"
+  strict: boolean
   tag: string | null
   previous_tag: string | null
   permissions: Permissions | null

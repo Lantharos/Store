@@ -1,4 +1,4 @@
-import { type AppStatus, DEFAULT_LOCALE } from "@schelf/protocol"
+import { type AppStatus, DEFAULT_LOCALE, type Visibility } from "@schelf/protocol"
 import { and, desc, eq, gt, isNull, like, or, type SQL, sql } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 import { installsSince } from "../../signing/records.ts"
@@ -16,11 +16,16 @@ function appQuery() {
       kind: schema.app.kind,
       format: schema.app.format,
       status: schema.app.status,
+      slug: schema.app.slug,
+      visibility: schema.app.visibility,
+      listingRequestedAt: schema.app.listingRequestedAt,
+      updater: schema.app.updater,
       distribution: schema.app.distribution,
       repository: schema.app.repository,
       licence: schema.app.licence,
       publisherId: schema.publisher.id,
       publisher: schema.publisher.name,
+      publisherSlug: schema.publisher.slug,
       activeTokens,
       trustedPublishers,
       createdAt: schema.app.createdAt,
@@ -48,6 +53,7 @@ export type AppView = Awaited<ReturnType<typeof apps.byId>> & {}
 export interface AppFilters {
   status?: AppStatus
   kind?: "app" | "extension"
+  visibility?: Visibility
 }
 
 export const apps = {
@@ -66,6 +72,7 @@ export const apps = {
           matching(query),
           filters.status ? eq(schema.app.status, filters.status) : undefined,
           filters.kind ? eq(schema.app.kind, filters.kind) : undefined,
+          filters.visibility ? eq(schema.app.visibility, filters.visibility) : undefined,
         ),
       )
       .orderBy(desc(schema.app.createdAt))

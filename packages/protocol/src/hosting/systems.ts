@@ -1,4 +1,4 @@
-export type Os = "windows" | "macos" | "linux" | "luft" | "phone" | "other"
+export type Os = "windows" | "macos" | "linux" | "luft" | "android" | "phone" | "other"
 export type Arch = "x86_64" | "aarch64"
 
 export interface System {
@@ -6,10 +6,12 @@ export interface System {
   arch: Arch
 }
 
-const PHONE = /Android|iPhone|iPad|iPod|CrOS/
+const ANDROID = /Android/
+const PHONE = /iPhone|iPad|iPod|CrOS/
 const LUFT = /\bLuft\b/
 
 function osFrom(agent: string, platformHint: string | null): Os {
+  if (ANDROID.test(agent)) return "android"
   if (PHONE.test(agent)) return "phone"
   if (LUFT.test(agent)) return "luft"
   const hint = platformHint?.replaceAll('"', "")
@@ -38,23 +40,17 @@ export function systemKey(system: System) {
   return `${system.os}-${system.arch}`
 }
 
-interface HighEntropy {
-  getHighEntropyValues(hints: string[]): Promise<{ architecture?: string; platform?: string }>
-}
-
-export async function refine(system: System): Promise<System> {
-  const data = (navigator as Navigator & { userAgentData?: HighEntropy }).userAgentData
-  if (!data || system.os === "luft" || system.os === "phone") return system
-  const values = await data.getHighEntropyValues(["architecture"])
-  if (!values.architecture) return system
-  return detect(navigator.userAgent, values.platform ?? null, values.architecture)
-}
-
 const API_OS: Partial<Record<Os, string>> = {
   windows: "windows",
   macos: "macos",
   linux: "linux",
   luft: "linux",
+}
+
+export function linkTarget(system: System) {
+  if (system.os === "android") return "android"
+  const os = API_OS[system.os]
+  return os ? `${os}-${system.arch}` : null
 }
 
 export function platformParam(system: System) {

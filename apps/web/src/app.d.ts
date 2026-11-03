@@ -1,4 +1,4 @@
-import type { System } from "#lib/system/detect.ts"
+import type { System } from "@schelf/protocol"
 
 declare global {
   namespace App {

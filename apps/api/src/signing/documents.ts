@@ -2,11 +2,13 @@ import {
   type AppIndex,
   accessOf,
   type CatalogEntry,
+  type Format,
   type IndexedRelease,
   type Platform,
   type PlatformRelease,
   parseSabineVersion,
   type SabineFeed,
+  STABLE,
   sabineTarget,
 } from "@schelf/protocol"
 import {
@@ -19,7 +21,7 @@ import {
 } from "./records.ts"
 
 function accessFor(record: AppRecord, release: ReleaseRow | undefined) {
-  if (record.app.format === "sabine") return "full"
+  if ((release?.format ?? record.app.format) === "sabine") return "full"
   return accessOf(release ? release.permissions : null)
 }
 
@@ -27,15 +29,18 @@ function updatedAt(record: AppRecord) {
   return (record.releases[0]?.release.approvedAt ?? record.app.createdAt).toISOString()
 }
 
+const indexable = (record: AppRecord) => record.releases.filter(({ release }) => !release.bridge)
+const stable = (record: AppRecord) => indexable(record).filter(({ release }) => release.channel === STABLE)
+
 export function catalogEntry(record: AppRecord): CatalogEntry {
   const english = englishListing(record)
   const platforms: Partial<Record<Platform, PlatformRelease>> = {}
-  for (const { release, artifacts } of record.releases) {
+  for (const { release, artifacts } of stable(record)) {
     for (const artifact of artifacts) {
       const target = artifact.platform as Platform
       platforms[target] ??= {
         version: release.version,
-        format: record.app.format,
+        format: artifact.format as Format,
         size: artifact.size,
         rollout: release.rolloutPercent,
       }
@@ -51,7 +56,7 @@ export function catalogEntry(record: AppRecord): CatalogEntry {
     categories: record.meta?.categories ?? [],
     publisher: record.publisher,
     platforms,
-    access: accessFor(record, record.releases[0]?.release),
+    access: accessFor(record, stable(record)[0]?.release),
     updated: updatedAt(record),
     installs_30d: record.installs30d,
   }
@@ -82,7 +87,7 @@ function indexedRelease(
     },
     artifacts: artifacts.map((artifact) => ({
       platform: artifact.platform as Platform,
-      format: record.app.format,
+      format: artifact.format as Format,
       kind: artifact.kind as IndexedRelease["artifacts"][number]["kind"],
       url: fileUrl(artifact.key),
       size: artifact.size,
@@ -134,15 +139,14 @@ export function appIndex(record: AppRecord): AppIndex {
     licence: record.app.licence,
     repository: record.app.repository,
     distribution: record.app.distribution,
-    releases: record.releases.map(({ release, artifacts }) => indexedRelease(record, release, artifacts)),
+    releases: indexable(record).map(({ release, artifacts }) => indexedRelease(record, release, artifacts)),
   }
 }
 
 export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
   const feeds = new Map<string, SabineFeed>()
-  if (record.app.format !== "sabine") return feeds
   for (const { release, artifacts } of record.releases) {
-    if (feeds.has(release.channel)) continue
+    if (release.updater !== "sabine" || feeds.has(release.channel)) continue
     feeds.set(release.channel, {
       schema: 1,
       app_id: record.app.id,

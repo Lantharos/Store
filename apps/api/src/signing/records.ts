@@ -60,6 +60,15 @@ function groupBy<T, K>(rows: T[], keyOf: (row: T) => K) {
   return groups
 }
 
+function newestPerChannel(releases: ReleaseRow[]) {
+  const seen = new Map<string, number>()
+  return releases.filter((release) => {
+    const count = seen.get(release.channel) ?? 0
+    seen.set(release.channel, count + 1)
+    return count < INDEXED_RELEASES
+  })
+}
+
 export async function blockedReleaseIds(appIds: string[]) {
   const rows = await db
     .select({ appId: schema.block.appId, releaseId: schema.block.releaseId })
@@ -113,7 +122,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
     releases.filter((release) => !blocked.releases.has(release.id)),
     (release) => release.appId,
   )
-  const indexed = [...shipped.values()].flatMap((group) => group.slice(0, INDEXED_RELEASES))
+  const indexed = [...shipped.values()].flatMap(newestPerChannel)
   const artifacts = groupBy(
     indexed.length
       ? await db
@@ -159,7 +168,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       screenshots: screenshotsByApp.get(app.id) ?? [],
       releases: blocked.apps.has(app.id)
         ? []
-        : (shipped.get(app.id) ?? []).slice(0, INDEXED_RELEASES).map((release) => ({
+        : newestPerChannel(shipped.get(app.id) ?? []).map((release) => ({
             release,
             artifacts: (artifacts.get(release.id) ?? []).map((artifact) => ({
               ...artifact,

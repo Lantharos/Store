@@ -1,5 +1,6 @@
 import { attestProvenance } from "@actions/attest"
 import * as core from "@actions/core"
+import { manifestName } from "@schelf/protocol"
 import {
   ApiFailure,
   collectArtifacts,
@@ -45,22 +46,26 @@ async function run() {
 
   await core.group("Recording build provenance", () => attest(artifacts, githubToken))
   const token = await githubOidcToken()
-  const { release, completed } = await core.group(`Publishing ${context.manifest.id} ${context.tag}`, () =>
-    publishRelease(
-      {
-        api,
-        token,
-        tag: context.tag!,
-        commit: context.commit,
-        schelfToml: context.schelfToml,
-        permissionsToml: context.permissionsToml,
-        notes: core.getInput("notes") || context.notes,
-        artifacts,
-      },
-      (event) => {
-        if (event.type === "uploaded") core.info(`Uploaded ${event.name} (${event.done}/${event.total})`)
-      },
-    ),
+  const { release, completed } = await core.group(
+    `Publishing ${manifestName(context.manifest)} ${context.tag}`,
+    () =>
+      publishRelease(
+        {
+          api,
+          token,
+          tag: context.tag!,
+          channel: core.getInput("channel") || undefined,
+          bridge: core.getBooleanInput("bridge"),
+          commit: context.commit,
+          schelfToml: context.schelfToml,
+          permissionsToml: context.permissionsToml,
+          notes: core.getInput("notes") || context.notes,
+          artifacts,
+        },
+        (event) => {
+          if (event.type === "uploaded") core.info(`Uploaded ${event.name} (${event.done}/${event.total})`)
+        },
+      ),
   )
 
   core.setOutput("release", release.release)
@@ -72,7 +77,10 @@ async function run() {
     report(check.summary, { title: `Schelf: ${check.name}` })
   }
   if (completed.status === "failed") core.setFailed(`${release.app} ${release.version} failed its checks`)
-  else core.notice(`${release.app} ${release.version} is on its way to review: ${completed.dashboard}`)
+  else
+    core.notice(
+      `${release.app} ${release.version} on ${release.channel} is ${completed.status.replace("-", " ")}: ${completed.dashboard}`,
+    )
 }
 
 run().catch((error: unknown) => {
