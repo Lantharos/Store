@@ -129,13 +129,14 @@ The `publish` action:
 
 A repository can publish several apps, each with its own `schelf.toml` in its folder. One workflow builds whichever app it's asked for, points the action at that app's file with `schelf-toml: apps/draft/schelf.toml`, and is registered as a trusted publisher of every app it publishes. Sabine's release workflow builds an app in a subfolder with `app: apps/draft`, only on the platforms it runs on with `platforms: linux-x86_64 linux-aarch64`, with the system libraries it links from `linux_packages`, and with a `version` that replaces the one in `Sabine.toml` for nightlies.
 
-Luft publishes its apps and extensions this way, from `.github/workflows/store.yml`:
+### Publishing from a monorepo's release pipeline
 
-- **By hand.** *Store* in the Actions tab has **Run workflow** with the app or extension and a channel to choose.
-- **On a version change.** A push to `main` that changes the version in an app's `Sabine.toml` or an extension's `extension.toml` publishes that app to stable. The release notes come from the commit message.
-- **Nightly.** Every night, each app that changed since its last nightly is published to the nightly channel from `main`.
+A repository that already has a release pipeline of its own, like an operating system image with apps inside, can publish its apps as one stage of it instead of from a workflow per app. Register that pipeline's workflow, limited to `refs/heads/main`, as the trusted publisher of every app it publishes. Two calls take the same GitHub identity token as publishing does:
 
-Pushes and the nightly schedule start one run per app, so each app's build and release has a run of its own. No tags or GitHub releases are made for any of them.
+- `GET /api/v1/publish/apps/<id>/releases` lists every release of the app on every channel, newest first, with its status and the commit it was built from. A pipeline compares that commit with its own to see whether the app changed, and picks a version newer than any the app already has.
+- `POST /api/v1/publish/apps/<id>/promote` with `{"version", "channel", "notes"}` sends a version that's out on one channel to another, with the same files and checks. On `stable` a listed app's release goes to review like any other. Asking again for a version that's already on that channel answers with that release, so a pipeline can retry safely.
+
+Luft works this way. Each night its image pipeline publishes every app and extension that changed since its last release to `nightly`, at the version in its manifest or the next patch after the newest release on any channel, whichever is higher, and builds the image with those releases inside. When the owner promotes a nightly image to stable, the pipeline promotes exactly the releases that image was built with to `stable`.
 
 For local use and other CI, `schelf publish` uses a dashboard token instead of OIDC, scoped to one app and shown once, and the dashboard can upload a release directly. Releases published that way are marked "uploaded by the developer" instead of "built on GitHub Actions", and always go to a person.
 
@@ -156,7 +157,7 @@ For local use and other CI, `schelf publish` uses a dashboard token instead of O
 
 ## From publish to install
 
-1. **Publish.** The developer runs their workflow, by hand, on a version change, on a schedule or on a GitHub release. It builds and runs the publish action.
+1. **Publish.** The developer runs their workflow, by hand, on a version change, on a schedule, on a GitHub release or as a stage of a bigger release pipeline. It builds and runs the publish action.
 2. **Upload.** The Worker verifies the token, files and attestations, creates the release (`checking`) and stores the files in R2.
 3. **Checks.** Quick checks run in the Worker: id and namespace, version newer than the last, platforms and formats known, listing complete, permissions compared with the last approved release, impersonation. The deeper checks run in this repository's public `checks` workflow, started by the Worker through `repository_dispatch` and reporting back with its own OIDC token: malware scan, unpacking and inspecting each file, the source diff since the commit of the last approved release on the channel (for public repositories), licence. A failed check goes back to the developer with the reason, and nothing reaches review.
 4. **Review.** The release goes to the Submissions inbox (first release of an id) or Updates (any later one) in Pult, with the facts. Details in [review](review.md).

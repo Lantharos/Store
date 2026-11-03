@@ -1,4 +1,10 @@
-import { type ChecksResponse, checksReport, mirrorRequest, publishRequest } from "@schelf/protocol"
+import {
+  type ChecksResponse,
+  checksReport,
+  mirrorRequest,
+  promoteRequest,
+  publishRequest,
+} from "@schelf/protocol"
 import { Hono } from "hono"
 import { bearer, fail, readBody } from "../lib/http.ts"
 import { acceptChecks, CHECKS_WORKFLOW, MIRROR_WORKFLOW, requireStoreWorkflow } from "../releases/checks.ts"
@@ -6,6 +12,7 @@ import { receiveDelta } from "../releases/deltas.ts"
 import { receiveMirrorIcon, replaceMirror } from "../storefront/mirror.ts"
 import { completeRelease } from "./complete.ts"
 import { workflowClaims } from "./publisher.ts"
+import { promoteForPublisher, publishedReleases } from "./releases.ts"
 import { startRelease } from "./start.ts"
 import { receiveFile } from "./upload.ts"
 import { checkUploadToken } from "./upload-token.ts"
@@ -27,6 +34,15 @@ publishingRoutes.put("/publish/:release/files/:name", async (c) => {
 publishingRoutes.post("/publish/:release/complete", async (c) => {
   await checkUploadToken(bearer(c.req.raw), c.req.param("release"))
   return c.json(await completeRelease(c.req.param("release")))
+})
+
+publishingRoutes.get("/publish/apps/:id/releases", async (c) =>
+  c.json(await publishedReleases(bearer(c.req.raw), c.req.param("id"))),
+)
+
+publishingRoutes.post("/publish/apps/:id/promote", async (c) => {
+  const input = await readBody(c, promoteRequest)
+  return c.json(await promoteForPublisher(bearer(c.req.raw), c.req.param("id"), input), 201)
 })
 
 async function storeWorkflow(request: Request, workflow: string) {

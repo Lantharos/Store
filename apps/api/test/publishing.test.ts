@@ -3,6 +3,8 @@ import {
   type AppIndex,
   type CompleteResponse,
   importSigningKey,
+  type PublishedRelease,
+  type PublishedReleases,
   type PublishResponse,
   paths,
   sha256Hex,
@@ -159,5 +161,52 @@ describe("publishing with a dashboard token", () => {
     const started = await publish(token, appId, nightly, { version: "0.1.0-nightly.202611030415.g1a2b3c4" })
     expect(started.channel).toBe("nightly")
     expect(versionCheck(await uploadAndComplete(started, nightly))?.status).toBe("passed")
+  })
+})
+
+describe("promoting from a release pipeline", () => {
+  function promote(token: string, appId: string, version: string) {
+    return exports.default.fetch(
+      new Request(`${API}/publish/apps/${appId}/promote`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          version,
+          channel: "stable",
+          notes: "Everything since the last stable release",
+        }),
+      }),
+    )
+  }
+
+  test("a nightly that's out goes to stable once, keeping its files, and shows in the app's releases", async () => {
+    const { appId, token } = await publisherWithApp()
+    const file = bytesOf("tonight's build")
+    const nightly = await publish(token, appId, file, { version: "1.0.1", channel: "nightly" })
+    await uploadAndComplete(nightly, file)
+    await approve(nightly.release, "Reviewer")
+
+    const first = await promote(token, appId, "1.0.1")
+    expect(first.status).toBe(201)
+    const promoted = (await first.json()) as PublishedRelease
+    expect(promoted).toMatchObject({ version: "1.0.1", channel: "stable", status: "in-review" })
+    const again = (await (await promote(token, appId, "1.0.1")).json()) as PublishedRelease
+    expect(again.release).toBe(promoted.release)
+
+    const listed = await exports.default.fetch(
+      new Request(`${API}/publish/apps/${appId}/releases`, { headers: { authorization: `Bearer ${token}` } }),
+    )
+    const { releases } = (await listed.json()) as PublishedReleases
+    expect(releases.map((release) => [release.channel, release.status])).toEqual([
+      ["stable", "in-review"],
+      ["nightly", "rolling-out"],
+    ])
+  })
+
+  test("a version that isn't out anywhere can't be promoted", async () => {
+    const { appId, token } = await publisherWithApp()
+    const file = bytesOf("a build still waiting")
+    await uploadAndComplete(await publish(token, appId, file, { version: "1.0.1", channel: "nightly" }), file)
+    expect((await promote(token, appId, "1.0.1")).status).toBe(409)
   })
 })

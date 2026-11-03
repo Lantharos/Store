@@ -45,6 +45,27 @@ export const publishRequest = z.object({
 })
 export type PublishRequest = z.infer<typeof publishRequest>
 
+export const promoteRequest = z.object({
+  version: z.string().max(64).regex(SEMVER, "A version looks like 1.2.0 or 2.0.0-beta.1"),
+  channel: channelName,
+  notes: z.string().max(20_000).optional(),
+})
+export type PromoteRequest = z.infer<typeof promoteRequest>
+
+export interface PublishedRelease {
+  release: string
+  version: string
+  channel: string
+  status: ReleaseStatus
+  commit: string | null
+  created: string
+}
+
+export interface PublishedReleases {
+  app: string
+  releases: PublishedRelease[]
+}
+
 export interface UploadTarget {
   name: string
   url: string

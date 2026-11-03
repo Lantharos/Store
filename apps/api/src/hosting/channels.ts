@@ -66,7 +66,7 @@ export async function pruneChannels() {
 
 const shipped = (status: string) => (SHIPPED_STATUSES as readonly string[]).includes(status)
 
-export async function promote(release: ReleaseRow, channel: string, by: string) {
+export async function promote(release: ReleaseRow, channel: string, by: string, notes = release.notes) {
   if (!shipped(release.status)) fail(409, "Only a release that's out can be promoted")
   if (release.channel === channel) fail(409, `${release.version} is on ${channel} already`)
   const [current] = await db
@@ -104,6 +104,7 @@ export async function promote(release: ReleaseRow, channel: string, by: string) 
       ...release,
       id,
       channel,
+      notes,
       promotedFrom: release.id,
       status: "checking",
       rolloutPercent: 0,

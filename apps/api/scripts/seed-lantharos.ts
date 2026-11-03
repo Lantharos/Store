@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { paths, rasterIcon, sha256Hex, slugFromId } from "@schelf/protocol"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
@@ -25,82 +25,29 @@ const MAIN_CATEGORIES = new Set([
 
 const PUBLISHER = { id: "lantharos", userId: "lantharos-owner", name: "Lantharos", slug: "lantharos" }
 const REPOSITORY = { name: "Lantharos/Luft", id: "1250156825", ownerId: "211589416" }
-const STORE_WORKFLOW = ".github/workflows/store.yml"
+const PIPELINE = { workflow: ".github/workflows/image.yml", ref: "refs/heads/main" }
+const FOLDERS = ["apps", "extensions"]
 
-interface SeedApp {
-  folder: string
+interface StoreListing {
   summary: string
   description: string
-  shots: string[]
+  screenshots: string[]
 }
 
-const APPS: SeedApp[] = [
-  {
-    folder: "apps/magpie",
-    summary: "Photos, videos and music",
-    description:
-      "Opens photos, videos, songs, PDFs and fonts, with the rest of the folder an arrow key away.",
-    shots: [
-      "web/site/src/assets/shots/app-magpie-light.webp",
-      "web/site/src/assets/shots/app-magpie-dark.webp",
-    ],
-  },
-  {
-    folder: "apps/rover",
-    summary: "Files",
-    description:
-      "Tabs, Quick Look, network drives and your cloud drives, with a sidebar that knows where Windows lives.",
-    shots: [
-      "web/site/src/assets/shots/app-rover-light.webp",
-      "web/site/src/assets/shots/app-rover-dark.webp",
-    ],
-  },
-  {
-    folder: "apps/draft",
-    summary: "Text and code",
-    description:
-      "Over a hundred languages, multiple cursors and a Markdown preview, and it remembers where you left off.",
-    shots: [
-      "web/site/src/assets/shots/app-draft-light.webp",
-      "web/site/src/assets/shots/app-draft-dark.webp",
-    ],
-  },
-  {
-    folder: "apps/tern",
-    summary: "Terminal",
-    description:
-      "Tabs and split panes, a nudge when a long command finishes, and colours from your wallpaper.",
-    shots: ["web/site/src/assets/shots/app-tern-light.webp", "web/site/src/assets/shots/app-tern-dark.webp"],
-  },
-  {
-    folder: "apps/mailman",
-    summary: "Mail",
-    description: "One inbox for every account, a screener for new senders and search that works offline.",
-    shots: [
-      "apps/mailman/store/inbox.webp",
-      "apps/mailman/store/reading.webp",
-      "apps/mailman/store/compose.webp",
-    ],
-  },
-  {
-    folder: "apps/meet",
-    summary: "Gets a computer ready for Luft without a USB stick",
-    description:
-      "Checks the computer, makes room next to the system already there, and restarts into Luft once to try it or install it. It can also make a USB stick, and take everything back out again.",
-    shots: ["apps/meet/store/check.webp", "apps/meet/store/room.webp", "apps/meet/store/ready.webp"],
-  },
-  {
-    folder: "extensions/rain",
-    summary: "Rain over your desktop",
-    description:
-      "Rain falls over the wallpaper and splashes on windows and the taskbar, from a drizzle to a storm, or plays as sound while you work.",
-    shots: [
-      "extensions/rain/store/windows.webp",
-      "extensions/rain/store/quick-settings.webp",
-      "extensions/rain/store/wallpaper.webp",
-    ],
-  },
-]
+function storeItems() {
+  return FOLDERS.flatMap((parent) =>
+    readdirSync(join(LUFT, parent))
+      .map((name) => `${parent}/${name}`)
+      .filter((folder) => existsSync(join(LUFT, folder, "schelf.toml"))),
+  )
+}
+
+function readStoreListing(folder: string) {
+  const path = join(LUFT, folder, "store/listing.toml")
+  if (!existsSync(path)) throw new Error(`${folder} has a schelf.toml but no store/listing.toml`)
+  const listing = Bun.TOML.parse(readFileSync(path, "utf8")) as StoreListing
+  return { ...listing, screenshots: listing.screenshots.map((file) => `${folder}/store/${file}`) }
+}
 
 function sql(value: string | number | null) {
   if (value === null) return "NULL"
@@ -124,7 +71,7 @@ function readManifest(folder: string) {
     name: field("name")!,
     kind: extension ? "extension" : "app",
     format: extension ? "luft-extension" : "sabine",
-    icon: extension ? `${folder}/icon.svg` : `${folder}/public/favicon.svg`,
+    icon: `${folder}/${extension ? "icon.svg" : field("icon")}`,
     categories: listFrom(text, "categories"),
     keywords: listFrom(text, "keywords"),
   }
@@ -170,24 +117,26 @@ const statements = [
    ON CONFLICT (prefix) DO UPDATE SET publisher_id = excluded.publisher_id, proof = 'manual', verified_at = excluded.verified_at;`,
 ]
 
-for (const seed of APPS) {
-  const manifest = readManifest(seed.folder)
-  const icon = manifest.icon && (await iconWithPng(manifest.id, manifest.icon, uploads))
+const folders = storeItems()
+for (const folder of folders) {
+  const manifest = readManifest(folder)
+  const listing = readStoreListing(folder)
+  const icon = await iconWithPng(manifest.id, manifest.icon, uploads)
   const categories = manifest.categories.filter((name) => MAIN_CATEGORIES.has(name))
   statements.push(
     `INSERT INTO app (id, slug, publisher_id, kind, format, updater, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(slugFromId(manifest.id))}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${manifest.format === "sabine" ? "'sabine'" : "NULL"}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'published', ${now})
      ON CONFLICT (id) DO UPDATE SET status = 'published', repository = excluded.repository;`,
-    `INSERT INTO trusted_publisher (id, app_id, owner_id, repository_id, repository, workflow, environment, created_at) VALUES (${sql(`${manifest.id}:store`)}, ${sql(manifest.id)}, ${sql(REPOSITORY.ownerId)}, ${sql(REPOSITORY.id)}, ${sql(REPOSITORY.name)}, ${sql(STORE_WORKFLOW)}, NULL, ${now})
-     ON CONFLICT (id) DO UPDATE SET workflow = excluded.workflow, repository = excluded.repository;`,
-    `INSERT INTO listing (app_id, locale, name, summary, description, keywords) VALUES (${sql(manifest.id)}, 'en', ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(seed.description)}, ${sql(JSON.stringify(manifest.keywords.slice(0, 20)))})
+    `DELETE FROM trusted_publisher WHERE app_id = ${sql(manifest.id)} AND repository_id = ${sql(REPOSITORY.id)};`,
+    `INSERT INTO trusted_publisher (id, app_id, owner_id, repository_id, repository, workflow, environment, ref, created_at) VALUES (${sql(`${manifest.id}:luft`)}, ${sql(manifest.id)}, ${sql(REPOSITORY.ownerId)}, ${sql(REPOSITORY.id)}, ${sql(REPOSITORY.name)}, ${sql(PIPELINE.workflow)}, NULL, ${sql(PIPELINE.ref)}, ${now});`,
+    `INSERT INTO listing (app_id, locale, name, summary, description, keywords) VALUES (${sql(manifest.id)}, 'en', ${sql(manifest.name)}, ${sql(listing.summary)}, ${sql(listing.description)}, ${sql(JSON.stringify(manifest.keywords.slice(0, 20)))})
      ON CONFLICT (app_id, locale) DO UPDATE SET name = excluded.name, summary = excluded.summary, description = excluded.description, keywords = excluded.keywords;`,
-    `INSERT INTO listing_meta (app_id, icon_key, categories, homepage, support) VALUES (${sql(manifest.id)}, ${sql(icon ? icon.key : null)}, ${sql(JSON.stringify(categories))}, 'https://luft.computer', 'https://github.com/Lantharos/Luft/issues')
+    `INSERT INTO listing_meta (app_id, icon_key, categories, homepage, support) VALUES (${sql(manifest.id)}, ${sql(icon.key)}, ${sql(JSON.stringify(categories))}, 'https://luft.computer', 'https://github.com/Lantharos/Luft/issues')
      ON CONFLICT (app_id) DO UPDATE SET icon_key = excluded.icon_key, categories = excluded.categories, homepage = excluded.homepage, support = excluded.support;`,
     `DELETE FROM screenshot WHERE app_id = ${sql(manifest.id)};`,
     `DELETE FROM search WHERE key = ${sql(`schelf:${manifest.id}`)};`,
-    `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(seed.summary)}, ${sql(manifest.keywords.join(" "))}, ${sql(PUBLISHER.name)});`,
+    `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(listing.summary)}, ${sql(manifest.keywords.join(" "))}, ${sql(PUBLISHER.name)});`,
   )
-  for (const [position, file] of seed.shots.entries()) {
+  for (const [position, file] of listing.screenshots.entries()) {
     const shot = await media(manifest.id, file, uploads)
     statements.push(
       `INSERT INTO screenshot (id, app_id, platform, position, key, width, height, caption) VALUES (${sql(`${manifest.id}-${position}`)}, ${sql(manifest.id)}, NULL, ${position}, ${sql(shot.key)}, ${shot.image.width}, ${shot.image.height}, NULL);`,
@@ -218,4 +167,4 @@ for (const [key, file] of uploads) {
   )
 }
 
-console.log(`Seeded ${APPS.length} apps; the store signs them on its next hourly run`)
+console.log(`Seeded ${folders.length} apps and extensions; the store signs them on its next hourly run`)
