@@ -159,7 +159,7 @@ Windows builds are reviewed the same way once there's a Windows VM image with Sa
 
 ## Email
 
-Mail to schelf.store reaches the api Worker through Cloudflare Email Routing, whose catch-all rule sends every address to it. These addresses take mail; anything else, and the `no-reply@` address the store's own email comes from, is refused with a note saying where to write instead.
+Mail to schelf.store reaches the api Worker through Cloudflare Email Routing: each address below has its own rule to the Worker, plus-addressing is on, and the catch-all rule sends everything else there too. These addresses take mail; anything else, and the `no-reply@` address the store's own email comes from, is refused with a note saying where to write instead.
 
 | Address                 | For                                                               |
 | ----------------------- | ----------------------------------------------------------------- |

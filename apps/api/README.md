@@ -25,7 +25,7 @@ It builds the Pult definitions, applies D1 migrations and deploys. The Worker se
 
 Review, rollouts, pulling apps and key rotation all happen in Pult, in the `schelf` project with `dev` and `prod` environments. Each environment's origin is where the Worker runs (`https://schelf.store` for prod); Pult calls `/api/ops`. Put the prod key in the `PULT_KEY` secret.
 
-Mail to the store's addresses arrives through Cloudflare Email Routing, whose catch-all rule sends it to this Worker's `email` handler. See [Email](../../docs/review.md#email).
+Mail to the store's addresses arrives through Cloudflare Email Routing, with a rule per address and the catch-all sending it to this Worker's `email` handler. See [Email](../../docs/review.md#email).
 
 ## Secrets
 
