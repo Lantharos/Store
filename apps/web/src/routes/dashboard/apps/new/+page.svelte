@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { type AppSettings, type CreateApp, createApp, type Namespace } from "@schelf/protocol"
+  import {
+    type AppSettings,
+    type CreateApp,
+    createApp,
+    type Namespace,
+    SCHELF_WORKFLOW,
+  } from "@schelf/protocol"
   import CodeBlock from "#lib/code/CodeBlock.svelte"
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
@@ -28,7 +34,7 @@
     summary: "",
     id: "",
     repository: "",
-    workflow: ".github/workflows/schelf.yml",
+    workflow: SCHELF_WORKFLOW,
     environment: undefined,
   })
 

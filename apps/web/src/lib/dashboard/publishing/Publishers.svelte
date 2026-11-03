@@ -1,6 +1,6 @@
 <script lang="ts">
   import GitBranch from "@lucide/svelte/icons/git-branch"
-  import type { TrustedPublisher } from "@schelf/protocol"
+  import { SCHELF_WORKFLOW, type TrustedPublisher } from "@schelf/protocol"
   import { date } from "../../format.ts"
   import Field from "../../ui/fields/Field.svelte"
   import Confirm from "../../ui/overlay/Confirm.svelte"
@@ -9,14 +9,12 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
 
-  const WORKFLOW = ".github/workflows/schelf.yml"
-
   let { appId, publishers = $bindable() }: { appId: string; publishers: TrustedPublisher[] } = $props()
 
   let adding = $state(false)
   let removing = $state<TrustedPublisher | null>(null)
   let removeOpen = $state(false)
-  let form = $state({ repository: "", workflow: WORKFLOW, environment: "" })
+  let form = $state({ repository: "", workflow: SCHELF_WORKFLOW, environment: "" })
   let error = $state<string | null>(null)
   let busy = $state(false)
 
@@ -54,7 +52,7 @@
       <h2 class="text-xl font-semibold">Trusted publishers</h2>
       <p class="mt-1 max-w-xl text-[15px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
     </div>
-    <button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>
+    <button type="button" class="button button-sm button-quiet" onclick={() => ((form = { repository: "", workflow: SCHELF_WORKFLOW, environment: "" }), (error = null), (adding = true))}>Add a publisher</button>
   </div>
   <ul class="mt-4 divide-y divide-hairline">
     {#each publishers as publisher (publisher.id)}
