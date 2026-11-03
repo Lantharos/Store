@@ -19,6 +19,7 @@ export const paths = {
   media: (id: string, hash: string, extension: string) => `media/${id}/${hash}.${extension}`,
   publisherLogo: (id: string, hash: string, extension: string) =>
     `media/publishers/${id}/${hash}.${extension}`,
+  userAvatar: (id: string, hash: string, extension: string) => `media/users/${id}/${hash}.${extension}`,
   verificationDocument: (id: string, hash: string, extension: string) =>
     `${PRIVATE_PREFIX}verification/${id}/${hash}.${extension}`,
   signature: (key: string) => `${key}.sig`,

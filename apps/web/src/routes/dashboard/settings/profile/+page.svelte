@@ -61,7 +61,7 @@
   {/snippet}
 </PageHeader>
 
-<div class="mt-10 max-w-xl space-y-10">
+<div class="mt-10 space-y-10">
   <LogoField {publisher} {editable} />
 
   <form class="space-y-6" onsubmit={save}>

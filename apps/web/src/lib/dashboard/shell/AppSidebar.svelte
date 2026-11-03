@@ -10,7 +10,8 @@
   import { session } from "../api/session.svelte.ts"
   import PublisherSwitcher from "../publishers/PublisherSwitcher.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "../releases/status.ts"
-  import { SETTINGS } from "../settings/sections.ts"
+  import { settingsHref } from "../settings/sections.ts"
+  import NavLink from "./NavLink.svelte"
   import UserRow from "./UserRow.svelte"
 
   let { onsearch }: { onsearch: () => void } = $props()
@@ -57,11 +58,9 @@
     {/if}
   </nav>
 
-  <div class="mt-auto space-y-0.5 pt-6 text-ink-soft">
-    <a href={SETTINGS} aria-current={path.startsWith(SETTINGS) ? "page" : undefined} class="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:text-ink aria-[current=page]:bg-well aria-[current=page]:text-ink">
-      <Settings class="size-4" />Settings
-    </a>
-    <a href="/docs" class="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:text-ink"><BookOpen class="size-4" />Docs</a>
+  <div class="mt-auto space-y-0.5 pt-6">
+    <NavLink href={settingsHref("profile")} icon={Settings}>Settings</NavLink>
+    <NavLink href="/docs" icon={BookOpen}>Docs</NavLink>
     <UserRow />
   </div>
 </div>

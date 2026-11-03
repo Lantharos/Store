@@ -4,6 +4,7 @@ const verification = (id: string) => `${publisher(id)}/verification`
 
 export const endpoints = {
   account: "/account",
+  avatar: "/account/avatar",
   publishers: "/publishers",
   publisher,
   logo: (id: string) => `${publisher(id)}/logo`,

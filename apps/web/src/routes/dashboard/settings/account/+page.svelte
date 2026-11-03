@@ -1,9 +1,12 @@
 <script lang="ts">
   import Mail from "@lucide/svelte/icons/mail"
+  import MethodRow from "#lib/dashboard/account/MethodRow.svelte"
   import Passkeys from "#lib/dashboard/account/Passkeys.svelte"
+  import PictureField from "#lib/dashboard/account/PictureField.svelte"
   import { auth } from "#lib/dashboard/api/auth.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
+  import GitHubMark from "#lib/ui/GitHubMark.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
   import { goto } from "$app/navigation"
 
@@ -29,44 +32,32 @@
 <PageHeader title="Account" />
 
 <section class="mt-8">
-  <h2 class="text-xl font-semibold">You</h2>
-  <dl class="mt-4 grid max-w-xl grid-cols-[8rem_1fr] gap-y-3 text-[15px]">
-    <dt class="text-ink-muted">Name</dt>
-    <dd class="truncate">{account.user.name}</dd>
-    <dt class="text-ink-muted">Email</dt>
-    <dd class="truncate">{account.user.email}</dd>
-  </dl>
+  <PictureField />
 </section>
 
-<section class="mt-12 max-w-2xl">
+<section class="mt-12">
   <h2 class="text-xl font-semibold">Signing in</h2>
   <div class="mt-2 divide-y divide-hairline">
-    <div class="flex items-center gap-4 py-4">
-      <svg viewBox="0 0 16 16" class="size-5 shrink-0 text-ink-muted" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
-      <div class="min-w-0 flex-1">
-        <p class="font-medium">GitHub</p>
-        <p class="text-[15px] text-ink-muted">{account.github ? `Connected as ${account.github}. It proves io.github.${account.github}.` : "Connect it to prove io.github namespaces instantly."}</p>
-      </div>
-      {#if !account.github}<button type="button" class="button button-sm button-quiet" onclick={linkGitHub}>Connect</button>{/if}
-    </div>
+    <MethodRow title="GitHub" text={account.github ? `Connected as ${account.github}, which proves io.github.${account.github}.` : "Connect it to prove io.github namespaces and show your GitHub picture."}>
+      {#snippet icon()}<GitHubMark class="size-5" />{/snippet}
+      {#snippet action()}
+        {#if !account.github}<button type="button" class="button button-sm button-quiet" onclick={linkGitHub}>Connect</button>{/if}
+      {/snippet}
+    </MethodRow>
     <Passkeys />
-    <div class="flex items-center gap-4 py-4">
-      <Mail class="size-5 shrink-0 text-ink-muted" />
-      <div class="min-w-0 flex-1">
-        <p class="font-medium">Email codes</p>
-        <p class="text-[15px] text-ink-muted">Always on, sent to {account.user.email}.</p>
-      </div>
-    </div>
+    <MethodRow title="Email codes" text="Always on, sent to {account.user.email}.">
+      {#snippet icon()}<Mail class="size-5" />{/snippet}
+    </MethodRow>
   </div>
 </section>
 
-<section class="mt-12 max-w-2xl">
+<section class="mt-12">
   <h2 class="text-xl font-semibold">Sign out</h2>
-  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Signs you out on this browser. The schelf command stays signed in until you run schelf logout.</p>
+  <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Signs you out in this browser. The schelf command stays signed in until you run schelf logout.</p>
   <button type="button" class="button button-sm button-quiet mt-4" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>
 </section>
 
-<section class="mt-12 max-w-2xl">
+<section class="mt-12">
   <h2 class="text-xl font-semibold">Delete your account</h2>
   <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">Your personal apps are delisted, and people who have them keep them. Organisations you own with others need another owner first. Your details are deleted within 30 days. This can't be undone.</p>
   <button type="button" class="button button-sm button-danger mt-4" onclick={() => ((typed = ""), (deleting = true))}>Delete account</button>

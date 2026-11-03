@@ -55,7 +55,7 @@
 <PageHeader title="Namespaces" text="{session.publisher?.name} can publish app ids under any namespace it has proven. GitHub namespaces are proven when you sign in with GitHub; for a domain, add a DNS record or a file." />
 
 {#if session.can("apps")}
-<form class="mt-8 flex max-w-xl flex-col gap-2 sm:flex-row" onsubmit={claim}>
+<form class="mt-8 flex flex-col gap-2 sm:flex-row" onsubmit={claim}>
   <input bind:value={prefix} class="field font-mono text-[15px]" placeholder="com.example" aria-label="Namespace" autocomplete="off" spellcheck="false" />
   <button class="button button-primary shrink-0" disabled={busy || !prefix.trim()}>Claim</button>
 </form>

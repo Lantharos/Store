@@ -8,5 +8,5 @@ export async function githubAccount(userId: string) {
   })
   if (!account?.accessToken) return null
   const user = await github<{ login: string; id: number }>("/user", { token: account.accessToken })
-  return { login: user.login, token: account.accessToken }
+  return { login: user.login, id: String(user.id), token: account.accessToken }
 }

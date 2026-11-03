@@ -1,3 +1,4 @@
+import { AVATAR_SOURCES } from "@schelf/protocol"
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import { createdAt, updatedAt } from "./columns.ts"
 
@@ -8,6 +9,9 @@ export const user = sqliteTable("user", {
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
   githubLogin: text("github_login"),
+  githubId: text("github_id"),
+  avatarKey: text("avatar_key"),
+  avatar: text("avatar", { enum: AVATAR_SOURCES }).notNull().default("github"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

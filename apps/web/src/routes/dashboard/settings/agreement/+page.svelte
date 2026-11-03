@@ -24,13 +24,13 @@
 
 <PageHeader title="Developer agreement" text="Each publisher you belong to accepts the agreement once, and again when it changes in substance. Owners accept it on an organisation's behalf." />
 
-<p class="mt-8 max-w-2xl text-[15px] leading-relaxed text-ink-soft">The current version is <a href="/legal/developer-agreement" target="_blank" class="link">{current}</a>.</p>
+<p class="mt-8 text-[15px] leading-relaxed text-ink-soft">The current version is <a href="/legal/developer-agreement" target="_blank" class="link">{current}</a>.</p>
 
-<ul class="mt-4 max-w-2xl divide-y divide-hairline">
+<ul class="mt-4 divide-y divide-hairline">
   {#each publishers as publisher (publisher.id)}
     {@const upToDate = publisher.agreement_version === current}
     <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
-      <PublisherMark logo={publisher.logo} name={publisher.name} />
+      <PublisherMark logo={session.logoOf(publisher)} name={publisher.name} person={publisher.kind === "person" && !publisher.logo} />
       <div class="min-w-0 flex-1">
         <p class="truncate font-medium">{publisher.name}</p>
         <p class="text-[13px] text-ink-muted">{upToDate ? `Accepted version ${publisher.agreement_version}` : `Accepted version ${publisher.agreement_version}, before the current one`}</p>

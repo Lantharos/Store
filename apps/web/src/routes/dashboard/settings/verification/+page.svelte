@@ -50,7 +50,7 @@
 
 <PageHeader title="Verification" text="The checkmark tells people {publisher.name} is who it says it is. It shows on its page, its apps and in the Schelf app." />
 
-<div class="mt-10 max-w-2xl">
+<div class="mt-10">
   {#if flow.state.error}
     <Failed error={flow.state.error} retry={() => flow.state.refresh()} />
   {:else if !flow.state.data}

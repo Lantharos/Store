@@ -36,9 +36,9 @@
   aria-expanded={open}
   aria-label="Publishing as {current.name}"
   onclick={() => (open = !open)}
-  class="mb-4 flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-well/60"
+  class="mb-4 flex w-full items-center gap-3 rounded-xl px-1.5 py-1.5 text-left transition-colors hover:bg-well/60"
 >
-  <PublisherMark logo={current.logo} name={current.name} />
+  <PublisherMark logo={session.logoOf(current)} name={current.name} person={current.kind === "person" && !current.logo} />
   <span class="min-w-0 flex-1">
     <span class="flex items-center gap-1.5 truncate font-medium text-ink">
       <span class="truncate">{current.name}</span>

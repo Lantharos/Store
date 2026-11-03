@@ -6,7 +6,15 @@
     open = $bindable(false),
     file,
     onsave,
-  }: { open?: boolean; file: File | null; onsave: (logo: File) => Promise<void> } = $props()
+    subject = "logo",
+    round = false,
+  }: {
+    open?: boolean
+    file: File | null
+    onsave: (image: File) => Promise<void>
+    subject?: "logo" | "picture"
+    round?: boolean
+  } = $props()
 
   const VIEW = 288
   const OUTPUT = 512
@@ -86,12 +94,12 @@
       canvas.getContext("2d")!.drawImage(image, -x / scale, -y / scale, side, side, 0, 0, OUTPUT, OUTPUT)
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
-          (result) => (result ? resolve(result) : reject(new Error("The logo couldn't be drawn"))),
+          (result) => (result ? resolve(result) : reject(new Error(`The ${subject} couldn't be drawn`))),
           "image/webp",
           0.92,
         ),
       )
-      await onsave(new File([blob], "logo", { type: blob.type }))
+      await onsave(new File([blob], subject, { type: blob.type }))
       open = false
     } finally {
       busy = false
@@ -101,14 +109,14 @@
 
 <Dialog bind:open class="max-w-[22rem]">
   <div class="p-6">
-    <h2 class="text-xl font-semibold">Position your logo</h2>
+    <h2 class="text-xl font-semibold">Position your {subject}</h2>
     <p class="mt-1 text-[15px] text-ink-muted">Drag to move it, and zoom to fit.</p>
     <div
       role="slider"
       tabindex="0"
-      aria-label="Logo position"
+      aria-label="Position"
       aria-valuenow={Math.round(-x)}
-      class="relative mt-5 cursor-grab touch-none overflow-hidden rounded-[28%] bg-well select-none focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
+      class="relative mt-5 cursor-grab touch-none overflow-hidden bg-well {round ? 'rounded-full' : 'rounded-[28%]'} select-none focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
       style:width="{VIEW}px"
       style:height="{VIEW}px"
       onpointerdown={down}
@@ -132,7 +140,7 @@
     <div class="mt-5"><Slider bind:value={zoom} min={1} max={4} step={0.01} label="Zoom" format={(value) => `${value.toFixed(1)}×`} /></div>
     <div class="mt-6 flex justify-end gap-2">
       <button type="button" class="button button-quiet" onclick={() => (open = false)}>Cancel</button>
-      <button type="button" class="button button-primary" disabled={!image || busy} onclick={save}>Use this logo</button>
+      <button type="button" class="button button-primary" disabled={!image || busy} onclick={save}>Use this {subject}</button>
     </div>
   </div>
 </Dialog>

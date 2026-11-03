@@ -7,6 +7,7 @@ import {
 } from "@schelf/protocol"
 import { and, asc, eq, gt, sql } from "drizzle-orm"
 import { Hono } from "hono"
+import { avatarUrl, githubAvatar } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
 import { fail, readBody } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
@@ -40,7 +41,7 @@ memberRoutes.get("/members", async (c) => {
       user_id: user.id,
       name: user.name,
       email: user.email,
-      image: user.image,
+      image: avatarUrl(user),
       role: member.role,
       joined_at: member.createdAt.toISOString(),
     })),
@@ -53,6 +54,7 @@ function inviteView(invite: typeof schema.invite.$inferSelect, by: string | null
     id: invite.id,
     email: invite.email,
     github: invite.githubLogin,
+    avatar: invite.githubLogin ? githubAvatar(invite.githubLogin) : null,
     role: invite.role,
     invited_by: by,
     expires_at: invite.expiresAt.toISOString(),

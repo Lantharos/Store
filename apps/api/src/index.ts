@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers"
 import { API_BASE } from "@schelf/protocol"
 import { Hono } from "hono"
 import { authRoutes } from "./auth/routes.ts"
+import { avatarRoutes } from "./avatars/github.ts"
 import { recheckNamespaces } from "./dashboard/account/namespaces.ts"
 import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
@@ -37,6 +38,7 @@ app.post("/api/ops", (c) => {
   if (!office) fail(404, "Not found")
   return office.handle(c.req.raw, c.executionCtx)
 })
+app.route(`${API_BASE}/avatars`, avatarRoutes)
 app.route(API_BASE, storefrontRoutes)
 app.route(API_BASE, publishingRoutes)
 app.route(`${API_BASE}/dev`, dashboardRoutes)

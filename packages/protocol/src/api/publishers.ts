@@ -9,6 +9,9 @@ export type Role = z.infer<typeof role>
 export const MAX_LOGO_BYTES = 1024 * 1024
 export const LOGO_EDGE = { min: 128, max: 2048 } as const
 export const INVITE_DAYS = 14
+export const AVATAR_SOURCES = ["github", "upload"] as const
+export type AvatarSource = (typeof AVATAR_SOURCES)[number]
+export const chooseAvatar = z.object({ avatar: z.enum(AVATAR_SOURCES) })
 
 const ABILITIES = {
   owner: ["releases", "apps", "members", "profile", "owners", "verification"],
@@ -52,6 +55,7 @@ export interface PendingInvite {
 export interface Account {
   user: { id: string; name: string; email: string; image: string | null }
   github: string | null
+  avatars: { using: AvatarSource; github: string | null; upload: string | null }
   passkeys: number
   agreement: string
   publishers: DashboardPublisher[]
@@ -99,6 +103,7 @@ export interface SentInvite {
   id: string
   email: string | null
   github: string | null
+  avatar: string | null
   role: Role
   invited_by: string | null
   expires_at: string

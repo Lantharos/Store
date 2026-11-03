@@ -32,6 +32,10 @@ class Session {
       null,
   )
 
+  logoOf(publisher: DashboardPublisher) {
+    return publisher.logo ?? (publisher.kind === "person" ? (this.account?.user.image ?? null) : null)
+  }
+
   can(ability: Ability) {
     return this.publisher ? can(this.publisher.role, ability) : false
   }

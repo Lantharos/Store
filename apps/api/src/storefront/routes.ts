@@ -17,6 +17,7 @@ import {
 } from "@schelf/protocol"
 import { eq, sum } from "drizzle-orm"
 import { Hono } from "hono"
+import { avatarUrl } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
@@ -130,10 +131,13 @@ storefrontRoutes.get("/mirror/:id", async (c) => {
 })
 
 storefrontRoutes.get("/publishers/:slug", async (c) => {
-  const publisher = await db.query.publisher.findFirst({
-    where: eq(schema.publisher.slug, c.req.param("slug")),
-  })
-  if (!publisher) fail(404, "There's no publisher by that name")
+  const [row] = await db
+    .select({ publisher: schema.publisher, owner: schema.user })
+    .from(schema.publisher)
+    .innerJoin(schema.user, eq(schema.user.id, schema.publisher.ownerId))
+    .where(eq(schema.publisher.slug, c.req.param("slug")))
+  if (!row) fail(404, "There's no publisher by that name")
+  const { publisher, owner } = row
   const { catalog } = await currentCatalog()
   c.header("cache-control", PUBLIC_CACHE)
   return c.json({
@@ -142,7 +146,7 @@ storefrontRoutes.get("/publishers/:slug", async (c) => {
     kind: publisher.kind,
     description: publisher.description,
     website: publisher.website,
-    logo: mediaUrl(publisher.logoKey),
+    logo: mediaUrl(publisher.logoKey) ?? (publisher.kind === "person" ? avatarUrl(owner) : null),
     verified: publisher.verifiedAt !== null,
     apps: catalog.apps.filter((entry) => entry.publisher.slug === publisher.slug),
   } satisfies PublisherPage)

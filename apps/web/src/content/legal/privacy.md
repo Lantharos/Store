@@ -23,7 +23,9 @@ We keep what you write in the report form, your name and email if you give them,
 
 ## If you're a developer
 
-We keep your account: your name, email, sign-in methods (a GitHub account, passkeys or email codes), the namespaces you've proven, your apps, releases and their review history, and when you accepted the developer agreement. We use them to run your account and to review and publish your apps. Your developer name and your apps are public. Your email isn't.
+We keep your account: your name, email, profile picture if you upload one, sign-in methods (a GitHub account, passkeys or email codes), the namespaces you've proven, your apps, releases and their review history, and when you accepted the developer agreement. We use them to run your account and to review and publish your apps. Your developer name and your apps are public. Your email isn't.
+
+If you connect GitHub, we show your GitHub profile picture in the dashboard, and on your personal publisher page until you add a logo. We fetch it from GitHub and serve it from schelf.store, so visitors' browsers never contact GitHub for it. You can upload your own picture instead.
 
 You can delete your account from the dashboard at any time. Your apps are delisted, and your personal details are deleted within 30 days, except what we must keep to show how we handled reports and reviews.
 
@@ -32,7 +34,7 @@ You can delete your account from the dashboard at any time. Your apps are delist
 | Service    | What for                                                                              |
 | ---------- | ------------------------------------------------------------------------------------- |
 | Cloudflare | Hosting, storage, email and download counting                                         |
-| GitHub     | Signing in with GitHub, and the build records of each release                         |
+| GitHub     | Signing in with GitHub, your profile picture, and the build records of each release   |
 | OpenRouter | A first pass over releases before a person reviews them; it sees the release, not you |
 
 ## Your rights

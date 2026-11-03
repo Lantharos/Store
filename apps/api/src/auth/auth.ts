@@ -6,6 +6,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError } from "better-auth/api"
 import { bearer, deviceAuthorization, emailOTP } from "better-auth/plugins"
 import { HTTPException } from "hono/http-exception"
+import { forgetUploadedAvatar } from "../avatars/stored.ts"
 import { db, schema } from "../db/client.ts"
 import { releaseOwnerships } from "../publishers/ownership.ts"
 import { CODE_MINUTES, sendCode } from "./mail.ts"
@@ -27,6 +28,7 @@ export const auth = betterAuth({
       beforeDelete: async (user) => {
         try {
           await releaseOwnerships(user.id)
+          await forgetUploadedAvatar(user.id)
         } catch (error) {
           if (error instanceof HTTPException) throw new APIError("CONFLICT", { message: error.message })
           throw error

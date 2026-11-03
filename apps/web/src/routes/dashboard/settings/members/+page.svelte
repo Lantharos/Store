@@ -1,7 +1,7 @@
 <script lang="ts">
-  import AtSign from "@lucide/svelte/icons/at-sign"
   import Mail from "@lucide/svelte/icons/mail"
   import { type Member, type Members, ROLE_NAMES, type Role } from "@schelf/protocol"
+  import Avatar from "#lib/dashboard/account/Avatar.svelte"
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
@@ -72,15 +72,15 @@
   }
 </script>
 
-<PageHeader title="Members" text="Everyone who works on {publisher.name}'s apps. Owners decide who's in and can ask for verification, admins manage apps and people, developers ship releases and listings." />
+<PageHeader title="Members" text="Everyone who works on {publisher.name}'s apps, and what each of them can do." />
 
 {#if session.can("members")}
-  <section class="mt-8 max-w-2xl">
+  <section class="mt-8">
     <InviteForm oninvited={() => members.refresh()} />
   </section>
 {/if}
 
-<div class="mt-10 max-w-3xl">
+<div class="mt-10">
   {#if members.error}
     <Failed error={members.error} retry={() => members.refresh()} />
   {:else if !members.data}
@@ -101,15 +101,19 @@
       <h2 class="mt-12 text-xl font-semibold">Invited</h2>
       <ul class="mt-2 divide-y divide-hairline">
         {#each members.data.invites as invite (invite.id)}
-          <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
-            <span class="grid size-9 shrink-0 place-items-center rounded-full bg-well text-ink-muted">
-              {#if invite.email}<Mail class="size-4" />{:else}<AtSign class="size-4" />{/if}
-            </span>
-            <div class="min-w-48 flex-1">
-              <p class="truncate font-medium">{invite.email ?? invite.github}</p>
-              <p class="truncate text-[13px] text-ink-muted">{ROLE_NAMES[invite.role].label}{invite.invited_by ? `, invited by ${invite.invited_by}` : ""} · expires {ago(invite.expires_at)}</p>
+          <li class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4">
+            {#if invite.avatar}
+              <Avatar src={invite.avatar} name={invite.github ?? ""} />
+            {:else}
+              <span class="grid size-9 shrink-0 place-items-center rounded-full bg-well text-ink-muted"><Mail class="size-4" /></span>
+            {/if}
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium">{invite.email ?? `@${invite.github}`}</p>
+              <p class="text-[13px] text-ink-muted">{ROLE_NAMES[invite.role].label}{invite.invited_by ? `, invited by ${invite.invited_by}` : ""} · expires {ago(invite.expires_at)}</p>
             </div>
-            {#if session.can("members")}<button type="button" class="button button-sm button-quiet" onclick={() => revoke(invite.id)}>Cancel invitation</button>{/if}
+            {#if session.can("members")}
+              <div class="max-sm:w-full max-sm:pl-13"><button type="button" class="button button-sm button-quiet" onclick={() => revoke(invite.id)}>Cancel invitation</button></div>
+            {/if}
           </li>
         {/each}
       </ul>

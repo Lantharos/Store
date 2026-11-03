@@ -36,13 +36,13 @@
 
 {#if session.apps.length}
   <ul class="mt-8 divide-y divide-hairline">
-    <li class="hidden grid-cols-[minmax(0,1fr)_8rem_10rem_8rem] gap-4 px-3 pb-2 text-[13px] text-ink-muted md:grid" aria-hidden="true">
+    <li class="hidden grid-cols-[minmax(0,1fr)_7rem_13rem_8rem] gap-4 px-3 pb-2 text-[13px] text-ink-muted md:grid" aria-hidden="true">
       <span>App</span><span>Version</span><span>Latest release</span><span class="text-right">Installs this week</span>
     </li>
     {#each session.apps as app, index (app.id)}
       {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}
       <li class="enter" style:--order={index}>
-        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl px-3 py-4 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_8rem_10rem_8rem]">
+        <a href="/dashboard/apps/{app.id}" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl px-3 py-4 transition-colors hover:bg-well/50 md:grid-cols-[minmax(0,1fr)_7rem_13rem_8rem]">
           <span class="flex min-w-0 items-center gap-4">
             <AppIcon src={app.icon} name={app.name} class="size-11" />
             <span class="min-w-0">
@@ -50,12 +50,12 @@
               <span class="block truncate font-mono text-[13px] text-ink-muted">{app.id}</span>
             </span>
           </span>
-          <span class="text-[15px] tabular text-ink-soft max-md:text-right">{app.version ?? "None yet"}</span>
+          <span class="text-[15px] tabular text-ink-soft max-md:text-right">{app.version ?? "–"}</span>
           <span class="flex items-center gap-2 text-[15px] text-ink-soft max-md:col-start-1 max-md:pl-15">
             {#if status}
-              <span class="size-2 rounded-full {TONE_DOT[status.tone]}"></span>{status.label}
+              <span class="size-2 shrink-0 rounded-full {TONE_DOT[status.tone]}"></span><span class="truncate">{status.label}</span>
             {:else}
-              <span class="size-2 rounded-full bg-ink-muted/40"></span>Waiting for the first release
+              <span class="size-2 shrink-0 rounded-full bg-ink-muted/40"></span>No release yet
             {/if}
           </span>
           <span class="text-right text-[15px] tabular text-ink-soft max-md:row-start-2 max-md:col-start-2">{count(app.installs_7d)}</span>

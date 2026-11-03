@@ -4,7 +4,7 @@
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
   import Palette from "./Palette.svelte"
-  import Sidebar from "./Sidebar.svelte"
+  import SidebarSwitcher from "./SidebarSwitcher.svelte"
 
   let { children }: { children: Snippet } = $props()
   let drawer = $state(false)
@@ -30,7 +30,7 @@
 <a href="#content" class="skip">Skip to content</a>
 <div class="min-h-svh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
   <aside class="sticky top-0 hidden h-svh bg-raised lg:block">
-    <Sidebar onsearch={() => (palette = true)} />
+    <SidebarSwitcher onsearch={() => (palette = true)} />
   </aside>
 
   <header class="sticky top-0 z-20 flex h-14 items-center gap-3 bg-glass px-4 backdrop-blur-xl lg:hidden">
@@ -44,7 +44,7 @@
     <div class="fixed inset-0 z-40 lg:hidden">
       <button type="button" aria-label="Close menu" class="scrim absolute inset-0 bg-scrim" onclick={() => (drawer = false)}></button>
       <aside class="drawer absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-raised shadow-float">
-        <Sidebar onsearch={() => ((drawer = false), (palette = true))} />
+        <SidebarSwitcher onsearch={() => ((drawer = false), (palette = true))} />
       </aside>
     </div>
   {/if}

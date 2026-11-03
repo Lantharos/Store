@@ -4,6 +4,7 @@
   import { date } from "../../format.ts"
   import Select from "../../ui/fields/Select.svelte"
   import Menu, { type MenuItem } from "../../ui/overlay/Menu.svelte"
+  import Avatar from "../account/Avatar.svelte"
   import { session } from "../api/session.svelte.ts"
   import { roleOptions } from "./roles.ts"
 
@@ -36,16 +37,17 @@
   ])
 </script>
 
-<li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
-  <span class="grid size-9 shrink-0 place-items-center rounded-full bg-well font-semibold text-ink-soft">{member.name.slice(0, 1)}</span>
-  <div class="min-w-48 flex-1">
+<li class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4">
+  <Avatar src={member.image} name={member.name} />
+  <div class="min-w-0 flex-1">
     <p class="truncate font-medium">{member.name}{#if you}<span class="font-normal text-ink-muted">{" (you)"}</span>{/if}</p>
-    <p class="truncate text-[13px] text-ink-muted">{member.email} · joined {date(member.joined_at)}</p>
+    <p class="text-[13px] text-ink-muted"><span class="break-all">{member.email}</span> · joined {date(member.joined_at)}</p>
   </div>
+  <div class="flex items-center gap-2 max-sm:w-full max-sm:pl-13">
   {#if manageable}
     <div class="w-36"><Select bind:value={role} label="Role of {member.name}" options={roleOptions(owners)} onchange={onrole} /></div>
   {:else}
-    <span class="w-36 text-[15px] text-ink-soft">{ROLE_NAMES[member.role].label}</span>
+    <span class="w-36 px-4 text-[15px] text-ink-soft">{ROLE_NAMES[member.role].label}</span>
   {/if}
   {#if manageable || you}
     <button bind:this={trigger} type="button" class="button size-9 p-0 hover:bg-well" aria-label="More for {member.name}" aria-haspopup="menu" aria-expanded={open} onclick={() => (open = !open)}>
@@ -55,4 +57,5 @@
   {:else}
     <span class="size-9"></span>
   {/if}
+  </div>
 </li>

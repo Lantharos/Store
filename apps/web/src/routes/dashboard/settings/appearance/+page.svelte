@@ -22,7 +22,7 @@
 
 <PageHeader title="Appearance" text="How schelf.store and the dashboard look in this browser." />
 
-<div role="radiogroup" aria-label="Appearance" class="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+<div role="radiogroup" aria-label="Appearance" class="mt-8 grid gap-3 sm:grid-cols-3">
   {#each OPTIONS as option (option.value)}
     {@const chosen = scheme.value === option.value}
     <button
