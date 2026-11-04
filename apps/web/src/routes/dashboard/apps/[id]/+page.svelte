@@ -6,7 +6,6 @@
   import { notices } from "#lib/dashboard/overview/attention.ts"
   import DownloadLink from "#lib/dashboard/overview/DownloadLink.svelte"
   import FirstRelease from "#lib/dashboard/overview/FirstRelease.svelte"
-  import NextRelease from "#lib/dashboard/overview/NextRelease.svelte"
   import Notices from "#lib/dashboard/overview/Notices.svelte"
   import ReleaseHeader from "#lib/dashboard/releases/ReleaseHeader.svelte"
   import ReleaseList from "#lib/dashboard/releases/ReleaseList.svelte"
@@ -25,9 +24,6 @@
   )
   const detail = $derived(featured ? releaseDetail(id, featured.id) : null)
   const others = $derived(releases.data?.filter((release) => release.id !== featured?.id) ?? [])
-  const shipped = $derived(
-    releases.data?.find((release) => release.status === "live" || release.status === "rolling-out"),
-  )
   const attention = $derived(notices(data, releases.data ?? []))
 </script>
 
@@ -69,7 +65,6 @@
 
     <aside class="space-y-8">
       <DownloadLink settings={data} />
-      {#if featured}<NextRelease settings={data} version={shipped?.version ?? featured.version} />{/if}
     </aside>
   </div>
 {/if}
