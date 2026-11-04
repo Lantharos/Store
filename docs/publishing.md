@@ -9,7 +9,7 @@ bunx schelf init          # in the app's repository
 git add schelf.toml .github/workflows/schelf.yml && git commit -m "Publish on Schelf" && git push
 ```
 
-`schelf init` signs in through the browser, reads `Sabine.toml`, AppStream metadata and the git remote, claims the app id (proving `io.github.<user>.*` through the GitHub sign-in, or walking through a DNS proof), registers the repository and workflow as a trusted publisher, and writes the two files. Pressing **Run workflow** on *Publish to Schelf* in the repository's Actions tab builds the app and sends it to review. Everything it does can also be done in the dashboard.
+`schelf init` signs in through the browser, reads `Sabine.toml`, AppStream metadata and the git remote, claims the app id (proving `io.github.<user>.*` through the GitHub sign-in, or walking through a DNS proof), registers the repository and workflow as a trusted publisher, and writes the two files. Pressing **Run workflow** on _Publish to Schelf_ in the repository's Actions tab builds the app and sends it to review. Everything it does can also be done in the dashboard.
 
 ## App ids
 
@@ -17,11 +17,11 @@ Every app and extension has a reverse-DNS id, like `com.lantharos.Wren` or `io.g
 
 A developer may only use ids under a namespace they've proven:
 
-| Namespace | Proof |
-| --- | --- |
+| Namespace                                    | Proof                                                                                                                                                                                     |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `com.example.*`, `org.example.*`, any domain | A DNS TXT record `schelf-verify=<token>` on `example.com`, or `https://example.com/.well-known/schelf-store.txt` containing the token. Subdomains count only for their own reversed name. |
-| `io.github.<user>.*` | Signing in with that GitHub account. |
-| `io.github.<org>.*` | Signing in with a GitHub account that's an owner of the organisation. |
+| `io.github.<user>.*`                         | Signing in with that GitHub account.                                                                                                                                                      |
+| `io.github.<org>.*`                          | Signing in with a GitHub account that's an owner of the organisation.                                                                                                                     |
 
 Proofs are re-checked monthly. A lapsed proof keeps existing apps listed but blocks new releases until it's fixed.
 
@@ -95,9 +95,9 @@ jobs:
 It adds **Publish to Schelf** to the repository's Actions tab, with a channel to choose. `schelf init` also offers to publish whenever the version in `Sabine.toml` (or `extension.toml`) changes on the default branch. That adds a push trigger and a small job that runs first and lets the build go ahead only when the version line changed:
 
 ```yaml
-  push:
-    branches: [main]
-    paths: [Sabine.toml]
+push:
+  branches: [main]
+  paths: [Sabine.toml]
 ```
 
 ### Versions
@@ -109,10 +109,10 @@ Sabine's release workflow builds every package and, because the app updates from
 For an AppImage built elsewhere, the workflow runs when a GitHub release is published, waits for the release's AppImages and publishes those, reading each one's architecture from its ELF header:
 
 ```yaml
-      - uses: actions/checkout@v7
-      - uses: Lantharos/Store/publish@v1
-        with:
-          release-assets: "*.AppImage"
+- uses: actions/checkout@v7
+- uses: Lantharos/Store/publish@v1
+  with:
+    release-assets: "*.AppImage"
 ```
 
 Extensions are packed from the checked-out tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. Any workflow can publish: add the action as a step at the end of the one that builds, and register that workflow as the trusted publisher.
@@ -146,14 +146,14 @@ For local use and other CI, `schelf publish` uses a dashboard token instead of O
 
 ## The schelf command
 
-| Command | Does |
-| --- | --- |
-| `schelf init` | Sets up an app, extension or project, as above. |
-| `schelf check` | Validates `schelf.toml`, the permission declaration and the listing locally, showing what the store page will look like in the terminal and what's missing. |
-| `schelf publish [files…]` | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--version`, `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
-| `schelf status [version]` | Where a release is: checks, review, rollout. |
-| `schelf rollout <version> <percent | pause | resume | all>` | Rollout control. |
-| `schelf login` / `logout` | Browser sign-in for the commands that need an account. |
+| Command                            | Does                                                                                                                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schelf init`                      | Sets up an app, extension or project, as above.                                                                                                                                            |
+| `schelf check`                     | Validates `schelf.toml`, the permission declaration and the listing locally, showing what the store page will look like in the terminal and what's missing.                                |
+| `schelf publish [files…]`          | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--version`, `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
+| `schelf status [version]`          | Where a release is: checks, review, rollout.                                                                                                                                               |
+| `schelf rollout <version> <percent | pause                                                                                                                                                                                      | resume | all>` | Rollout control. |
+| `schelf login` / `logout`          | Browser sign-in for the commands that need an account.                                                                                                                                     |
 
 ## From publish to install
 

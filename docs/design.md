@@ -11,36 +11,36 @@ There are two sides:
 
 This document is the overview. The details are in:
 
-| File | Covers |
-| --- | --- |
+| File                           | Covers                                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [publishing.md](publishing.md) | App ids and namespace proofs, `schelf.toml`, trusted publishing from GitHub Actions, the `schelf` command, from publish to install |
-| [review.md](review.md) | The Pult inboxes, the facts on each item, triage, reading update diffs, the review command |
-| [trust.md](trust.md) | Keys, what each client checks, permissions, rollouts, deltas, rollback, stopping a bad app |
-| [data.md](data.md) | D1 tables, R2 layout, the signed files clients read, download links and feeds, counting downloads without tracking, the API |
-| [clients.md](clients.md) | The Schelf app and its other sources, Sabine's built-in updates, the website and dashboard |
-| [extensions.md](extensions.md) | Luft extensions in the store |
-| [legal.md](legal.md) | Developer agreement, terms, privacy, DSA notice and action, DMCA |
+| [review.md](review.md)         | The Pult inboxes, the facts on each item, triage, reading update diffs, the review command                                         |
+| [trust.md](trust.md)           | Keys, what each client checks, permissions, rollouts, deltas, rollback, stopping a bad app                                         |
+| [data.md](data.md)             | D1 tables, R2 layout, the signed files clients read, download links and feeds, counting downloads without tracking, the API        |
+| [clients.md](clients.md)       | The Schelf app and its other sources, Sabine's built-in updates, the website and dashboard                                         |
+| [extensions.md](extensions.md) | Luft extensions in the store                                                                                                       |
+| [legal.md](legal.md)           | Developer agreement, terms, privacy, DSA notice and action, DMCA                                                                   |
 
 ## Decisions
 
-| Area | Decision |
-| --- | --- |
-| What it is | A distribution service: release hosting and management for any app, with a storefront for the ones that are listed. |
-| Who can publish | Anyone with a GitHub repository, public or private, free. Paid apps after there's a company. |
-| Where apps are built | In the developer's own GitHub Actions. Schelf runs no build machines. |
-| How releases arrive | Trusted publishing: the developer's workflow proves who it is with GitHub's OIDC token, so there are no secrets to copy. Every file carries a GitHub build attestation. Or uploaded by hand, from the dashboard or with a token, under closer scrutiny. |
-| Checks | Automatic checks in the Worker on upload; deeper checks (malware scan, source diff, permission inspection) in a public workflow in this repository, run on GitHub's free runners. |
-| Review | In Pult: facts on every item, Jev triage as a first pass, a person decides. Which releases need a person depends on how they arrived, the channel and whether the project is listed ([hosting](#hosting-releases)). |
-| Accounts | Better Auth on D1 with Drizzle: GitHub sign-in (which also proves `io.github.*` namespaces), email codes and passkeys. |
-| Infrastructure | Cloudflare: Workers, D1, R2, Analytics Engine, Queues, Email Service. |
-| Kinds | Apps, and extensions for Luft. |
-| Formats | Sabine apps on every system, AppImages on Linux, Luft extensions on Luft, and files: installers, archives, programs and APKs, which Schelf hosts and offers as downloads. |
-| Visibility | Projects are listed or unlisted. Unlisted ones have a page, links, feeds and stats but aren't in the catalog. |
-| Signing | Store signing key on every index file, update feed and the revocation list; an offline root signs the store keys. |
-| Permissions | Luft's shared permission format, declared up front, shown before install; wider updates need review and consent. |
-| Stopping bad apps | A signed revocation list every client fetches hourly. |
-| Tracking | None. Downloads are counted per app, version and system; nothing identifies a device or person. |
-| Other sources | The catalog includes Flathub and Fedora apps, filtered for quality, so the Schelf app is useful from day one. |
+| Area                 | Decision                                                                                                                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What it is           | A distribution service: release hosting and management for any app, with a storefront for the ones that are listed.                                                                                                                                     |
+| Who can publish      | Anyone with a GitHub repository, public or private, free. Paid apps after there's a company.                                                                                                                                                            |
+| Where apps are built | In the developer's own GitHub Actions. Schelf runs no build machines.                                                                                                                                                                                   |
+| How releases arrive  | Trusted publishing: the developer's workflow proves who it is with GitHub's OIDC token, so there are no secrets to copy. Every file carries a GitHub build attestation. Or uploaded by hand, from the dashboard or with a token, under closer scrutiny. |
+| Checks               | Automatic checks in the Worker on upload; deeper checks (malware scan, source diff, permission inspection) in a public workflow in this repository, run on GitHub's free runners.                                                                       |
+| Review               | In Pult: facts on every item, Jev triage as a first pass, a person decides. Which releases need a person depends on how they arrived, the channel and whether the project is listed ([hosting](#hosting-releases)).                                     |
+| Accounts             | Better Auth on D1 with Drizzle: GitHub sign-in (which also proves `io.github.*` namespaces), email codes and passkeys.                                                                                                                                  |
+| Infrastructure       | Cloudflare: Workers, D1, R2, Analytics Engine, Queues, Email Service.                                                                                                                                                                                   |
+| Kinds                | Apps, and extensions for Luft.                                                                                                                                                                                                                          |
+| Formats              | Sabine apps on every system, AppImages on Linux, Luft extensions on Luft, and files: installers, archives, programs and APKs, which Schelf hosts and offers as downloads.                                                                               |
+| Visibility           | Projects are listed or unlisted. Unlisted ones have a page, links, feeds and stats but aren't in the catalog.                                                                                                                                           |
+| Signing              | Store signing key on every index file, update feed and the revocation list; an offline root signs the store keys.                                                                                                                                       |
+| Permissions          | Luft's shared permission format, declared up front, shown before install; wider updates need review and consent.                                                                                                                                        |
+| Stopping bad apps    | A signed revocation list every client fetches hourly.                                                                                                                                                                                                   |
+| Tracking             | None. Downloads are counted per app, version and system; nothing identifies a device or person.                                                                                                                                                         |
+| Other sources        | The catalog includes Flathub and Fedora apps, filtered for quality, so the Schelf app is useful from day one.                                                                                                                                           |
 
 ## Hosting releases
 
@@ -56,11 +56,11 @@ Decisions for projects that use Schelf as their release host, listed or not. Det
 
 **How releases arrive, and who reviews them.**
 
-| Release | Unlisted project | Listed project |
-| --- | --- | --- |
-| From GitHub Actions, stable or beta or a custom channel | Out once the checks pass; a person only when a check flags something | A person, every release |
-| From GitHub Actions, nightly | Out once the checks pass | Out once the checks pass |
-| Uploaded by hand (dashboard or `schelf publish` with a token) | A person, every release | A person, every release |
+| Release                                                       | Unlisted project                                                     | Listed project           |
+| ------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
+| From GitHub Actions, stable or beta or a custom channel       | Out once the checks pass; a person only when a check flags something | A person, every release  |
+| From GitHub Actions, nightly                                  | Out once the checks pass                                             | Out once the checks pass |
+| Uploaded by hand (dashboard or `schelf publish` with a token) | A person, every release                                              | A person, every release  |
 
 "Flags something" means any check other than the listing, licence and source diff that isn't a pass, or the malware scan and inspection not having run. Manual uploads are labelled "Uploaded by the developer", tagged `uploaded`, get a stricter check set (the malware scan has to finish, files that can't be opened are flagged), and new publishers (under 30 days old) can upload three a day. A release that goes out on its checks is approved by "Schelf's checks", logged on its Pult record, and starts its rollout like any other.
 
@@ -113,28 +113,28 @@ Hosts: `schelf.store` for the site, dashboard and API (`/api/*` routes to the ap
 
 ## Phases
 
-| Phase | Ships | Done when |
-| --- | --- | --- |
-| 1. Foundation | Both Workers, auth, D1 and R2, keys and the revocation list, trusted publishing, the publish action and `schelf` command, checks, Pult definitions, the storefront, dashboard and docs in English, the Flathub and Fedora mirror, the store as the Schelf app's catalog on Luft, Sabine updating from Schelf, Luft extensions | Lantharos's own apps publish through Schelf and update from it on Luft and Windows, and a test app can be pulled and stops launching within the hour. |
-| 2. Open | Open sign-up, deltas, translations of the site and listings, organisations | Ten outside apps listed and a week of updates through review without trouble. |
-| 3. Other Linux | The Schelf app as a Sabine bundle for other distributions, AppImages in bubblewrap | The same apps install on Fedora and Ubuntu from the Schelf app. |
-| Later | Paid apps with a merchant of record, winget and Flathub submissions from the dashboard, a beta channel | |
+| Phase          | Ships                                                                                                                                                                                                                                                                                                                         | Done when                                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Foundation  | Both Workers, auth, D1 and R2, keys and the revocation list, trusted publishing, the publish action and `schelf` command, checks, Pult definitions, the storefront, dashboard and docs in English, the Flathub and Fedora mirror, the store as the Schelf app's catalog on Luft, Sabine updating from Schelf, Luft extensions | Lantharos's own apps publish through Schelf and update from it on Luft and Windows, and a test app can be pulled and stops launching within the hour. |
+| 2. Open        | Open sign-up, deltas, translations of the site and listings, organisations                                                                                                                                                                                                                                                    | Ten outside apps listed and a week of updates through review without trouble.                                                                         |
+| 3. Other Linux | The Schelf app as a Sabine bundle for other distributions, AppImages in bubblewrap                                                                                                                                                                                                                                            | The same apps install on Fedora and Ubuntu from the Schelf app.                                                                                       |
+| Later          | Paid apps with a merchant of record, winget and Flathub submissions from the dashboard, a beta channel                                                                                                                                                                                                                        |                                                                                                                                                       |
 
 ## Costs
 
 Rough monthly costs on Cloudflare's Workers Paid plan, which includes D1, Queues, Analytics Engine and 10 million requests.
 
-| Item | At launch (50 apps) | At 1,000 apps |
-| --- | --- | --- |
-| Workers Paid | $5 | $5 |
-| Extra Worker requests | $0 | about $5 at 25 million a month |
-| R2 storage (last five releases per system, about 40 MB each, plus media and the mirror) | under $1 | about $15 for 1 TB |
-| R2 operations | $0 | about $2 |
-| Egress | $0 | $0 |
-| GitHub Actions (checks and mirror in a public repository) | $0 | $0 |
-| Triage with Jev | cents | a few dollars |
-| Email | included | under $5 |
-| **Total** | **about $10** | **about $35** |
+| Item                                                                                    | At launch (50 apps) | At 1,000 apps                  |
+| --------------------------------------------------------------------------------------- | ------------------- | ------------------------------ |
+| Workers Paid                                                                            | $5                  | $5                             |
+| Extra Worker requests                                                                   | $0                  | about $5 at 25 million a month |
+| R2 storage (last five releases per system, about 40 MB each, plus media and the mirror) | under $1            | about $15 for 1 TB             |
+| R2 operations                                                                           | $0                  | about $2                       |
+| Egress                                                                                  | $0                  | $0                             |
+| GitHub Actions (checks and mirror in a public repository)                               | $0                  | $0                             |
+| Triage with Jev                                                                         | cents               | a few dollars                  |
+| Email                                                                                   | included            | under $5                       |
+| **Total**                                                                               | **about $10**       | **about $35**                  |
 
 ## Open questions
 

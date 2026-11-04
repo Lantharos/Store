@@ -8,13 +8,13 @@ Almost nothing. An extension is an app with `kind = "extension"` and `format = "
 
 The differences:
 
-| | Apps | Extensions |
-| --- | --- | --- |
-| Artifact | Per system | One `luft` artifact (a `.tar.zst` of the extension folder), or `luft-x86_64` and `luft-aarch64` when it ships a native helper |
-| Requires | Sabine version, system minimums | The Kestrel extension API version from the extension's manifest; Schelf offers the newest release whose API the installed Luft supports |
-| Permissions | Luft's shared permission format | The extension API's own permission list from `extension.toml`, which `schelf.toml` names as its `permissions` file, and whether it runs a helper program |
-| Where it's listed | Everywhere | Only on `/extensions` on the website and in the Schelf app on Luft. The catalog marks it `kind: "extension"`, and every other client and list leaves it out. |
-| Installs | Counted per system | Counted under `luft` |
+|                   | Apps                            | Extensions                                                                                                                                                   |
+| ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Artifact          | Per system                      | One `luft` artifact (a `.tar.zst` of the extension folder), or `luft-x86_64` and `luft-aarch64` when it ships a native helper                                |
+| Requires          | Sabine version, system minimums | The Kestrel extension API version from the extension's manifest; Schelf offers the newest release whose API the installed Luft supports                      |
+| Permissions       | Luft's shared permission format | The extension API's own permission list from `extension.toml`, which `schelf.toml` names as its `permissions` file, and whether it runs a helper program     |
+| Where it's listed | Everywhere                      | Only on `/extensions` on the website and in the Schelf app on Luft. The catalog marks it `kind: "extension"`, and every other client and list leaves it out. |
+| Installs          | Counted per system              | Counted under `luft`                                                                                                                                         |
 
 ## Checks specific to extensions
 

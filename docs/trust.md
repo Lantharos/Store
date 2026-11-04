@@ -4,13 +4,13 @@ Who signs what, what each client checks, how permissions reach the user, how upd
 
 ## Keys
 
-| Key | Held by | Signs | Lifetime |
-| --- | --- | --- | --- |
-| Store root (Ed25519) | The owner, offline in 1Password; never on a server | Store signing keys and their revocation | Years; built into every client |
-| Store signing key (Ed25519) | The api Worker, as a secret | Index files, update feeds, the revocation list | One year, rotated with overlap; the list is re-signed every night so it never looks stale |
-| GitHub OIDC identity | The developer's workflow run | Nothing; it proves which repository, workflow, ref and commit a release came from | Minutes |
-| Build attestation | GitHub (Sigstore, keyless) | Each published file's digest and the run that built it | Permanent, public |
-| Windows Authenticode, Apple Developer ID | The developer | Binaries and installers on those systems | Theirs |
+| Key                                      | Held by                                            | Signs                                                                             | Lifetime                                                                                  |
+| ---------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Store root (Ed25519)                     | The owner, offline in 1Password; never on a server | Store signing keys and their revocation                                           | Years; built into every client                                                            |
+| Store signing key (Ed25519)              | The api Worker, as a secret                        | Index files, update feeds, the revocation list                                    | One year, rotated with overlap; the list is re-signed every night so it never looks stale |
+| GitHub OIDC identity                     | The developer's workflow run                       | Nothing; it proves which repository, workflow, ref and commit a release came from | Minutes                                                                                   |
+| Build attestation                        | GitHub (Sigstore, keyless)                         | Each published file's digest and the run that built it                            | Permanent, public                                                                         |
+| Windows Authenticode, Apple Developer ID | The developer                                      | Binaries and installers on those systems                                          | Theirs                                                                                    |
 
 There are no developer keys to lose or leak. A release can only come from the workflow the developer registered, and it still needs a person's approval before anyone gets it. A stolen dashboard token can upload a release, but every upload is reviewed by a person whatever the project, it's marked as uploaded by hand, scoped to one app and revocable. Releases of unlisted projects from a trusted workflow go out on the store's checks; the workflow, the attestation and a clean malware scan stand in for the person.
 
@@ -48,11 +48,11 @@ On Windows and macOS, the operating system then checks the developer's own code 
 
 Apps declare permissions in Luft's shared permission format, the one the AppImage sandbox enforces (being built in the Luft repository now). The store doesn't invent its own: it stores the declaration per release, shows it on the app page, in Schelf before install and in Pult next to what the binary actually does.
 
-| Format | How permissions are enforced at launch |
-| --- | --- |
-| AppImage on Luft | Luft's AppImage sandbox, from the declaration. |
-| AppImage on other Linux | Schelf runs it in bubblewrap with the same declaration translated to bind mounts, portals and D-Bus filtering. |
-| Sabine app | Not enforced yet: Sabine apps run with the user's full rights outside Chromium's own sandbox. The listing shows them as "Full access" until Sabine can run under the same sandbox. See the open questions. |
+| Format                  | How permissions are enforced at launch                                                                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AppImage on Luft        | Luft's AppImage sandbox, from the declaration.                                                                                                                                                             |
+| AppImage on other Linux | Schelf runs it in bubblewrap with the same declaration translated to bind mounts, portals and D-Bus filtering.                                                                                             |
+| Sabine app              | Not enforced yet: Sabine apps run with the user's full rights outside Chromium's own sandbox. The listing shows them as "Full access" until Sabine can run under the same sandbox. See the open questions. |
 
 Rules:
 
@@ -79,7 +79,13 @@ This is part of the foundation, not a later feature. The revocation list is a si
   "serial": 41,
   "issued": "2026-11-02T10:00:00Z",
   "blocked": [
-    { "app": "com.example.Bad", "versions": "*", "action": "block", "reason": "malware", "note": "Sends your files to a third party." },
+    {
+      "app": "com.example.Bad",
+      "versions": "*",
+      "action": "block",
+      "reason": "malware",
+      "note": "Sends your files to a third party."
+    },
     { "app": "io.github.someone.Tool", "versions": ["2.1.0"], "action": "warn", "reason": "crashes on start" }
   ]
 }
@@ -87,10 +93,10 @@ This is part of the foundation, not a later feature. The revocation list is a si
 
 What happens on the device:
 
-| Action | Effect |
-| --- | --- |
+| Action  | Effect                                                                                                                                                                               |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `block` | The app can't start: launching it shows why and offers to remove it. Updates and new installs are refused. Its files stay until the user removes them, so nothing they made is lost. |
-| `warn` | It starts after a notice the user can dismiss once per version. |
+| `warn`  | It starts after a notice the user can dismiss once per version.                                                                                                                      |
 
 On Luft, the block is enforced at launch for every format: the AppImage sandbox and the Sabine service both refuse a blocked app id or version, and Schelf's background service keeps the list current. On other Linux systems Schelf enforces it for apps it installed, through the menu entry it wrote. On Windows it's Sabine's service, which launches Sabine apps.
 
