@@ -3,9 +3,12 @@ import { join } from "node:path"
 import {
   accessOf,
   extensionLabels,
+  LISTING_TOML,
+  type ListingFile,
   type Permissions,
   PUBLISH_ACTION,
   readExtensionAccess,
+  readListingFile,
   readPermissions,
   readSchelfToml,
   SCHELF_TOML,
@@ -54,6 +57,14 @@ async function countScreenshots(root: string, listing?: string) {
   if (!listing) return 0
   const entries = await readdir(join(root, listing, "screenshots"), { recursive: true }).catch(() => [])
   return entries.filter((entry) => SCREENSHOT.test(entry)).length
+}
+
+async function listingFileIn(root: string, folder: string | undefined, issues: Issue[]) {
+  if (!folder) return undefined
+  const text = await readOptional(join(root, folder, LISTING_TOML))
+  return text === undefined
+    ? undefined
+    : parse<ListingFile>(LISTING_TOML, () => readListingFile(text), issues)
 }
 
 function identityIssues(project: Project, manifest: SchelfToml): Issue[] {
@@ -150,7 +161,11 @@ export async function validate(project: Project): Promise<Validation> {
 
   if (manifest)
     issues.push(...identityIssues(project, manifest), ...(await workflowIssues(project, manifest)))
-  const listing = readListing(project, await countScreenshots(project.root, manifest?.listing))
+  const listing = readListing(
+    project,
+    await countScreenshots(project.root, manifest?.listing),
+    await listingFileIn(project.root, manifest?.listing, issues),
+  )
   issues.push(...listingIssues(listing))
   return { manifest, access, fullAccess, listing, issues }
 }

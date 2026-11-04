@@ -5,7 +5,7 @@
   import { pickArtifact } from "../../system/artifacts.ts"
   import AppIcon from "../apps/AppIcon.svelte"
   import ExtensionArt from "../apps/ExtensionArt.svelte"
-  import { categoryHref, categoryLabel } from "../categories.ts"
+  import { categoryHref, categoryLabel, primaryCategory } from "../categories.ts"
   import Download from "./Download.svelte"
   import ExtensionPermissions from "./ExtensionPermissions.svelte"
   import type { ExtensionGrant } from "./extension.ts"
@@ -43,6 +43,7 @@
       : "Every file was uploaded by the developer and checked by Schelf.",
   )
   const extension = $derived(app.kind === "extension")
+  const primary = $derived(primaryCategory(app.categories))
   const artifacts = $derived(latest?.artifacts ?? [])
   const unavailable = $derived(!extension && system.os !== "luft" && !pickArtifact(artifacts, system))
   let others = $state(false)
@@ -63,9 +64,9 @@
           <a href="/publishers/{app.publisher.slug}" class="inline-flex items-center gap-1 align-bottom hover:text-ink">
             {app.publisher.name}{#if app.publisher.verified}<BadgeCheck class="size-4 text-accent" aria-label="Verified publisher" />{/if}
           </a>
-          {#each app.categories.slice(0, 1) as category (category)}
-            · <a href={extension ? "/extensions" : categoryHref(category)} class="hover:text-ink">{categoryLabel(category)}</a>
-          {/each}
+          {#if primary}
+            · <a href={extension ? "/extensions" : categoryHref(primary)} class="hover:text-ink">{categoryLabel(primary)}</a>
+          {/if}
           · {app.distribution === "open" ? "Free and open source" : "Closed source"}
         </p>
       </div>

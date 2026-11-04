@@ -65,6 +65,7 @@ export async function publish(args: Args) {
         commit,
         schelfToml: context.schelfToml,
         permissionsToml: context.permissionsToml,
+        listingToml: context.listingToml,
         notes: flag(args, "notes") ?? context.notes,
         artifacts: await hashArtifacts(artifacts),
       }),

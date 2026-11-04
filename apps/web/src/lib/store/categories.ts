@@ -20,6 +20,8 @@ const LABELS: Record<string, string> = {
 
 export const CATEGORY_CHOICES = Object.keys(LABELS)
 
+export const primaryCategory = (categories: string[]) => categories[0]
+
 export const categoryLabel = (name: string) => LABELS[name] ?? name.replace(/([a-z])([A-Z])/g, "$1 $2")
 
 export const categorySlug = (name: string) =>

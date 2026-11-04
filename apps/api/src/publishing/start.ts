@@ -12,6 +12,7 @@ import {
   paths,
   type Requires,
   readExtensionAccess,
+  readListingFile,
   readPermissions,
   readSchelfToml,
   type SchelfToml,
@@ -27,6 +28,7 @@ import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { acceptingSubmissions } from "../ops/events.ts"
 import type { AppRow } from "../signing/records.ts"
+import { applyListingFile } from "./listing-file.ts"
 import { identifyPublisher, type Publisher } from "./publisher.ts"
 import { issueUploadToken } from "./upload-token.ts"
 
@@ -38,6 +40,15 @@ function readManifest(text: string): SchelfToml {
   } catch (error) {
     if (error instanceof ZodError) throw error
     fail(422, `schelf.toml doesn't parse: ${(error as Error).message}`)
+  }
+}
+
+function readListing(text: string) {
+  try {
+    return readListingFile(text)
+  } catch (error) {
+    if (error instanceof ZodError) throw error
+    fail(422, `listing.toml doesn't parse: ${(error as Error).message}`)
   }
 }
 
@@ -213,7 +224,8 @@ export async function startRelease(
     fail(422, `${app.id} is registered as an ${app.kind}, not an ${manifest.kind}`)
   const publisher = await identifyPublisher(credential, app)
   await publishable(app)
-  return createRelease({
+  const listing = body.listing_toml === undefined ? undefined : readListing(body.listing_toml)
+  const release = await createRelease({
     app,
     publisher,
     version: body.version,
@@ -227,4 +239,6 @@ export async function startRelease(
     bridge: body.bridge,
     files: body.files,
   })
+  if (listing) await applyListingFile(app, listing)
+  return release
 }

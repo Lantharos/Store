@@ -183,14 +183,16 @@ export interface ListingMeta {
   brand_color: string | null
 }
 
-export const LISTING_SOURCES = ["appstream", "sabine", "dashboard"] as const
+export const LISTING_SOURCES = ["appstream", "sabine", "listing", "dashboard"] as const
 export const listingSource = z.enum(LISTING_SOURCES)
 export type ListingSource = z.infer<typeof listingSource>
 export type FieldSources = Record<string, ListingSource>
 
+export const MAX_CATEGORIES = 4
+
 export const updateMeta = z.object({
   source: listingSource.default("dashboard"),
-  categories: z.array(z.string().max(40)).max(4).optional(),
+  categories: z.array(z.string().max(40)).max(MAX_CATEGORIES).optional(),
   homepage: z.url().nullable().optional(),
   support: z.url().nullable().optional(),
   privacy_url: z.url().nullable().optional(),

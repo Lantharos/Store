@@ -1,3 +1,4 @@
+import type { ListingFile } from "@schelf/protocol"
 import type { Project } from "../project/detect.ts"
 import type { Issue } from "./issues.ts"
 
@@ -19,19 +20,19 @@ const NAME_LIMIT = 60
 const SUMMARY_LIMIT = 120
 const MIN_SCREENSHOTS = 2
 
-export function readListing(project: Project, extraScreenshots: number): Listing {
+export function readListing(project: Project, extraScreenshots: number, file?: ListingFile): Listing {
   const component = project.appstream?.component
   return {
     name: project.name,
-    summary: project.summary,
-    description: component?.description || undefined,
+    summary: file?.summary ?? project.summary,
+    description: file?.description ?? (component?.description || undefined),
     developer: component?.developer,
     licence: project.licence,
     icon: project.icon,
     screenshots: (component?.screenshots.length ?? 0) + extraScreenshots,
-    categories: component?.categories ?? [],
-    homepage: component?.urls.homepage,
-    support: component?.urls.bugtracker ?? component?.urls.help ?? component?.urls.contact,
+    categories: file?.categories ?? component?.categories ?? [],
+    homepage: file?.homepage ?? component?.urls.homepage,
+    support: file?.support ?? component?.urls.bugtracker ?? component?.urls.help ?? component?.urls.contact,
     contentRating: component?.contentRating !== undefined,
   }
 }

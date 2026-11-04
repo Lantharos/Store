@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CatalogEntry, SearchHit } from "@schelf/protocol"
-  import { categoryLabel } from "../categories.ts"
+  import { categoryLabel, primaryCategory } from "../categories.ts"
   import { appHref, originOf } from "../links.ts"
   import AppIcon from "./AppIcon.svelte"
   import ExtensionArt from "./ExtensionArt.svelte"
@@ -15,9 +15,9 @@
     "transition-transform duration-(--spring-snappy-duration) ease-(--spring-snappy) group-hover:scale-[1.04] group-active:scale-[0.97]"
   const origin = $derived("origin" in app ? originOf(app) : null)
   const soon = $derived("platforms" in app && Object.keys(app.platforms).length === 0)
+  const primary = $derived(primaryCategory(app.categories))
   const meta = $derived(
-    detail ??
-      (origin ? `From ${origin}` : app.categories[0] ? categoryLabel(app.categories[0]) : app.publisher.name),
+    detail ?? (origin ? `From ${origin}` : primary ? categoryLabel(primary) : app.publisher.name),
   )
 </script>
 

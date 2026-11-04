@@ -41,10 +41,10 @@ id = "io.github.alice.Notes"
 kind = "app"                 # or "extension" (Luft only)
 format = "sabine"            # "appimage", or "luft-extension" for extensions
 permissions = "permissions.toml"   # Luft's shared permission format; omit for full access
-listing = "store/"           # optional: screenshots and translated text kept in the repository
+listing = "store/"           # optional: a folder with a listing.toml, sent with every release
 ```
 
-Most of the listing comes from `Sabine.toml`, the AppStream metainfo file and the repository; `schelf.toml` only adds what's missing, and the dashboard edits the rest. The file is sent with every release, so the store always reviews the declaration that matches the build.
+Most of the listing comes from `Sabine.toml`, the AppStream metainfo file and the repository; a `listing.toml` in the `listing` folder sets the summary, description, keywords, categories, links and colour with each release, and the dashboard edits the rest. A field last changed in the dashboard stays as it is. Categories are in order: the first is the primary one, shown under the name and in lists, and a project can have up to four. The file is sent with every release, so the store always reviews the declaration that matches the build.
 
 ## Trusted publishing
 

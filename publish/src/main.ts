@@ -70,6 +70,7 @@ async function run() {
           commit: context.commit,
           schelfToml: context.schelfToml,
           permissionsToml: context.permissionsToml,
+          listingToml: context.listingToml,
           notes: core.getInput("notes") || context.notes,
           artifacts,
         },

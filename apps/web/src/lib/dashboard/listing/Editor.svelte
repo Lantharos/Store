@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { AppSettings, ListingMeta, ListingSource, ListingText } from "@schelf/protocol"
   import { untrack } from "svelte"
-  import { CATEGORY_CHOICES, categoryLabel } from "../../store/categories.ts"
   import ColorField from "../../ui/fields/ColorField.svelte"
   import Field from "../../ui/fields/Field.svelte"
   import Select from "../../ui/fields/Select.svelte"
@@ -9,6 +8,7 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
+  import CategoryPicker from "./CategoryPicker.svelte"
   import IconField from "./IconField.svelte"
   import Preview from "./Preview.svelte"
   import Screenshots from "./Screenshots.svelte"
@@ -27,10 +27,10 @@
     pt: "Portuguese",
     ja: "Japanese",
   }
-  const MAX_CATEGORIES = 4
   const SOURCE_NOTES: Partial<Record<ListingSource, string>> = {
     appstream: "From your AppStream file",
     sabine: "From Sabine.toml",
+    listing: "From your listing.toml",
   }
   const textNote = (field: string) =>
     SOURCE_NOTES[settings.listing_sources[locale]?.[field] ?? "dashboard"] ?? null
@@ -58,12 +58,6 @@
   function chooseLocale(code: string) {
     if (!listing[code]) listing[code] = $state.snapshot(listing.en ?? empty)
     locale = code
-  }
-
-  function toggleCategory(name: string) {
-    meta.categories = meta.categories.includes(name)
-      ? meta.categories.filter((category) => category !== name)
-      : [...meta.categories, name].slice(0, MAX_CATEGORIES)
   }
 
   function discard() {
@@ -140,15 +134,8 @@
     </Section>
 
     <Section title="Details">
-      <Field label="Categories" note={metaNote("categories")} hint="Up to four. The first is the one shown under your name.">
-        <div class="flex flex-wrap gap-2">
-          {#each [...new Set([...settings.meta.categories, ...CATEGORY_CHOICES])] as name (name)}
-            {@const chosen = meta.categories.includes(name)}
-            <button type="button" aria-pressed={chosen} onclick={() => toggleCategory(name)} disabled={!chosen && meta.categories.length >= MAX_CATEGORIES} class="button button-sm {chosen ? 'button-ink' : 'button-quiet'}">
-              {categoryLabel(name)}
-            </button>
-          {/each}
-        </div>
+      <Field label="Categories" note={metaNote("categories")} hint="Up to four. Drag to change the order; the first one is your primary category.">
+        <CategoryPicker bind:categories={meta.categories} saved={settings.meta.categories} />
       </Field>
       <div class="grid gap-6 sm:grid-cols-2">
         <Field label="Website" note={metaNote("homepage")}><input class="field" type="url" placeholder="https://" bind:value={meta.homepage} /></Field>

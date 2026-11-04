@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
+import { MAX_CATEGORIES } from "@schelf/protocol"
 import { ApiFailure } from "@schelf/publisher"
 import type { Dashboard } from "../api/dashboard.ts"
 import type { Project } from "../project/detect.ts"
@@ -8,7 +9,6 @@ import type { Identity } from "./identity.ts"
 import { imageSize } from "./images.ts"
 
 const MAX_SCREENSHOTS = 8
-const MAX_CATEGORIES = 4
 const MAX_KEYWORDS = 20
 
 async function bytesOf(root: string, location: string) {

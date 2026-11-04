@@ -6,7 +6,7 @@
   import AppIcon from "../../store/apps/AppIcon.svelte"
   import ExtensionArt from "../../store/apps/ExtensionArt.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
-  import { categoryLabel } from "../../store/categories.ts"
+  import { categoryLabel, primaryCategory } from "../../store/categories.ts"
   import ExtensionPermissions from "../../store/page/ExtensionPermissions.svelte"
   import { type ExtensionGrant, extensionGrants } from "../../store/page/extension.ts"
   import { scheme as dashboardScheme } from "../../theme/scheme.svelte.ts"
@@ -47,6 +47,7 @@
 
   onMount(() => dashboardScheme.load())
 
+  const primary = $derived(primaryCategory(meta.categories))
   const BUTTONS: Record<System, string> = {
     windows: "Download for Windows",
     macos: "Download for Mac",
@@ -97,7 +98,7 @@
         <div class="min-w-0 flex-1">
           <p class="truncate text-xl leading-tight font-semibold tracking-[-0.02em]">{text.name || "Your app's name"}</p>
           <p class="truncate text-[13px] text-ink-soft">{text.summary || "A short line about what it does"}</p>
-          <p class="truncate text-[12px] text-ink-muted">{publisher}{meta.categories[0] ? ` · ${categoryLabel(meta.categories[0])}` : ""}</p>
+          <p class="truncate text-[12px] text-ink-muted">{publisher}{primary ? ` · ${categoryLabel(primary)}` : ""}</p>
         </div>
       </div>
       <span class="button button-sm button-primary pointer-events-none w-full">

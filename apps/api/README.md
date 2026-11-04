@@ -19,7 +19,7 @@ bun run test
 bun run deploy
 ```
 
-It builds the Pult definitions, applies D1 migrations and deploys. The Worker sends its definitions to Pult itself the first time it runs a new version, using its `PULT_KEY` secret. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`, which finds every app and extension in Luft with a `schelf.toml` and takes its text and screenshots from its `store/listing.toml`; the store signs them on its next hourly run.
+It builds the Pult definitions, applies D1 migrations and deploys. The Worker sends its definitions to Pult itself the first time it runs a new version, using its `PULT_KEY` secret. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`, which finds every app and extension in Luft with a `schelf.toml` and takes its text, categories, links, colour and screenshots from its `store/listing.toml`; the store signs them on its next hourly run.
 
 ## Pult
 

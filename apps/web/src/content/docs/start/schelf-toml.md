@@ -33,7 +33,7 @@ format = "files"
 | `kind`                   | No           | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                        |
 | `format`                 | Yes          | `sabine`, `appimage`, `luft-extension` for extensions, or `files` for anything else Schelf hosts.                        |
 | `permissions`            | No           | The file holding your [permission declaration](/docs/permissions). Leave it out and your app is listed with full access. |
-| `listing`                | No           | A folder with screenshots and translated text kept in the repository.                                                    |
+| `listing`                | No           | A folder holding a [`listing.toml`](#listingtoml), so your listing lives in the repository.                              |
 | `requires.sabine`        | No           | The oldest Sabine version your app runs on, like `"0.68"`.                                                               |
 | `requires.extension_api` | Extensions   | The Luft extension API version your extension was built for.                                                             |
 
@@ -42,11 +42,28 @@ format = "files"
 Schelf reads, in this order:
 
 1. The dashboard, for anything you've edited there.
-2. The `listing` folder, if you set one.
+2. The `listing.toml` in your `listing` folder, if you set one, sent with every release.
 3. Your AppStream metainfo file: name, summary, description, screenshots, categories, links and release notes.
 4. `Sabine.toml` and the repository: name, icon, licence and homepage.
 
 The dashboard marks which fields came from AppStream, so you know where to change them.
+
+## listing.toml
+
+Keep the words and details of your listing next to the code, and every release brings them along:
+
+```toml
+summary = "Notes that stay out of your way"
+description = "Plain paragraphs and lists. Links and **bold** work."
+keywords = ["notes", "markdown"]
+categories = ["Office", "Utility"]
+homepage = "https://example.com/notes"
+support = "https://example.com/notes/help"
+privacy_url = "https://example.com/privacy"
+brand_color = "#3e6b4f"
+```
+
+Every field is optional. `categories` takes up to four, and the first is your primary category: the one shown under your name and in lists. A field you've changed in the dashboard stays as you set it, so the file won't overwrite it. The English text comes from this file; screenshots, icons and translations are added in the dashboard.
 
 ## Checking it
 

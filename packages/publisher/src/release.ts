@@ -20,6 +20,7 @@ export interface ReleaseInput {
   commit?: string
   schelfToml: string
   permissionsToml?: string
+  listingToml?: string
   notes: string
   artifacts: HashedArtifact[]
 }
@@ -73,6 +74,7 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
     commit: input.commit,
     schelf_toml: input.schelfToml,
     permissions_toml: input.permissionsToml,
+    listing_toml: input.listingToml,
     notes: input.notes,
     channel: input.channel,
     bridge: input.bridge ?? false,

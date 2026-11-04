@@ -1,4 +1,5 @@
 import { type AppIndex, type PublisherPage, STORE_ORIGIN } from "@schelf/protocol"
+import { primaryCategory } from "../store/categories.ts"
 
 const organization = {
   "@type": "Organization",
@@ -42,7 +43,7 @@ const SCHEMA_CATEGORIES: Record<string, string> = {
 }
 
 const schemaCategory = (categories: string[]) =>
-  categories.map((name) => SCHEMA_CATEGORIES[name]).find(Boolean) ?? "UtilitiesApplication"
+  SCHEMA_CATEGORIES[primaryCategory(categories) ?? ""] ?? "UtilitiesApplication"
 
 const OPERATING_SYSTEMS: [string, string][] = [
   ["windows", "Windows"],
