@@ -36,6 +36,7 @@
   const panel = $props.id()
   const listing = $derived(app.listing.en!)
   const latest = $derived(app.releases.find((release) => release.channel === "stable"))
+  const testing = $derived(latest ? undefined : app.releases[0])
   const hosted = $derived(app.format === "files")
   const note = $derived(
     latest?.provenance.origin === "github-actions"
@@ -84,7 +85,9 @@
     {:else}
       <div class="sm:text-right">
         <p class="font-medium">Coming soon</p>
-        <p class="mt-1 text-[13px] text-ink-muted">The first release isn't out yet.</p>
+        <p class="mt-1 text-[13px] text-ink-muted">
+          {testing ? `${testing.version} is being tested on the ${testing.channel} channel.` : "The first release isn't out yet."}
+        </p>
       </div>
     {/if}
   </header>
