@@ -9,7 +9,7 @@
 </script>
 
 <div class="h-full overflow-hidden">
-  <div class="track grid h-full w-[200%] grid-cols-2" class:settings>
+  <div class="track grid h-full w-[200%] grid-cols-2 grid-rows-[minmax(0,1fr)]" class:settings>
     <div class="min-w-0" inert={settings}><AppSidebar {onsearch} /></div>
     <div class="min-w-0" inert={!settings}><SettingsSidebar /></div>
   </div>
