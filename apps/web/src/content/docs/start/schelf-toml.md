@@ -33,7 +33,7 @@ format = "files"
 | `kind`                   | No           | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                        |
 | `format`                 | Yes          | `sabine`, `appimage`, `luft-extension` for extensions, or `files` for anything else Schelf hosts.                        |
 | `permissions`            | No           | The file holding your [permission declaration](/docs/permissions). Leave it out and your app is listed with full access. |
-| `listing`                | No           | A folder holding a [`listing.toml`](#listingtoml), so your listing lives in the repository.                              |
+| `listing`                | No           | A folder holding a [`listing.toml`](#the-listing-file), so your listing lives in the repository.                         |
 | `requires.sabine`        | No           | The oldest Sabine version your app runs on, like `"0.68"`.                                                               |
 | `requires.extension_api` | Extensions   | The Luft extension API version your extension was built for.                                                             |
 
@@ -48,7 +48,7 @@ Schelf reads, in this order:
 
 The dashboard marks which fields came from AppStream, so you know where to change them.
 
-## listing.toml
+## The listing file
 
 Keep the words and details of your listing next to the code, and every release brings them along:
 
