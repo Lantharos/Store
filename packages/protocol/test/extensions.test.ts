@@ -14,14 +14,23 @@ describe("extension permissions", () => {
     ])
   })
 
+  test("read the hosts it connects to", () => {
+    const access = readExtensionAccess('permissions = ["taskbar"]\n\n[network]\nhosts = ["app.pult.sh"]\n')
+    expect(access).toEqual({ permissions: ["taskbar"], helper: false, network: ["app.pult.sh"] })
+    expect(extensionLabels(access)).toEqual(["Add buttons to the taskbar", "Connect to app.pult.sh"])
+  })
+
   test("refuse a permission the extension API doesn't have", () => {
     expect(() => readExtensionAccess('permissions = ["camera"]\n')).toThrow()
   })
 
-  test("asking for a new permission or a helper widens", () => {
+  test("asking for a new permission, a helper or a host widens", () => {
     const before = { permissions: ["wallpaper" as const], helper: false }
     expect(extensionWidens(before, { permissions: ["wallpaper", "taskbar"], helper: false })).toBe(true)
     expect(extensionWidens(before, { permissions: ["wallpaper"], helper: true })).toBe(true)
     expect(extensionWidens(before, { permissions: [], helper: false })).toBe(false)
+    expect(
+      extensionWidens(before, { permissions: ["wallpaper"], helper: false, network: ["api.example.com"] }),
+    ).toBe(true)
   })
 })

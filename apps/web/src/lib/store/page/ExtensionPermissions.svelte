@@ -1,13 +1,21 @@
 <script lang="ts">
   import AudioLines from "@lucide/svelte/icons/audio-lines"
   import Bell from "@lucide/svelte/icons/bell"
+  import BellOff from "@lucide/svelte/icons/bell-off"
   import CloudSun from "@lucide/svelte/icons/cloud-sun"
   import Cpu from "@lucide/svelte/icons/cpu"
+  import Globe from "@lucide/svelte/icons/globe"
   import Image from "@lucide/svelte/icons/image"
+  import Keyboard from "@lucide/svelte/icons/keyboard"
+  import Lock from "@lucide/svelte/icons/lock"
   import MapPin from "@lucide/svelte/icons/map-pin"
+  import Music from "@lucide/svelte/icons/music"
   import PanelBottom from "@lucide/svelte/icons/panel-bottom"
+  import PanelTop from "@lucide/svelte/icons/panel-top"
+  import Phone from "@lucide/svelte/icons/phone"
   import Search from "@lucide/svelte/icons/search"
   import ToggleRight from "@lucide/svelte/icons/toggle-right"
+  import Volume2 from "@lucide/svelte/icons/volume-2"
   import type { ExtensionGrant } from "./extension.ts"
 
   let { grants }: { grants: ExtensionGrant[] } = $props()
@@ -20,7 +28,15 @@
     notifications: Bell,
     weather: CloudSun,
     location: MapPin,
-    media: AudioLines,
+    media: Music,
+    popups: PanelTop,
+    typing: Keyboard,
+    sounds: Volume2,
+    "audio-levels": AudioLines,
+    calls: Phone,
+    "locked-sounds": Lock,
+    "do-not-disturb": BellOff,
+    network: Globe,
     helper: Cpu,
   }
 </script>
