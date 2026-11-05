@@ -6,6 +6,7 @@ import { sniffImage } from "../src/dashboard/apps/images.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
 
 const LUFT = process.env.LUFT ?? join(import.meta.dirname, "../../../../luft")
+const D1_DATABASE = "a461f2c7-c13f-40bb-a9f7-23b32fb81181"
 const OWNER_EMAIL = process.env.OWNER_EMAIL
 const REMOTE = process.argv.includes("--remote")
 const WORK = join(import.meta.dirname, "../.wrangler")
@@ -91,13 +92,13 @@ async function iconWithPng(appId: string, file: string, uploads: Map<string, str
   return icon
 }
 
-async function wrangler(...args: string[]) {
-  const process = Bun.spawn(["bunx", "wrangler", ...args, REMOTE ? "--remote" : "--local"], {
+async function cf(...args: string[]) {
+  const process = Bun.spawn(["bunx", "cf", ...args, ...(REMOTE ? [] : ["--local"])], {
     cwd: join(import.meta.dirname, ".."),
     stdout: "inherit",
     stderr: "inherit",
   })
-  if ((await process.exited) !== 0) throw new Error(`wrangler ${args.join(" ")} failed`)
+  if ((await process.exited) !== 0) throw new Error(`cf ${args.join(" ")} failed`)
 }
 
 if (!OWNER_EMAIL) throw new Error("Set OWNER_EMAIL to the account that should own Lantharos's apps")
@@ -153,22 +154,22 @@ statements.push(
   `INSERT INTO store_state (key, value) VALUES (${sql(RESIGN_REQUEST)}, ${sql(String(now))}) ON CONFLICT (key) DO UPDATE SET value = excluded.value;`,
 )
 
-const sqlFile = join(WORK, "seed-lantharos.sql")
-writeFileSync(sqlFile, statements.join("\n"))
-await wrangler("d1", "execute", "DB", "--file", sqlFile)
+const batchFile = join(WORK, "seed-lantharos.json")
+writeFileSync(batchFile, JSON.stringify(statements.map((statement) => ({ sql: statement }))))
+await cf("d1", "query", D1_DATABASE, "--batch", `@${batchFile}`)
 for (const [key, file] of uploads) {
   const type = key.endsWith(".svg") ? "image/svg+xml" : key.endsWith(".png") ? "image/png" : "image/webp"
-  await wrangler(
+  await cf(
     "r2",
-    "object",
+    "objects",
     "put",
-    `schelf-store/${key}`,
+    key,
+    "--bucket-name",
+    "schelf-store",
     "--file",
     file,
     "--content-type",
     type,
-    "--cache-control",
-    "public, max-age=31536000, immutable",
   )
 }
 

@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/migrations", "!**/worker-configuration.d.ts", "!**/.svelte-kit", "!**/.pult"]
+    "includes": ["**", "!**/migrations", "!**/.cloudflare", "!**/.svelte-kit", "!**/.pult"]
   },
   "formatter": {
     "indentStyle": "space",

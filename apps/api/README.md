@@ -29,7 +29,7 @@ Mail to the store's addresses arrives through Cloudflare Email Routing, with a r
 
 ## Secrets
 
-Set with `wrangler secret put <name>`.
+Set with `cf workers secrets update <name> --worker schelf-api`.
 
 | Secret                                     | What it is                                                                                                                                   |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |

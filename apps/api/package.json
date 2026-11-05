@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "pult build && wrangler d1 migrations apply DB --remote && wrangler deploy",
-    "types": "wrangler types --env-file .dev.vars.example",
+    "dev": "cf dev",
+    "deploy": "pult build && cf d1 migrations apply a461f2c7-c13f-40bb-a9f7-23b32fb81181 && cf deploy",
+    "types": "cf workers types",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:migrate": "cf d1 migrations apply a461f2c7-c13f-40bb-a9f7-23b32fb81181 --local",
     "seed": "bun scripts/seed.ts",
-    "check": "tsc -p . && tsc -p test",
+    "check": "cf workers types && tsc -p . && tsc -p test",
     "test": "vitest run"
   },
   "dependencies": {
@@ -26,8 +26,9 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.5.0",
+    "cf": "1.0.0-beta.28",
     "drizzle-kit": "0.31.11",
     "vitest": "5.1.0",
-    "wrangler": "4.156.2"
+    "wrangler": "4.158.0"
   }
 }

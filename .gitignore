@@ -3,6 +3,7 @@ node_modules
 /apps/*/build
 dist
 .wrangler
+.cloudflare
 .dev.vars
 *.log
 .env

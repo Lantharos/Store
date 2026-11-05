@@ -9,7 +9,7 @@ const TEST_ROOT = seed(5)
 export default defineConfig({
   plugins: [
     cloudflareTest(async () => ({
-      wrangler: { configPath: "./wrangler.jsonc" },
+      config: true,
       miniflare: {
         d1Databases: ["MIGRATION_DB", "HOSTING_MIGRATION_DB"],
         bindings: {

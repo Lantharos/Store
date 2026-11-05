@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "preview": "wrangler dev",
-    "deploy": "vite build && wrangler deploy",
+    "preview": "cf-wrangler dev",
+    "deploy": "vite build && cf-wrangler build && cf deploy --prebuilt",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "@sveltejs/kit": "3.1.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@tailwindcss/vite": "4.3.4",
+    "cf": "1.0.0-beta.28",
     "markdown-it": "15.0.3",
     "shiki": "4.6.0",
     "svelte": "5.57.3",
@@ -32,6 +33,6 @@
     "tailwindcss": "4.3.4",
     "typescript": "6.0.3",
     "vite": "8.3.5",
-    "wrangler": "4.156.2"
+    "wrangler": "4.158.0"
   }
 }
