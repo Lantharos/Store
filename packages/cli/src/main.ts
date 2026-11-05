@@ -40,7 +40,9 @@ const COMMANDS: Record<
 
 function help() {
   title("schelf")
-  for (const command of Object.values(COMMANDS)) field(command.usage, command.about, 30)
+  const commands = Object.values(COMMANDS)
+  const width = Math.max(...commands.map((command) => command.usage.length)) + 2
+  for (const command of commands) field(command.usage, command.about, width)
   blank()
   note("Options: --api <origin> to use another store, --token <token> for publish outside GitHub Actions")
   blank()
