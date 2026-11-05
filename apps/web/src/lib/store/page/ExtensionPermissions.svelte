@@ -14,6 +14,7 @@
   import PanelTop from "@lucide/svelte/icons/panel-top"
   import Phone from "@lucide/svelte/icons/phone"
   import Search from "@lucide/svelte/icons/search"
+  import Sparkles from "@lucide/svelte/icons/sparkles"
   import ToggleRight from "@lucide/svelte/icons/toggle-right"
   import Volume2 from "@lucide/svelte/icons/volume-2"
   import type { ExtensionGrant } from "./extension.ts"
@@ -35,6 +36,8 @@
     "audio-levels": AudioLines,
     calls: Phone,
     "locked-sounds": Lock,
+    "input-sounds": Keyboard,
+    "screen-effects": Sparkles,
     "do-not-disturb": BellOff,
     network: Globe,
     helper: Cpu,

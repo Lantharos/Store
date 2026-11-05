@@ -18,7 +18,9 @@ export const EXTENSION_PERMISSIONS = [
   "audio-levels",
   "calls",
   "locked-sounds",
+  "input-sounds",
   "do-not-disturb",
+  "screen-effects",
 ] as const
 export const extensionPermission = z.enum(EXTENSION_PERMISSIONS, {
   error: (issue) => `${String(issue.input)} isn't a permission an extension can ask for.`,
@@ -40,7 +42,9 @@ export const EXTENSION_PERMISSION_LABELS: Record<ExtensionPermission, string> = 
   "audio-levels": "Follow the beat of what's playing",
   calls: "Know when you're in a call",
   "locked-sounds": "Keep playing sounds while the screen is locked",
+  "input-sounds": "Play a sound when you type and click, without seeing your keys",
   "do-not-disturb": "Hold back notifications for a while",
+  "screen-effects": "Draw over and change how your windows and the whole screen look",
 }
 export const EXTENSION_HELPER_LABEL = "Runs its own program"
 export const extensionNetworkLabel = (hosts: string[]) =>
