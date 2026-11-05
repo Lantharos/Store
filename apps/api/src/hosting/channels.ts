@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers"
 import { compareVersions, NIGHTLY, NIGHTLY_KEEP, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm"
-import { db, schema } from "../db/client.ts"
+import { db, insertRows, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { recordHistory } from "../ops/events.ts"
@@ -116,12 +116,14 @@ export async function promote(release: ReleaseRow, channel: string, by: string, 
       approvedAt: null,
       createdAt: new Date(),
     }),
-    db
-      .insert(schema.artifact)
-      .values(artifacts.map((artifact) => ({ ...artifact, id: randomId(), releaseId: id }))),
-    ...(checks.length
-      ? [db.insert(schema.check).values(checks.map((check) => ({ ...check, releaseId: id })))]
-      : []),
+    ...insertRows(
+      schema.artifact,
+      artifacts.map((artifact) => ({ ...artifact, id: randomId(), releaseId: id })),
+    ),
+    ...insertRows(
+      schema.check,
+      checks.map((check) => ({ ...check, releaseId: id })),
+    ),
   ])
   recordHistory("release", id, `Promoted from ${release.channel}`, by)
   await routeRelease(id)

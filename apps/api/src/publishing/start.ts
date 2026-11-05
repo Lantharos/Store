@@ -20,7 +20,7 @@ import {
 } from "@schelf/protocol"
 import { and, eq, sql } from "drizzle-orm"
 import { ZodError } from "zod"
-import { db, schema } from "../db/client.ts"
+import { db, insertRows, schema } from "../db/client.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { refuseEnded } from "../hosting/ended.ts"
 import { limitManualUploads } from "../hosting/limits.ts"
@@ -189,7 +189,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
       requires: input.requires,
       status: "uploading",
     }),
-    db.insert(schema.artifact).values(artifacts),
+    ...insertRows(schema.artifact, artifacts),
   ])
 
   const upload = await issueUploadToken(releaseId)

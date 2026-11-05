@@ -23,6 +23,7 @@ interface Release {
   channel?: string
   announcedSha?: string
   listingToml?: string
+  names?: string[]
 }
 
 async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, release: Release = {}) {
@@ -36,15 +37,15 @@ async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>
         schelf_toml: schelfToml(appId),
         permissions_toml: PERMISSIONS,
         listing_toml: release.listingToml,
-        files: [
-          {
-            name: "notes.AppImage",
+        files: await Promise.all(
+          (release.names ?? ["notes.AppImage"]).map(async (name) => ({
+            name,
             platform: "linux-x86_64",
             kind: "appimage",
             size: file.length,
             sha256: release.announcedSha ?? (await sha256Hex(file)),
-          },
-        ],
+          })),
+        ),
       }),
     }),
   )
@@ -69,9 +70,9 @@ async function uploadAndComplete(started: PublishResponse, file: Uint8Array<Arra
 
 const versionCheck = (result: CompleteResponse) => result.checks.find((check) => check.name === "version")
 
-function upload(started: PublishResponse, body: Uint8Array<ArrayBuffer>) {
+function upload(started: PublishResponse, body: Uint8Array<ArrayBuffer>, index = 0) {
   return exports.default.fetch(
-    new Request(started.files[0]!.url, {
+    new Request(started.files[index]!.url, {
       method: "PUT",
       headers: { authorization: `Bearer ${started.upload_token}`, "content-length": String(body.length) },
       body,
@@ -109,6 +110,23 @@ describe("publishing with a dashboard token", () => {
       provenance: { origin: "developer" },
     })
     expect(document.releases[0]!.artifacts[0]!.sha256).toBe(await sha256Hex(file))
+  })
+
+  test("a release with sixteen packages, as a Sabine app has, gets as far as being signed", async () => {
+    const { appId, token } = await publisherWithApp()
+    const file = bytesOf("an AppImage, honestly")
+    const names = Array.from({ length: 16 }, (_, index) => `notes-${index}.AppImage`)
+    const started = await publish(token, appId, file, { names })
+
+    for (let index = 1; index < names.length; index++) {
+      expect((await upload(started, file, index)).status).toBe(200)
+    }
+    expect((await uploadAndComplete(started, file)).status).toBe("in-review")
+
+    await approve(started.release, "Reviewer")
+    await rebuildApp(appId)
+    const document = await env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
+    expect(document.releases[0]!.artifacts).toHaveLength(16)
   })
 
   test("a file that doesn't match its announced SHA-256 is refused and removed", async () => {
