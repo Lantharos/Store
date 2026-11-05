@@ -13,7 +13,7 @@ const WORK = join(import.meta.dirname, "../.wrangler")
 const PUBLISHER = { id: "lantharos", userId: "lantharos-owner", name: "Lantharos", slug: "lantharos" }
 const REPOSITORY = { name: "Lantharos/Luft", id: "1250156825", ownerId: "211589416" }
 const PIPELINE = { workflow: ".github/workflows/image.yml", ref: "refs/heads/main" }
-const FOLDERS = ["apps", "extensions"]
+const FOLDERS = ["apps/store", "extensions"]
 const ONLY = process.argv.find((argument) => argument.startsWith("--only="))?.slice("--only=".length)
 
 interface StoreListing extends ListingFile {
