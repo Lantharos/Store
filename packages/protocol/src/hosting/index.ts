@@ -1,3 +1,4 @@
+export * from "./channels.ts"
 export * from "./feeds.ts"
 export * from "./files.ts"
 export * from "./pick.ts"

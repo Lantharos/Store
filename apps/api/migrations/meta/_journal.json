@@ -99,6 +99,13 @@
       "when": 1793869958821,
       "tag": "0013_gradual",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1793870787215,
+      "tag": "0014_ended_channels",
+      "breakpoints": true
     }
   ]
 }

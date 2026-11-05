@@ -7,9 +7,12 @@
   import { endpoints } from "../api/endpoints.ts"
 
   let { settings, release }: { settings: AppSettings; release: ReleaseDetail } = $props()
+  const ended = $derived(
+    new Set(settings.channels.filter((channel) => channel.ended_into).map((channel) => channel.name)),
+  )
   const choices = $derived(
     [...new Set(["stable", "beta", ...settings.channels.map((channel) => channel.name)])]
-      .filter((name) => name !== release.channel)
+      .filter((name) => name !== release.channel && !ended.has(name))
       .map((name) => ({ value: name, label: name })),
   )
   let channel = $state<string>()

@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, isNotNull, ne } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { GitHubError, repository } from "../github/api.ts"
 import { type Attestation, findAttestation } from "../github/attestations.ts"
+import { refuseEnded } from "../hosting/ended.ts"
 import { fail } from "../lib/http.ts"
 import { recordHistory } from "../ops/events.ts"
 import { dispatchChecks, failedChecks } from "../releases/checks.ts"
@@ -98,6 +99,7 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
   const release = await db.query.release.findFirst({ where: eq(schema.release.id, releaseId) })
   if (!release) fail(404, "That release doesn't exist")
   if (release.status !== "uploading") fail(409, "This release was already completed")
+  await refuseEnded(release.appId, release.channel)
   const app = (await db.query.app.findFirst({ where: eq(schema.app.id, release.appId) }))!
   const artifacts = await db.select().from(schema.artifact).where(eq(schema.artifact.releaseId, release.id))
   for (const artifact of artifacts) {

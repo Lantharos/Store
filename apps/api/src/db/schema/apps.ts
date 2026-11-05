@@ -65,6 +65,7 @@ export const channel = sqliteTable(
     name: text("name").notNull(),
     keep: integer("keep"),
     gradual: integer("gradual", { mode: "boolean" }),
+    endedInto: text("ended_into"),
     createdAt: createdAt(),
   },
   (table) => [primaryKey({ columns: [table.appId, table.name] })],

@@ -18,7 +18,8 @@ import {
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { linkBase, pageUrl } from "./addresses.ts"
-import { hostedReleases } from "./releases.ts"
+import { channelRoute } from "./ended.ts"
+import { feedReleases, linkReleases } from "./releases.ts"
 
 const SHORT_CACHE = "public, max-age=60"
 const CHANNEL = /^@([a-z][a-z0-9-]{0,19})$/
@@ -107,10 +108,12 @@ export async function serveProject(request: Request, segments: string[]) {
     return notFound("There's no project here")
   if (project.status === "pulled") return text("This project was pulled from Schelf", 410)
   const channelMatch = path[0] ? CHANNEL.exec(path[0]) : null
-  const channel = channelMatch ? channelMatch[1]! : STABLE
+  const named = channelMatch ? channelMatch[1]! : STABLE
   if (channelMatch) path.shift()
 
-  const releases = await hostedReleases(project.id, channel)
+  const route = await channelRoute(project.id, named)
+  const channel = route.at(-1)!
+  const releases = await linkReleases(project.id, route)
   const options: LinkOptions = { followRollout: project.latestFollowsRollout, draw: Math.random() }
   const varies = (release: HostedRelease) => options.followRollout && release.rollout < 100
   const [first, second, third, fourth] = path
@@ -159,18 +162,22 @@ export async function serveProject(request: Request, segments: string[]) {
     )
   }
   if (first === "tauri.json" && !second) {
-    const release = updaterRelease(releases, "tauri", options)
+    const release = updaterRelease(await feedReleases(project.id, route), "tauri", options)
     const feed = release && tauriFeed(release)
     return feed
       ? json(feed, options.followRollout ? "no-store" : SHORT_CACHE)
       : new Response(null, { status: 204 })
   }
   if (first && !second && electronFeedName(first)) {
-    const named = electronFeedName(first)!
-    const lineReleases =
-      named.channel === channel ? releases : await hostedReleases(project.id, named.channel)
-    const release = lineReleases.find((candidate) => candidate.updater === "electron")
-    const feed = release && electronFeed(release, first)
+    const line = electronFeedName(first)!.channel
+    const lineReleases = await feedReleases(
+      project.id,
+      line === named ? route : await channelRoute(project.id, line),
+    )
+    const feed = lineReleases
+      .filter((candidate) => candidate.updater === "electron")
+      .map((release) => electronFeed(release, first))
+      .find(Boolean)
     return feed ? text(feed, 200, "text/yaml; charset=utf-8") : notFound(`There's no ${first} here`)
   }
   return notFound()

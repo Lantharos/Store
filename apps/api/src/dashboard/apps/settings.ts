@@ -1,4 +1,10 @@
-import { type AppSettings, DEFAULT_LOCALE, rollsOutGradually } from "@schelf/protocol"
+import {
+  type AppSettings,
+  channelNow,
+  DEFAULT_LOCALE,
+  endedChannelsOf,
+  rollsOutGradually,
+} from "@schelf/protocol"
 import { count, desc, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 import { projectLinks } from "../../hosting/addresses.ts"
@@ -56,6 +62,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
   const publisherSlug = owner!.slug
   const releasesIn = new Map(counts.map((row) => [row.channel, row.releases]))
   const channelNames = [...new Set(["stable", ...channels.map((row) => row.name)])]
+  const ended = endedChannelsOf(channels)
   const english = listings.find((entry) => entry.locale === DEFAULT_LOCALE)
   const publisher = publishers[0]
   return {
@@ -93,6 +100,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       keep: channels.find((row) => row.name === name)?.keep ?? null,
       gradual: rollsOutGradually(name, channels.find((row) => row.name === name)?.gradual ?? null),
       releases: releasesIn.get(name) ?? 0,
+      ended_into: ended.has(name) ? channelNow(name, ended) : null,
     })),
     switches: switches.map((row) => ({
       id: row.id,

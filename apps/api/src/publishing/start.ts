@@ -22,6 +22,7 @@ import { and, eq, sql } from "drizzle-orm"
 import { ZodError } from "zod"
 import { db, schema } from "../db/client.ts"
 import { ensureChannel } from "../hosting/channels.ts"
+import { refuseEnded } from "../hosting/ended.ts"
 import { limitManualUploads } from "../hosting/limits.ts"
 import { releaseLine } from "../hosting/switches.ts"
 import { fail } from "../lib/http.ts"
@@ -139,8 +140,9 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
   const names = new Set(input.files.map((file) => file.name))
   if (names.size !== input.files.length) fail(422, "Two files have the same name")
   const line = await releaseLine(app, input.format, input.bridge)
-  if (publisher.origin === "manual") await limitManualUploads(app.publisherId)
   const channel = input.channel ?? channelFromVersion(version)
+  await refuseEnded(app.id, channel)
+  if (publisher.origin === "manual") await limitManualUploads(app.publisherId)
   await clearAbandoned(app, version)
   await ensureChannel(app.id, channel)
 

@@ -1,4 +1,5 @@
 import {
+  endChannelRequest,
   isProjectId,
   manualUpload,
   promoteRelease,
@@ -13,6 +14,7 @@ import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
 import { ensureChannel, promote } from "../../hosting/channels.ts"
+import { endChannel, reopenChannel } from "../../hosting/ended.ts"
 import { requestListing } from "../../hosting/listing.ts"
 import { cancelSwitch, latestSwitch, startSwitch } from "../../hosting/switches.ts"
 import { fail, readBody } from "../../lib/http.ts"
@@ -82,6 +84,19 @@ hostingRoutes.patch("/:id/channels/:channel", async (c) => {
     .update(schema.channel)
     .set(changes)
     .where(and(eq(schema.channel.appId, app.id), eq(schema.channel.name, name)))
+  return c.json(await appSettings(app))
+})
+
+hostingRoutes.post("/:id/channels/:channel/end", async (c) => {
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  const { into } = await readBody(c, endChannelRequest)
+  await endChannel(app, c.req.param("channel"), into, c.var.viewer.name)
+  return c.json(await appSettings(app))
+})
+
+hostingRoutes.post("/:id/channels/:channel/reopen", async (c) => {
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  await reopenChannel(app, c.req.param("channel"), c.var.viewer.name)
   return c.json(await appSettings(app))
 })
 

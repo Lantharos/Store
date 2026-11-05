@@ -8,6 +8,7 @@ import { recordHistory } from "../ops/events.ts"
 import { routeRelease } from "../releases/review.ts"
 import { resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
+import { refuseEnded } from "./ended.ts"
 
 const WAITING = ["uploading", "checking", "in-review"] as const
 
@@ -69,6 +70,7 @@ const shipped = (status: string) => (SHIPPED_STATUSES as readonly string[]).incl
 export async function promote(release: ReleaseRow, channel: string, by: string, notes = release.notes) {
   if (!shipped(release.status)) fail(409, "Only a release that's out can be promoted")
   if (release.channel === channel) fail(409, `${release.version} is on ${channel} already`)
+  await refuseEnded(release.appId, channel)
   const [current] = await db
     .select({ version: schema.release.version })
     .from(schema.release)

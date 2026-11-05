@@ -102,7 +102,7 @@ push:
 
 ### Versions
 
-The version comes from the publish request, never from a tag. The action takes it from its `version` input, else from the release's tag when the run is for one, else from the app's manifest next to `schelf.toml`: `Sabine.toml`, `extension.toml`, `src-tauri/tauri.conf.json` or `package.json`. On the `nightly` channel it makes a version of its own from the next minor version, the time and the commit, like `0.2.0-nightly.202611030415.g1a2b3c4`, so nightlies never collide and each is newer than the last. The store refuses a version the app already has, on any channel, and a version that isn't newer than the last approved release on its channel fails the checks.
+The version comes from the publish request, never from a tag. The action takes it from its `version` input, else from the release's tag when the run is for one, else from the app's manifest next to `schelf.toml`: `Sabine.toml`, `extension.toml`, `src-tauri/tauri.conf.json` or `package.json`. On the `nightly` channel it makes a version of its own from the next minor version, the time and the commit, like `0.2.0-nightly.202611030415.g1a2b3c4`, so nightlies never collide and each is newer than the last. The store refuses a version the app already has, on any channel, and a version that isn't newer than the last approved release on its channel fails the checks. It also refuses anything sent to a channel that has ended, including a version that names one, with a message saying how to reopen it.
 
 Sabine's release workflow builds every package and, because the app updates from Schelf, leaves the GitHub release alone. The action reads each file's platform and package kind from the names Sabine gives them.
 

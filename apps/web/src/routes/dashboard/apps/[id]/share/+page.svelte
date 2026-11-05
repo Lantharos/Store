@@ -17,7 +17,9 @@
   const data = $derived(settings.data!)
   const releases = $derived(resource<ReleaseSummary[]>(endpoints.releases(id)))
   let channel = $state("stable")
-  const channels = $derived(data.channels.filter((entry) => entry.releases > 0).map((entry) => entry.name))
+  const channels = $derived(
+    data.channels.filter((entry) => entry.releases > 0 && !entry.ended_into).map((entry) => entry.name),
+  )
   const shipped = $derived(
     releases.data ? linkedRelease(releases.data, channel, data.app.latest_follows_rollout) : undefined,
   )

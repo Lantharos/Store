@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
-import { DEFAULT_LOCALE, SHIPPED_STATUSES } from "@schelf/protocol"
-import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm"
+import { DEFAULT_LOCALE, type EndedChannels, endedChannelsOf, SHIPPED_STATUSES } from "@schelf/protocol"
+import { and, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm"
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core"
 import { db, schema } from "../db/client.ts"
 import { DAY_MS, dayOf } from "../lib/time.ts"
@@ -19,6 +19,7 @@ export interface AppRecord {
   meta: typeof schema.listingMeta.$inferSelect | null
   screenshots: (typeof schema.screenshot.$inferSelect)[]
   releases: { release: ReleaseRow; artifacts: IndexedArtifact[] }[]
+  endedChannels: EndedChannels
   installs30d: number
 }
 
@@ -101,7 +102,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
   if (apps.length === 0) return []
   const ids = apps.map((app) => app.id)
   const publisherIds = [...new Set(apps.map((app) => app.publisherId))]
-  const [publishers, listings, metas, screenshots, releases, blocked, installs] = await Promise.all([
+  const [publishers, listings, metas, screenshots, releases, ended, blocked, installs] = await Promise.all([
     db.select().from(schema.publisher).where(within(schema.publisher.id, publisherIds)),
     db.select().from(schema.listing).where(within(schema.listing.appId, ids)),
     db.select().from(schema.listingMeta).where(within(schema.listingMeta.appId, ids)),
@@ -115,6 +116,10 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       .from(schema.release)
       .where(and(within(schema.release.appId, ids), inArray(schema.release.status, [...SHIPPED_STATUSES])))
       .orderBy(desc(schema.release.approvedAt)),
+    db
+      .select()
+      .from(schema.channel)
+      .where(and(within(schema.channel.appId, ids), isNotNull(schema.channel.endedInto))),
     blockedReleaseIds(ids),
     installsSince(ids, 30),
   ])
@@ -158,6 +163,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
   const listingsByApp = groupBy(listings, (row) => row.appId)
   const metaByApp = new Map(metas.map((meta) => [meta.appId, meta]))
   const screenshotsByApp = groupBy(screenshots, (row) => row.appId)
+  const endedByApp = groupBy(ended, (row) => row.appId)
   return apps.map((app) => {
     const publisher = publisherById.get(app.publisherId)!
     return {
@@ -175,6 +181,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
               deltas: deltas.get(artifact.id) ?? [],
             })),
           })),
+      endedChannels: endedChannelsOf(endedByApp.get(app.id) ?? []),
       installs30d: installs.get(app.id) ?? 0,
     }
   })

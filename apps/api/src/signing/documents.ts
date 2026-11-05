@@ -2,6 +2,8 @@ import {
   type AppIndex,
   accessOf,
   type CatalogEntry,
+  channelNow,
+  channelPath,
   type Format,
   type IndexedRelease,
   type Platform,
@@ -143,8 +145,24 @@ export function appIndex(record: AppRecord): AppIndex {
     ...(record.app.replacedBy
       ? { replaced_by: { id: record.app.replacedBy, note: record.app.replacedNote ?? "" } }
       : {}),
+    ...(record.endedChannels.size
+      ? {
+          ended_channels: Object.fromEntries(
+            [...record.endedChannels.keys()].map((name) => [name, channelNow(name, record.endedChannels)]),
+          ),
+        }
+      : {}),
     releases: indexable(record).map(({ release, artifacts }) => indexedRelease(record, release, artifacts)),
   }
+}
+
+function endedFeeds(record: AppRecord, feeds: Map<string, SabineFeed>) {
+  return [...record.endedChannels.keys()].flatMap((name) => {
+    const source = channelPath(name, record.endedChannels)
+      .toReversed()
+      .find((channel) => feeds.has(channel))
+    return source ? [[name, { ...feeds.get(source)!, channel: name }] as const] : []
+  })
 }
 
 export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
@@ -171,5 +189,5 @@ export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
       signature: "",
     })
   }
-  return feeds
+  return new Map([...feeds, ...endedFeeds(record, feeds)])
 }

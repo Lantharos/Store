@@ -123,11 +123,13 @@ export interface Channel {
   keep: number | null
   gradual: boolean
   releases: number
+  ended_into: string | null
 }
 export const updateChannel = z.object({
   keep: z.number().int().min(1).max(100).nullable().optional(),
   gradual: z.boolean().optional(),
 })
+export const endChannelRequest = z.object({ into: channelName })
 export const promoteRelease = z.object({ channel: channelName })
 
 export interface UpdaterSwitch {

@@ -1,4 +1,10 @@
-import { type ArtifactKind, type HostedRelease, type Platform, SHIPPED_STATUSES } from "@schelf/protocol"
+import {
+  type ArtifactKind,
+  compareVersions,
+  type HostedRelease,
+  type Platform,
+  SHIPPED_STATUSES,
+} from "@schelf/protocol"
 import { and, desc, eq, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { blockedReleaseIds, fileUrl } from "../signing/records.ts"
@@ -68,4 +74,17 @@ export async function hostedReleases(appId: string, channel: string) {
     Response.json(releases, { headers: { "cache-control": `max-age=${CACHE_SECONDS}` } }),
   )
   return releases
+}
+
+export async function linkReleases(appId: string, route: string[]) {
+  const lists = await Promise.all(route.toReversed().map((channel) => hostedReleases(appId, channel)))
+  return lists.flat()
+}
+
+/** A feed can't see the version asking, and electron-updater takes a lower one from a channel it's set to. */
+export async function feedReleases(appId: string, route: string[]) {
+  const releases = await linkReleases(appId, route)
+  return route.length > 1
+    ? releases.sort((left, right) => compareVersions(right.version, left.version))
+    : releases
 }

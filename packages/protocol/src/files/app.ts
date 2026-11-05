@@ -89,6 +89,7 @@ export const appIndex = z.object({
   repository: z.string().nullable(),
   distribution,
   replaced_by: z.object({ id: z.string(), note: z.string() }).optional(),
+  ended_channels: z.record(z.string(), z.string()).optional(),
   releases: z.array(indexedRelease),
 })
 export type AppIndex = z.infer<typeof appIndex>
