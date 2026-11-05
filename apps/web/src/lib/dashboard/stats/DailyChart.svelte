@@ -22,7 +22,7 @@
   const y = (value: number) => PAD.top + plotHeight - (value / max) * plotHeight
   const label = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" })
   const dayLabel = (day: string) => label.format(new Date(`${day}T00:00:00Z`))
-  const xTicks = $derived(days.length ? [0, Math.floor((days.length - 1) / 2), days.length - 1] : [])
+  const xTicks = $derived(days.length ? [...new Set([0, Math.floor((days.length - 1) / 2), days.length - 1])] : [])
   const point = $derived(active === null ? null : days[active])
 
   function pointer(event: PointerEvent) {

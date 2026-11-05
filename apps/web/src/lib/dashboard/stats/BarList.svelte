@@ -2,12 +2,17 @@
   import { count } from "../../format.ts"
 
   let { rows, measure }: { rows: { label: string; value: number }[]; measure: string } = $props()
-  const max = $derived(Math.max(...rows.map((row) => row.value), 1))
-  const total = $derived(rows.reduce((sum, row) => sum + row.value, 0))
+  const merged = $derived.by(() => {
+    const totals = new Map<string, number>()
+    for (const { label, value } of rows) totals.set(label, (totals.get(label) ?? 0) + value)
+    return [...totals].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)
+  })
+  const max = $derived(Math.max(...merged.map((row) => row.value), 1))
+  const total = $derived(merged.reduce((sum, row) => sum + row.value, 0))
 </script>
 
 <ul class="space-y-3" aria-label={measure}>
-  {#each rows as row (row.label)}
+  {#each merged as row (row.label)}
     <li class="group" title="{row.label}: {count(row.value)} {measure.toLowerCase()}">
       <p class="flex items-baseline justify-between gap-3 text-[15px]">
         <span class="truncate">{row.label}</span>
