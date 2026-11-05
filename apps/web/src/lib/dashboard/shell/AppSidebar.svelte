@@ -29,7 +29,6 @@
     <Kbd keys="mod+K" />
   </button>
 
-  <a href="/dashboard" aria-current={path === "/dashboard" ? "page" : undefined} class="rounded-xl px-2 py-1.5 text-[13px] text-ink-muted hover:text-ink aria-[current=page]:text-ink">Projects</a>
   <nav aria-label="Projects" class="-mx-4 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-4">
     {#each projectGroups(session.apps) as group (group.kind)}
       <p class="px-2 pt-3 pb-1 text-[13px] text-ink-muted first:pt-0">{group.label}</p>
