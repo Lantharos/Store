@@ -5,6 +5,7 @@ import { fail } from "../lib/http.ts"
 import { recordHistory, rolloutsAreFrozen } from "../ops/events.ts"
 import { resign, resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
+import { channelIsGradual } from "./gradual.ts"
 import { notifyPublisher } from "./notify.ts"
 
 const CONTROLLABLE = new Set(["rolling-out", "live"])
@@ -61,7 +62,8 @@ export async function stepRollouts(now = new Date()) {
     rolloutDue(release.rolloutPercent, release.rolloutSteppedAt ?? release.approvedAt ?? now, now),
   )
   for (const release of due) {
-    const percent = nextRolloutStep(release.rolloutPercent)
+    const gradual = await channelIsGradual(release.appId, release.channel)
+    const percent = gradual ? nextRolloutStep(release.rolloutPercent) : 100
     await db.update(schema.release).set(percentUpdate(percent, now)).where(eq(schema.release.id, release.id))
     if (percent === 100) notifyPublisher(release.id, "live")
     recordHistory(

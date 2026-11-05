@@ -103,6 +103,9 @@ export type CheckResult = z.infer<typeof checkResult>
 export const ROLLOUT_STEPS = [10, 25, 50, 100] as const
 export const ROLLOUT_STEP_HOURS = 24
 
+/** Only stable reaches people step by step unless the channel says otherwise. */
+export const rollsOutGradually = (channel: string, chosen: boolean | null) => chosen ?? channel === STABLE
+
 export function nextRolloutStep(percent: number) {
   return ROLLOUT_STEPS.find((step) => step > percent) ?? 100
 }

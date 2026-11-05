@@ -8,6 +8,7 @@ import { randomId } from "../lib/ids.ts"
 import { recordHistory, tellOps } from "../ops/events.ts"
 import { resignApp } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
+import { channelIsGradual } from "./gradual.ts"
 import { notifyPublisher } from "./notify.ts"
 
 export type Decision = "approved" | "changes-requested" | "rejected"
@@ -74,7 +75,7 @@ export async function approve(releaseId: string, by: string, { security = false 
   const release = await releaseOrFail(releaseId)
   if (release.status !== "in-review") fail(409, `This release is ${release.status}, not waiting for review`)
   const now = new Date()
-  const percent = security ? 100 : FIRST_STEP
+  const percent = security || !(await channelIsGradual(release.appId, release.channel)) ? 100 : FIRST_STEP
   await db.batch([
     db
       .update(schema.release)

@@ -75,12 +75,12 @@ hostingRoutes.delete("/:id/switch", async (c) => {
 
 hostingRoutes.patch("/:id/channels/:channel", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
-  const { keep } = await readBody(c, updateChannel)
+  const changes = await readBody(c, updateChannel)
   const name = c.req.param("channel")
   await ensureChannel(app.id, name)
   await db
     .update(schema.channel)
-    .set({ keep })
+    .set(changes)
     .where(and(eq(schema.channel.appId, app.id), eq(schema.channel.name, name)))
   return c.json(await appSettings(app))
 })

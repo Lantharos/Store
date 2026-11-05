@@ -1,4 +1,4 @@
-import { type AppSettings, DEFAULT_LOCALE } from "@schelf/protocol"
+import { type AppSettings, DEFAULT_LOCALE, rollsOutGradually } from "@schelf/protocol"
 import { count, desc, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
 import { projectLinks } from "../../hosting/addresses.ts"
@@ -91,6 +91,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
     channels: channelNames.map((name) => ({
       name,
       keep: channels.find((row) => row.name === name)?.keep ?? null,
+      gradual: rollsOutGradually(name, channels.find((row) => row.name === name)?.gradual ?? null),
       releases: releasesIn.get(name) ?? 0,
     })),
     switches: switches.map((row) => ({

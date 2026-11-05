@@ -64,6 +64,7 @@ export const channel = sqliteTable(
       .references(() => app.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     keep: integer("keep"),
+    gradual: integer("gradual", { mode: "boolean" }),
     createdAt: createdAt(),
   },
   (table) => [primaryKey({ columns: [table.appId, table.name] })],

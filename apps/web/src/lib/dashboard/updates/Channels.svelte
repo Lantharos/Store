@@ -2,6 +2,7 @@
   import type { AppSettings } from "@schelf/protocol"
   import { plural } from "../../format.ts"
   import Select from "../../ui/fields/Select.svelte"
+  import Switch from "../../ui/fields/Switch.svelte"
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
@@ -15,11 +16,9 @@
     ...[3, 5, 10, 20, 50].map((count) => ({ value: String(count), label: `Keep the last ${count}` })),
   ]
 
-  async function keep(channel: string, value: string) {
+  async function change(channel: string, changes: { keep?: number | null; gradual?: boolean }) {
     try {
-      settings = await api.patch<AppSettings>(endpoints.channel(settings.app.id, channel), {
-        keep: value === "all" ? null : Number(value),
-      })
+      settings = await api.patch<AppSettings>(endpoints.channel(settings.app.id, channel), changes)
     } catch (error) {
       toasts.show((error as Error).message, "danger")
     }
@@ -33,9 +32,13 @@
 >
   {#each settings.channels as channel (channel.name)}
     <Row title={channel.name} description={plural(channel.releases, "release")}>
+      <label class="flex items-center gap-3 text-[15px] text-ink-soft">
+        Step by step
+        <Switch label="Roll out {channel.name} releases step by step" checked={channel.gradual} onchange={(gradual) => change(channel.name, { gradual })} />
+      </label>
       {#if channel.name !== "stable"}
         <div class="w-56">
-          <Select label="How many {channel.name} releases to keep" value={channel.keep === null ? "all" : String(channel.keep)} options={KEEP} onchange={(value) => keep(channel.name, value)} />
+          <Select label="How many {channel.name} releases to keep" value={channel.keep === null ? "all" : String(channel.keep)} options={KEEP} onchange={(value) => change(channel.name, { keep: value === "all" ? null : Number(value) })} />
         </div>
       {/if}
     </Row>

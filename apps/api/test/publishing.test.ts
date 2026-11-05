@@ -249,8 +249,15 @@ describe("promoting from a release pipeline", () => {
     const { releases } = (await listed.json()) as PublishedReleases
     expect(releases.map((release) => [release.channel, release.status])).toEqual([
       ["stable", "in-review"],
-      ["nightly", "rolling-out"],
+      ["nightly", "live"],
     ])
+
+    await approve(promoted.release, "Reviewer")
+    const rolling = await exports.default.fetch(
+      new Request(`${API}/publish/apps/${appId}/releases`, { headers: { authorization: `Bearer ${token}` } }),
+    )
+    const after = (await rolling.json()) as PublishedReleases
+    expect(after.releases.find((release) => release.channel === "stable")?.status).toBe("rolling-out")
   })
 
   test("a version that isn't out anywhere can't be promoted", async () => {

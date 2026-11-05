@@ -6,6 +6,8 @@ description: New releases reach people gradually, and you can speed them up, slo
 
 An approved release doesn't reach everyone at once. It goes to 10% of people, then 25%, 50% and everyone, one step a day. If something's wrong, only a few people have it, and you can stop there.
 
+That's how stable works. Releases on other channels, like nightly and beta, go to everyone on that channel right away, since people chose to get them early. You can change this for each channel in your project's update settings.
+
 ## How devices decide
 
 Each device draws a random number once and keeps it. When a release is at 25%, the devices whose number falls in the first quarter get it. Schelf never learns which devices are in which group, and the same people don't always go first.
