@@ -13,10 +13,10 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@better-auth/passkey": "1.7.15",
+    "@better-auth/passkey": "1.7.18",
     "@cf-wasm/og": "0.5.0",
     "@schelf/protocol": "workspace:*",
-    "better-auth": "1.7.15",
+    "better-auth": "1.7.18",
     "hash-wasm": "4.12.0"
   },
   "devDependencies": {
