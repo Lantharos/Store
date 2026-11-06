@@ -90,6 +90,11 @@ export async function serveDownload(request: Request) {
   headers.set("access-control-allow-origin", "*")
   headers.set("x-content-type-options", "nosniff")
   if (key.startsWith("media/")) headers.set("content-security-policy", MEDIA_POLICY)
+  const download = downloadOf(key)
+  if (download) {
+    headers.set("content-disposition", `attachment; filename="${key.slice(key.lastIndexOf("/") + 1)}"`)
+    if (!headers.has("content-type")) headers.set("content-type", "application/octet-stream")
+  }
 
   if (request.method === "HEAD") {
     headers.set("content-length", String(object.size))
@@ -99,7 +104,6 @@ export async function serveDownload(request: Request) {
   const body = (object as R2ObjectBody).body
 
   const range = request.headers.get("range")
-  const download = downloadOf(key)
   if (download && startsAtZero(range)) count(download, url)
   if (object.range && range) {
     const { offset = 0, length = object.size - offset } = object.range as { offset?: number; length?: number }

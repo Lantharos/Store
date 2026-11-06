@@ -1,4 +1,4 @@
-import { exports } from "cloudflare:workers"
+import { env, exports } from "cloudflare:workers"
 import {
   type CheckName,
   type CheckStatus,
@@ -168,6 +168,38 @@ describe("stable download links", () => {
     expect(yml).toContain('version: "2.0.0"')
     expect(yml).toContain("notes-2.0.0.exe")
     expect((await fetchDl(`${publisherSlug}/notes/latest/linux`)).status).toBe(404)
+  })
+})
+
+describe("serving a release file", () => {
+  const key = paths.artifact(
+    `com.example${randomId(6)}.Notes`,
+    "1.0.0",
+    "linux-x86_64",
+    "Notes-1.0.0.AppImage",
+  )
+
+  test("tells the browser to save it, on HEAD, GET and range requests", async () => {
+    await env.BUCKET.put(key, bytesOf("an AppImage, honestly"))
+    const requests = [
+      new Request(`${DL}/${key}`, { method: "HEAD" }),
+      new Request(`${DL}/${key}`),
+      new Request(`${DL}/${key}`, { headers: { range: "bytes=0-1" } }),
+    ]
+    for (const request of requests) {
+      const response = await exports.default.fetch(request)
+      expect(response.headers.get("content-disposition")).toBe('attachment; filename="Notes-1.0.0.AppImage"')
+      expect(response.headers.get("content-type")).toBe("application/octet-stream")
+      await response.body?.cancel()
+    }
+  })
+
+  test("keeps a type the file was stored with", async () => {
+    const typed = key.replace(".AppImage", ".rpm")
+    await env.BUCKET.put(typed, bytesOf("rpm"), { httpMetadata: { contentType: "application/x-rpm" } })
+    const response = await exports.default.fetch(new Request(`${DL}/${typed}`))
+    expect(response.headers.get("content-type")).toBe("application/x-rpm")
+    await response.body?.cancel()
   })
 })
 
