@@ -1,5 +1,5 @@
 import { appId } from "@schelf/protocol"
-import type { Project } from "../project/detect.ts"
+import { type Project, SUMMARY_LIMIT } from "../project/detect.ts"
 import { Failure } from "../ui/output.ts"
 import { ask } from "../ui/prompt.ts"
 import { interactive } from "../ui/style.ts"
@@ -10,8 +10,6 @@ export interface Identity {
   summary: string
 }
 
-const SUMMARY_LIMIT = 120
-
 async function settle(
   current: string | undefined,
   question: string,
@@ -20,7 +18,10 @@ async function settle(
 ) {
   if (current) return current
   if (!interactive)
-    throw new Failure(missing, "Run schelf init in a terminal, or add it to your AppStream file.")
+    throw new Failure(
+      missing,
+      "Run schelf init in a terminal, or add it to your AppStream file or Sabine.toml.",
+    )
   const answer = await ask(question, suggestion)
   if (!answer) throw new Failure(missing)
   return answer

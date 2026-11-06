@@ -6,6 +6,8 @@ description: Port your app to another framework without leaving anyone on an old
 
 Copies of your app that are already installed only understand the updater they were built with. If you rebuild an Electron app with Sabine, every copy out there still asks electron-updater's feed for updates, and would never hear of the new version. Schelf handles the move so that every copy ends up on the new build.
 
+A Sabine app that updates from GitHub Releases doesn't need any of this. See [moving from GitHub Releases](/docs/moving-from-github-releases).
+
 ## How it works
 
 On the project's **Updates** tab, choose **Change** next to how it updates, pick the new framework, and Schelf walks you through what happens next. From then on, you ship two things, in either order:

@@ -15,6 +15,7 @@ export const DOC_SECTIONS = [
       "manual-uploads",
       "closed-source-apps",
       "moving-to-a-new-framework",
+      "moving-from-github-releases",
     ],
   },
   { title: "Kinds of apps", pages: ["sabine-apps", "appimages", "luft-extensions"] },

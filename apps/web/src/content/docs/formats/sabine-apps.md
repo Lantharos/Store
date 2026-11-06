@@ -17,6 +17,8 @@ provider = "schelf"
 
 `schelf init` adds it for you. That's all: Sabine's update service follows your app's feed on Schelf, which is signed with the store's key that Sabine has built in.
 
+Already shipping updates from GitHub Releases? [Moving from GitHub Releases](/docs/moving-from-github-releases) brings everyone who has the app along.
+
 ## What people get
 
 - Updates arrive in the background and apply the next time the app starts, the way Sabine's updates always work.

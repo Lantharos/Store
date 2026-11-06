@@ -144,6 +144,14 @@ jobs:
           channel: ${{ inputs.channel }}
 ```
 
+## When publishing fails
+
+Trying again is safe. A release that never finished uploading doesn't count as published, so the same version goes through on the next attempt. If the builds finished and only the publish job failed, rerun that job and they're reused:
+
+```sh
+gh run rerun <run id> --failed
+```
+
 ## Files and systems
 
 The action works out which system each file is for:

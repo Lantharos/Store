@@ -21,14 +21,21 @@ bunx schelf <command>
 
 ## Options
 
-| Option                | What it does                                                                             |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`. |
-| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                            |
-| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                    |
-| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                |
-| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).    |
-| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                    |
+| Option                | What it does                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`.     |
+| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                                |
+| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                        |
+| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                    |
+| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).        |
+| `--publisher <slug>`  | With `init`, who publishes the app, if your account has several. `schelf whoami` lists them. |
+| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                        |
+
+## Setting up an app
+
+`schelf init` needs a summary. It takes one from your AppStream file or from `description` in `Sabine.toml`, and asks if neither has one that fits, so outside a terminal it stops there.
+
+For a Sabine app, it builds the workflow with the Sabine version your project uses, read from the workflow you already have, `Cargo.toml` or `package.json`, and keeps settings like `rust_toolchain` from your old release workflow. That workflow won't publish anything once the app updates from Schelf, so `init` offers to remove it. If the app updated from GitHub, see [moving from GitHub Releases](/docs/moving-from-github-releases).
 
 ## Signing in
 

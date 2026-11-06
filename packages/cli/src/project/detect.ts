@@ -28,6 +28,8 @@ export interface Project {
   found: string[]
 }
 
+export const SUMMARY_LIMIT = 120
+
 const METAINFO = /\.(metainfo|appdata)\.xml$/
 const APPIMAGE_CONFIGS = [
   "AppImageBuilder.yml",
@@ -107,6 +109,9 @@ async function findIcon(
   return (await findFiles(root, (name) => name === `${id}.svg` || name === `${id}.png`))[0]
 }
 
+const fitting = (description: string | undefined) =>
+  description && description.length <= SUMMARY_LIMIT ? description : undefined
+
 export async function detectProject(root: string): Promise<Project> {
   const [sabineText, extensionText, repository] = await Promise.all([
     readOptional(join(root, "Sabine.toml")),
@@ -141,7 +146,7 @@ export async function detectProject(root: string): Promise<Project> {
     format,
     id,
     name: extension?.name ?? sabine?.name ?? component?.name.en,
-    summary: extension?.summary ?? component?.summary.en,
+    summary: extension?.summary ?? component?.summary.en ?? fitting(sabine?.description),
     version: extension?.version ?? sabine?.version ?? component?.releases[0]?.version,
     licence: await findLicence(root, component),
     icon: await findIcon(root, id, sabine, component),

@@ -18,9 +18,13 @@ Every project gets stable links on `dl.schelf.store`. They redirect to the relea
 
 Links follow the stable channel. Put `@beta` or `@nightly` after the project for another, like `/lantharos/raffi/@beta/latest/windows`.
 
+## Which file you get
+
+When a link names only a system, Schelf picks in this order: `exe`, `msi`, `dmg`, `pkg`, `app-image`, `deb`, `rpm`, `flatpak`, `apk`, `zip`, `tarball`. So `/latest/windows` gives the `.exe` of a release that has both. Add the kind to choose: `/latest/windows/msi`, `/latest/linux/deb` or `/latest/linux/appimage`.
+
 ## Rollouts
 
-A new release [rolls out](/docs/rollouts) over a few days. Until it reaches everyone, the links keep pointing at the release before it, so a bad release never lands on your front page. If you'd rather hand it out as it rolls out, turn on **Links follow the rollout** in the project's **Settings**: each request then gets the new release with the rollout's chance.
+A new release [rolls out](/docs/rollouts) over a few days. Until it reaches everyone, the links keep pointing at the release before it, so a bad release never lands on your front page. A first release has nothing before it, so the links serve it as soon as it's approved. If you'd rather hand it out as it rolls out, turn on **Links follow the rollout** in the project's **Settings**: each request then gets the new release with the rollout's chance.
 
 ## The JSON
 

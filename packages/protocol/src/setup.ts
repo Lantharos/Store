@@ -15,6 +15,7 @@ export interface SetupInput {
   permissions?: string
   listing?: string
   sabineVersion?: string
+  sabineInputs?: Record<string, string>
   extensionApi?: number
   helper?: { path: string; build: string }
   environment?: string | null
@@ -104,6 +105,11 @@ const versionGate = (input: SetupInput) =>
 const publishJob = (environment: string | null | undefined) =>
   `  publish:\n    runs-on: ubuntu-latest\n${environment ? `    environment: ${environment}\n` : ""}`
 
+const sabineInputs = (input: SetupInput) =>
+  Object.entries(input.sabineInputs ?? {})
+    .map(([name, value]) => `      ${name}: ${value}\n`)
+    .join("")
+
 function sabineWorkflow(input: SetupInput) {
   const version = sabineVersionOf(input)!
   const { jobs, gate } = versionGate(input)
@@ -111,7 +117,7 @@ function sabineWorkflow(input: SetupInput) {
 ${gate}    uses: ${SABINE_REPOSITORY}/.github/workflows/release-app.yml@${version}
     with:
       sabine_version: ${version}
-      # Building the MSI package accepts the WiX 7 licence: https://docs.firegiant.com/wix/osmf/
+${sabineInputs(input)}      # Building the MSI package accepts the WiX 7 licence: https://docs.firegiant.com/wix/osmf/
       accept_wix_eula: true
     secrets: inherit
 ${publishJob(input.environment)}    needs: build

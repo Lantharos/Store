@@ -1,4 +1,4 @@
-import { stat } from "node:fs/promises"
+import { rm, stat } from "node:fs/promises"
 import { join } from "node:path"
 import { SCHELF_WORKFLOW, type SetupInput } from "@schelf/protocol"
 import { greet, session } from "../api/auth.ts"
@@ -8,14 +8,14 @@ import { detectProject, type Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
 import { defaultBranch, repositoryRoot } from "../project/git.ts"
 import { sourceOf } from "../project/source.ts"
-import { plannedFiles, sabineVersion, writePlanned } from "../setup/files.ts"
+import { plannedFiles, replacedWorkflows, sabineInputs, sabineVersion, writePlanned } from "../setup/files.ts"
 import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
 import { importListing } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
 import { initProject } from "../setup/project.ts"
 import { choosePublisher, registerApp, registeredApp } from "../setup/register.ts"
-import { blank, done, Failure, field, next, note, step, title } from "../ui/output.ts"
+import { blank, caution, done, Failure, field, next, note, step, title } from "../ui/output.ts"
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
 
@@ -59,11 +59,23 @@ async function setupInput(project: Project, id: string): Promise<SetupInput> {
       ? "store/"
       : undefined,
     sabineVersion: project.format === "sabine" ? await sabineVersion(project.root) : undefined,
+    sabineInputs: project.format === "sabine" ? await sabineInputs(project.root) : undefined,
     extensionApi: project.extension?.api,
     helper: project.extension?.helper
       ? { path: project.extension.helper, build: await helperBuild(project.root, project.extension.helper) }
       : undefined,
     branch: await publishBranch(project),
+  }
+}
+
+async function retireReleaseWorkflows(root: string) {
+  for (const path of await replacedWorkflows(root)) {
+    if (interactive && (await confirm(`Remove ${path}? It won't publish anything from now on`))) {
+      await rm(join(root, path))
+      done(`Removed ${path}`)
+    } else {
+      caution(`${path} won't publish anything from now on; remove it when you're ready`)
+    }
   }
 }
 
@@ -122,6 +134,10 @@ export async function init(args: Args) {
   }
   await writePlanned(root, files)
   for (const file of files) done(`${file.existing === undefined ? "Wrote" : "Updated"} ${file.path}`)
+  if (project.format === "sabine") await retireReleaseWorkflows(root)
+  if (project.sabine?.updatesProvider === "github") {
+    note(`Copies already installed need one more GitHub release: ${api}/docs/moving-from-github-releases`)
+  }
 
   next([
     `git add ${files.map((file) => file.path).join(" ")} && git commit -m "Publish on Schelf" && git push`,

@@ -94,6 +94,19 @@ describe("stable links", () => {
     expect(latestRelease(bridged, STAGED)?.version).toBe("1.1.0")
   })
 
+  test("serve a first release before its rollout reaches everyone", () => {
+    const first = [release("1.0.0", 10, [file("raffi-1.0.0.exe", "windows-x86_64", "exe")])]
+    expect(resolveLink(first, "windows", undefined, STAGED)?.release.version).toBe("1.0.0")
+    expect(latestRelease(first, STAGED)?.version).toBe("1.0.0")
+  })
+
+  test("take either name for an AppImage", () => {
+    const files = [file("raffi.AppImage", "linux-x86_64", "app-image")]
+    expect(resolveLink([release("1.0.0", 100, files)], "linux", "appimage", STAGED)?.file.name).toBe(
+      "raffi.AppImage",
+    )
+  })
+
   test("find nothing for a system no release was built for", () => {
     expect(resolveLink(releases, "linux-x86_64", undefined, STAGED)).toBeUndefined()
   })

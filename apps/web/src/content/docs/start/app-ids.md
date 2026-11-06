@@ -26,6 +26,8 @@ Or serve it as the whole content of `https://example.com/.well-known/schelf-stor
 
 A subdomain only proves its own reversed name: proving `notes.example.com` gives you `com.example.notes.*`, not all of `com.example`.
 
+A namespace belongs to the publisher that proves it. Prove it while you're publishing as your [organisation](/docs/organisations), and every app under it can belong to that organisation. Once it's proven, no other publisher can claim it.
+
 ## Keeping it
 
 Schelf checks your proof again once a month. If it lapses, your apps stay listed but new releases wait until it's back. You'll get an email first.

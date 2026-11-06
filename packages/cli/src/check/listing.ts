@@ -1,5 +1,5 @@
 import type { ListingFile } from "@schelf/protocol"
-import type { Project } from "../project/detect.ts"
+import { type Project, SUMMARY_LIMIT } from "../project/detect.ts"
 import type { Issue } from "./issues.ts"
 
 export interface Listing {
@@ -17,7 +17,6 @@ export interface Listing {
 }
 
 const NAME_LIMIT = 60
-const SUMMARY_LIMIT = 120
 const MIN_SCREENSHOTS = 2
 
 export function readListing(project: Project, extraScreenshots: number, file?: ListingFile): Listing {
@@ -25,7 +24,7 @@ export function readListing(project: Project, extraScreenshots: number, file?: L
   return {
     name: project.name,
     summary: file?.summary ?? project.summary,
-    description: file?.description ?? (component?.description || undefined),
+    description: file?.description ?? (component?.description || project.sabine?.description),
     developer: component?.developer,
     licence: project.licence,
     icon: project.icon,

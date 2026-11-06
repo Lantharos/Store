@@ -26,7 +26,7 @@ export async function importListing(account: Dashboard, project: Project, identi
     await account.putListing(identity.id, "en", {
       name: identity.name,
       summary: identity.summary,
-      description: component?.description ?? "",
+      description: component?.description || project.sabine?.description || "",
       keywords: (component?.keywords ?? []).slice(0, MAX_KEYWORDS),
       source: component ? "appstream" : project.sabine ? "sabine" : "dashboard",
     })

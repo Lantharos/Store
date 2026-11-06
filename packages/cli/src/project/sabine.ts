@@ -13,13 +13,14 @@ export interface SabineApp {
   id: string
   name: string
   version?: string
+  description?: string
   icon?: string
   sandbox?: SabineSandbox
   updatesProvider?: string
 }
 
 interface SabineFile {
-  app?: { id?: string; name?: string; version?: string; icon?: string }
+  app?: { id?: string; name?: string; version?: string; description?: string; icon?: string }
   sandbox?: SabineSandbox
   updates?: { provider?: string }
 }
@@ -32,6 +33,7 @@ export function readSabine(text: string): SabineApp {
     id,
     name,
     version: file.app?.version,
+    description: file.app?.description,
     icon: file.app?.icon,
     sandbox: file.sandbox,
     updatesProvider: file.updates?.provider,

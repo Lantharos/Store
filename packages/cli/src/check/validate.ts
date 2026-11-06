@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises"
-import { join } from "node:path"
+import { join, normalize } from "node:path"
 import {
   accessOf,
   extensionLabels,
@@ -53,10 +53,12 @@ function parse<T>(file: string, read: () => T, issues: Issue[]): T | undefined {
   }
 }
 
-async function countScreenshots(root: string, listing?: string) {
+async function countScreenshots(root: string, listing: string | undefined, project: Project) {
   if (!listing) return 0
-  const entries = await readdir(join(root, listing, "screenshots"), { recursive: true }).catch(() => [])
-  return entries.filter((entry) => SCREENSHOT.test(entry)).length
+  const folder = join(listing, "screenshots")
+  const declared = new Set(project.appstream?.component.screenshots.map(({ url }) => normalize(url)))
+  const entries = await readdir(join(root, folder), { recursive: true }).catch(() => [])
+  return entries.filter((entry) => SCREENSHOT.test(entry) && !declared.has(join(folder, entry))).length
 }
 
 async function listingFileIn(root: string, folder: string | undefined, issues: Issue[]) {
@@ -163,7 +165,7 @@ export async function validate(project: Project): Promise<Validation> {
     issues.push(...identityIssues(project, manifest), ...(await workflowIssues(project, manifest)))
   const listing = readListing(
     project,
-    await countScreenshots(project.root, manifest?.listing),
+    await countScreenshots(project.root, manifest?.listing, project),
     await listingFileIn(project.root, manifest?.listing, issues),
   )
   issues.push(...listingIssues(listing))

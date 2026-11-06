@@ -34,7 +34,7 @@ format = "files"
 | `format`                 | Yes          | `sabine`, `appimage`, `luft-extension` for extensions, or `files` for anything else Schelf hosts.                        |
 | `permissions`            | No           | The file holding your [permission declaration](/docs/permissions). Leave it out and your app is listed with full access. |
 | `listing`                | No           | A folder holding a [`listing.toml`](#the-listing-file), so your listing lives in the repository.                         |
-| `requires.sabine`        | No           | The oldest Sabine version your app runs on, like `"0.68"`.                                                               |
+| `requires.sabine`        | No           | The oldest Sabine version your app runs on, like `"0.68"`. `schelf init` sets the version you build with.                |
 | `requires.extension_api` | Extensions   | The Luft extension API version your extension was built for.                                                             |
 
 ## Where the listing comes from
@@ -44,9 +44,11 @@ Schelf reads, in this order:
 1. The dashboard, for anything you've edited there.
 2. The `listing.toml` in your `listing` folder, if you set one, sent with every release.
 3. Your AppStream metainfo file: name, summary, description, screenshots, categories, links and release notes.
-4. `Sabine.toml` and the repository: name, icon, licence and homepage.
+4. `Sabine.toml` and the repository: name, description, icon, licence and homepage. The description doubles as the summary if it's 120 characters or fewer.
 
 The dashboard marks which fields came from AppStream, so you know where to change them.
+
+`schelf init` uploads the icon and every screenshot in your metainfo the first time it registers an app. A screenshot can be a URL or a path from the repository root, like `store/screenshots/library.png`.
 
 ## The listing file
 
