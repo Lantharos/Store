@@ -167,6 +167,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
         sha256: file.sha256,
         signature: file.signature ?? null,
         executable: file.executable ?? null,
+        blockmapSize: file.blockmap_size ?? null,
         uploadId,
       }
     }),

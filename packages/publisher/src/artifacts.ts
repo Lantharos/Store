@@ -1,10 +1,12 @@
 import { open, readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
+import { inflateRawSync } from "node:zlib"
 import {
   type ArtifactKind,
   type Format,
   GENERATED_FEEDS,
   inferFile,
+  MAX_BLOCKMAP_BASE64,
   type Platform,
   platform as platformSchema,
   UnknownFile,
@@ -18,6 +20,7 @@ export interface InferredArtifact {
   executable?: string
   signature?: string
   blockmap?: string
+  blockmapSize?: number
 }
 
 const SABINE_NAME =
@@ -102,6 +105,30 @@ async function readBlockmap(path: string) {
   }
 }
 
+function isBlockmap(deflated: Buffer) {
+  try {
+    return Array.isArray(JSON.parse(inflateRawSync(deflated).toString()).files)
+  } catch {
+    return false
+  }
+}
+
+async function embeddedBlockmapSize(path: string) {
+  const file = await open(path)
+  try {
+    const { size } = await file.stat()
+    const trailer = Buffer.alloc(4)
+    await file.read(trailer, 0, 4, size - 4)
+    const length = trailer.readUInt32BE()
+    if (length + 4 >= size || length > MAX_BLOCKMAP_BASE64) return undefined
+    const blockmap = Buffer.alloc(length)
+    await file.read(blockmap, 0, length, size - 4 - length)
+    return isBlockmap(blockmap) ? length : undefined
+  } finally {
+    await file.close()
+  }
+}
+
 async function generalArtifact(path: string, name: string): Promise<InferredArtifact> {
   try {
     const inferred = inferFile(name)
@@ -113,6 +140,7 @@ async function generalArtifact(path: string, name: string): Promise<InferredArti
       kind: inferred.kind,
       platform: arch ? (`linux-${arch}` as Platform) : inferred.platform,
       blockmap: await readBlockmap(path),
+      blockmapSize: inferred.kind === "appimage" ? await embeddedBlockmapSize(path) : undefined,
     }
   } catch (error) {
     if (error instanceof UnknownFile) throw new ArtifactError(error.message)

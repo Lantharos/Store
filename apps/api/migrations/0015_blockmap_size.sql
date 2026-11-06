@@ -1,0 +1,1 @@
+ALTER TABLE `artifact` ADD `blockmap_size` integer;

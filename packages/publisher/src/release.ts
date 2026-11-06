@@ -87,6 +87,7 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
       executable: artifact.executable,
       signature: artifact.signature,
       blockmap: artifact.blockmap,
+      blockmap_size: artifact.blockmapSize,
     })),
   }
   const release = await request<PublishResponse>(`${input.api}${API_BASE}/publish`, {

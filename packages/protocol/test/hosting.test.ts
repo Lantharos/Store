@@ -29,6 +29,7 @@ function file(
     sha512: "c2hhNTEy",
     signature: null,
     attestation: null,
+    blockmapSize: null,
     ...extra,
   }
 }
@@ -155,6 +156,10 @@ describe("update feeds", () => {
       [
         file("Raffi-Setup-1.4.0.exe", "windows-x86_64", "exe", { sha512: "d2luZG93cw==", size: 5000 }),
         file("Raffi-1.4.0-mac.zip", "macos-universal", "zip", { sha512: "bWFj" }),
+        file("Raffi-1.4.0-x86_64.AppImage", "linux-x86_64", "appimage", {
+          sha512: "bGludXg=",
+          blockmapSize: 1234,
+        }),
       ],
       { updater: "electron", notes: "Faster: search\nand more" },
     )
@@ -169,7 +174,7 @@ describe("update feeds", () => {
       releaseNotes: "Faster: search\nand more",
     })
     expect(parse(electronFeed(electron, "latest-mac.yml")!).files[0].url).toContain("mac.zip")
-    expect(electronFeed(electron, "latest-linux.yml")).toBeNull()
+    expect(parse(electronFeed(electron, "latest-linux.yml")!).files[0].blockMapSize).toBe(1234)
   })
 
   test("after a move to Sabine, the old updater's feed only ever offers the bridge", () => {

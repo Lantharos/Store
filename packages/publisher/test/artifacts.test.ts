@@ -2,9 +2,12 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { deflateRawSync } from "node:zlib"
 import { collectArtifacts, inferArtifact } from "../src/index.ts"
 
 let root: string
+
+const embeddedBlockmap = () => deflateRawSync(JSON.stringify({ version: "2", files: [] }))
 
 function elf(machine: number) {
   const header = Buffer.alloc(64)
@@ -27,6 +30,15 @@ beforeAll(async () => {
   await writeFile(join(root, "electron", "Notes-Setup-1.0.0.exe"), "installer")
   await writeFile(join(root, "electron", "Notes-Setup-1.0.0.exe.blockmap"), "block map")
   await writeFile(join(root, "electron", "Notes-1.0.0.msi"), "msi")
+  await mkdir(join(root, "appimages"))
+  const blockmap = embeddedBlockmap()
+  const size = Buffer.alloc(4)
+  size.writeUInt32BE(blockmap.length)
+  await writeFile(
+    join(root, "appimages", "Notes-1.0.0-x86_64.AppImage"),
+    Buffer.concat([elf(0x3e), blockmap, size]),
+  )
+  await writeFile(join(root, "appimages", "Plain-1.0.0-x86_64.AppImage"), elf(0x3e))
 })
 
 afterAll(() => rm(root, { recursive: true }))
@@ -37,6 +49,16 @@ describe("Electron files", () => {
     expect(artifacts.map(({ name, blockmap }) => ({ name, blockmap }))).toEqual([
       { name: "Notes-1.0.0.msi", blockmap: undefined },
       { name: "Notes-Setup-1.0.0.exe", blockmap: Buffer.from("block map").toString("base64") },
+    ])
+  })
+})
+
+describe("AppImages from electron-builder", () => {
+  test("report the size of their embedded blockmap", async () => {
+    const artifacts = await collectArtifacts([join(root, "appimages/*")], "files")
+    expect(artifacts.map(({ name, blockmapSize }) => ({ name, blockmapSize }))).toEqual([
+      { name: "Notes-1.0.0-x86_64.AppImage", blockmapSize: embeddedBlockmap().length },
+      { name: "Plain-1.0.0-x86_64.AppImage", blockmapSize: undefined },
     ])
   })
 })

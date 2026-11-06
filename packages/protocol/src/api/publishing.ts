@@ -29,6 +29,7 @@ export const publishFile = z.object({
   executable: z.string().max(500).optional(),
   signature: z.string().max(4096).optional(),
   blockmap: z.base64().max(MAX_BLOCKMAP_BASE64).optional(),
+  blockmap_size: z.number().int().positive().optional(),
 })
 export type PublishFile = z.infer<typeof publishFile>
 

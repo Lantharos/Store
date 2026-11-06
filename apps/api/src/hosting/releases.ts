@@ -60,6 +60,7 @@ async function loadReleases(appId: string, channel: string): Promise<HostedRelea
         sha512: artifact.sha512,
         signature: artifact.signature,
         attestation: artifact.attestationUrl,
+        blockmapSize: artifact.blockmapSize,
       })),
   }))
 }

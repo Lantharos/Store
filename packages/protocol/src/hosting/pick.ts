@@ -10,6 +10,7 @@ export interface HostedFile {
   sha512: string | null
   signature: string | null
   attestation: string | null
+  blockmapSize: number | null
 }
 
 export interface HostedRelease {

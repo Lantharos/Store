@@ -80,6 +80,7 @@ export const artifact = sqliteTable(
     sha512: text("sha512"),
     signature: text("signature"),
     executable: text("executable"),
+    blockmapSize: integer("blockmap_size"),
     uploadId: text("upload_id"),
     uploadedAt: integer("uploaded_at", { mode: "timestamp_ms" }),
     attestationUrl: text("attestation_url"),

@@ -90,6 +90,7 @@ export function electronFeed(release: HostedRelease, file: string): string | nul
       `  - url: ${yamlString(each.url)}`,
       `    sha512: ${yamlString(each.sha512)}`,
       `    size: ${each.size}`,
+      ...(each.blockmapSize ? [`    blockMapSize: ${each.blockmapSize}`] : []),
     ]),
     `path: ${yamlString(main.url)}`,
     `sha512: ${yamlString(main.sha512)}`,
