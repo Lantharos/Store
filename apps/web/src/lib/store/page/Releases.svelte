@@ -17,7 +17,7 @@
     <h2 id="whats-new" class="text-xl font-semibold">What's new in {latest.version}</h2>
     <p class="mt-1 text-[15px] text-ink-muted"><time datetime={latest.published}>{date(latest.published)}</time></p>
     {#if latest.notes}
-      <div class="notes mt-3 text-ink-soft">{@html latest.notes}</div>
+      <div class="prose prose-compact mt-3">{@html latest.notes}</div>
     {/if}
     {#if older.length}
       <button type="button" class="mt-4 text-[15px] text-accent hover:underline" aria-expanded={history} onclick={() => (history = !history)}>
@@ -31,7 +31,7 @@
                 <span class="font-semibold">{release.version}</span>
                 <time class="text-[13px] text-ink-muted" datetime={release.published}>{date(release.published)}</time>
               </p>
-              {#if release.notes}<div class="notes mt-2 text-[15px] text-ink-soft">{@html release.notes}</div>{/if}
+              {#if release.notes}<div class="prose prose-compact mt-2 text-[15px]!">{@html release.notes}</div>{/if}
             </li>
           {/each}
         </ol>
@@ -43,25 +43,5 @@
 <style>
   .disclosure {
     transition: grid-template-rows var(--spring-smooth-duration) var(--spring-smooth);
-  }
-
-  .notes :global(ul) {
-    list-style: disc;
-    padding-left: 1.25rem;
-  }
-
-  .notes :global(li + li),
-  .notes :global(p + p) {
-    margin-top: 0.375rem;
-  }
-
-  .notes :global(li::marker) {
-    color: var(--ink-muted);
-  }
-
-  .notes :global(a) {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
 </style>

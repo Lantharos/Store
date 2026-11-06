@@ -105,7 +105,7 @@
   <div class="mt-6 grid gap-12 lg:grid-cols-[1fr_22rem] lg:gap-16">
     <div class="min-w-0">
       {#if description}
-        <div class="description max-w-[42rem] text-[17px] leading-relaxed text-ink-soft">{@html description}</div>
+        <div class="prose prose-compact max-w-[42rem]">{@html description}</div>
       {/if}
       <Releases {releases} />
     </div>
@@ -125,30 +125,3 @@
   </div>
 </article>
 
-<style>
-  .description :global(p + p),
-  .description :global(* + ul),
-  .description :global(ul + p) {
-    margin-top: 1em;
-  }
-
-  .description :global(ul) {
-    list-style: disc;
-    padding-left: 1.25rem;
-  }
-
-  .description :global(a) {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-
-  .description :global(h1),
-  .description :global(h2),
-  .description :global(h3) {
-    margin-top: 1.5em;
-    color: var(--ink);
-    font-size: 1.125rem;
-    font-weight: 600;
-  }
-</style>
