@@ -10,7 +10,7 @@ import {
 } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { github, GitHubError } from "../github/api.ts"
+import { GitHubError, github } from "../github/api.ts"
 import { type WorkflowClaims, workflowPath } from "../github/oidc.ts"
 import { fail } from "../lib/http.ts"
 import { recordHistory } from "../ops/events.ts"
