@@ -103,7 +103,7 @@
         {:else if draft.current === "name"}
           <NameStep {draft} publisher={publisher.slug} />
         {:else if draft.current === "id"}
-          <IdStep bind:id={fields.id} {namespaces} bind:ready={idReady} />
+          <IdStep bind:id={fields.id} {namespaces} bind:ready={idReady} optional={!draft.kind?.store} />
         {:else if draft.current === "visibility"}
           <VisibilityStep bind:visibility={fields.visibility} />
         {:else if draft.current === "source"}

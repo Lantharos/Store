@@ -1,14 +1,41 @@
-import { SCHELF_WORKFLOW, slugFromId, UPDATER_NAMES } from "@schelf/protocol"
+import {
+  appId,
+  namespaceCovers,
+  projectId,
+  SCHELF_WORKFLOW,
+  slugFromId,
+  UPDATER_NAMES,
+} from "@schelf/protocol"
 import { greet, session } from "../api/auth.ts"
-import { dashboard } from "../api/dashboard.ts"
+import { type Dashboard, dashboard } from "../api/dashboard.ts"
 import type { Project } from "../project/detect.ts"
 import { sourceOf } from "../project/source.ts"
-import { blank, done, field, next } from "../ui/output.ts"
+import { blank, done, Failure, field, next } from "../ui/output.ts"
 import { bold } from "../ui/style.ts"
 import { plannedFiles, writePlanned } from "./files.ts"
+import { ensureNamespace } from "./namespace.ts"
 import { choosePublisher } from "./register.ts"
 
-export async function initProject(api: string, project: Project, wantedPublisher: string | undefined) {
+async function chooseId(account: Dashboard, owner: string, detected?: string, wanted?: string) {
+  if (wanted) {
+    const parsed = appId.safeParse(wanted)
+    if (!parsed.success) throw new Failure(parsed.error.issues[0]!.message)
+    await ensureNamespace(account, owner, wanted)
+    return wanted
+  }
+  if (!detected) return undefined
+  const namespaces = await account.namespaces(owner)
+  return namespaces.some((entry) => entry.verified && namespaceCovers(entry.prefix, detected))
+    ? detected
+    : undefined
+}
+
+export async function initProject(
+  api: string,
+  project: Project,
+  wantedPublisher: string | undefined,
+  wantedId: string | undefined,
+) {
   const repository = project.repository!
   const slug = slugFromId(repository.name)
   const name = project.name ?? repository.name
@@ -27,6 +54,7 @@ export async function initProject(api: string, project: Project, wantedPublisher
   const settings = existing
     ? await account.app(existing.id)
     : await account.createProject(publisher.id, {
+        id: await chooseId(account, publisher.id, project.id, wantedId),
         name,
         slug,
         ...source,
@@ -46,7 +74,7 @@ export async function initProject(api: string, project: Project, wantedPublisher
 
   const files = await plannedFiles(project.root, {
     id: settings.app.id,
-    project: `${publisher.slug}/${slug}`,
+    project: settings.app.id === projectId(publisher.slug, slug) ? `${publisher.slug}/${slug}` : undefined,
     kind: "app",
     format: "files",
   })

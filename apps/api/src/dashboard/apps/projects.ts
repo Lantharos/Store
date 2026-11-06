@@ -8,7 +8,7 @@ import {
   RESERVED_SLUGS,
   slugFromId,
 } from "@schelf/protocol"
-import { and, eq, like } from "drizzle-orm"
+import { and, eq, like, sql } from "drizzle-orm"
 import type { Context } from "hono"
 import type { z } from "zod"
 import { db, schema } from "../../db/client.ts"
@@ -88,18 +88,22 @@ async function insertProject(c: Context<PublisherVars>, input: NewProject, value
   return c.json(await appSettings((await appAccess(c.var.viewer, values.id)).app), 201)
 }
 
+async function requireNamespace(publisherId: string, id: string) {
+  const namespaces = await db
+    .select()
+    .from(schema.namespace)
+    .where(eq(schema.namespace.publisherId, publisherId))
+  if (!namespaces.some((entry) => entry.verifiedAt && namespaceCovers(entry.prefix, id)))
+    fail(403, `Prove you own the namespace of ${id} first`)
+}
+
 export async function addApp(c: Context<PublisherVars>) {
   allow(c.var.role, "apps")
   active(c.var.publisher)
   const input = await readBody(c, createApp)
   const publisher = c.var.publisher
   if (!formatFits(input.kind, input.format)) fail(422, `A ${input.kind} can't be a ${input.format}`)
-  const namespaces = await db
-    .select()
-    .from(schema.namespace)
-    .where(eq(schema.namespace.publisherId, publisher.id))
-  if (!namespaces.some((entry) => entry.verifiedAt && namespaceCovers(entry.prefix, input.id)))
-    fail(403, `Prove you own the namespace of ${input.id} first`)
+  await requireNamespace(publisher.id, input.id)
   await reclaimPurged(publisher.id, input.id)
   return insertProject(c, input, {
     id: input.id,
@@ -118,8 +122,11 @@ export async function addProject(c: Context<PublisherVars>) {
   const input = await readBody(c, createProject)
   const publisher = c.var.publisher
   if (RESERVED_SLUGS.has(input.slug)) fail(422, "That name is reserved")
-  const id = projectId(publisher.slug, input.slug)
+  if (input.id) await requireNamespace(publisher.id, input.id)
+  const id = input.id ?? projectId(publisher.slug, input.slug)
   await reclaimPurged(publisher.id, id)
+  if (await db.$count(schema.app, sql`lower(${schema.app.id}) = ${id.toLowerCase()}`))
+    fail(409, `${id} is taken`)
   if (
     await db.$count(
       schema.app,

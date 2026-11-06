@@ -96,7 +96,7 @@ export async function init(args: Args) {
       note(
         "Nothing here builds a Sabine app or a Luft extension, so Schelf hosts its release files as they are.",
       )
-    return initProject(api, project, flag(args, "publisher"))
+    return initProject(api, project, flag(args, "publisher"), flag(args, "id"))
   }
   const repository = `${project.repository.owner}/${project.repository.name}`
   const identity = await settleIdentity(project)

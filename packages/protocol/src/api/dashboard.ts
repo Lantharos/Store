@@ -83,6 +83,7 @@ export const createApp = newProjectBase.extend({
 export type CreateApp = z.input<typeof createApp>
 
 export const createProject = newProjectBase.extend({
+  id: appId.optional(),
   slug: projectSlug.min(1),
   updater: updater.exclude(["sabine"]).optional(),
 })

@@ -2,7 +2,7 @@ import { join } from "node:path"
 import { type Component, parseMetainfo } from "@schelf/appstream"
 import type { Format, Kind } from "@schelf/protocol"
 
-export type Framework = { updater: "electron" | "tauri"; evidence: string }
+export type Framework = { updater: "electron" | "tauri"; evidence: string; id?: string }
 
 import { type ExtensionManifest, readExtension } from "./extension.ts"
 import { findFiles, readOptional } from "./files.ts"
@@ -73,16 +73,22 @@ async function findAppImageBuild(root: string) {
 }
 
 async function findFramework(root: string): Promise<Framework | undefined> {
-  if (await readOptional(join(root, "src-tauri", "tauri.conf.json")))
-    return { updater: "tauri", evidence: "src-tauri/tauri.conf.json" }
+  const tauri = await readOptional(join(root, "src-tauri", "tauri.conf.json"))
+  if (tauri) {
+    const { identifier } = JSON.parse(tauri) as { identifier?: string }
+    return { updater: "tauri", evidence: "src-tauri/tauri.conf.json", id: identifier }
+  }
   const packageJson = await readOptional(join(root, "package.json"))
   if (!packageJson) return undefined
   const manifest = JSON.parse(packageJson) as {
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
+    build?: { appId?: string }
   }
   const dependencies = { ...manifest.dependencies, ...manifest.devDependencies }
-  return "electron" in dependencies ? { updater: "electron", evidence: "package.json" } : undefined
+  return "electron" in dependencies
+    ? { updater: "electron", evidence: "package.json", id: manifest.build?.appId }
+    : undefined
 }
 
 async function findLicence(root: string, component?: Component) {
@@ -139,7 +145,7 @@ export async function detectProject(root: string): Promise<Project> {
         ? "files"
         : "appimage"
   const component = appstream?.component
-  const id = extension?.id ?? sabine?.id ?? component?.id.replace(/\.desktop$/, "")
+  const id = extension?.id ?? sabine?.id ?? component?.id.replace(/\.desktop$/, "") ?? framework?.id
   return {
     root,
     kind,

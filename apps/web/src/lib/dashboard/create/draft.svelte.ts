@@ -102,7 +102,8 @@ export class Draft {
   fillDefaults(github: string | undefined) {
     if (!github) return
     const fields = this.fields
-    if (this.current === "id" && !fields.id) fields.id = `io.github.${github}.${compact(fields.name)}`
+    if (this.current === "id" && this.kind?.store && !fields.id)
+      fields.id = `io.github.${github}.${compact(fields.name)}`
     if (this.current === "publishing" && !fields.repository)
       fields.repository = `${github}/${compact(fields.name).toLowerCase()}`
   }
@@ -130,7 +131,12 @@ export class Draft {
           id: fields.id,
           visibility: kind.steps.includes("visibility") ? fields.visibility : "listed",
         })
-      : createProject.safeParse({ ...shared, slug: this.slug, updater: kind.updater })
+      : createProject.safeParse({
+          ...shared,
+          id: fields.id.trim() || undefined,
+          slug: this.slug,
+          updater: kind.updater,
+        })
   }
 
   async create(publisherId: string) {

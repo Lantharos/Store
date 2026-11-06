@@ -19,7 +19,7 @@ const COMMANDS: Record<
 > = {
   init: {
     run: init,
-    usage: "init [--publisher <slug>]",
+    usage: "init [--publisher <slug>] [--id <app id>]",
     about: "Set up this app, extension or project for Schelf",
   },
   check: { run: check, usage: "check", about: "Check schelf.toml and preview the store page" },

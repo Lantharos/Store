@@ -12,7 +12,8 @@
     id = $bindable(),
     namespaces,
     ready = $bindable(false),
-  }: { id: string; namespaces: Resource<Namespace[]>; ready?: boolean } = $props()
+    optional = false,
+  }: { id: string; namespaces: Resource<Namespace[]>; ready?: boolean; optional?: boolean } = $props()
 
   let claiming = $state(false)
   let claimError = $state<string | null>(null)
@@ -26,7 +27,7 @@
   const prefix = $derived(id.split(".").slice(0, -1).join(".").toLowerCase())
 
   $effect(() => {
-    ready = valid.success && covering?.verified === true
+    ready = (optional && !id) || (valid.success && covering?.verified === true)
   })
 
   async function claim() {
@@ -48,7 +49,7 @@
 </script>
 
 <div class="space-y-6">
-  <Field label="App id" hint="The same id as in Sabine.toml, your AppStream file and desktop entry. It can't change after the first release." error={id && !valid.success ? valid.error.issues[0]?.message : null}>
+  <Field label="App id" note={optional ? "Optional" : undefined} hint={optional ? "Your app's own id, like electron-builder's appId, your Tauri identifier or your AppStream id. Leave it empty and the project goes by its address. It can't change after the first release." : "The same id as in Sabine.toml, your AppStream file and desktop entry. It can't change after the first release."} error={id && !valid.success ? valid.error.issues[0]?.message : null}>
     <input bind:value={id} class="field font-mono text-[15px]" spellcheck="false" autocomplete="off" placeholder="io.github.you.Notes" />
   </Field>
 

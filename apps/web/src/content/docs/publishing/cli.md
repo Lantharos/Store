@@ -29,6 +29,7 @@ bunx schelf <command>
 | `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                    |
 | `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).        |
 | `--publisher <slug>`  | With `init`, who publishes the app, if your account has several. `schelf whoami` lists them. |
+| `--id <app id>`       | With `init`, give a project this [app id](/docs/app-ids) instead of the one it finds. Schelf takes it from your AppStream file, electron-builder's `appId` or your Tauri `identifier` when you've proven its namespace. |
 | `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                        |
 
 ## Setting up an app

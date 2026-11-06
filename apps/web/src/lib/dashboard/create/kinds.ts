@@ -32,7 +32,7 @@ interface KindInfo {
 }
 
 const STORE_STEPS: Step[] = ["kind", "name", "id", "visibility", "source", "publishing", "finish"]
-const HOSTED_STEPS: Step[] = ["kind", "name", "source", "publishing", "finish"]
+const HOSTED_STEPS: Step[] = ["kind", "name", "id", "source", "publishing", "finish"]
 
 export const KINDS: Record<ProjectKind, KindInfo> = {
   sabine: {

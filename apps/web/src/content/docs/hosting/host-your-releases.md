@@ -28,6 +28,8 @@ It creates the project, trusts the repository's `.github/workflows/schelf.yml` t
 | Releases from GitHub Actions    | Go out once Schelf's checks pass; a person looks only if a check flags something | A person reviews every stable and beta release |
 | Releases you upload             | A person reviews every one                                                       | A person reviews every one                     |
 
+A project can have an [app id](/docs/app-ids) too, under a namespace you've proven, like `al.kaleid.raffi`. Add it when you create the project, and use `id` instead of `project` in `schelf.toml`. Its address stays the same, so its download links and feeds don't depend on it. A project with an id keeps it if you later move to Sabine.
+
 To list a project later, choose **Ask to be listed** in its **Settings**. A person reviews the project and its latest release; until then nothing changes.
 
 ## What Schelf hosts

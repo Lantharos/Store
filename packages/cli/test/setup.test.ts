@@ -74,6 +74,14 @@ test("a short description in Sabine.toml serves as the summary", async () => {
   expect((await detectProject(root)).summary).toBe("Quick notes")
 })
 
+test("an Electron app's id comes from electron-builder's appId", async () => {
+  await write(
+    "package.json",
+    JSON.stringify({ devDependencies: { electron: "45.0.0" }, build: { appId: "al.kaleid.raffi" } }),
+  )
+  expect((await detectProject(root)).id).toBe("al.kaleid.raffi")
+})
+
 test("a description too long for a summary isn't used as one", async () => {
   await write(
     "Sabine.toml",
