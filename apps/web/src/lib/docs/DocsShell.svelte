@@ -4,6 +4,7 @@
   import ChevronDown from "@lucide/svelte/icons/chevron-down"
   import { page as current } from "$app/state"
   import type { Page } from "../content/page.ts"
+  import DocsSearch from "./DocsSearch.svelte"
   import { DOC_SECTIONS, docHref } from "./nav.ts"
   import Toc from "./Toc.svelte"
 
@@ -61,11 +62,15 @@
 
 <div class="page grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_12rem]">
   <aside class="hidden lg:block">
-    <div class="sticky top-6 max-h-[calc(100svh-3rem)] overflow-y-auto pt-8 pb-8">{@render nav()}</div>
+    <div class="sticky top-6 flex max-h-[calc(100svh-3rem)] flex-col pt-8 pb-8">
+      <DocsSearch />
+      <div class="mt-6 min-h-0 flex-1 overflow-y-auto scrollbar-none">{@render nav()}</div>
+    </div>
   </aside>
 
   <article class="min-w-0 pt-4 lg:pt-8">
-    <div class="lg:hidden">
+    <div class="space-y-3 lg:hidden">
+      <DocsSearch />
       <button type="button" class="flex w-full items-center justify-between rounded-2xl bg-well px-4 py-3 text-[15px]" aria-expanded={menu} onclick={() => (menu = !menu)}>
         <span>Documentation</span>
         <ChevronDown class="size-4 transition-transform {menu ? 'rotate-180' : ''}" />

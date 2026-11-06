@@ -1,5 +1,5 @@
 import type { Plugin } from "vite"
-import { renderPage } from "./markdown.ts"
+import { bodyOf, renderPage } from "./markdown.ts"
 
 const CONTENT = /\/src\/content\/.+\.md$/
 
@@ -10,7 +10,11 @@ export function markdownPages(): Plugin {
     async transform(source, id) {
       if (!CONTENT.test(id)) return
       const slug = id.slice(id.lastIndexOf("/") + 1, -3)
-      return { code: `export default ${JSON.stringify(await renderPage(slug, source))}`, map: null }
+      const page = JSON.stringify(await renderPage(slug, source))
+      return {
+        code: `export default ${page}\nexport const markdown = ${JSON.stringify(bodyOf(source))}`,
+        map: null,
+      }
     },
   }
 }

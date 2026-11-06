@@ -32,6 +32,8 @@ markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
 
 const FRONTMATTER = /^---\n+title: (.+)\ndescription: (.+)\n---\n/
 
+export const bodyOf = (source: string) => source.replace(FRONTMATTER, "").trim()
+
 export async function renderPage(slug: string, source: string): Promise<Page> {
   markdown.options.highlight = highlightWith(await highlighter)
   const match = FRONTMATTER.exec(source)

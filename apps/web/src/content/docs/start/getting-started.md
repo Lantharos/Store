@@ -55,6 +55,8 @@ You get an email at each step, and `schelf status` shows the same thing in your 
 
 ## Where to go next
 
+Using a coding agent? Point it at [llms.txt](/llms.txt), or [llms-full.txt](/llms-full.txt) for all of these docs in one file.
+
 - [Fill in your listing](/dashboard): screenshots, a description and categories make the difference on the store page.
 - [Declare permissions](/docs/permissions) so Luft can sandbox your app and people can see what it uses.
 - [Turn on built-in updates](/docs/sabine-apps) for Sabine apps on Windows and macOS.
