@@ -3,6 +3,7 @@ import {
   channelFromVersion,
   EXTENSION_MANIFEST,
   type Format,
+  fromBase64,
   manifestName,
   PART_SIZE,
   type PublishFile,
@@ -98,11 +99,12 @@ async function clearAbandoned(app: AppRow, version: string) {
     )
   const artifacts = await db.select().from(schema.artifact).where(eq(schema.artifact.releaseId, existing.id))
   await Promise.all(
-    artifacts.map((artifact) =>
+    artifacts.flatMap((artifact) => [
+      env.BUCKET.delete(paths.blockmap(artifact.key)),
       artifact.uploadId && !artifact.uploadedAt
         ? env.BUCKET.resumeMultipartUpload(artifact.key, artifact.uploadId).abort()
         : env.BUCKET.delete(artifact.key),
-    ),
+    ]),
   )
   await db.delete(schema.release).where(eq(schema.release.id, existing.id))
 }
@@ -152,6 +154,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
       const key = paths.artifact(app.id, version, file.platform, file.name)
       const parts = partsFor(file.size)
       const uploadId = parts > 1 ? (await env.BUCKET.createMultipartUpload(key)).uploadId : null
+      if (file.blockmap) await env.BUCKET.put(paths.blockmap(key), fromBase64(file.blockmap))
       return {
         id: randomId(),
         releaseId,

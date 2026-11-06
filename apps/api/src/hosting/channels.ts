@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { compareVersions, NIGHTLY, NIGHTLY_KEEP, SHIPPED_STATUSES } from "@schelf/protocol"
+import { compareVersions, NIGHTLY, NIGHTLY_KEEP, paths, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm"
 import { db, insertRows, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
@@ -33,7 +33,7 @@ async function removeReleases(appId: string, ids: string[]) {
     : []
   const kept = new Set(shared.map((artifact) => artifact.key))
   const removable = keys.filter((key) => !kept.has(key))
-  if (removable.length) await env.BUCKET.delete(removable)
+  if (removable.length) await env.BUCKET.delete(removable.flatMap((key) => [key, paths.blockmap(key)]))
   await db.delete(schema.release).where(inArray(schema.release.id, ids))
   recordHistory(
     "app",

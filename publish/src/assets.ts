@@ -27,7 +27,9 @@ async function matchingAssets(tag: string, patterns: string[], token: string) {
     `/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`,
     token,
   )
-  return release.assets.filter((asset) => patterns.some((pattern) => matchesGlob(asset.name, pattern)))
+  return release.assets.filter((asset) =>
+    patterns.some((pattern) => matchesGlob(asset.name.replace(/\.blockmap$/i, ""), pattern)),
+  )
 }
 
 async function settledAssets(tag: string, patterns: string[], token: string) {

@@ -20,6 +20,7 @@ export function downloadOf(key: string): Download | null {
   const [root, app, version, platform, file, ...rest] = key.split("/")
   if (root !== "apps" || !app || !version || !platform || !file || rest.length || platform === "checks")
     return null
+  if (file.endsWith(".blockmap")) return null
   return { app, version, platform }
 }
 

@@ -8,6 +8,7 @@ import {
   type PublishResponse,
   paths,
   sha256Hex,
+  toBase64,
   verifyDocument,
 } from "@schelf/protocol"
 import { describe, expect, test } from "vitest"
@@ -24,6 +25,7 @@ interface Release {
   announcedSha?: string
   listingToml?: string
   names?: string[]
+  blockmap?: string
 }
 
 async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, release: Release = {}) {
@@ -44,6 +46,7 @@ async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>
             kind: "appimage",
             size: file.length,
             sha256: release.announcedSha ?? (await sha256Hex(file)),
+            blockmap: release.blockmap,
           })),
         ),
       }),
@@ -110,6 +113,18 @@ describe("publishing with a dashboard token", () => {
       provenance: { origin: "developer" },
     })
     expect(document.releases[0]!.artifacts[0]!.sha256).toBe(await sha256Hex(file))
+  })
+
+  test("a blockmap is served next to its file for electron-updater's differential downloads", async () => {
+    const { appId, token } = await publisherWithApp()
+    const file = bytesOf("an AppImage, honestly")
+    const blockmap = bytesOf("gzipped block map")
+    await publish(token, appId, file, { blockmap: toBase64(blockmap) })
+
+    const key = paths.artifact(appId, "1.0.0", "linux-x86_64", "notes.AppImage")
+    const served = await exports.default.fetch(`https://dl.schelf.store/${paths.blockmap(key)}`)
+    expect(served.status).toBe(200)
+    expect(new Uint8Array(await served.arrayBuffer())).toEqual(blockmap)
   })
 
   test("a release with sixteen packages, as a Sabine app has, gets as far as being signed", async () => {

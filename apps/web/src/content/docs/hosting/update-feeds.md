@@ -29,9 +29,12 @@ Use the generic provider with the project's link as its address:
 publish:
   provider: generic
   url: https://dl.schelf.store/lantharos/raffi
+  useMultipleRangeRequest: false
 ```
 
-electron-updater reads `latest.yml` on Windows, `latest-mac.yml` on macOS and `latest-linux.yml` on Linux from there. A release that's rolling out carries its rollout as `stagingPercentage`, which electron-updater respects on its own. For another channel, set electron-updater's `channel` to `beta`, and it reads `beta.yml`. Publish the `.exe`, the macOS `.zip` and `.dmg`, and the AppImage; Schelf writes the feed files, so you don't upload `latest*.yml` or `.blockmap` files.
+electron-updater reads `latest.yml` on Windows, `latest-mac.yml` on macOS and `latest-linux.yml` on Linux from there. A release that's rolling out carries its rollout as `stagingPercentage`, which electron-updater respects on its own. For another channel, set electron-updater's `channel` to `beta`, and it reads `beta.yml`. Publish the `.exe`, the macOS `.zip` and `.dmg`, and the AppImage; Schelf writes the feed files, so you don't upload `latest*.yml`.
+
+Keep each `.blockmap` electron-builder writes next to its file. Schelf hosts it alongside that file, so an update only downloads what changed. `useMultipleRangeRequest: false` has electron-updater ask for those pieces one range at a time, which is what `dl.schelf.store` serves.
 
 ## Tauri
 

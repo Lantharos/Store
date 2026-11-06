@@ -13,6 +13,7 @@ export const paths = {
   revocations: "trust/v1/revocations.json",
   artifact: (id: string, version: string, platform: string, file: string) =>
     `apps/${id}/${version}/${platform}/${file}`,
+  blockmap: (artifact: string) => `${artifact}.blockmap`,
   check: (id: string, version: string, name: string) => `apps/${id}/${version}/checks/${name}.json`,
   delta: (id: string, from: string, to: string, platform: string) =>
     `apps/${id}/deltas/${from}-${to}/${platform}.zst`,

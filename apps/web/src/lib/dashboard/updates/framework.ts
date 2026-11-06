@@ -17,7 +17,7 @@ export function feedSetup(updater: Updater, feed: string): { file: string; lang:
     return {
       file: "electron-builder.yml",
       lang: "yaml",
-      code: `publish:\n  provider: generic\n  url: ${feed}`,
+      code: `publish:\n  provider: generic\n  url: ${feed}\n  useMultipleRangeRequest: false`,
     }
   return {
     file: "tauri.conf.json",

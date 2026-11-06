@@ -86,6 +86,7 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
       sha256: artifact.sha256,
       executable: artifact.executable,
       signature: artifact.signature,
+      blockmap: artifact.blockmap,
     })),
   }
   const release = await request<PublishResponse>(`${input.api}${API_BASE}/publish`, {

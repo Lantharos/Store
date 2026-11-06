@@ -23,9 +23,23 @@ beforeAll(async () => {
   await writeFile(join(root, "Tool-arm.AppImage"), elf(0xb7))
   await writeFile(join(root, "Tool.AppImage"), elf(0x3e))
   await writeFile(join(root, "script.AppImage"), "#!/bin/sh\n")
+  await mkdir(join(root, "electron"))
+  await writeFile(join(root, "electron", "Notes-Setup-1.0.0.exe"), "installer")
+  await writeFile(join(root, "electron", "Notes-Setup-1.0.0.exe.blockmap"), "block map")
+  await writeFile(join(root, "electron", "Notes-1.0.0.msi"), "msi")
 })
 
 afterAll(() => rm(root, { recursive: true }))
+
+describe("Electron files", () => {
+  test("carry the blockmap beside them, and it's not a file of its own", async () => {
+    const artifacts = await collectArtifacts([join(root, "electron/*")], "files")
+    expect(artifacts.map(({ name, blockmap }) => ({ name, blockmap }))).toEqual([
+      { name: "Notes-1.0.0.msi", blockmap: undefined },
+      { name: "Notes-Setup-1.0.0.exe", blockmap: Buffer.from("block map").toString("base64") },
+    ])
+  })
+})
 
 describe("Sabine bundles", () => {
   test("reads the platform and kind from the names Sabine's workflow gives", async () => {

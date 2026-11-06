@@ -17,6 +17,7 @@ export interface InferredArtifact {
   kind: ArtifactKind
   executable?: string
   signature?: string
+  blockmap?: string
 }
 
 const SABINE_NAME =
@@ -93,6 +94,14 @@ function extensionArtifact(path: string, name: string): InferredArtifact {
   return { path, name, platform: arch ? (`luft-${arch}` as Platform) : "luft", kind: "extension" }
 }
 
+async function readBlockmap(path: string) {
+  try {
+    return (await readFile(`${path}.blockmap`)).toString("base64")
+  } catch {
+    return undefined
+  }
+}
+
 async function generalArtifact(path: string, name: string): Promise<InferredArtifact> {
   try {
     const inferred = inferFile(name)
@@ -103,6 +112,7 @@ async function generalArtifact(path: string, name: string): Promise<InferredArti
       name,
       kind: inferred.kind,
       platform: arch ? (`linux-${arch}` as Platform) : inferred.platform,
+      blockmap: await readBlockmap(path),
     }
   } catch (error) {
     if (error instanceof UnknownFile) throw new ArtifactError(error.message)
