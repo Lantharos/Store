@@ -14,6 +14,7 @@ import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
 import { backOffice, publishDefinitions } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
+import { restartStalledChecks } from "./releases/checks.ts"
 import { stepRollouts } from "./releases/rollout.ts"
 import { resign, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
 import { storefrontRoutes } from "./storefront/routes.ts"
@@ -59,6 +60,7 @@ export default {
       const office = backOffice()
       await Promise.all([
         stepRollouts(),
+        restartStalledChecks(),
         pruneChannels(),
         resignIfRequested(),
         publishDefinitions(),

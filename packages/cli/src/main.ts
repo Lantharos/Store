@@ -2,6 +2,7 @@
 import process from "node:process"
 import { ApiFailure, ArtifactError } from "@schelf/publisher"
 import { ZodError } from "zod"
+import { version } from "../package.json"
 import { type Args, parseArgs } from "./args.ts"
 import { check } from "./commands/check.ts"
 import { init } from "./commands/init.ts"
@@ -67,7 +68,7 @@ function report(error: unknown) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.flags.get("version") === true) {
-    console.log(process.env.SCHELF_CLI_VERSION)
+    console.log(version)
     return 0
   }
   const name = args.positionals.shift()

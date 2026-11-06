@@ -15,6 +15,11 @@ import { fail } from "../lib/http.ts"
 import type { AppRow } from "../signing/records.ts"
 
 const LAST_USED_GRANULARITY_MS = 60_000
+const GITHUB_KEYS_UNAVAILABLE = new Set([
+  errors.JOSEError.code,
+  errors.JWKSTimeout.code,
+  errors.JWKSNoMatchingKey.code,
+])
 
 export type Publisher =
   | { origin: "oidc"; ref: string; commit: string; runUrl: string; workflow: string; claims: WorkflowClaims }
@@ -24,9 +29,12 @@ export async function workflowClaims(token: string) {
   try {
     return await verifyWorkflowToken(token)
   } catch (error) {
-    if (error instanceof errors.JOSEError)
-      fail(401, "That GitHub identity token isn't valid for schelf.store")
-    throw error
+    if (!(error instanceof errors.JOSEError)) throw error
+    if (GITHUB_KEYS_UNAVAILABLE.has(error.code)) {
+      console.error(`Couldn't verify a GitHub identity token: ${error.message}`)
+      fail(503, "GitHub's signing keys aren't reachable right now")
+    }
+    fail(401, "That GitHub identity token isn't valid for schelf.store")
   }
 }
 

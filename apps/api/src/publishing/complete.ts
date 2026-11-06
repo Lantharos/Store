@@ -61,6 +61,19 @@ async function lookalikes(appId: string, name: string | undefined) {
     .map((hit) => ({ id: hit.key.slice(hit.key.indexOf(":") + 1), name: hit.name }))
 }
 
+export function previousRelease(release: ReleaseRow) {
+  return db.query.release.findFirst({
+    where: and(
+      eq(schema.release.appId, release.appId),
+      eq(schema.release.channel, release.channel),
+      ne(schema.release.id, release.id),
+      isNotNull(schema.release.approvedAt),
+      inArray(schema.release.status, [...SHIPPED_STATUSES, "withdrawn"]),
+    ),
+    orderBy: desc(schema.release.approvedAt),
+  })
+}
+
 export async function saveChecks(release: ReleaseRow, checks: CheckResult[]) {
   await Promise.all(
     checks
@@ -109,16 +122,7 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
   }
 
   const [previous, namespaces, listing, meta, screenshots, attestations] = await Promise.all([
-    db.query.release.findFirst({
-      where: and(
-        eq(schema.release.appId, app.id),
-        eq(schema.release.channel, release.channel),
-        ne(schema.release.id, release.id),
-        isNotNull(schema.release.approvedAt),
-        inArray(schema.release.status, [...SHIPPED_STATUSES, "withdrawn"]),
-      ),
-      orderBy: desc(schema.release.approvedAt),
-    }),
+    previousRelease(release),
     db.select().from(schema.namespace).where(eq(schema.namespace.publisherId, app.publisherId)),
     db.select().from(schema.listing).where(eq(schema.listing.appId, app.id)),
     db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) }),
