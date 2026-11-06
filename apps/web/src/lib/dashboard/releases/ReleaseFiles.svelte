@@ -5,16 +5,14 @@
   import { bytes } from "../../format.ts"
   import Permissions from "../../store/page/Permissions.svelte"
   import { KIND_NAMES, PLATFORM_NAMES } from "../../system/artifacts.ts"
+  import ReleaseNotes from "./ReleaseNotes.svelte"
 
   let { release }: { release: ReleaseDetail } = $props()
 </script>
 
 <div class="space-y-6">
   {#if release.notes}
-    <section class="rounded-group bg-raised p-5 sm:p-6">
-      <h2 class="font-semibold">Release notes</h2>
-      <p class="mt-3 text-[15px] leading-relaxed whitespace-pre-line text-ink-soft">{release.notes}</p>
-    </section>
+    <ReleaseNotes notes={release.notes} version={release.version} />
   {/if}
 
   <section class="rounded-group bg-raised p-5 sm:p-6">

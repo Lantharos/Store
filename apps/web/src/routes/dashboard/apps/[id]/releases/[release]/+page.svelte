@@ -31,7 +31,7 @@
   {:else if !detail.data}
     <Loading />
   {:else}
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <Timeline appId={id} release={detail.data} previous={releases.data ? previousShipped(releases.data, releaseId) : null} onchange={(next) => detail.set(next)}>
         {#snippet header()}<ReleaseHeader release={detail.data!} />{/snippet}
       </Timeline>
