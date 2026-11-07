@@ -1,7 +1,7 @@
 import { type AppPage, STABLE } from "@schelf/protocol"
 import { error } from "@sveltejs/kit"
-import { appSchema } from "#lib/seo/schema.ts"
 import { renderUserMarkdown } from "#lib/content/markdown.ts"
+import { appSchema } from "#lib/seo/schema.ts"
 import { extensionGrants } from "./extension.ts"
 
 export function storePage(found: AppPage, path: string) {
