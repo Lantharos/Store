@@ -61,6 +61,43 @@ interface Hit {
   name: string
 }
 
+interface Document extends Hit {
+  summary: string
+  keywords: string
+}
+
+const SCHELF_FIRST = "(key >= 'schelf:' AND key < 'schelf;') DESC"
+
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+
+function distance(left: string, right: string) {
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index)
+  for (let row = 1; row <= left.length; row++) {
+    const current = [row]
+    for (let column = 1; column <= right.length; column++) {
+      const swap = left.charAt(row - 1) === right.charAt(column - 1) ? 0 : 1
+      current.push(Math.min(previous[column]! + 1, current[column - 1]! + 1, previous[column - 1]! + swap))
+    }
+    previous = current
+  }
+  return previous[right.length]!
+}
+
+/** Whether every word searched for starts a word of the app's, or is that word with a typo or two. */
+function close(query: string, document: Document) {
+  const own = words(`${document.name} ${document.keywords} ${document.summary}`)
+  return words(query)
+    .filter((word) => word.length >= TRIGRAM)
+    .every((word) => {
+      const typos = word.length >= 8 ? 2 : word.length >= 6 ? 1 : 0
+      return own.some((candidate) => candidate.startsWith(word) || distance(word, candidate) <= typos)
+    })
+}
+
 function scoped(prefix: string | undefined) {
   return prefix
     ? { clause: "AND key >= ?3 AND key < ?4", bounds: [`${prefix}:`, `${prefix};`] }
@@ -70,7 +107,8 @@ function scoped(prefix: string | undefined) {
 async function prefixHits(query: string, limit: number, prefix: string | undefined) {
   const { clause, bounds } = scoped(prefix)
   const { results } = await env.DB.prepare(
-    `SELECT key, name FROM search WHERE (name LIKE ?1 || '%' OR name LIKE '% ' || ?1 || '%') ${clause} ORDER BY length(name) LIMIT ?2`,
+    `SELECT key, name FROM search WHERE (name LIKE ?1 || '%' OR name LIKE '% ' || ?1 || '%') ${clause}
+     ORDER BY lower(name) = lower(?1) DESC, name LIKE ?1 || '%' DESC, ${SCHELF_FIRST}, length(name) LIMIT ?2`,
   )
     .bind(query.replace(/[%_]/g, ""), limit, ...bounds)
     .all<Hit>()
@@ -82,13 +120,17 @@ async function fuzzyHits(query: string, limit: number, prefix: string | undefine
   if (!expression) return []
   const { clause, bounds } = scoped(prefix)
   const { results } = await env.DB.prepare(
-    `SELECT key, name FROM search WHERE search MATCH ?1 ${clause} ORDER BY bm25(search, 0, 10, 3, 4, 1) LIMIT ?2`,
+    `SELECT key, name, summary, keywords FROM search WHERE search MATCH ?1 ${clause} ORDER BY bm25(search, 0, 10, 3, 4, 1) LIMIT ?2`,
   )
     .bind(expression, limit, ...bounds)
-    .all<Hit>()
-  return results
+    .all<Document>()
+  return results.filter((document) => close(query, document)).map(({ key, name }) => ({ key, name }))
 }
 
+/**
+ * Names that are what was searched for come first, then names that start with it, then names with a word that does,
+ * with schelf.store's own apps first among equals, and then apps whose words match despite a typo.
+ */
 export async function searchKeys(query: string, limit: number, prefix?: string) {
   const [starts, similar] = await Promise.all([
     prefixHits(query.trim(), limit, prefix),
