@@ -2,6 +2,7 @@
   import AudioLines from "@lucide/svelte/icons/audio-lines"
   import Bell from "@lucide/svelte/icons/bell"
   import BellOff from "@lucide/svelte/icons/bell-off"
+  import Clipboard from "@lucide/svelte/icons/clipboard"
   import CloudSun from "@lucide/svelte/icons/cloud-sun"
   import Cpu from "@lucide/svelte/icons/cpu"
   import Globe from "@lucide/svelte/icons/globe"
@@ -13,6 +14,7 @@
   import PanelBottom from "@lucide/svelte/icons/panel-bottom"
   import PanelTop from "@lucide/svelte/icons/panel-top"
   import Phone from "@lucide/svelte/icons/phone"
+  import RadioTower from "@lucide/svelte/icons/radio-tower"
   import Search from "@lucide/svelte/icons/search"
   import Sparkles from "@lucide/svelte/icons/sparkles"
   import ToggleRight from "@lucide/svelte/icons/toggle-right"
@@ -39,7 +41,9 @@
     "input-sounds": Keyboard,
     "screen-effects": Sparkles,
     "do-not-disturb": BellOff,
+    clipboard: Clipboard,
     network: Globe,
+    listen: RadioTower,
     helper: Cpu,
   }
 </script>
