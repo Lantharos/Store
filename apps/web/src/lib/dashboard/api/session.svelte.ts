@@ -23,14 +23,17 @@ class Session {
   loaded = $state(false)
   signedIn = $state(false)
   account = $state<Account | null>(null)
-  apps = $state<DashboardApp[]>([])
   #chosen = $state<string | null>(remembered())
+  #loaded = $state<{ publisherId: string; apps: DashboardApp[] } | null>(null)
 
   publisher: DashboardPublisher | null = $derived(
     this.account?.publishers.find((entry) => entry.id === this.#chosen) ??
       this.account?.publishers[0] ??
       null,
   )
+
+  appsLoaded = $derived(this.#loaded !== null && this.#loaded.publisherId === this.publisher?.id)
+  apps: DashboardApp[] = $derived(this.appsLoaded ? this.#loaded!.apps : [])
 
   logoOf(publisher: DashboardPublisher) {
     return publisher.logo ?? (publisher.kind === "person" ? (this.account?.user.image ?? null) : null)
@@ -55,7 +58,13 @@ class Session {
   }
 
   async refreshApps() {
-    this.apps = this.publisher ? await api.get<DashboardApp[]>(endpoints.apps(this.publisher.id)) : []
+    const publisherId = this.publisher?.id
+    if (!publisherId) {
+      this.#loaded = null
+      return
+    }
+    const apps = await api.get<DashboardApp[]>(endpoints.apps(publisherId))
+    if (publisherId === this.publisher?.id) this.#loaded = { publisherId, apps }
   }
 
   async use(id: string) {
@@ -74,7 +83,7 @@ class Session {
     await auth.signOut()
     this.signedIn = false
     this.account = null
-    this.apps = []
+    this.#loaded = null
   }
 }
 

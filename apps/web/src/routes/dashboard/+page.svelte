@@ -7,6 +7,7 @@
   import Restorable from "#lib/dashboard/project/Restorable.svelte"
   import PendingInvites from "#lib/dashboard/publishers/PendingInvites.svelte"
   import { RELEASE_STATUS } from "#lib/dashboard/releases/status.ts"
+  import Loading from "#lib/dashboard/shell/Loading.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
 
@@ -38,7 +39,9 @@
   </a>
 {/each}
 
-{#if session.apps.length}
+{#if !session.appsLoaded}
+  <div class="mt-8"><Loading /></div>
+{:else if session.apps.length}
   {#each projectGroups(session.apps) as group (group.kind)}
     <section class="mt-8">
       <h2 class="mb-2.5 px-1 font-semibold">{group.label}</h2>
