@@ -6,9 +6,16 @@ import { emptyFacts, scanText } from "../src/inspect/strings.ts"
 const strings = `
 GET https://api.notes.example/v1/sync
 xmlns="http://www.w3.org/2000/svg"
+Font licence at http://scripts.sil.org/OFL by http://abattis.org
+<a href="http://www.css" rel="stylesheet">
+see https://github.com/gfx-rs/wgpu/issues/5276
+https://github.com/notes/models/releases/download/v1/model.bin
 /dev/ttyUSB0
 org.freedesktop.portal.FileChooser
 org.mpris.MediaPlayer2.spotify
+com.lantharos.Kestrel.Appearance
+org.freedesktop.DBus.Error.ServiceUnknown
+net.imput.heliumInvalidKeyUpdatelogical_position
 93.184.216.34
 192.168.1.10
 1.2.3
@@ -18,12 +25,13 @@ pkexec
 test("finds hosts, devices, bus names and programs in a binary's strings", () => {
   const facts = emptyFacts()
   scanText(strings, "bin/notes", facts)
-  expect(facts.hosts.map((entry) => entry.value)).toEqual(["api.notes.example"])
+  expect(facts.hosts.map((entry) => entry.value)).toEqual(["api.notes.example", "github.com"])
   expect(facts.addresses.map((entry) => entry.value)).toEqual(["93.184.216.34"])
   expect(facts.devices.map((entry) => entry.value)).toEqual(["/dev/ttyUSB0"])
   expect(facts.busNames.map((entry) => entry.value)).toEqual([
     "org.freedesktop.portal.FileChooser",
     "org.mpris.MediaPlayer2.spotify",
+    "com.lantharos.Kestrel.Appearance",
   ])
   expect(facts.programs.map((entry) => entry.value)).toEqual(["pkexec"])
 })

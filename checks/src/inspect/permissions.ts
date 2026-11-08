@@ -17,7 +17,7 @@ interface Detection {
 const NETWORK_LIBRARIES = /^(libcurl|libsoup|ws2_32\.dll|winhttp\.dll|wininet\.dll|CFNetwork)/i
 const USB_LIBRARIES = /^(libusb|libhidapi|hid\.dll|winusb\.dll)/i
 const ALWAYS_REACHABLE =
-  /^org\.freedesktop\.(portal\.|Notifications$|secrets$|DBus$)|^org\.kde\.StatusNotifier/
+  /^org\.freedesktop\.(portal|Notifications|secrets|DBus)(\.|$)|^org\.kde\.StatusNotifier|^com\.lantharos\.Kestrel(\.Appearance)?$/
 const PRIVILEGED_PROGRAMS = new Set(["pkexec", "sudo", "insmod", "modprobe", "setcap"])
 const PRIVILEGED_DEVICES = /^\/dev\/(k?mem|kvm|uinput|sd[a-z]|nvme)/
 
@@ -32,7 +32,12 @@ function libraryEvidence(detection: Detection, pattern: RegExp) {
 }
 
 const covers = (granted: string[], name: string) =>
-  granted.some((held) => held === name || (held.endsWith(".*") && name.startsWith(held.slice(0, -1))))
+  granted.some(
+    (held) =>
+      held === name ||
+      name.startsWith(`${held}.`) ||
+      (held.endsWith(".*") && name.startsWith(held.slice(0, -1))),
+  )
 
 export function comparePermissions(declared: Permissions | null, detection: Detection): PermissionRow[] {
   const granted = (check: (permissions: Permissions) => boolean) =>

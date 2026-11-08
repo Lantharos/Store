@@ -101,6 +101,8 @@ Each submission item carries everything needed to decide without leaving Pult. T
 | Repository health  | Age, stars, contributors, recent commits, whether the repo is a fork, and whether the developer account is new.                                                                                                                                                 | Fields.                                                                              |
 | Size and platforms | Artifact sizes and platforms built.                                                                                                                                                                                                                             | Fields.                                                                              |
 
+The permissions inspection leaves out what only looks like access: links to licences, fonts, standards and documentation, links to a code host other than its downloads, and licence, credit and font files. A D-Bus name counts only when it's shaped like one, isn't an error name, and isn't under a name the app may already reach, so an interface of a declared service counts as that service. Every app may reach the portals, notifications, the Secret Service, the tray and Kestrel's palette.
+
 Screenshots in the listing are attached so they show inline; Pult already renders image attachments.
 
 ## Triage
