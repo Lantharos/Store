@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ReleaseSummary } from "@schelf/protocol"
+  import BadgeBuilder from "#lib/brand/BadgeBuilder.svelte"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
   import { appSettings } from "#lib/dashboard/apps/context.ts"
@@ -47,4 +48,10 @@
   {/if}
 
   <EmbedButton code={data.links.embed} release={detail?.data} />
+
+  <section>
+    <h2 class="px-1 font-semibold">A badge for your site</h2>
+    <p class="mt-0.5 px-1 text-[13px] leading-relaxed text-ink-muted">Sends people to {data.app.name}’s page on Schelf. The logo and colours are on the <a href="/brand" class="link">brand page</a>.</p>
+    <div class="mt-2.5 rounded-group bg-raised p-5"><BadgeBuilder link={data.links.page} /></div>
+  </section>
 </div>

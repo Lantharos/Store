@@ -14,6 +14,7 @@ export async function GET() {
     { path: "/" },
     { path: "/categories" },
     { path: "/extensions" },
+    { path: "/brand" },
     ...categoriesOf(apps).map((category) => ({ path: categoryHref(category.name) })),
     ...apps.map((app) => ({ path: appHref(app), updated: app.updated })),
     ...[...new Set(apps.map((app) => app.publisher.slug))].map((slug) => ({ path: `/publishers/${slug}` })),

@@ -17,6 +17,7 @@
         ["/dashboard", "Dashboard"],
         ["/docs", "Docs"],
         ["/docs/review-guidelines", "Review guidelines"],
+        ["/brand", "Brand"],
       ],
     },
     {

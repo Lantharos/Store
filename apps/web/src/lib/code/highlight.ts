@@ -1,7 +1,7 @@
 import { createCssVariablesTheme, createHighlighterCore } from "shiki/core"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
 
-export type Language = "toml" | "yaml" | "json" | "sh" | "html"
+export type Language = "toml" | "yaml" | "json" | "sh" | "html" | "text"
 
 const theme = createCssVariablesTheme({ name: "schelf", variablePrefix: "--shiki-" })
 

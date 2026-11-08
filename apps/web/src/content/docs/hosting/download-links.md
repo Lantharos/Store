@@ -1,7 +1,7 @@
 ---
 
 title: Download links
-description: Links that always point at the newest release, a JSON description, and a download button for your own site.
+description: Links that always point at the newest release, a JSON description, a download button for your own site and a badge for your store page.
 ---
 
 Every project gets stable links on `dl.schelf.store`. They redirect to the release's file, which never changes once it's published.
@@ -63,6 +63,18 @@ It's served with CORS, so your site can read it from the browser.
 ```
 
 Without the script, the link already sends each visitor the right file. With it, the link reads "Download for macOS" with the version and size, and points straight at the file. It's a plain link, so style it like your own buttons.
+
+## A badge for your store page
+
+For people who'd rather install through Schelf, link to your store page with the Get it on schelf.store badge:
+
+```html
+<a href="https://schelf.store/lantharos/raffi">
+  <img src="https://schelf.store/brand/get-it-on-schelf-dark.svg" alt="Get it on schelf.store" height="56">
+</a>
+```
+
+There's a dark and a light badge in three sizes. Pick your app on the [brand page](/brand) or under **Share** in the project to get the HTML or Markdown with your link already in it, including a version for READMEs that follows the reader's dark mode.
 
 ## Checksums and provenance
 
