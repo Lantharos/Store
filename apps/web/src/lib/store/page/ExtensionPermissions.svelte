@@ -8,6 +8,7 @@
   import Globe from "@lucide/svelte/icons/globe"
   import Image from "@lucide/svelte/icons/image"
   import Keyboard from "@lucide/svelte/icons/keyboard"
+  import ListPlus from "@lucide/svelte/icons/list-plus"
   import Lock from "@lucide/svelte/icons/lock"
   import MapPin from "@lucide/svelte/icons/map-pin"
   import Music from "@lucide/svelte/icons/music"
@@ -42,6 +43,7 @@
     "screen-effects": Sparkles,
     "do-not-disturb": BellOff,
     clipboard: Clipboard,
+    "file-actions": ListPlus,
     network: Globe,
     listen: RadioTower,
     helper: Cpu,

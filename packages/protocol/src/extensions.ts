@@ -22,6 +22,7 @@ export const EXTENSION_PERMISSIONS = [
   "do-not-disturb",
   "screen-effects",
   "clipboard",
+  "file-actions",
 ] as const
 export const extensionPermission = z.enum(EXTENSION_PERMISSIONS, {
   error: (issue) => `${String(issue.input)} isn't a permission an extension can ask for.`,
@@ -47,6 +48,7 @@ export const EXTENSION_PERMISSION_LABELS: Record<ExtensionPermission, string> = 
   "do-not-disturb": "Hold back notifications for a while",
   "screen-effects": "Draw over and change how your windows and the whole screen look",
   clipboard: "Copy to your clipboard",
+  "file-actions": "Add to the menu of files and folders in Rover",
 }
 export const EXTENSION_HELPER_LABEL = "Runs its own program"
 export const extensionNetworkLabel = (hosts: string[]) =>
