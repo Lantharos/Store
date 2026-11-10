@@ -2,13 +2,10 @@ import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   DOWNLOAD_ORIGIN,
-  expiresIn,
   importSigningKey,
   keyIdOf,
   paths,
   ROOT_KEY,
-  STORE_KEYS_SIGNED_FOR_DAYS,
-  type Stamp,
   type StoreKeys,
   serialAfter,
   signDocument,
@@ -33,11 +30,11 @@ if (!rootSeed || !command || !COMMANDS.includes(command) || (command !== "renew"
 const root = await importSigningKey(rootSeed)
 if (root.id !== ROOT_KEY.id) throw new Error("That isn't the store's root key")
 
-async function publishedKeys(): Promise<Unstamped<StoreKeys> & Partial<Stamp>> {
+async function publishedKeys(): Promise<Unstamped<StoreKeys> & Partial<StoreKeys>> {
   if (command === "init") return { version: 1, issued: new Date().toISOString(), keys: [], revoked: [] }
   const response = await fetch(`${DOWNLOAD_ORIGIN}/${paths.storeKeys}`)
   if (!response.ok) throw new Error(`Couldn't read the published store keys: ${response.status}`)
-  return storeKeys.partial({ serial: true, expires: true }).parse(await response.json())
+  return storeKeys.partial({ serial: true }).parse(await response.json())
 }
 
 const current = await publishedKeys()
@@ -64,7 +61,6 @@ const next: StoreKeys = {
   ...changed,
   issued: now.toISOString(),
   serial: serialAfter(current.serial ?? 0, now.getTime()),
-  expires: expiresIn(STORE_KEYS_SIGNED_FOR_DAYS, now.getTime()),
 }
 
 const signed = await signDocument(root, next)

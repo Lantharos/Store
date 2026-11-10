@@ -9,7 +9,6 @@ async function keysSignedBy(seed: string, entries: StoreKeys["keys"]) {
   const root = await importSigningKey(seed)
   return signDocument(root, {
     serial: Date.now(),
-    expires: "2099-01-01T00:00:00.000Z",
     version: 1,
     issued: LATER,
     keys: entries,
@@ -33,6 +32,7 @@ describe("store key rotation", () => {
     ])
     await publishStoreKeys(signed.body, signed.signature)
     expect((await signingKey()).id).toBe(prepared.id)
+    await expect(publishStoreKeys(signed.body, signed.signature)).rejects.toThrow()
   })
 
   test("keys not signed by the root are refused", async () => {

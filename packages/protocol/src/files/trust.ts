@@ -16,7 +16,7 @@ export const storeKeyList = z.object({
   revoked: z.array(z.string()),
 })
 
-export const storeKeys = stamp.extend({
+export const storeKeys = stamp.pick({ serial: true }).extend({
   version: z.literal(1),
   issued: z.iso.datetime(),
   ...storeKeyList.shape,

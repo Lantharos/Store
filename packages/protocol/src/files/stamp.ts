@@ -3,7 +3,6 @@ import { z } from "zod"
 const DAY_MS = 86_400_000
 
 export const SIGNED_FOR_DAYS = 14
-export const STORE_KEYS_SIGNED_FOR_DAYS = 90
 
 export const stamp = z.object({
   serial: z.number().int().nonnegative(),

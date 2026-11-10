@@ -29,7 +29,7 @@ A **stable link** redirects to an immutable artifact URL. It never names a bridg
 Before installing or updating, the Schelf app and Sabine's updater check, in order, and refuse on any failure:
 
 1. The file is signed by a store key that the built-in root signed and that isn't revoked or expired.
-2. The file hasn't passed its `expires` time, and its `serial` isn't lower than the last one the device took for that path. This holds for the catalog, the mirrors, app index files, the revocation list and `store-keys.json`, so nobody can serve an old signed copy in place of a newer one, or keep one alive forever.
+2. The file hasn't passed its `expires` time, and its `serial` isn't lower than the last one the device took for that path. This holds for the catalog, the mirrors, app index files and the revocation list; `store-keys.json`, which only the offline root can sign, has the serial and no expiry. So nobody can serve an old signed copy in place of a newer one, or keep one alive forever.
 3. The revocation list is no more than seven days old (older means the device is offline; installs still work, with a notice).
 4. The release isn't blocked, and neither is its app.
 5. The downloaded file's SHA-256 matches the signed entry.
@@ -41,7 +41,7 @@ On Windows and macOS, the operating system then checks the developer's own code 
 
 ## Rotating keys
 
-- **Store signing key:** Prepare a new store key in Pult makes one inside the store and shows its public half; the owner signs it into `store-keys.json` with the root on a trusted computer (`apps/api/scripts/store-keys.ts`) a month before the old one expires, and Publish store keys in Pult puts it live. `store-keys.json` itself expires 90 days after the root signed it, so the owner signs it again before then with `store-keys.ts renew`, which changes nothing but its serial and expiry, and publishes it the same way; Pult refuses a file without them or one that has already expired. The store then signs with the newest key it holds that the root vouches for. If a key leaks, the owner signs its revocation the same way, and publishing it re-signs every index file and feed within minutes.
+- **Store signing key:** Prepare a new store key in Pult makes one inside the store and shows its public half; the owner signs it into `store-keys.json` with the root on a trusted computer (`apps/api/scripts/store-keys.ts`) a month before the old one expires, and Publish store keys in Pult puts it live. `store-keys.json` carries a serial and never expires; `store-keys.ts renew` signs the same keys again with a newer serial. Pult refuses a file without a serial or with one that isn't greater than the published file's. The store then signs with the newest key it holds that the root vouches for. If a key leaks, the owner signs its revocation the same way, and publishing it re-signs every index file and feed within minutes.
 - **Trusted publishers** change in the dashboard; removing one stops new releases from that workflow at once.
 - **Dashboard tokens** are revoked in the dashboard, and expire after a year.
 

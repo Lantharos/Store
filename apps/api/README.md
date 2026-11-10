@@ -44,4 +44,4 @@ Set with `cf workers secrets update <name> --worker schelf-api`.
 
 ## Store keys
 
-`scripts/store-keys.ts` signs `trust/v1/store-keys.json` with the root key: `init` for the first key, `add` to rotate in a new one, `revoke` to drop a leaked one, `renew` to sign the same keys again before the file expires, 90 days after it was signed. A new key comes from Prepare a new store key in Pult, and the signed file goes live with Publish store keys, which also re-signs everything.
+`scripts/store-keys.ts` signs `trust/v1/store-keys.json` with the root key: `init` for the first key, `add` to rotate in a new one, `revoke` to drop a leaked one, `renew` to sign the same keys again with a newer serial. A new key comes from Prepare a new store key in Pult, and the signed file goes live with Publish store keys, which also re-signs everything.

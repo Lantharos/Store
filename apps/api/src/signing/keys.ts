@@ -75,8 +75,9 @@ export async function prepareSigningKey() {
 export async function publishStoreKeys(body: string, signatureText: string) {
   const signature = signatureEnvelope.parse(JSON.parse(signatureText))
   const trusted = await trustedStoreKeys(env.ROOT_PUBLIC_KEY, body, signature)
-  if (new Date(storeKeys.parse(JSON.parse(body)).expires) <= new Date())
-    throw new Error("These store keys have already expired; sign them again with the root")
+  const published = await env.BUCKET.get(paths.storeKeys).then((object) => object?.json())
+  if (storeKeys.parse(JSON.parse(body)).serial <= (storeKeys.partial().parse(published ?? {}).serial ?? -1))
+    throw new Error("These store keys aren't newer than the published ones; sign them again with the root")
   const held = await heldKeys()
   if (![...trusted.keys()].some((id) => held.has(id)))
     throw new Error("None of these keys is held by the Worker; prepare one first")
