@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   generateSigningSeed,
   importSigningKey,
+  paths,
   type SabineFeed,
   type StoreKeys,
   sabineSigningPayload,
@@ -70,6 +71,7 @@ describe("signed documents", () => {
     const store = await importSigningKey(await generateSigningSeed())
     const now = new Date("2026-11-03T00:00:00Z")
     const keys: StoreKeys = {
+      path: paths.storeKeys,
       serial: 1,
       version: 1,
       issued: now.toISOString(),

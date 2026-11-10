@@ -29,7 +29,7 @@ A **stable link** redirects to an immutable artifact URL. It never names a bridg
 Before installing or updating, the Schelf app and Sabine's updater check, in order, and refuse on any failure:
 
 1. The file is signed by a store key that the built-in root signed and that isn't revoked or expired.
-2. The file hasn't passed its `expires` time, and its `serial` isn't lower than the last one the device took for that path. This holds for the catalog, the mirrors, app index files and the revocation list; `store-keys.json`, which only the offline root can sign, has the serial and no expiry. So nobody can serve an old signed copy in place of a newer one, or keep one alive forever.
+2. The file's `path` is the path it was asked for, it hasn't passed its `expires` time, and its `serial` isn't lower than the last one the device took for that path. This holds for the catalog, the mirrors, app index files and the revocation list; `store-keys.json`, which only the offline root can sign, has the path and the serial and no expiry. So nobody can serve one signed file in place of another, an old signed copy in place of a newer one, or keep one alive forever.
 3. The revocation list is no more than seven days old (older means the device is offline; installs still work, with a notice).
 4. The release isn't blocked, and neither is its app.
 5. The downloaded file's SHA-256 matches the signed entry.
@@ -77,6 +77,7 @@ This is part of the foundation, not a later feature. The revocation list is a si
 
 ```json
 {
+  "path": "trust/v1/revocations.json",
   "serial": 1793613600000,
   "expires": "2026-11-16T10:00:00Z",
   "issued": "2026-11-02T10:00:00Z",

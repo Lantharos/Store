@@ -5,6 +5,7 @@ const DAY_MS = 86_400_000
 export const SIGNED_FOR_DAYS = 14
 
 export const stamp = z.object({
+  path: z.string(),
   serial: z.number().int().nonnegative(),
   expires: z.iso.datetime(),
 })

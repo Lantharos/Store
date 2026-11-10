@@ -34,7 +34,7 @@ async function publishedKeys(): Promise<Unstamped<StoreKeys> & Partial<StoreKeys
   if (command === "init") return { version: 1, issued: new Date().toISOString(), keys: [], revoked: [] }
   const response = await fetch(`${DOWNLOAD_ORIGIN}/${paths.storeKeys}`)
   if (!response.ok) throw new Error(`Couldn't read the published store keys: ${response.status}`)
-  return storeKeys.partial({ serial: true }).parse(await response.json())
+  return storeKeys.partial({ path: true, serial: true }).parse(await response.json())
 }
 
 const current = await publishedKeys()
@@ -59,6 +59,7 @@ const changed =
 const next: StoreKeys = {
   ...current,
   ...changed,
+  path: paths.storeKeys,
   issued: now.toISOString(),
   serial: serialAfter(current.serial ?? 0, now.getTime()),
 }

@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { utf8 } from "../encoding.ts"
+import { paths } from "../paths.ts"
 import { keyIdOf, type SignatureEnvelope, verifySignature } from "../signing.ts"
 import { stamp } from "./stamp.ts"
 
@@ -17,6 +18,7 @@ export const storeKeyList = z.object({
 })
 
 export const storeKeys = stamp.pick({ serial: true }).extend({
+  path: z.literal(paths.storeKeys),
   version: z.literal(1),
   issued: z.iso.datetime(),
   ...storeKeyList.shape,

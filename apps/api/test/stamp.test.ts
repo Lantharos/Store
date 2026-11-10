@@ -1,10 +1,10 @@
 import { env } from "cloudflare:workers"
-import { paths, revocations, SIGNED_FOR_DAYS } from "@schelf/protocol"
+import { catalog, paths, revocations, SIGNED_FOR_DAYS } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { DAY_MS } from "../src/lib/time.ts"
-import { rebuildRevocations } from "../src/signing/rebuild.ts"
+import { rebuildCatalog, rebuildRevocations } from "../src/signing/rebuild.ts"
 
 async function signedRevocations() {
   await rebuildRevocations()
@@ -12,6 +12,12 @@ async function signedRevocations() {
 }
 
 describe("signed documents", () => {
+  test("name the path they were signed for", async () => {
+    expect((await signedRevocations()).path).toBe(paths.revocations)
+    await rebuildCatalog()
+    expect(catalog.parse(await (await env.BUCKET.get(paths.catalog))!.json()).path).toBe(paths.catalog)
+  })
+
   test("say when they stop counting and never go back to an older serial", async () => {
     const first = await signedRevocations()
     const second = await signedRevocations()

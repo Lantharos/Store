@@ -21,7 +21,7 @@ async function nextSerial(key: string) {
 }
 
 export async function writeSigned(key: string, document: object) {
-  const stamp: Stamp = { serial: await nextSerial(key), expires: expiresIn(SIGNED_FOR_DAYS) }
+  const stamp: Stamp = { path: key, serial: await nextSerial(key), expires: expiresIn(SIGNED_FOR_DAYS) }
   const signed = await signDocument(await signingKey(), { ...document, ...stamp })
   await env.BUCKET.put(key, signed.body, {
     httpMetadata: { contentType: JSON_TYPE, cacheControl: INDEX_CACHE },

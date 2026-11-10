@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { generateSigningSeed, importSigningKey, type StoreKeys, signDocument } from "@schelf/protocol"
+import { generateSigningSeed, importSigningKey, paths, type StoreKeys, signDocument } from "@schelf/protocol"
 import { describe, expect, test } from "vitest"
 import { prepareSigningKey, publishStoreKeys, signingKey } from "../src/signing/keys.ts"
 
@@ -8,6 +8,7 @@ const LATER = "2026-12-01T00:00:00.000Z"
 async function keysSignedBy(seed: string, entries: StoreKeys["keys"]) {
   const root = await importSigningKey(seed)
   return signDocument(root, {
+    path: paths.storeKeys,
     serial: Date.now(),
     version: 1,
     issued: LATER,
