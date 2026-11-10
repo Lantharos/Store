@@ -2,55 +2,70 @@ import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   DOWNLOAD_ORIGIN,
+  expiresIn,
   importSigningKey,
   keyIdOf,
   paths,
   ROOT_KEY,
+  STORE_KEYS_SIGNED_FOR_DAYS,
+  type Stamp,
   type StoreKeys,
+  serialAfter,
   signDocument,
   storeKeys,
+  type Unstamped,
 } from "@schelf/protocol"
 
 const YEAR_MS = 365 * 24 * 3_600_000
-const [command, value, out = "trust-out"] = process.argv.slice(2)
+const COMMANDS = ["init", "add", "revoke", "renew"]
+const [command, ...rest] = process.argv.slice(2)
+const [value, out = "trust-out"] = command === "renew" ? ["", ...rest] : rest
 const rootSeed = process.env.ROOT_KEY
 
-if (!rootSeed || !command || !value || !["init", "add", "revoke"].includes(command)) {
+if (!rootSeed || !command || !COMMANDS.includes(command) || (command !== "renew" && !value)) {
   console.error("ROOT_KEY=<root seed> bun scripts/store-keys.ts init <signing public key> [out dir]")
   console.error("ROOT_KEY=<root seed> bun scripts/store-keys.ts add <signing public key> [out dir]")
   console.error("ROOT_KEY=<root seed> bun scripts/store-keys.ts revoke <key id> [out dir]")
+  console.error("ROOT_KEY=<root seed> bun scripts/store-keys.ts renew [out dir]")
   process.exit(1)
 }
 
 const root = await importSigningKey(rootSeed)
 if (root.id !== ROOT_KEY.id) throw new Error("That isn't the store's root key")
 
-async function publishedKeys(): Promise<StoreKeys> {
+async function publishedKeys(): Promise<Unstamped<StoreKeys> & Partial<Stamp>> {
   if (command === "init") return { version: 1, issued: new Date().toISOString(), keys: [], revoked: [] }
   const response = await fetch(`${DOWNLOAD_ORIGIN}/${paths.storeKeys}`)
   if (!response.ok) throw new Error(`Couldn't read the published store keys: ${response.status}`)
-  return storeKeys.parse(await response.json())
+  return storeKeys.partial({ serial: true, expires: true }).parse(await response.json())
 }
 
 const current = await publishedKeys()
 
 const now = new Date()
-const next: StoreKeys =
+const changed =
   command === "revoke"
-    ? { ...current, issued: now.toISOString(), revoked: [...new Set([...current.revoked, value])] }
-    : {
-        ...current,
-        issued: now.toISOString(),
-        keys: [
-          ...current.keys,
-          {
-            id: await keyIdOf(value),
-            public_key: value,
-            not_before: now.toISOString(),
-            expires: new Date(now.getTime() + YEAR_MS).toISOString(),
-          },
-        ],
-      }
+    ? { revoked: [...new Set([...current.revoked, value])] }
+    : command === "renew"
+      ? {}
+      : {
+          keys: [
+            ...current.keys,
+            {
+              id: await keyIdOf(value),
+              public_key: value,
+              not_before: now.toISOString(),
+              expires: new Date(now.getTime() + YEAR_MS).toISOString(),
+            },
+          ],
+        }
+const next: StoreKeys = {
+  ...current,
+  ...changed,
+  issued: now.toISOString(),
+  serial: serialAfter(current.serial ?? 0, now.getTime()),
+  expires: expiresIn(STORE_KEYS_SIGNED_FOR_DAYS, now.getTime()),
+}
 
 const signed = await signDocument(root, next)
 mkdirSync(join(out, "trust/v1"), { recursive: true })

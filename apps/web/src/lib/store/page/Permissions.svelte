@@ -1,9 +1,12 @@
 <script lang="ts">
+  import AppWindow from "@lucide/svelte/icons/app-window"
+  import Camera from "@lucide/svelte/icons/camera"
   import File from "@lucide/svelte/icons/file"
   import Folder from "@lucide/svelte/icons/folder"
   import Globe from "@lucide/svelte/icons/globe"
   import GlobeLock from "@lucide/svelte/icons/globe-lock"
   import MessagesSquare from "@lucide/svelte/icons/messages-square"
+  import Mic from "@lucide/svelte/icons/mic"
   import ShieldAlert from "@lucide/svelte/icons/shield-alert"
   import Usb from "@lucide/svelte/icons/usb"
   import type { Permissions } from "@schelf/protocol"
@@ -15,6 +18,9 @@
     full: ShieldAlert,
     folder: Folder,
     device: Usb,
+    microphone: Mic,
+    camera: Camera,
+    x11: AppWindow,
     talk: MessagesSquare,
     network: Globe,
     offline: GlobeLock,

@@ -4,6 +4,7 @@ import { requires } from "../manifest.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
 import { publisherSummary } from "./catalog.ts"
+import { stamp } from "./stamp.ts"
 
 export const DEFAULT_LOCALE = "en"
 
@@ -69,7 +70,7 @@ export const indexedRelease = z.object({
 })
 export type IndexedRelease = z.infer<typeof indexedRelease>
 
-export const appIndex = z.object({
+export const appIndex = stamp.extend({
   version: z.literal(1),
   generated: z.iso.datetime(),
   id: z.string(),

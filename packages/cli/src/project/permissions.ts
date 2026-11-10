@@ -22,6 +22,9 @@ export function describePermissions(permissions: Permissions | null): string[] {
     lines.push(`${readOnly ? "Reads" : "Reads and changes"} ${folder}`)
   }
   for (const device of permissions.devices) lines.push(`Uses ${DEVICES[device]}`)
+  if (permissions.microphone) lines.push("Uses the microphone")
+  if (permissions.camera) lines.push("Uses the camera")
+  if (permissions.x11) lines.push("Shows its windows through X11")
   for (const name of permissions.talk) lines.push(`Talks to ${name}`)
   return lines
 }

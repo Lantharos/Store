@@ -1,12 +1,17 @@
 import { env } from "cloudflare:workers"
+import { MIRROR_ORIGINS, type MirrorOrigin } from "@schelf/protocol"
 import { and, eq, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { rebuildApp, rebuildCatalog, rebuildRevocations } from "./rebuild.ts"
+import { rebuildApp, rebuildCatalog, rebuildMirror, rebuildRevocations } from "./rebuild.ts"
 import { RESIGN_REQUEST } from "./resign-request.ts"
 
 const QUEUE_BATCH = 100
 
-export type SigningJob = { type: "app"; id: string } | { type: "catalog" } | { type: "revocations" }
+export type SigningJob =
+  | { type: "app"; id: string }
+  | { type: "catalog" }
+  | { type: "mirror"; origin: MirrorOrigin }
+  | { type: "revocations" }
 
 export function resign(...jobs: SigningJob[]) {
   return env.SIGNING.sendBatch(jobs.map((body) => ({ body })))
@@ -21,7 +26,11 @@ export async function resignEverything() {
     await resign(
       ...apps.slice(start, start + QUEUE_BATCH).map((app) => ({ type: "app" as const, id: app.id })),
     )
-  await resign({ type: "catalog" }, { type: "revocations" })
+  await resign(
+    { type: "catalog" },
+    ...MIRROR_ORIGINS.map((origin) => ({ type: "mirror" as const, origin })),
+    { type: "revocations" },
+  )
   return apps.length
 }
 
@@ -54,14 +63,17 @@ export function resignApp(id: string) {
 
 export async function signQueued(batch: MessageBatch<SigningJob>) {
   const apps = new Set<string>()
+  const mirrors = new Set<MirrorOrigin>()
   let catalog = false
   let revocations = false
   for (const { body } of batch.messages) {
     if (body.type === "app") apps.add(body.id)
     else if (body.type === "catalog") catalog = true
+    else if (body.type === "mirror") mirrors.add(body.origin)
     else revocations = true
   }
   for (const id of apps) await rebuildApp(id)
   if (catalog) await rebuildCatalog()
+  for (const origin of mirrors) await rebuildMirror(origin)
   if (revocations) await rebuildRevocations()
 }

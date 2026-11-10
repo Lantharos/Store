@@ -7,7 +7,14 @@ const LATER = "2026-12-01T00:00:00.000Z"
 
 async function keysSignedBy(seed: string, entries: StoreKeys["keys"]) {
   const root = await importSigningKey(seed)
-  return signDocument(root, { version: 1, issued: LATER, keys: entries, revoked: [] })
+  return signDocument(root, {
+    serial: Date.now(),
+    expires: "2099-01-01T00:00:00.000Z",
+    version: 1,
+    issued: LATER,
+    keys: entries,
+    revoked: [],
+  } satisfies StoreKeys)
 }
 
 describe("store key rotation", () => {

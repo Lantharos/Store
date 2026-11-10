@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { utf8 } from "../encoding.ts"
 import { keyIdOf, type SignatureEnvelope, verifySignature } from "../signing.ts"
+import { stamp } from "./stamp.ts"
 
 export const storeKey = z.object({
   id: z.string(),
@@ -10,11 +11,15 @@ export const storeKey = z.object({
 })
 export type StoreKey = z.infer<typeof storeKey>
 
-export const storeKeys = z.object({
-  version: z.literal(1),
-  issued: z.iso.datetime(),
+export const storeKeyList = z.object({
   keys: z.array(storeKey),
   revoked: z.array(z.string()),
+})
+
+export const storeKeys = stamp.extend({
+  version: z.literal(1),
+  issued: z.iso.datetime(),
+  ...storeKeyList.shape,
 })
 export type StoreKeys = z.infer<typeof storeKeys>
 
@@ -31,8 +36,7 @@ export const blockedEntry = z.object({
 })
 export type BlockedEntry = z.infer<typeof blockedEntry>
 
-export const revocations = z.object({
-  serial: z.number().int().nonnegative(),
+export const revocations = stamp.extend({
   issued: z.iso.datetime(),
   blocked: z.array(blockedEntry),
 })
@@ -57,7 +61,7 @@ export async function trustedStoreKeys(
     throw new Error("store-keys.json isn't signed by the root")
   if (!(await verifySignature(rootPublicKey, utf8(body), envelope.sig)))
     throw new Error("store-keys.json has a bad signature")
-  const document = storeKeys.parse(JSON.parse(body))
+  const document = storeKeyList.parse(JSON.parse(body))
   const trusted = new Map<string, string>()
   for (const key of document.keys) {
     const current = new Date(key.not_before) <= now && now < new Date(key.expires)

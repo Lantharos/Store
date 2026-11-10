@@ -6,9 +6,9 @@ import { resignEverything } from "../../signing/queue.ts"
 export const resign = action("resign-everything", {
   label: "Re-sign the index",
   description:
-    "Signs every index file, update feed and the revocation list again with the current store key.",
+    "Signs every index file, mirror catalog, update feed and the revocation list again with the current store key.",
   danger: "confirm",
-  run: async () => `Re-signing ${await resignEverything()} apps, the catalog and the revocation list`,
+  run: async () => `Re-signing ${await resignEverything()} apps, the catalogs and the revocation list`,
 })
 
 export const prepareKey = action("prepare-store-key", {

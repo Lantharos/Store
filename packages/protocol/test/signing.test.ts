@@ -70,6 +70,8 @@ describe("signed documents", () => {
     const store = await importSigningKey(await generateSigningSeed())
     const now = new Date("2026-11-03T00:00:00Z")
     const keys: StoreKeys = {
+      serial: 1,
+      expires: "2027-01-01T00:00:00.000Z",
       version: 1,
       issued: now.toISOString(),
       keys: [

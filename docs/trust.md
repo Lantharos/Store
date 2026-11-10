@@ -4,13 +4,13 @@ Who signs what, what each client checks, how permissions reach the user, how upd
 
 ## Keys
 
-| Key                                      | Held by                                            | Signs                                                                             | Lifetime                                                                                  |
-| ---------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Store root (Ed25519)                     | The owner, offline in 1Password; never on a server | Store signing keys and their revocation                                           | Years; built into every client                                                            |
-| Store signing key (Ed25519)              | The api Worker, as a secret                        | Index files, update feeds, the revocation list                                    | One year, rotated with overlap; the list is re-signed every night so it never looks stale |
-| GitHub OIDC identity                     | The developer's workflow run                       | Nothing; it proves which repository, workflow, ref and commit a release came from | Minutes                                                                                   |
-| Build attestation                        | GitHub (Sigstore, keyless)                         | Each published file's digest and the run that built it                            | Permanent, public                                                                         |
-| Windows Authenticode, Apple Developer ID | The developer                                      | Binaries and installers on those systems                                          | Theirs                                                                                    |
+| Key                                      | Held by                                            | Signs                                                                             | Lifetime                                                                                     |
+| ---------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Store root (Ed25519)                     | The owner, offline in 1Password; never on a server | Store signing keys and their revocation                                           | Years; built into every client                                                               |
+| Store signing key (Ed25519)              | The api Worker, as a secret                        | Index files, update feeds, the revocation list                                    | One year, rotated with overlap; every signed file is signed again each night so none expires |
+| GitHub OIDC identity                     | The developer's workflow run                       | Nothing; it proves which repository, workflow, ref and commit a release came from | Minutes                                                                                      |
+| Build attestation                        | GitHub (Sigstore, keyless)                         | Each published file's digest and the run that built it                            | Permanent, public                                                                            |
+| Windows Authenticode, Apple Developer ID | The developer                                      | Binaries and installers on those systems                                          | Theirs                                                                                       |
 
 There are no developer keys to lose or leak. A release can only come from the workflow the developer registered, and it still needs a person's approval before anyone gets it. A stolen dashboard token can upload a release, but every upload is reviewed by a person whatever the project, it's marked as uploaded by hand, scoped to one app and revocable. Releases of unlisted projects from a trusted workflow go out on the store's checks; the workflow, the attestation and a clean malware scan stand in for the person.
 
@@ -29,10 +29,11 @@ A **stable link** redirects to an immutable artifact URL. It never names a bridg
 Before installing or updating, the Schelf app and Sabine's updater check, in order, and refuse on any failure:
 
 1. The file is signed by a store key that the built-in root signed and that isn't revoked or expired.
-2. The revocation list is signed, its serial isn't lower than the last one seen, and it's no more than seven days old (older means the device is offline; installs still work, with a notice).
-3. The release isn't blocked, and neither is its app.
-4. The downloaded file's SHA-256 matches the signed entry.
-5. The permissions in the entry are the ones the user agreed to; if they're wider, ask again (see below).
+2. The file hasn't passed its `expires` time, and its `serial` isn't lower than the last one the device took for that path. This holds for the catalog, the mirrors, app index files, the revocation list and `store-keys.json`, so nobody can serve an old signed copy in place of a newer one, or keep one alive forever.
+3. The revocation list is no more than seven days old (older means the device is offline; installs still work, with a notice).
+4. The release isn't blocked, and neither is its app.
+5. The downloaded file's SHA-256 matches the signed entry.
+6. The permissions in the entry are the ones the user agreed to; if they're wider, ask again (see below).
 
 Clients don't verify Sigstore attestations themselves; the Worker does at upload, and the store's signature vouches for it. The attestations stay public on GitHub for anyone who wants to check.
 
@@ -40,7 +41,7 @@ On Windows and macOS, the operating system then checks the developer's own code 
 
 ## Rotating keys
 
-- **Store signing key:** Prepare a new store key in Pult makes one inside the store and shows its public half; the owner signs it into `store-keys.json` with the root on a trusted computer (`apps/api/scripts/store-keys.ts`) a month before the old one expires, and Publish store keys in Pult puts it live. The store then signs with the newest key it holds that the root vouches for. If a key leaks, the owner signs its revocation the same way, and publishing it re-signs every index file and feed within minutes.
+- **Store signing key:** Prepare a new store key in Pult makes one inside the store and shows its public half; the owner signs it into `store-keys.json` with the root on a trusted computer (`apps/api/scripts/store-keys.ts`) a month before the old one expires, and Publish store keys in Pult puts it live. `store-keys.json` itself expires 90 days after the root signed it, so the owner signs it again before then with `store-keys.ts renew`, which changes nothing but its serial and expiry, and publishes it the same way; Pult refuses a file without them or one that has already expired. The store then signs with the newest key it holds that the root vouches for. If a key leaks, the owner signs its revocation the same way, and publishing it re-signs every index file and feed within minutes.
 - **Trusted publishers** change in the dashboard; removing one stops new releases from that workflow at once.
 - **Dashboard tokens** are revoked in the dashboard, and expire after a year.
 
@@ -76,7 +77,8 @@ This is part of the foundation, not a later feature. The revocation list is a si
 
 ```json
 {
-  "serial": 41,
+  "serial": 1793613600000,
+  "expires": "2026-11-16T10:00:00Z",
   "issued": "2026-11-02T10:00:00Z",
   "blocked": [
     {

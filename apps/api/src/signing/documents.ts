@@ -6,13 +6,16 @@ import {
   channelPath,
   type Format,
   type IndexedRelease,
+  type MirrorEntry,
   type Platform,
   type PlatformRelease,
   parseSabineVersion,
   type SabineFeed,
   STABLE,
   sabineTarget,
+  type Unstamped,
 } from "@schelf/protocol"
+import type { schema } from "../db/client.ts"
 import {
   type AppRecord,
   englishListing,
@@ -106,7 +109,7 @@ function indexedRelease(
   }
 }
 
-export function appIndex(record: AppRecord): AppIndex {
+export function appIndex(record: AppRecord): Unstamped<AppIndex> {
   return {
     version: 1,
     generated: new Date().toISOString(),
@@ -190,4 +193,22 @@ export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
     })
   }
   return new Map([...feeds, ...endedFeeds(record, feeds)])
+}
+
+export function mirrorCatalogEntry(row: typeof schema.mirrorApp.$inferSelect): MirrorEntry {
+  const base = {
+    id: row.id,
+    kind: "app" as const,
+    name: row.name,
+    summary: row.summary,
+    icon: row.icon,
+    categories: row.categories,
+    publisher: { name: row.publisher, verified: row.verified },
+    updated: row.updatedAt.toISOString(),
+    installs_30d: row.installs30d,
+    rank: row.rank,
+  }
+  return row.origin === "flathub"
+    ? { ...base, origin: "flathub", flathub: row.ref }
+    : { ...base, origin: "fedora", package: row.ref }
 }

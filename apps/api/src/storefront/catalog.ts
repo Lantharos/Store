@@ -1,10 +1,12 @@
 import { env } from "cloudflare:workers"
-import { type Catalog, type CatalogEntry, paths } from "@schelf/protocol"
+import { type Catalog, type CatalogEntry, paths, type Unstamped } from "@schelf/protocol"
 
 const FRESH_MS = 30_000
 
-let cached: { etag: string; checkedAt: number; catalog: Catalog; byId: Map<string, CatalogEntry> } | undefined
-const EMPTY: Catalog = { version: 1, generated: new Date(0).toISOString(), apps: [] }
+type Listed = Unstamped<Catalog>
+
+let cached: { etag: string; checkedAt: number; catalog: Listed; byId: Map<string, CatalogEntry> } | undefined
+const EMPTY: Listed = { version: 1, generated: new Date(0).toISOString(), apps: [] }
 
 export async function currentCatalog() {
   if (cached && Date.now() - cached.checkedAt < FRESH_MS) return cached
@@ -16,7 +18,7 @@ export async function currentCatalog() {
     cached.checkedAt = Date.now()
     return cached
   }
-  const catalog = object && "body" in object ? await object.json<Catalog>() : EMPTY
+  const catalog = object && "body" in object ? await object.json<Listed>() : EMPTY
   cached = {
     etag: object?.etag ?? "",
     checkedAt: Date.now(),

@@ -12,8 +12,9 @@ import {
 import { and, eq, inArray, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
+import { mirrorCatalogEntry } from "../signing/documents.ts"
+import { resign } from "../signing/queue.ts"
 import { fileUrl, within } from "../signing/records.ts"
-import { writeSigned } from "../signing/write.ts"
 import { clearOriginStatement, indexStatements } from "./search-index.ts"
 
 const STATEMENTS_PER_BATCH = 400
@@ -22,24 +23,6 @@ const ICON_FILE = /^([0-9a-f]{16})\.png$/
 
 function mirrorKey(entry: Pick<MirrorEntry, "origin" | "id">) {
   return `${entry.origin}:${entry.id}`
-}
-
-function toEntry(row: typeof schema.mirrorApp.$inferSelect): MirrorEntry {
-  const base = {
-    id: row.id,
-    kind: "app" as const,
-    name: row.name,
-    summary: row.summary,
-    icon: row.icon,
-    categories: row.categories,
-    publisher: { name: row.publisher, verified: row.verified },
-    updated: row.updatedAt.toISOString(),
-    installs_30d: row.installs30d,
-    rank: row.rank,
-  }
-  return row.origin === "flathub"
-    ? { ...base, origin: "flathub", flathub: row.ref }
-    : { ...base, origin: "fedora", package: row.ref }
 }
 
 export async function mirrorHits(keys: string[]) {
@@ -51,7 +34,7 @@ export async function mirrorHits(keys: string[]) {
     .select()
     .from(schema.mirrorApp)
     .where(and(within(schema.mirrorApp.id, ids), inArray(schema.mirrorApp.origin, ["flathub", "fedora"])))
-  for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row), toEntry(row))
+  for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row), mirrorCatalogEntry(row))
   return hits
 }
 
@@ -62,7 +45,7 @@ export async function mirrorEntry(id: string, origin: string | undefined) {
     .where(and(eq(schema.mirrorApp.id, id), isNull(schema.mirrorApp.hiddenReason)))
   const preferred = origin ? [origin] : MIRROR_ORIGINS
   const row = preferred.map((name) => rows.find((candidate) => candidate.origin === name)).find(Boolean)
-  return row ? toEntry(row) : null
+  return row ? mirrorCatalogEntry(row) : null
 }
 
 async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
@@ -101,12 +84,7 @@ async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
   ]
   for (let start = 0; start < statements.length; start += STATEMENTS_PER_BATCH)
     await env.DB.batch(statements.slice(start, start + STATEMENTS_PER_BATCH))
-  await writeSigned(paths.mirror(origin), {
-    version: 1,
-    generated: new Date().toISOString(),
-    origin,
-    apps: [...entries].sort((left, right) => right.rank - left.rank),
-  })
+  await resign({ type: "mirror", origin })
 }
 
 export async function replaceMirror(request: MirrorRequest): Promise<MirrorResponse> {

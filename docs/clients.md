@@ -16,7 +16,7 @@ An app that's in more than one place shows once: the store's listing wins over F
 
 ### The mirror
 
-A scheduled workflow in this repository (`mirror/`) runs every six hours on GitHub's free runners. It reads Flathub's API and Fedora's AppStream data, applies the quality rules below, ranks what's left, and posts the result to `POST /api/v1/mirror` with its OIDC token. The Worker signs the mirror catalogs and updates search.
+A scheduled workflow in this repository (`mirror/`) runs every six hours on GitHub's free runners. It reads Flathub's API and Fedora's AppStream data, applies the quality rules below, ranks what's left, and posts the result to `POST /api/v1/mirror` with its OIDC token. The Worker signs the mirror catalogs and updates search, and signs them again every night from what it holds, so they stay valid if a run is missed.
 
 A Flathub app is **left out** when any of these is true:
 

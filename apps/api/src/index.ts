@@ -16,7 +16,7 @@ import { backOffice, publishDefinitions } from "./ops/pult.ts"
 import { publishingRoutes } from "./publishing/routes.ts"
 import { restartStalledChecks } from "./releases/checks.ts"
 import { stepRollouts } from "./releases/rollout.ts"
-import { resign, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
+import { resignEverything, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
 import { storefrontRoutes } from "./storefront/routes.ts"
 
 const HOURLY = "0 * * * *"
@@ -68,12 +68,7 @@ export default {
       ])
       return
     }
-    await Promise.all([
-      rollUpDownloads(),
-      recheckNamespaces(),
-      purgeDeleted(),
-      resign({ type: "revocations" }),
-    ])
+    await Promise.all([rollUpDownloads(), recheckNamespaces(), purgeDeleted(), resignEverything()])
   },
   queue: (batch) => signQueued(batch as MessageBatch<SigningJob>),
   email: receiveMail,

@@ -12,6 +12,7 @@ export const FILESYSTEMS = [
   "xdg-videos",
 ] as const
 export const DEVICES = ["usb", "serial", "all"] as const
+const SWITCHES = ["x11", "microphone", "camera"] as const
 const READ_ONLY = ":ro"
 const REFUSED_NAMES = [
   "org.freedesktop.impl.portal",
@@ -52,6 +53,9 @@ export const sandboxTable = z
     filesystems: z.array(folder).default([]),
     devices: z.array(device).default([]),
     talk: z.array(busName).default([]),
+    x11: z.boolean().default(false),
+    microphone: z.boolean().default(false),
+    camera: z.boolean().default(false),
     unsandboxed: z.boolean().default(false),
     reason: z.string().optional(),
   })
@@ -68,6 +72,9 @@ export const permissions = z.object({
   filesystems: z.array(z.string()),
   devices: z.array(z.enum(DEVICES)),
   talk: z.array(z.string()),
+  x11: z.boolean().default(false),
+  microphone: z.boolean().default(false),
+  camera: z.boolean().default(false),
   unsandboxed: z.string().nullable(),
 })
 export type Permissions = z.infer<typeof permissions>
@@ -77,6 +84,9 @@ export const SANDBOXED_DEFAULT: Permissions = {
   filesystems: [],
   devices: [],
   talk: [],
+  x11: false,
+  microphone: false,
+  camera: false,
   unsandboxed: null,
 }
 
@@ -90,6 +100,9 @@ export function readPermissions(toml: string): Permissions {
     filesystems: table.filesystems,
     devices: table.devices,
     talk: table.talk,
+    x11: table.x11,
+    microphone: table.microphone,
+    camera: table.camera,
     unsandboxed: null,
   }
 }
@@ -115,6 +128,7 @@ export function widens(before: Permissions | null, after: Permissions | null) {
   if (!before || before.unsandboxed !== null) return false
   if (!after || after.unsandboxed !== null) return true
   if (after.network && !before.network) return true
+  if (SWITCHES.some((name) => after[name] && !before[name])) return true
   const had = folderGrants(before.filesystems)
   for (const [name, writable] of folderGrants(after.filesystems)) {
     if (had.get("home") === true) continue

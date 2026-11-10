@@ -7,6 +7,8 @@ await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
 const root = await importSigningKey(env.TEST_ROOT_KEY)
 const store = await importSigningKey(env.STORE_SIGNING_KEY)
 const signed = await signDocument(root, {
+  serial: 1,
+  expires: "2099-01-01T00:00:00.000Z",
   version: 1,
   issued: "2026-11-01T00:00:00.000Z",
   keys: [

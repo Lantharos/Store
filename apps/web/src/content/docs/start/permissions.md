@@ -13,6 +13,7 @@ Declarations use Luft's shared permission format: a `[sandbox]` table, either in
 network = false
 filesystems = ["xdg-pictures:ro", "xdg-music:ro", "xdg-videos"]
 devices = []
+microphone = true
 talk = ["org.mpris.MediaPlayer2.*"]
 ```
 
@@ -23,6 +24,9 @@ talk = ["org.mpris.MediaPlayer2.*"]
 | `network`     | `true` (the default) or `false`                                                                                            | “The internet”, or “No internet access” |
 | `filesystems` | `home`, `xdg-desktop`, `xdg-documents`, `xdg-download`, `xdg-music`, `xdg-pictures`, `xdg-videos`; add `:ro` for read only | “Pictures, Music and Videos folders”    |
 | `devices`     | `usb`, `serial`, `all`                                                                                                     | “USB devices”                           |
+| `microphone`  | `true` to record sound, from the microphone and from what the computer plays                                               | “The microphone”                        |
+| `camera`      | `true` to use the computer's cameras                                                                                       | “The camera”                            |
+| `x11`         | `true` if your app only works with X11, where apps can see each other's windows and typing                                 | “The older way of showing windows”      |
 | `talk`        | D-Bus names your app talks to, like `org.mpris.MediaPlayer2.*`                                                             | “Talk to one other service”             |
 
 Files people open with your app, through the file picker or by opening them from Rover, are always allowed. You don't need a folder permission for that.
@@ -43,4 +47,4 @@ Sabine apps run with full access on every system for now, because Sabine can't s
 
 ## Changing permissions in an update
 
-Narrowing what you ask for needs nothing. Widening it, like adding a folder or turning on the network, sends the update to review with a note, and Schelf asks each person before installing it. Until they agree, they stay on the version they have. So ask for what you need in the first release rather than adding it bit by bit.
+Narrowing what you ask for needs nothing. Widening it, like adding a folder, the microphone or the network, sends the update to review with a note, and Schelf asks each person before installing it. Until they agree, they stay on the version they have. So ask for what you need in the first release rather than adding it bit by bit.

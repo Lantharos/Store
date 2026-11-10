@@ -5,13 +5,16 @@ describe("permission declarations", () => {
   test("read what an app asks for the way Luft's sandbox does", () => {
     expect(
       readPermissions(
-        '[app]\nid = "io.github.alice.Notes"\n\n[sandbox]\nnetwork = false\nfilesystems = ["xdg-documents", "xdg-download:ro"]\ndevices = ["usb"]\ntalk = ["org.mpris.MediaPlayer2.notes"]\n',
+        '[app]\nid = "io.github.alice.Notes"\n\n[sandbox]\nnetwork = false\nfilesystems = ["xdg-documents", "xdg-download:ro"]\ndevices = ["usb"]\ntalk = ["org.mpris.MediaPlayer2.notes"]\nmicrophone = true\n',
       ),
     ).toEqual({
       network: false,
       filesystems: ["xdg-documents", "xdg-download:ro"],
       devices: ["usb"],
       talk: ["org.mpris.MediaPlayer2.notes"],
+      x11: false,
+      microphone: true,
+      camera: false,
       unsandboxed: null,
     })
   })
@@ -39,6 +42,8 @@ describe("permission declarations", () => {
         { ...documents, talk: ["org.mpris.MediaPlayer2.notes"] },
       ),
     ).toBe(false)
+    expect(widens(documents, { ...documents, camera: true })).toBe(true)
+    expect(widens({ ...documents, x11: true }, documents)).toBe(false)
     expect(widens(documents, null)).toBe(true)
     expect(widens(null, documents)).toBe(false)
   })

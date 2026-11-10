@@ -5,6 +5,7 @@ import {
   paths,
   type SigningKey,
   signatureEnvelope,
+  storeKeyList,
   storeKeys,
   trustedStoreKeys,
 } from "@schelf/protocol"
@@ -38,7 +39,7 @@ async function chooseKey() {
   const published = await publishedKeys()
   const trusted = await trustedStoreKeys(env.ROOT_PUBLIC_KEY, published.body, published.signature)
   const held = await heldKeys()
-  const newestFirst = storeKeys
+  const newestFirst = storeKeyList
     .parse(JSON.parse(published.body))
     .keys.filter((entry) => trusted.has(entry.id) && held.has(entry.id))
     .sort((left, right) => right.not_before.localeCompare(left.not_before))
@@ -74,6 +75,8 @@ export async function prepareSigningKey() {
 export async function publishStoreKeys(body: string, signatureText: string) {
   const signature = signatureEnvelope.parse(JSON.parse(signatureText))
   const trusted = await trustedStoreKeys(env.ROOT_PUBLIC_KEY, body, signature)
+  if (new Date(storeKeys.parse(JSON.parse(body)).expires) <= new Date())
+    throw new Error("These store keys have already expired; sign them again with the root")
   const held = await heldKeys()
   if (![...trusted.keys()].some((id) => held.has(id)))
     throw new Error("None of these keys is held by the Worker; prepare one first")

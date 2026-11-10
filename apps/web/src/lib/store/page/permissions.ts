@@ -1,6 +1,15 @@
 import type { Permissions } from "@schelf/protocol"
 
-export type PermissionIcon = "full" | "folder" | "device" | "talk" | "network" | "offline"
+export type PermissionIcon =
+  | "full"
+  | "folder"
+  | "device"
+  | "microphone"
+  | "camera"
+  | "x11"
+  | "talk"
+  | "network"
+  | "offline"
 
 export interface PermissionLine {
   icon: PermissionIcon
@@ -63,6 +72,15 @@ export function describePermissions(permissions: Permissions | null): {
   for (const line of [folderLine(writable, false), folderLine(readable, true)]) if (line) lines.push(line)
   lines.push({ icon: "folder", text: "Files you open with it" })
   for (const device of permissions.devices) lines.push({ icon: "device", text: DEVICES[device] ?? device })
+  if (permissions.microphone)
+    lines.push({ icon: "microphone", text: "The microphone", detail: "And the sound this computer plays." })
+  if (permissions.camera) lines.push({ icon: "camera", text: "The camera" })
+  if (permissions.x11)
+    lines.push({
+      icon: "x11",
+      text: "The older way of showing windows",
+      detail: "Apps that use X11 can see each other’s windows and what you type in them.",
+    })
   if (permissions.talk.length) {
     lines.push({
       icon: "talk",

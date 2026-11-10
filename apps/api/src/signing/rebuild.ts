@@ -1,13 +1,20 @@
 import { env } from "cloudflare:workers"
-import { type Catalog, paths, type Revocations, signSabineFeed } from "@schelf/protocol"
-import { and, eq, isNull, sql } from "drizzle-orm"
+import {
+  type Catalog,
+  type MirrorCatalog,
+  type MirrorOrigin,
+  paths,
+  type Revocations,
+  signSabineFeed,
+  type Unstamped,
+} from "@schelf/protocol"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { appIndex, catalogEntry, sabineFeeds } from "./documents.ts"
+import { appIndex, catalogEntry, mirrorCatalogEntry, sabineFeeds } from "./documents.ts"
 import { signingKey } from "./keys.ts"
 import { loadApps } from "./records.ts"
 import { writeFeed, writeSigned } from "./write.ts"
 
-const REVOCATION_SERIAL = "revocations.serial"
 const INDEXED_APP_STATUSES = new Set(["published", "delisted", "pulled", "deleted"])
 
 export async function rebuildApp(id: string) {
@@ -39,12 +46,26 @@ export async function rebuildCatalog() {
     .from(schema.app)
     .where(and(eq(schema.app.status, "published"), eq(schema.app.visibility, "listed")))
   const records = await loadApps(listed)
-  const catalog: Catalog = {
+  const catalog: Unstamped<Catalog> = {
     version: 1,
     generated: new Date().toISOString(),
     apps: records.map(catalogEntry).sort((left, right) => right.installs_30d - left.installs_30d),
   }
   await writeSigned(paths.catalog, catalog)
+}
+
+export async function rebuildMirror(origin: MirrorOrigin) {
+  const rows = await db
+    .select()
+    .from(schema.mirrorApp)
+    .where(and(eq(schema.mirrorApp.origin, origin), isNull(schema.mirrorApp.hiddenReason)))
+    .orderBy(desc(schema.mirrorApp.rank), schema.mirrorApp.id)
+  await writeSigned(paths.mirror(origin), {
+    version: 1,
+    generated: new Date().toISOString(),
+    origin,
+    apps: rows.map(mirrorCatalogEntry),
+  } satisfies Unstamped<MirrorCatalog>)
 }
 
 export async function rebuildRevocations() {
@@ -75,22 +96,8 @@ export async function rebuildRevocations() {
     else if (existing.versions !== "*")
       existing.versions = versions === "*" ? "*" : [...existing.versions, ...versions]
   }
-  const serial = await nextSerial()
   await writeSigned(paths.revocations, {
-    serial,
     issued: new Date().toISOString(),
     blocked: [...merged.values()],
-  } satisfies Revocations)
-}
-
-async function nextSerial() {
-  const [row] = await db
-    .insert(schema.storeState)
-    .values({ key: REVOCATION_SERIAL, value: "1" })
-    .onConflictDoUpdate({
-      target: schema.storeState.key,
-      set: { value: sql`cast(${schema.storeState.value} as integer) + 1` },
-    })
-    .returning()
-  return Number(row!.value)
+  } satisfies Unstamped<Revocations>)
 }

@@ -31,6 +31,7 @@ export default defineConfig({
       triggers.queue({
         maxBatchSize: 100,
         maxBatchTimeout: 2,
+        maxConcurrency: 1,
         maxRetries: 10,
         name: "schelf-store-sign",
       }),

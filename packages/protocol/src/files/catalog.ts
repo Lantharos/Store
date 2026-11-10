@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { access, format, kind, platform } from "../platforms.ts"
+import { stamp } from "./stamp.ts"
 
 export const publisherSummary = z.object({
   name: z.string(),
@@ -36,7 +37,7 @@ export function comingSoon(entry: Pick<CatalogEntry, "platforms">) {
   return Object.keys(entry.platforms).length === 0
 }
 
-export const catalog = z.object({
+export const catalog = stamp.extend({
   version: z.literal(1),
   generated: z.iso.datetime(),
   apps: z.array(catalogEntry),
@@ -66,7 +67,7 @@ export const mirrorEntry = z.discriminatedUnion("origin", [
 ])
 export type MirrorEntry = z.infer<typeof mirrorEntry>
 
-export const mirrorCatalog = z.object({
+export const mirrorCatalog = stamp.extend({
   version: z.literal(1),
   generated: z.iso.datetime(),
   origin: mirrorOrigin,
