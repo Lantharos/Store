@@ -18,6 +18,8 @@ There are no developer keys to lose or leak. A release can only come from the wo
 
 An **index entry** is the store's signature over a release in `index/v1/apps/<id>.json`: app id, version, artifacts with hashes, the permissions, and where it came from (repository, workflow, commit, run). It's made only when a person approves the release.
 
+For an extension, the entry also says `requires.luft`, the oldest Luft it runs on, and `runs_in_shell`, whether it may run inside Luft's desktop, in Kestrel's own process, where its permissions describe the API but don't wall it off. That is a separate decision from approving the release: the owner approves each release's exact files for it, only for a verified publisher, and the store signs `runs_in_shell: true` only while the publisher is still verified and the files are still the ones approved. Luft's system packages service checks the signed listing, the publisher's mark and the file's hash itself before it unpacks such an extension where only the system can write.
+
 An **update feed** is the same release in Sabine's update manifest format, signed by the store key, at `sabine/<id>/<channel>.json`. Sabine apps that set `provider = "schelf"` follow it ([clients](clients.md#sabine-apps-on-windows-and-macos)).
 
 Projects that use electron-updater or Tauri's updater get those feeds too ([design](design.md#hosting-releases)). The store doesn't sign them: electron-updater checks each file's SHA-512 from the feed and the developer's code signature, and Tauri checks the developer's own updater signature, which is uploaded with each bundle. Both are served over HTTPS from the store's own host.

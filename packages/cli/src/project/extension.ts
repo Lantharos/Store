@@ -7,6 +7,7 @@ export interface ExtensionManifest {
   summary?: string
   api: number
   helper?: string
+  luft?: unknown
 }
 
 interface ExtensionFile {
@@ -16,6 +17,7 @@ interface ExtensionFile {
   description?: string
   api?: number
   helper?: { path?: string }
+  luft?: { minimum?: unknown }
 }
 
 export function readExtension(text: string): ExtensionManifest {
@@ -32,5 +34,6 @@ export function readExtension(text: string): ExtensionManifest {
     summary: file.description,
     api: file.api,
     helper: file.helper?.path,
+    luft: file.luft?.minimum,
   }
 }

@@ -6,6 +6,7 @@ import {
   ORIGINS,
   type Permissions,
   type Requires,
+  SHELL_REVIEWS,
   UPDATERS,
 } from "@schelf/protocol"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
@@ -36,6 +37,7 @@ export const release = sqliteTable(
     extensionAccess: text("extension_access", { mode: "json" }).$type<ExtensionAccess | null>(),
     permissionsWidened: integer("permissions_widened", { mode: "boolean" }).notNull().default(false),
     requires: text("requires", { mode: "json" }).$type<Requires>().notNull(),
+    luftMinimum: text("luft_minimum"),
     status: text("status", {
       enum: [
         "uploading",
@@ -55,6 +57,12 @@ export const release = sqliteTable(
     rolloutSteppedAt: integer("rollout_stepped_at", { mode: "timestamp_ms" }),
     approvedBy: text("approved_by"),
     approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
+    shellReview: text("shell_review", { enum: SHELL_REVIEWS }),
+    shellFiles: text("shell_files", { mode: "json" }).$type<string[]>(),
+    shellReason: text("shell_reason"),
+    shellDecidedBy: text("shell_decided_by"),
+    shellDecidedAt: integer("shell_decided_at", { mode: "timestamp_ms" }),
+    shellItem: text("shell_item"),
     createdAt: createdAt(),
   },
   (table) => [

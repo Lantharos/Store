@@ -1,6 +1,6 @@
 {
   "name": "schelf",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Publish apps and Luft extensions on schelf.store",
   "type": "module",
   "license": "MIT",

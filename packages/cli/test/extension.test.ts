@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
-import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { workflowFor } from "@schelf/protocol"
+import { SCHELF_WORKFLOW, schelfTomlFor, workflowFor } from "@schelf/protocol"
+import { validate } from "../src/check/validate.ts"
 import { detectProject } from "../src/project/detect.ts"
 import { helperBuild } from "../src/setup/helper.ts"
 
@@ -60,4 +61,32 @@ test("an extension without a helper stays one file", async () => {
   expect(workflowFor({ id: "com.lantharos.Rain", kind: "extension", format: "luft-extension" })).toContain(
     "zstd -19 -o dist/com.lantharos.Rain.tar.zst",
   )
+})
+
+test("schelf check asks for the oldest Luft the extension runs on", async () => {
+  const setup = {
+    id: "com.lantharos.Rain",
+    kind: "extension",
+    format: "luft-extension",
+    extensionApi: 1,
+  } as const
+  await writeFile(join(root, "schelf.toml"), schelfTomlFor(setup))
+  await mkdir(join(root, ".github/workflows"), { recursive: true })
+  await writeFile(join(root, SCHELF_WORKFLOW), workflowFor(setup))
+  const luft = async () =>
+    (await validate(await detectProject(root))).issues.filter((issue) => issue.message.includes("Luft"))
+
+  expect(await luft()).toEqual([
+    {
+      level: "error",
+      message: "extension.toml doesn't say the oldest Luft it runs on",
+      hint: 'Add [luft] with minimum = "1.0", or a nightly such as minimum = "1.0-nightly.27".',
+    },
+  ])
+  await writeFile(join(root, "extension.toml"), `${RAIN}\n[luft]\nminimum = "1.2.0"\n`)
+  expect((await luft()).map((issue) => issue.message)).toEqual([
+    "extension.toml [luft] minimum: A Luft version looks like 1.2 or 1.2-nightly.21",
+  ])
+  await writeFile(join(root, "extension.toml"), `${RAIN}\n[luft]\nminimum = "1.0-nightly.27"\n`)
+  expect(await luft()).toEqual([])
 })

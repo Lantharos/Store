@@ -5,6 +5,7 @@
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import { appSettings } from "#lib/dashboard/apps/context.ts"
+  import InsideLuft from "#lib/dashboard/releases/InsideLuft.svelte"
   import Promote from "#lib/dashboard/releases/Promote.svelte"
   import ReleaseFiles from "#lib/dashboard/releases/ReleaseFiles.svelte"
   import ReleaseHeader from "#lib/dashboard/releases/ReleaseHeader.svelte"
@@ -36,6 +37,9 @@
         {#snippet header()}<ReleaseHeader release={detail.data!} />{/snippet}
       </Timeline>
       <div class="space-y-6">
+        {#if detail.data.shell}
+          <InsideLuft appId={id} release={detail.data} shell={detail.data.shell} onchange={(next) => detail.set(next)} />
+        {/if}
         {#if settings.data && (detail.data.status === "live" || detail.data.status === "rolling-out") && session.can("releases")}
           <Promote settings={settings.data} release={detail.data} />
         {/if}

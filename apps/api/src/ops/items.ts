@@ -4,7 +4,7 @@ import { db, schema } from "../db/client.ts"
 import { apps } from "./data/apps.ts"
 import { releases } from "./data/releases.ts"
 import { app } from "./define/app.ts"
-import { listings, reports, submissions, updates } from "./define/inboxes.ts"
+import { inShell, listings, reports, submissions, updates } from "./define/inboxes.ts"
 import { publisher } from "./define/publisher.ts"
 import { release as releaseResource } from "./define/release.ts"
 import { verification } from "./define/verification.ts"
@@ -43,6 +43,21 @@ export async function sendRelease(pult: Pult, releaseId: string, kind: "submissi
     data: { app: release.appId, name: release.name, version: release.version, publisher: release.publisher },
   })
   await db.update(schema.review).set({ pultItem: sent.id }).where(eq(schema.review.releaseId, release.id))
+}
+
+export async function sendShell(pult: Pult, releaseId: string) {
+  const release = await releases.byId(releaseId)
+  if (release?.shellReview !== "waiting") return
+  const sent = await pult.send(inShell, {
+    fingerprint: `${release.id}:shell`,
+    record: release.id,
+    tags: [
+      ...(release.extensionAccess?.helper ? ["helper"] : []),
+      ...(release.channel === "stable" ? [] : [release.channel]),
+    ],
+    data: { app: release.appId, name: release.name, version: release.version, publisher: release.publisher },
+  })
+  await db.update(schema.release).set({ shellItem: sent.id }).where(eq(schema.release.id, release.id))
 }
 
 export async function sendListing(pult: Pult, appId: string) {

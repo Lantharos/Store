@@ -115,7 +115,7 @@ For an AppImage built elsewhere, the workflow runs when a GitHub release is publ
     release-assets: "*.AppImage"
 ```
 
-Extensions are packed from the checked-out tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. Any workflow can publish: add the action as a step at the end of the one that builds, and register that workflow as the trusted publisher.
+Extensions are packed from the checked-out tree with `git archive` into one `.tar.zst`. An extension whose `extension.toml` has a `[helper]` is built on x86_64 and ARM runners instead, with the helper added to each archive, and publishes a `luft-x86_64` and a `luft-aarch64` file; the store refuses a lone `luft` file for it. The store also refuses an extension release whose `extension.toml` doesn't name the oldest Luft it runs on in `[luft] minimum`, before anything uploads, and `schelf check` says so first. Any workflow can publish: add the action as a step at the end of the one that builds, and register that workflow as the trusted publisher.
 
 The `publish` action:
 

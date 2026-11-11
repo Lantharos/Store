@@ -69,10 +69,10 @@ export async function appAccess(viewer: Viewer, id: string, ability?: Ability) {
 }
 
 export async function releaseAccess(viewer: Viewer, appId: string, releaseId: string, ability?: Ability) {
-  const { app } = await appAccess(viewer, appId, ability)
+  const { app, publisher } = await appAccess(viewer, appId, ability)
   const release = await db.query.release.findFirst({
     where: and(eq(schema.release.id, releaseId), eq(schema.release.appId, app.id)),
   })
   if (!release) fail(404, "That release doesn't exist")
-  return { app, release }
+  return { app, publisher, release }
 }

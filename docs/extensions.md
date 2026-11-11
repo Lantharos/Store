@@ -11,7 +11,7 @@ The differences:
 |                   | Apps                            | Extensions                                                                                                                                                   |
 | ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Artifact          | Per system                      | One `luft` artifact (a `.tar.zst` of the extension folder), or `luft-x86_64` and `luft-aarch64` when it ships a native helper                                |
-| Requires          | Sabine version, system minimums | The Kestrel extension API version from the extension's manifest; Schelf offers the newest release whose API the installed Luft supports                      |
+| Requires          | Sabine version, system minimums | The Kestrel extension API version and the oldest Luft, `[luft] minimum`, from the extension's manifest; Schelf offers the newest release this Luft can run   |
 | Permissions       | Luft's shared permission format | The extension API's own permission list from `extension.toml`, which `schelf.toml` names as its `permissions` file, and whether it runs a helper program     |
 | Where it's listed | Everywhere                      | Only on `/extensions` on the website and in the Schelf app on Luft. The catalog marks it `kind: "extension"`, and every other client and list leaves it out. |
 | Installs          | Counted per system              | Counted under `luft`                                                                                                                                         |
@@ -20,8 +20,17 @@ The differences:
 
 - The manifest parses and its id matches the app id.
 - It targets an extension API version Luft has shipped.
+- `extension.toml` names the oldest Luft it runs on as `[luft] minimum`, such as `1.2` or `1.2-nightly.21`, or the release is refused before anything uploads. The store keeps it on the release and signs it into the index as `requires.luft`.
 - Native helpers are listed in the manifest and scanned like any binary.
 - The store reads the permission list and `[helper]` from `extension.toml` and shows them in plain words: `wallpaper` "Draw over the wallpaper", `quick-settings` "Add tiles to quick settings", `taskbar` "Add buttons to the taskbar", `search` "Add results to search", `notifications` "Send notifications", `weather` "See the weather where you are", `location` "See roughly where you are", `media` "See and control what's playing", `popups` "Show panels and small windows", `typing` "Type into other apps", `sounds` "Play sounds", `audio-levels` "Follow the beat of what's playing", `calls` "Know when you're in a call", `locked-sounds` "Keep playing sounds while the screen is locked", `do-not-disturb` "Hold back notifications for a while", the hosts under `[network]` as "Connect to app.example.com", and a helper as "Runs its own program". A permission the extension API doesn't have is refused, and a release that asks for a new one, connects to a new host or adds a helper goes to the Updates inbox tagged `permissions`, like an app's.
+
+## Older versions of Luft
+
+An app's index lists the newest five releases of each channel and, for extensions, also the newest release for each `requires.luft` seen on that channel. Schelf on Luft takes the highest version on the channel it follows that its Kestrel API and Luft version can run, so a computer that hasn't updated Luft keeps getting the last release that runs on it.
+
+## Running inside Luft
+
+Each extension release in the index says `runs_in_shell`, which is only true when the publisher is verified and the owner approved that release's exact files to run inside Luft's desktop ([review](review.md#inside-luft)). Luft doesn't run any other extension yet; running them apart from the desktop comes later. The website says which on the extension's page, and the dashboard shows the state of each release with the reason for a refusal.
 
 ## Luft's own extensions
 

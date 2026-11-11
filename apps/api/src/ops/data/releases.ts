@@ -12,6 +12,7 @@ function releaseQuery() {
       publisherId: schema.app.publisherId,
       publisher: schema.publisher.name,
       publisherSlug: schema.publisher.slug,
+      publisherVerifiedAt: schema.publisher.verifiedAt,
       repository: schema.app.repository,
       slug: schema.app.slug,
       visibility: schema.app.visibility,
@@ -28,8 +29,8 @@ function releaseQuery() {
 
 type Row = Awaited<ReturnType<ReturnType<typeof releaseQuery>["execute"]>>[number]
 
-function view({ release, name, ...app }: Row) {
-  return { ...release, ...app, name: name ?? release.appId }
+function view({ release, name, publisherVerifiedAt, ...app }: Row) {
+  return { ...release, ...app, publisherVerified: publisherVerifiedAt !== null, name: name ?? release.appId }
 }
 
 export type ReleaseView = ReturnType<typeof view>

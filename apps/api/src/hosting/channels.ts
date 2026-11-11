@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm"
 import { db, insertRows, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
-import { recordHistory } from "../ops/events.ts"
+import { recordHistory, tellOps } from "../ops/events.ts"
 import { routeRelease } from "../releases/review.ts"
 import { resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
@@ -114,6 +114,7 @@ export async function promote(release: ReleaseRow, channel: string, by: string, 
       rolloutSteppedAt: null,
       approvedBy: null,
       approvedAt: null,
+      shellItem: null,
       createdAt: new Date(),
     }),
     ...insertRows(
@@ -126,6 +127,7 @@ export async function promote(release: ReleaseRow, channel: string, by: string, 
     ),
   ])
   recordHistory("release", id, `Promoted from ${release.channel}`, by)
+  if (release.shellReview === "waiting") tellOps({ type: "shell", release: id })
   await routeRelease(id)
   return id
 }

@@ -16,6 +16,7 @@ import {
   type Unstamped,
 } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
+import { runsInShell } from "../releases/shell-files.ts"
 import {
   type AppRecord,
   englishListing,
@@ -81,7 +82,10 @@ function indexedRelease(
     permissions: release.permissions,
     extension: release.extensionAccess,
     access: accessFor(record, release),
-    requires: release.requires,
+    requires: release.luftMinimum ? { ...release.requires, luft: release.luftMinimum } : release.requires,
+    ...(record.app.kind === "extension" && {
+      runs_in_shell: runsInShell(release, artifacts, record.publisher.verified),
+    }),
     provenance: {
       origin: release.origin === "oidc" ? "github-actions" : "developer",
       repository: record.app.repository,

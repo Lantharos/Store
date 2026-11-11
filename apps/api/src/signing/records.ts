@@ -61,12 +61,16 @@ function groupBy<T, K>(rows: T[], keyOf: (row: T) => K) {
   return groups
 }
 
-function newestPerChannel(releases: ReleaseRow[]) {
+function listedPerChannel(releases: ReleaseRow[]) {
   const seen = new Map<string, number>()
+  const minimums = new Set<string>()
   return releases.filter((release) => {
     const count = seen.get(release.channel) ?? 0
     seen.set(release.channel, count + 1)
-    return count < INDEXED_RELEASES
+    const minimum = `${release.channel} ${release.luftMinimum}`
+    const newestForItsLuft = release.luftMinimum !== null && !minimums.has(minimum)
+    minimums.add(minimum)
+    return count < INDEXED_RELEASES || newestForItsLuft
   })
 }
 
@@ -127,7 +131,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
     releases.filter((release) => !blocked.releases.has(release.id)),
     (release) => release.appId,
   )
-  const indexed = [...shipped.values()].flatMap(newestPerChannel)
+  const indexed = [...shipped.values()].flatMap(listedPerChannel)
   const artifacts = groupBy(
     indexed.length
       ? await db
@@ -174,7 +178,7 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
       screenshots: screenshotsByApp.get(app.id) ?? [],
       releases: blocked.apps.has(app.id)
         ? []
-        : newestPerChannel(shipped.get(app.id) ?? []).map((release) => ({
+        : listedPerChannel(shipped.get(app.id) ?? []).map((release) => ({
             release,
             artifacts: (artifacts.get(release.id) ?? []).map((artifact) => ({
               ...artifact,

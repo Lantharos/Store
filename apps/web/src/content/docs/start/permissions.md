@@ -48,3 +48,7 @@ Sabine apps run with full access on every system for now, because Sabine can't s
 ## Changing permissions in an update
 
 Narrowing what you ask for needs nothing. Widening it, like adding a folder, the microphone or the network, sends the update to review with a note, and Schelf asks each person before installing it. Until they agree, they stay on the version they have. So ask for what you need in the first release rather than adding it bit by bit.
+
+## Extensions
+
+Luft extensions don't use this format. They list what they use from the extension API in `extension.toml`, and the store page shows that list in the same plain words. Inside Luft's desktop those permissions describe the API rather than wall the extension off, which is why an extension only runs there once Luft has reviewed the release ([running inside Luft](/docs/luft-extensions#running-inside-luft)).

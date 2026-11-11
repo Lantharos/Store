@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { extensionAccess } from "../extensions.ts"
+import { luftVersion } from "../luft.ts"
 import { requires } from "../manifest.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
@@ -64,7 +65,8 @@ export const indexedRelease = z.object({
   permissions: permissions.nullable(),
   extension: extensionAccess.nullable(),
   access,
-  requires,
+  requires: requires.extend({ luft: luftVersion.optional() }),
+  runs_in_shell: z.boolean().optional(),
   provenance,
   artifacts: z.array(artifact),
 })

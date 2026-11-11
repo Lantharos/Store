@@ -11,7 +11,7 @@
   },
   "resources": {
     "app": {
-      "source": "src/ops/define/app.ts:34",
+      "source": "src/ops/define/app.ts:35",
       "label": "App",
       "plural": "Apps",
       "icon": "box",
@@ -56,7 +56,7 @@
       },
       "actions": {
         "list": {
-          "source": "src/ops/define/app.ts:109",
+          "source": "src/ops/define/app.ts:112",
           "label": "List it",
           "description": "Puts the project in the catalog, search and the Schelf app.",
           "danger": "confirm",
@@ -72,7 +72,7 @@
           "schedule": null
         },
         "keepUnlisted": {
-          "source": "src/ops/define/app.ts:120",
+          "source": "src/ops/define/app.ts:123",
           "label": "Keep unlisted",
           "description": "Declines the request to be listed and tells the publisher why. The project keeps working as it is.",
           "danger": "confirm",
@@ -101,7 +101,7 @@
           "schedule": null
         },
         "delist": {
-          "source": "src/ops/define/app.ts:133",
+          "source": "src/ops/define/app.ts:136",
           "label": "Delist",
           "description": "Hides the app from the catalog and search. Installs and updates keep working.",
           "danger": "confirm",
@@ -116,10 +116,45 @@
           "choices": [],
           "schedule": null
         },
+        "replace": {
+          "source": "src/ops/define/app.ts:145",
+          "label": "Replace with…",
+          "description": "Delists the app and points it to the one that takes its place. Schelf installs that one for people who have this one, then removes this one.",
+          "danger": "confirm",
+          "input": {
+            "type": "object",
+            "properties": {
+              "replacement": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The id of the listed app that takes its place"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300,
+                "description": "Shown on the app's page and in Schelf"
+              }
+            },
+            "required": [
+              "replacement",
+              "note"
+            ]
+          },
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": null,
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
         "relist": {
-          "source": "src/ops/define/app.ts:142",
+          "source": "src/ops/define/app.ts:160",
           "label": "List again",
-          "description": "Shows the app in the catalog and search again.",
+          "description": "Shows the app in the catalog and search again, and drops any replacement.",
           "danger": "confirm",
           "input": null,
           "preview": false,
@@ -133,7 +168,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/app.ts:152",
+          "source": "src/ops/define/app.ts:170",
           "label": "Pull",
           "description": "Stops every version from installing and starting, delists the app and shows the note to people who have it.",
           "danger": "reauth",
@@ -169,7 +204,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/app.ts:163",
+          "source": "src/ops/define/app.ts:181",
           "label": "Undo pull",
           "description": "Lets the app install and start again and lists it.",
           "danger": "reauth",
@@ -185,7 +220,7 @@
           "schedule": null
         },
         "revokeToken": {
-          "source": "src/ops/define/app.ts:173",
+          "source": "src/ops/define/app.ts:191",
           "label": "Revoke a token",
           "description": "Stops one upload token from publishing. The developer can make a new one.",
           "danger": "confirm",
@@ -213,7 +248,7 @@
           "schedule": null
         },
         "removeTrustedPublisher": {
-          "source": "src/ops/define/app.ts:199",
+          "source": "src/ops/define/app.ts:217",
           "label": "Remove a trusted publisher",
           "description": "Stops one workflow from publishing until the developer adds it again.",
           "danger": "confirm",
@@ -243,7 +278,7 @@
       }
     },
     "publisher": {
-      "source": "src/ops/define/publisher.ts:22",
+      "source": "src/ops/define/publisher.ts:23",
       "label": "Publisher",
       "plural": "Publishers",
       "icon": "building",
@@ -280,7 +315,7 @@
       },
       "actions": {
         "approveVerification": {
-          "source": "src/ops/define/publisher.ts:56",
+          "source": "src/ops/define/publisher.ts:57",
           "label": "Verify",
           "description": "Gives the publisher the verified mark on its page, its apps and in the Schelf app.",
           "danger": "confirm",
@@ -296,7 +331,7 @@
           "schedule": null
         },
         "askForMore": {
-          "source": "src/ops/define/publisher.ts:64",
+          "source": "src/ops/define/publisher.ts:65",
           "label": "Ask for more",
           "description": "Sends the owners a message they answer in the dashboard; their answer comes back here.",
           "danger": "none",
@@ -324,7 +359,7 @@
           "schedule": null
         },
         "rejectVerification": {
-          "source": "src/ops/define/publisher.ts:72",
+          "source": "src/ops/define/publisher.ts:73",
           "label": "Decline verification",
           "description": "Declines the request and emails the reason. They can ask again later.",
           "danger": "confirm",
@@ -353,7 +388,7 @@
           "schedule": null
         },
         "checkAgain": {
-          "source": "src/ops/define/publisher.ts:81",
+          "source": "src/ops/define/publisher.ts:82",
           "label": "Check again",
           "description": "Runs the domain, email, GitHub and impersonation checks again and refreshes the request.",
           "danger": "none",
@@ -369,7 +404,7 @@
           "schedule": null
         },
         "revokeVerification": {
-          "source": "src/ops/define/publisher.ts:87",
+          "source": "src/ops/define/publisher.ts:88",
           "label": "Revoke verification",
           "description": "Removes the verified mark and emails the reason.",
           "danger": "reauth",
@@ -397,8 +432,24 @@
           "choices": [],
           "schedule": null
         },
+        "allowExtensionsInShell": {
+          "source": "src/ops/define/publisher.ts:96",
+          "label": "Let its extensions run inside Luft",
+          "description": "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases each need their own approval.",
+          "danger": "reauth",
+          "input": null,
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": null,
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
         "suspend": {
-          "source": "src/ops/define/publisher.ts:95",
+          "source": "src/ops/define/publisher.ts:104",
           "label": "Suspend",
           "description": "Stops the publisher from publishing or changing listings. Listed apps stay listed.",
           "danger": "reauth",
@@ -414,7 +465,7 @@
           "schedule": null
         },
         "reinstate": {
-          "source": "src/ops/define/publisher.ts:104",
+          "source": "src/ops/define/publisher.ts:113",
           "label": "Reinstate",
           "description": "Lets the publisher publish and change listings again.",
           "danger": "confirm",
@@ -430,7 +481,7 @@
           "schedule": null
         },
         "removePublishers": {
-          "source": "src/ops/define/publisher.ts:113",
+          "source": "src/ops/define/publisher.ts:122",
           "label": "Remove all trusted publishers",
           "description": "Stops every workflow of this publisher from publishing until they add them again.",
           "danger": "reauth",
@@ -446,7 +497,7 @@
           "schedule": null
         },
         "revokeTokens": {
-          "source": "src/ops/define/publisher.ts:124",
+          "source": "src/ops/define/publisher.ts:133",
           "label": "Revoke all tokens",
           "description": "Stops every upload token of this publisher. They can make new ones.",
           "danger": "reauth",
@@ -462,7 +513,7 @@
           "schedule": null
         },
         "grantNamespace": {
-          "source": "src/ops/define/publisher.ts:137",
+          "source": "src/ops/define/publisher.ts:146",
           "label": "Grant a namespace",
           "description": "Gives the publisher a namespace without a proof, taking it from whoever holds it, after a dispute.",
           "danger": "confirm",
@@ -492,7 +543,7 @@
       }
     },
     "release": {
-      "source": "src/ops/define/release.ts:23",
+      "source": "src/ops/define/release.ts:30",
       "label": "Release",
       "plural": "Releases",
       "icon": "package",
@@ -522,7 +573,7 @@
       "related": {},
       "actions": {
         "approve": {
-          "source": "src/ops/define/release.ts:43",
+          "source": "src/ops/define/release.ts:50",
           "label": "Approve",
           "description": "Signs the release into the index and the update feeds and starts the rollout at 10%.",
           "danger": "confirm",
@@ -538,7 +589,7 @@
           "schedule": null
         },
         "approveSecurityFix": {
-          "source": "src/ops/define/release.ts:50",
+          "source": "src/ops/define/release.ts:57",
           "label": "Approve as a security fix",
           "description": "Approves the release and sends it to everyone at once.",
           "danger": "confirm",
@@ -554,7 +605,7 @@
           "schedule": null
         },
         "requestChanges": {
-          "source": "src/ops/define/release.ts:58",
+          "source": "src/ops/define/release.ts:65",
           "label": "Ask for changes",
           "description": "Sends the developer a message; they fix it and publish again.",
           "danger": "none",
@@ -582,7 +633,7 @@
           "schedule": null
         },
         "reject": {
-          "source": "src/ops/define/release.ts:67",
+          "source": "src/ops/define/release.ts:74",
           "label": "Reject",
           "description": "Rejects the release and sends the developer the reason as a statement of reasons.",
           "danger": "confirm",
@@ -609,8 +660,53 @@
           "choices": [],
           "schedule": null
         },
+        "allowInShell": {
+          "source": "src/ops/define/release.ts:83",
+          "label": "Let it run inside Luft",
+          "description": "Approves these exact files to run inside Luft's desktop and signs the app's index again. A new release needs its own approval.",
+          "danger": "confirm",
+          "input": null,
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": "runs inside Luft",
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
+        "refuseInShell": {
+          "source": "src/ops/define/release.ts:92",
+          "label": "Refuse to run inside Luft",
+          "description": "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable.",
+          "danger": "confirm",
+          "input": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "description": "The developer sees it"
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "preview": false,
+          "automatable": false,
+          "approval": false,
+          "contextual": true,
+          "background": false,
+          "moves": "refused",
+          "pick": {},
+          "choices": [],
+          "schedule": null
+        },
         "pause": {
-          "source": "src/ops/define/release.ts:76",
+          "source": "src/ops/define/release.ts:102",
           "label": "Pause rollout",
           "description": "Keeps the rollout where it is until it's resumed.",
           "danger": "confirm",
@@ -626,7 +722,7 @@
           "schedule": null
         },
         "resume": {
-          "source": "src/ops/define/release.ts:83",
+          "source": "src/ops/define/release.ts:109",
           "label": "Resume rollout",
           "danger": "none",
           "input": null,
@@ -641,7 +737,7 @@
           "schedule": null
         },
         "sendToEveryone": {
-          "source": "src/ops/define/release.ts:88",
+          "source": "src/ops/define/release.ts:114",
           "label": "Send to everyone",
           "description": "Skips the remaining rollout steps.",
           "danger": "confirm",
@@ -657,7 +753,7 @@
           "schedule": null
         },
         "setRollout": {
-          "source": "src/ops/define/release.ts:95",
+          "source": "src/ops/define/release.ts:121",
           "label": "Set rollout",
           "description": "Offers the release to this share of devices.",
           "danger": "confirm",
@@ -685,7 +781,7 @@
           "schedule": null
         },
         "rollback": {
-          "source": "src/ops/define/release.ts:104",
+          "source": "src/ops/define/release.ts:130",
           "label": "Roll back",
           "description": "Withdraws the release; devices are offered the version before it.",
           "danger": "confirm",
@@ -701,7 +797,7 @@
           "schedule": null
         },
         "pull": {
-          "source": "src/ops/define/release.ts:111",
+          "source": "src/ops/define/release.ts:137",
           "label": "Pull",
           "description": "Stops this version from installing and starting on every device and shows the note to people who have it.",
           "danger": "reauth",
@@ -737,7 +833,7 @@
           "schedule": null
         },
         "unpull": {
-          "source": "src/ops/define/release.ts:122",
+          "source": "src/ops/define/release.ts:148",
           "label": "Undo pull",
           "description": "Lets this version install and start again.",
           "danger": "reauth",
@@ -753,7 +849,7 @@
           "schedule": null
         },
         "askClaude": {
-          "source": "src/ops/define/release.ts:132",
+          "source": "src/ops/define/release.ts:158",
           "label": "Review with Claude",
           "description": "Shows the command that installs and tries the app in a throwaway VM.",
           "danger": "none",
@@ -825,7 +921,7 @@
     "resign-everything": {
       "source": "src/ops/define/store.ts:6",
       "label": "Re-sign the index",
-      "description": "Signs every index file, update feed and the revocation list again with the current store key.",
+      "description": "Signs every index file, mirror catalog, update feed and the revocation list again with the current store key.",
       "danger": "confirm",
       "input": null,
       "preview": false,
@@ -840,8 +936,61 @@
     }
   },
   "inboxes": {
-    "listings": {
+    "inside-luft": {
       "source": "src/ops/define/inboxes.ts:128",
+      "label": "Inside Luft",
+      "icon": "shield",
+      "resource": "release",
+      "layout": "list",
+      "states": [
+        "open",
+        "runs inside Luft",
+        "refused"
+      ],
+      "closed": [
+        "runs inside Luft",
+        "refused"
+      ],
+      "reopen": [],
+      "data": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "app",
+          "name",
+          "version",
+          "publisher"
+        ]
+      },
+      "columns": [
+        "title",
+        "lastSeen"
+      ],
+      "intake": null,
+      "triage": null,
+      "reply": false,
+      "hooks": {
+        "state": false
+      },
+      "sla": {
+        "open": 259200000
+      }
+    },
+    "listings": {
+      "source": "src/ops/define/inboxes.ts:143",
       "label": "Listings",
       "icon": "list",
       "resource": "app",
@@ -990,7 +1139,7 @@
       }
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:147",
+      "source": "src/ops/define/inboxes.ts:162",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
@@ -1668,5 +1817,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "fcc930ae2925"
+  "version": "71f668ac8776"
 }

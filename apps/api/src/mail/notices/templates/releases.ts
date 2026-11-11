@@ -2,7 +2,15 @@ import { link, SUPPORT } from "../links.ts"
 import { type AppSummary, app, button, type Part, paragraph, quote } from "../parts.ts"
 import type { Mail } from "../render.ts"
 
-export type ReleaseOutcome = "failed" | "approved" | "changes-requested" | "rejected" | "pulled" | "live"
+export type ReleaseOutcome =
+  | "failed"
+  | "approved"
+  | "changes-requested"
+  | "rejected"
+  | "pulled"
+  | "live"
+  | "inside-luft"
+  | "not-inside-luft"
 
 export interface ReleaseData extends AppSummary {
   appId: string
@@ -68,6 +76,21 @@ function copyFor(outcome: ReleaseOutcome, { name, version, rolloutPercent }: Rel
         subject: `${release} is out to everyone`,
         heading: `${release} is out to everyone`,
         lead: `The rollout is done, so every device with ${name} is offered ${version} now.`,
+      }
+    case "inside-luft":
+      return {
+        subject: `${release} runs inside Luft`,
+        heading: `${release} runs inside Luft`,
+        lead: "Luft reviewed this release, so it runs inside Luft's desktop on every computer that installs it. Each new release is reviewed again.",
+      }
+    case "not-inside-luft":
+      return {
+        subject: `${release} won't run inside Luft`,
+        heading: `${release} won't run inside Luft`,
+        lead: "Luft reviewed this release and decided it can't run inside Luft's desktop, for this reason:",
+        after:
+          "It stays on Schelf, just not inside Luft's desktop. If something isn't clear, reply to this email.",
+        answerable: true,
       }
   }
 }

@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { type AppIndex, type Installs, refName } from "@schelf/protocol"
+  import { type AppIndex, type Installs, luftVersionLabel, refName } from "@schelf/protocol"
   import { count, date } from "../../format.ts"
   import { systemsOf } from "../../system/artifacts.ts"
 
   let { app, installs }: { app: AppIndex; installs: Installs } = $props()
 
   const latest = $derived(app.releases.find((release) => release.channel === "stable"))
+  const extension = $derived(app.kind === "extension" ? latest : undefined)
   const systems = $derived(systemsOf(latest?.artifacts.map((artifact) => artifact.platform) ?? []))
   const repository = $derived(app.repository?.replace(/^https?:\/\//, ""))
   const built = $derived(
@@ -28,6 +29,14 @@
     <dd>{latest.version}</dd>
     <dt class="text-ink-muted">Updated</dt>
     <dd><time datetime={latest.published}>{date(latest.published)}</time></dd>
+  {/if}
+  {#if extension?.requires.luft}
+    <dt class="text-ink-muted">Needs</dt>
+    <dd>{luftVersionLabel(extension.requires.luft)} or newer</dd>
+  {/if}
+  {#if extension}
+    <dt class="text-ink-muted">Runs</dt>
+    <dd>{extension.runs_in_shell && app.publisher.verified ? "Inside Luft, reviewed by Luft" : "Not reviewed yet, so Luft won’t run it"}</dd>
   {/if}
   {#if built}
     <dt class="text-ink-muted">Built</dt>

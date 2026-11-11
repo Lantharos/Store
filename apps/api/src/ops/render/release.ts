@@ -1,7 +1,7 @@
 import { b } from "@lantharos/pult"
-import { CHECK_TITLES } from "@schelf/protocol"
+import { CHECK_TITLES, extensionLabels, luftVersionLabel } from "@schelf/protocol"
 import { fileUrl } from "../../signing/records.ts"
-import { CHECK_RESULT, ORIGIN, RELEASE_STATUS, SOURCE, VISIBILITY } from "../data/labels.ts"
+import { CHECK_RESULT, ORIGIN, RELEASE_STATUS, SHELL_REVIEW, SOURCE, VISIBILITY } from "../data/labels.ts"
 import { appPage, link } from "../data/links.ts"
 import { type ReleaseView, releases } from "../data/releases.ts"
 import { checkDetailBlocks, factBlocks } from "./facts.ts"
@@ -37,6 +37,29 @@ function provenance(release: ReleaseView) {
   }
 }
 
+function extensionFields(release: ReleaseView) {
+  if (release.kind !== "extension") return {}
+  return {
+    "needs Luft": release.luftMinimum ? `${luftVersionLabel(release.luftMinimum)} or newer` : "Any",
+    "inside Luft": release.shellReview ? SHELL_REVIEW[release.shellReview] : "Not asked for",
+    "refused because": release.shellReview === "refused" ? (release.shellReason ?? undefined) : undefined,
+    "can do": release.extensionAccess
+      ? extensionLabels(release.extensionAccess).join(", ") || "Nothing beyond the basics"
+      : undefined,
+  }
+}
+
+export async function shellBlocks(release: ReleaseView) {
+  return [
+    b.markdown(
+      release.publisherVerified
+        ? "Approving lets these exact files run inside Luft's desktop, in Kestrel's own process, where the permissions describe the API but don't wall it off. Read the source changes and the helper, if there is one, before you approve."
+        : "The publisher isn't verified any more, so this release can't run inside Luft whatever is decided here.",
+    ),
+    ...(await releaseBlocks(release)),
+  ]
+}
+
 export async function releaseBlocks(release: ReleaseView) {
   const [checks, artifacts, reviews, block] = await Promise.all([
     releases.checks(release.id),
@@ -49,6 +72,7 @@ export async function releaseBlocks(release: ReleaseView) {
     b.fields({
       app: b.ref("app", release.appId, release.name),
       publisher: b.ref("publisher", release.publisherId, release.publisher),
+      verified: release.publisherVerified,
       version: release.version,
       channel: release.channel === "stable" ? undefined : release.channel,
       project: `${VISIBILITY[release.visibility]}, ${SOURCE[release.distribution].toLowerCase()}`,
@@ -60,6 +84,7 @@ export async function releaseBlocks(release: ReleaseView) {
       "pulled because": block?.reason,
       "public note": block?.publicNote ?? undefined,
       ...provenance(release),
+      ...extensionFields(release),
       "wider permissions": release.permissionsWidened ? "Asks for more than the release before" : undefined,
       approved: release.approvedAt
         ? `${release.approvedAt.toISOString().slice(0, 10)} by ${release.approvedBy}`

@@ -129,7 +129,7 @@ hostingRoutes.post("/:id/uploads", async (c) => {
         format,
       }),
       format,
-      declared: { permissions: null, extensionAccess: null },
+      declared: { permissions: null, extensionAccess: null, luftMinimum: null },
       requires: {},
       channel: input.channel,
       bridge: input.bridge,

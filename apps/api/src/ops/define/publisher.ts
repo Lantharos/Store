@@ -3,6 +3,7 @@ import { PUBLISHER_KINDS } from "@schelf/protocol"
 import { and, eq, inArray, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { db, schema } from "../../db/client.ts"
+import { allowPublisherInShell } from "../../releases/shell.ts"
 import { approve, askForMore, recheck, reject, revoke } from "../../verification/decisions.ts"
 import { apps } from "../data/apps.ts"
 import { PUBLISHER_KIND, PUBLISHER_STATUS } from "../data/labels.ts"
@@ -91,6 +92,14 @@ export const publisher = resource("publisher", {
       danger: "reauth",
       when: (publisher) => publisher.verifiedAt !== null,
       run: ({ record, input, actor }) => revoke(record.id, actor.name, input.reason),
+    }),
+    allowExtensionsInShell: action({
+      label: "Let its extensions run inside Luft",
+      description:
+        "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases each need their own approval.",
+      danger: "reauth",
+      when: (publisher) => publisher.verifiedAt !== null,
+      run: ({ record, actor }) => allowPublisherInShell(record.id, actor.name),
     }),
     suspend: action({
       description: "Stops the publisher from publishing or changing listings. Listed apps stay listed.",

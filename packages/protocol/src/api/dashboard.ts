@@ -9,6 +9,7 @@ import {
   channelName,
   type Origin,
   type ReleaseStatus,
+  type ShellReview,
   type Updater,
   updater,
 } from "../releases.ts"
@@ -309,12 +310,22 @@ export type TimelineStep =
   | { kind: "review"; at: string; decision: string | null; reason: string | null }
   | { kind: "rollout"; at: string; percent: number; paused: boolean }
 
+export interface ShellStatus {
+  review: ShellReview | null
+  runs_in_shell: boolean
+  reason: string | null
+  verified: boolean
+  requestable: boolean
+}
+
 export interface ReleaseDetail extends ReleaseSummary {
   notes: string
   commit: string | null
   run_url: string | null
   permissions: Permissions | null
   permissions_widened: boolean
+  luft: string | null
+  shell: ShellStatus | null
   artifacts: {
     platform: Platform
     kind: z.infer<typeof artifactKind>

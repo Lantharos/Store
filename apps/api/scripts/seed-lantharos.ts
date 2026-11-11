@@ -1,6 +1,14 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { type ListingFile, paths, rasterIcon, readListingFile, sha256Hex, slugFromId } from "@schelf/protocol"
+import {
+  type ListingFile,
+  paths,
+  rasterIcon,
+  readListingFile,
+  readLuftMinimum,
+  sha256Hex,
+  slugFromId,
+} from "@schelf/protocol"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
 import { sniffImage } from "../src/dashboard/apps/images.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
@@ -72,6 +80,7 @@ function readManifest(folder: string) {
     format: extension ? "luft-extension" : "sabine",
     icon: `${folder}/${extension ? "icon.svg" : field("icon")}`,
     keywords: listFrom(text, "keywords"),
+    luft: extension ? readLuftMinimum(text) : null,
   }
 }
 
@@ -138,6 +147,11 @@ for (const folder of folders) {
      ON CONFLICT (app_id, locale) DO UPDATE SET name = excluded.name, summary = excluded.summary, description = excluded.description, keywords = excluded.keywords, sources = excluded.sources;`,
     `INSERT INTO listing_meta (app_id, icon_key, categories, homepage, support, privacy_url, brand_color, sources) VALUES (${sql(manifest.id)}, ${sql(icon.key)}, ${sql(JSON.stringify(listing.categories))}, ${sql(listing.homepage)}, ${sql(listing.support)}, ${sql(listing.privacy_url)}, ${sql(listing.brand_color)}, ${sql(metaSources)})
      ON CONFLICT (app_id) DO UPDATE SET icon_key = excluded.icon_key, categories = excluded.categories, homepage = excluded.homepage, support = excluded.support, privacy_url = excluded.privacy_url, brand_color = excluded.brand_color, sources = excluded.sources;`,
+    ...(manifest.luft
+      ? [
+          `UPDATE release SET luft_minimum = ${sql(manifest.luft)} WHERE app_id = ${sql(manifest.id)} AND luft_minimum IS NULL;`,
+        ]
+      : []),
     `DELETE FROM screenshot WHERE app_id = ${sql(manifest.id)};`,
     `DELETE FROM search WHERE key = ${sql(`schelf:${manifest.id}`)};`,
     `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(listing.summary)}, ${sql(keywords.join(" "))}, ${sql(PUBLISHER.name)});`,

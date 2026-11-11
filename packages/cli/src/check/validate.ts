@@ -5,6 +5,7 @@ import {
   extensionLabels,
   LISTING_TOML,
   type ListingFile,
+  luftVersion,
   type Permissions,
   PUBLISH_ACTION,
   readExtensionAccess,
@@ -69,6 +70,21 @@ async function listingFileIn(root: string, folder: string | undefined, issues: I
     : parse<ListingFile>(LISTING_TOML, () => readListingFile(text), issues)
 }
 
+function luftIssues(minimum: unknown): Issue[] {
+  if (minimum === undefined)
+    return [
+      {
+        level: "error",
+        message: "extension.toml doesn't say the oldest Luft it runs on",
+        hint: 'Add [luft] with minimum = "1.0", or a nightly such as minimum = "1.0-nightly.27".',
+      },
+    ]
+  const read = luftVersion.safeParse(minimum)
+  return read.success
+    ? []
+    : [{ level: "error", message: `extension.toml [luft] minimum: ${read.error.issues[0]!.message}` }]
+}
+
 function identityIssues(project: Project, manifest: SchelfToml): Issue[] {
   const issues: Issue[] = []
   const declared = [
@@ -93,6 +109,7 @@ function identityIssues(project: Project, manifest: SchelfToml): Issue[] {
       level: "error",
       message: `extension.toml targets extension API ${project.extension.api}, schelf.toml requires ${manifest.requires.extension_api}`,
     })
+  if (project.extension) issues.push(...luftIssues(project.extension.luft))
   if (manifest.format === "sabine" && project.sabine?.updatesProvider !== "schelf")
     issues.push({
       level: "warning",

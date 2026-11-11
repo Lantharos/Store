@@ -10,7 +10,7 @@ import { appName } from "../../storefront/report-mail.ts"
 import { REPORT_KIND } from "../data/labels.ts"
 import { releases } from "../data/releases.ts"
 import { emailHint } from "../render/publisher.ts"
-import { releaseBlocks } from "../render/release.ts"
+import { releaseBlocks, shellBlocks } from "../render/release.ts"
 import { app } from "./app.ts"
 import { release } from "./release.ts"
 
@@ -123,6 +123,21 @@ export const updates = inbox("updates", {
     ],
   }),
   render: (item) => renderRelease(item.record),
+})
+
+export const inShell = inbox("inside-luft", {
+  label: "Inside Luft",
+  icon: "shield",
+  resource: release,
+  states: ["open", "runs inside Luft", "refused"],
+  closed: ["runs inside Luft", "refused"],
+  sla: { open: "3d" },
+  data: releaseData,
+  title: (data) => `${data.name} ${data.version} from ${data.publisher} asks to run inside Luft`,
+  render: async (item) => {
+    const current = item.record ? await releases.byId(item.record) : null
+    return current ? shellBlocks(current) : [b.markdown("This release no longer exists.")]
+  },
 })
 
 export const listings = inbox("listings", {

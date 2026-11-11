@@ -4,6 +4,7 @@ import { z } from "zod"
 import { pull, unpull } from "../../releases/moderation.ts"
 import { approve, reject, requestChanges } from "../../releases/review.ts"
 import { controlRollout } from "../../releases/rollout.ts"
+import { allowInShell, refuseShell } from "../../releases/shell.ts"
 import { RELEASE_STATUS } from "../data/labels.ts"
 import { appPage } from "../data/links.ts"
 import { type ReleaseView, releases } from "../data/releases.ts"
@@ -19,6 +20,12 @@ const waiting = (release: ReleaseView) => release.status === "in-review"
 const rolling = (release: ReleaseView) => release.status === "rolling-out"
 const shipped = (release: ReleaseView) => release.status === "rolling-out" || release.status === "live"
 const pullable = (release: ReleaseView) => shipped(release) || release.status === "withdrawn"
+const extension = (release: ReleaseView) => release.kind === "extension"
+const shellApprovable = (release: ReleaseView) =>
+  extension(release) &&
+  release.publisherVerified &&
+  release.shellReview !== "approved" &&
+  (waiting(release) || shipped(release))
 
 export const release = resource("release", {
   icon: "package",
@@ -72,6 +79,25 @@ export const release = resource("release", {
       moves: "rejected",
       automatable: true,
       run: ({ record, input, actor }) => reject(record.id, actor.name, input.reason),
+    }),
+    allowInShell: action({
+      label: "Let it run inside Luft",
+      description:
+        "Approves these exact files to run inside Luft's desktop and signs the app's index again. A new release needs its own approval.",
+      danger: "confirm",
+      when: shellApprovable,
+      moves: "runs inside Luft",
+      run: ({ record, actor }) => allowInShell(record.id, actor.name),
+    }),
+    refuseInShell: action({
+      label: "Refuse to run inside Luft",
+      description:
+        "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable.",
+      input: z.object({ reason: z.string().trim().min(1).max(2000).describe("The developer sees it") }),
+      danger: "confirm",
+      when: (release) => extension(release) && release.shellReview !== "refused",
+      moves: "refused",
+      run: ({ record, input, actor }) => refuseShell(record.id, actor.name, input.reason),
     }),
     pause: action({
       label: "Pause rollout",

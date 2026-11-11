@@ -45,6 +45,8 @@ export const endpoints = {
   releases: (id: string) => `${app(id)}/releases`,
   release: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}`,
   rollout: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}/rollout`,
+  insideLuft: (id: string, release: string) =>
+    `${app(id)}/releases/${encodeURIComponent(release)}/inside-luft`,
   stats: (id: string, days: number) => `${app(id)}/stats?days=${days}`,
   hosting: (id: string) => `${app(id)}/hosting`,
   listingRequest: (id: string) => `${app(id)}/listing-request`,

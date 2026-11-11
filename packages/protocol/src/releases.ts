@@ -17,6 +17,10 @@ export type ReleaseStatus = z.infer<typeof releaseStatus>
 
 export const SHIPPED_STATUSES = ["rolling-out", "live"] as const satisfies ReleaseStatus[]
 
+/** Where an extension release is in being approved to run inside Luft; none until someone asks. */
+export const SHELL_REVIEWS = ["waiting", "approved", "refused"] as const
+export type ShellReview = (typeof SHELL_REVIEWS)[number]
+
 export const APP_STATUSES = ["draft", "in-review", "published", "delisted", "pulled", "deleted"] as const
 export const appStatus = z.enum(APP_STATUSES)
 export type AppStatus = z.infer<typeof appStatus>

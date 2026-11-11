@@ -21,16 +21,16 @@ bunx schelf <command>
 
 ## Options
 
-| Option                | What it does                                                                                 |
-| --------------------- | -------------------------------------------------------------------------------------------- |
-| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`.     |
-| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                                |
-| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                        |
-| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                    |
-| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).        |
-| `--publisher <slug>`  | With `init`, who publishes the app, if your account has several. `schelf whoami` lists them. |
+| Option                | What it does                                                                                                                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`.                                                                                                                                |
+| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                                                                                                                                                           |
+| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                                                                                                                                                   |
+| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                                                                                                                                               |
+| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).                                                                                                                                   |
+| `--publisher <slug>`  | With `init`, who publishes the app, if your account has several. `schelf whoami` lists them.                                                                                                                            |
 | `--id <app id>`       | With `init`, give a project this [app id](/docs/app-ids) instead of the one it finds. Schelf takes it from your AppStream file, electron-builder's `appId` or your Tauri `identifier` when you've proven its namespace. |
-| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                        |
+| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                                                                                                                                                   |
 
 ## Setting up an app
 

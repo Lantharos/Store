@@ -14,6 +14,7 @@ import {
   type Requires,
   readExtensionAccess,
   readListingFile,
+  readLuftMinimum,
   readPermissions,
   readSchelfToml,
   type SchelfToml,
@@ -61,11 +62,15 @@ function declared(manifest: SchelfToml, text: string | undefined) {
         422,
         `An extension's schelf.toml sets permissions = "${EXTENSION_MANIFEST}"; send its contents too`,
       )
-    return { permissions: null, extensionAccess: readExtensionAccess(text) }
+    return {
+      permissions: null,
+      extensionAccess: readExtensionAccess(text),
+      luftMinimum: readLuftMinimum(text),
+    }
   }
-  if (!manifest.permissions) return { permissions: null, extensionAccess: null }
+  if (!manifest.permissions) return { permissions: null, extensionAccess: null, luftMinimum: null }
   if (text === undefined) fail(422, `schelf.toml names ${manifest.permissions}; send its contents too`)
-  return { permissions: readPermissions(text), extensionAccess: null }
+  return { permissions: readPermissions(text), extensionAccess: null, luftMinimum: null }
 }
 
 export async function appById(id: string) {

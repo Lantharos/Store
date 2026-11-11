@@ -5,6 +5,7 @@ import type {
   REPORT_KINDS,
   ReleaseStatus,
   Role,
+  ShellReview,
   VerificationEventKind,
   VerificationStatus,
 } from "@schelf/protocol"
@@ -32,6 +33,12 @@ export const VISIBILITY = { listed: "Listed", unlisted: "Unlisted" } as const
 export const SOURCE = { open: "Open source", proprietary: "Closed source" } as const
 
 export const ORIGIN = { oidc: "Built on GitHub Actions", manual: "Uploaded by the developer" } as const
+
+export const SHELL_REVIEW: Record<ShellReview, string> = {
+  waiting: "Asked to run inside Luft",
+  approved: "Runs inside Luft",
+  refused: "Refused to run inside Luft",
+}
 
 export const RELEASE_STATUS: Record<ReleaseStatus, string> = {
   uploading: "Uploading",

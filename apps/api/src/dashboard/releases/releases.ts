@@ -5,6 +5,7 @@ import {
   type ReleaseDetail,
   type ReleaseSummary,
   rolloutRequest,
+  type ShellStatus,
   type TimelineStep,
 } from "@schelf/protocol"
 import { desc, eq } from "drizzle-orm"
@@ -16,7 +17,9 @@ import { iso } from "../../lib/time.ts"
 import { recordHistory } from "../../ops/events.ts"
 import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
-import { type ArtifactRow, fileUrl, type ReleaseRow } from "../../signing/records.ts"
+import { requestShell } from "../../releases/shell.ts"
+import { runsInShell, shellRequestable } from "../../releases/shell-files.ts"
+import { type AppRow, type ArtifactRow, fileUrl, type ReleaseRow } from "../../signing/records.ts"
 
 export const releaseRoutes = new Hono<SignedInVars>()
 
@@ -76,7 +79,28 @@ releaseRoutes.get("/:id/releases", async (c) => {
   )
 })
 
-async function detail(release: ReleaseRow): Promise<ReleaseDetail> {
+interface Owner {
+  app: Pick<AppRow, "kind">
+  publisher: { verifiedAt: Date | null }
+}
+
+function shellStatus(
+  release: ReleaseRow,
+  artifacts: ArtifactRow[],
+  { app, publisher }: Owner,
+): ShellStatus | null {
+  if (app.kind !== "extension") return null
+  const verified = publisher.verifiedAt !== null
+  return {
+    review: release.shellReview,
+    runs_in_shell: runsInShell(release, artifacts, verified),
+    reason: release.shellReview === "refused" ? release.shellReason : null,
+    verified,
+    requestable: shellRequestable(release, verified),
+  }
+}
+
+async function detail(release: ReleaseRow, owner: Owner): Promise<ReleaseDetail> {
   const [artifacts, checks, reviews] = await Promise.all([
     db.select().from(schema.artifact).where(eq(schema.artifact.releaseId, release.id)),
     db
@@ -131,6 +155,8 @@ async function detail(release: ReleaseRow): Promise<ReleaseDetail> {
     run_url: release.runUrl,
     permissions: release.permissions,
     permissions_widened: release.permissionsWidened,
+    luft: release.luftMinimum,
+    shell: shellStatus(release, artifacts, owner),
     artifacts: artifacts.map((artifact) => ({
       platform: artifact.platform as Platform,
       kind: artifact.kind as ArtifactKind,
@@ -146,15 +172,34 @@ async function detail(release: ReleaseRow): Promise<ReleaseDetail> {
   }
 }
 
+async function current(id: string) {
+  return (await db.query.release.findFirst({ where: eq(schema.release.id, id) }))!
+}
+
 releaseRoutes.get("/:id/releases/:release", async (c) => {
-  const { release } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"))
-  return c.json(await detail(release))
+  const { release, ...owner } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"))
+  return c.json(await detail(release, owner))
 })
 
 releaseRoutes.post("/:id/releases/:release/rollout", async (c) => {
-  const { release } = await releaseAccess(c.var.viewer, c.req.param("id"), c.req.param("release"), "releases")
+  const { release, ...owner } = await releaseAccess(
+    c.var.viewer,
+    c.req.param("id"),
+    c.req.param("release"),
+    "releases",
+  )
   const done = await controlRollout(release, await readBody(c, rolloutRequest))
   recordHistory("release", release.id, done, c.var.viewer.name)
-  const updated = (await db.query.release.findFirst({ where: eq(schema.release.id, release.id) }))!
-  return c.json(await detail(updated))
+  return c.json(await detail(await current(release.id), owner))
+})
+
+releaseRoutes.post("/:id/releases/:release/inside-luft", async (c) => {
+  const { release, ...owner } = await releaseAccess(
+    c.var.viewer,
+    c.req.param("id"),
+    c.req.param("release"),
+    "releases",
+  )
+  await requestShell(release.id, c.var.viewer.name)
+  return c.json(await detail(await current(release.id), owner))
 })
