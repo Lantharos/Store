@@ -39,4 +39,4 @@ You can delete your account at any time; your apps are delisted, and people who 
 
 ## Law
 
-This agreement is governed by the law of the operator's country of residence, as named in the [imprint](/legal/contact), without taking away protections you have where you live.
+This agreement is governed by the law of the operator's country of residence, without taking away protections you have where you live.

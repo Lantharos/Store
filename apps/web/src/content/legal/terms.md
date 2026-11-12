@@ -8,7 +8,7 @@ These terms apply when you use schelf.store or the Schelf app to find, download 
 
 ## Who we are
 
-Schelf is run by Lantharos. You can reach us at [legal@schelf.store](mailto:legal@schelf.store). Our full details are in the [imprint](/legal/contact).
+Schelf is run by Lantharos. You can reach us at [legal@schelf.store](mailto:legal@schelf.store).
 
 ## Apps are made by their developers
 

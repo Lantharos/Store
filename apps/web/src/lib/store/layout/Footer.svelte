@@ -26,7 +26,7 @@
         ["/legal/terms", "Terms"],
         ["/legal/privacy", "Privacy"],
         ["/legal/developer-agreement", "Developer agreement"],
-        ["/legal/contact", "Contact and imprint"],
+        ["/legal/contact", "Contact"],
       ],
     },
   ]

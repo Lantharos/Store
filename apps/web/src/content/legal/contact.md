@@ -1,6 +1,6 @@
 ---
 
-title: Contact and imprint
+title: Contact
 description: How to reach the people behind Schelf.
 ---
 
@@ -17,14 +17,6 @@ Some things have an address of their own, and reach the right person sooner ther
 - [support@schelf.store](mailto:support@schelf.store) for help with publishing
 
 To report a problem with a specific app, use the **Report a problem** link on its page. It reaches the same people and tells us exactly which app you mean.
-
-## Imprint
-
-Schelf is run by Lantharos, the trading name of Kristof Imeri, a sole trader.
-
-Address: [to be added]
-
-Email: [legal@schelf.store](mailto:legal@schelf.store)
 
 ## Copyright notices
 
