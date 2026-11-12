@@ -55,7 +55,7 @@ Schelf offers each Luft the newest release whose extension API it supports and w
 
 ## Running inside Luft
 
-Luft runs an extension inside its desktop, drawing in the same scene as everything else, only when Luft has reviewed that exact release. Luft doesn’t run an extension that hasn’t been reviewed. To ask for it, open the release in the dashboard and choose **Ask to run inside Luft** under Inside Luft. Only a [verified publisher](/docs/verification) can ask.
+Luft runs an extension inside its desktop, drawing in the same scene as everything else, only when Luft has reviewed that exact release. Until then it runs in a sandbox, without the parts of the extension API that only work inside the desktop, and one that needs them waits for the review. To ask for it, open the release in the dashboard and choose **Ask to run inside Luft** under Inside Luft. Only a [verified publisher](/docs/verification) can ask.
 
 Luft reviews the release's files, its source changes, what its manifest asks for and its helper, and then either approves it or refuses it with a reason, which you see on the release page and by email. A refused release stays on Schelf and installs the same way, just not inside the desktop; publish a new release with the change and ask again.
 

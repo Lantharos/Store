@@ -30,7 +30,7 @@ An app's index lists the newest five releases of each channel and, for extension
 
 ## Running inside Luft
 
-Each extension release in the index says `runs_in_shell`, which is only true when the publisher is verified and the owner approved that release's exact files to run inside Luft's desktop ([review](review.md#inside-luft)). Luft doesn't run any other extension yet; running them apart from the desktop comes later. The website says which on the extension's page, and the dashboard shows the state of each release with the reason for a refusal.
+Each extension release in the index says `runs_in_shell`, which is only true when the publisher is verified and the owner approved that release's exact files to run inside Luft's desktop ([review](review.md#inside-luft)). Luft runs any other release in a sandbox, without the parts of the extension API that only work inside the desktop, and doesn't install one that needs them until it's approved. The website says which on the extension's page, and the dashboard shows the state of each release with the reason for a refusal.
 
 ## Luft's own extensions
 

@@ -36,7 +36,7 @@
   {/if}
   {#if extension}
     <dt class="text-ink-muted">Runs</dt>
-    <dd>{extension.runs_in_shell && app.publisher.verified ? "Inside Luft, reviewed by Luft" : "Not reviewed yet, so Luft won’t run it"}</dd>
+    <dd>{extension.runs_in_shell && app.publisher.verified ? "Inside Luft, reviewed by Luft" : "In a sandbox, until Luft reviews it"}</dd>
   {/if}
   {#if built}
     <dt class="text-ink-muted">Built</dt>
