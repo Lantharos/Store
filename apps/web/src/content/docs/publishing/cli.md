@@ -1,7 +1,7 @@
 ---
 
 title: The schelf command
-description: Set up, check, publish and roll out from your terminal.
+description: Everything the dashboard does, from your terminal or a coding agent.
 ---
 
 `schelf` runs with Bun or Node, so there's nothing to install:
@@ -10,49 +10,61 @@ description: Set up, check, publish and roll out from your terminal.
 bunx schelf <command>
 ```
 
-| Command                             | What it does                                                                                                                                                                                           |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `schelf init`                       | Sets up the app, extension or project in this repository: signs you in, claims the id or makes an unlisted project, connects the workflow and writes `schelf.toml` and `.github/workflows/schelf.yml`. |
-| `schelf check`                      | Checks `schelf.toml`, your permissions and your listing, and previews the store page.                                                                                                                  |
-| `schelf publish [files…]`           | Publishes a release. In GitHub Actions it uses the workflow's own identity; anywhere else, a token.                                                                                                    |
-| `schelf status [version]`           | Where a release is: each check, review and rollout. Shows the newest release without a version.                                                                                                        |
-| `schelf rollout <version> <change>` | Changes a rollout: a percentage like `50`, `pause`, `resume`, or `all`.                                                                                                                                |
-| `schelf login` / `schelf logout`    | Signs this computer in or out, through your browser.                                                                                                                                                   |
+New here? [From the terminal](/docs/terminal) walks through it in order.
 
-## Options
+## In the project's repository
 
-| Option                | What it does                                                                                                                                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--token <token>`     | A dashboard token for `publish` outside GitHub Actions. You can also set `SCHELF_TOKEN`.                                                                                                                                |
-| `--config <path>`     | Use a `schelf.toml` somewhere other than the repository root.                                                                                                                                                           |
-| `--version <version>` | The version to publish, when it isn't the one in your app's manifest.                                                                                                                                                   |
-| `--channel <name>`    | Publish to a [channel](/docs/channels) other than stable.                                                                                                                                                               |
-| `--bridge`            | Publish the bridge when [moving to a new framework](/docs/moving-to-a-new-framework).                                                                                                                                   |
-| `--publisher <slug>`  | With `init`, who publishes the app, if your account has several. `schelf whoami` lists them.                                                                                                                            |
-| `--id <app id>`       | With `init`, give a project this [app id](/docs/app-ids) instead of the one it finds. Schelf takes it from your AppStream file, electron-builder's `appId` or your Tauri `identifier` when you've proven its namespace. |
-| `--api <origin>`      | Talk to another store. You can also set `SCHELF_API`.                                                                                                                                                                   |
+| Command                             | What it does                                                                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `schelf init`                       | Registers the app or project, trusts its workflow, and writes `schelf.toml`, `store/listing.toml` and `.github/workflows/schelf.yml`. |
+| `schelf check`                      | Validates [both files](/docs/schelf-toml) and the permission declaration, and previews the store page.                                |
+| `schelf apply [--dry-run]`          | Makes the store match the files. `--dry-run` only lists what would change.                                                            |
+| `schelf publish [files…]`           | Applies the files and publishes a release: from GitHub Actions, with a token, or signed in, which sends it to review.                 |
+| `schelf status [version]`           | What's in flight and where each release is, what checks flagged, what waits on you; or one release in full.                           |
+| `schelf rollout <version> <change>` | Sets a percentage like `50`, or `pause`, `resume` or `all`.                                                                           |
 
-## Setting up an app
+These read the project from `schelf.toml`; elsewhere pass `--app <id>`.
 
-`schelf init` needs a summary. It takes one from your AppStream file or from `description` in `Sabine.toml`, and asks if neither has one that fits, so outside a terminal it stops there.
+## Everything else
 
-For a Sabine app, it builds the workflow with the Sabine version your project uses, read from the workflow you already have, `Cargo.toml` or `package.json`, and keeps settings like `rust_toolchain` from your old release workflow. That workflow won't publish anything once the app updates from Schelf, so `init` offers to remove it. If the app updated from GitHub, see [moving from GitHub Releases](/docs/moving-from-github-releases).
+| Command                                                               | What it does                                                                               |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `schelf project list`, `show`, `stats`                                | Projects, their links, feeds and channels, and installs.                                   |
+| `schelf project rename <address>`, `delete`, `restore <id>`           | Move, delete or restore a project.                                                         |
+| `schelf release list`, `show [version]`                               | Releases and their checks, review and rollout.                                             |
+| `schelf release promote <version> <channel>`                          | Put a shipped release on another channel.                                                  |
+| `schelf release rollback <version>`                                   | Stop a release for everyone and offer the one before it again.                             |
+| `schelf release inside-luft <version>`                                | Ask for an extension release to run inside Luft.                                           |
+| `schelf channel list`                                                 | Channels; change them in `schelf.toml`.                                                    |
+| `schelf trust list`, `add <owner/repository>`, `remove <id>`          | The workflows trusted to publish (`--workflow`, `--environment`, `--ref`).                 |
+| `schelf token list`, `create <name>`, `revoke <id>`                   | Upload tokens for publishing outside GitHub Actions.                                       |
+| `schelf publisher list`, `show`, `create <name>`, `update`            | Publishers and their profile (`--description`, `--website`, `--logo`, `--name`, `--slug`). |
+| `schelf member list`, `invite`, `role`, `remove`, `transfer`, `leave` | An organisation's members.                                                                 |
+| `schelf invite list`, `accept`, `decline`, `revoke`                   | Invitations.                                                                               |
+| `schelf namespace list`, `claim`, `verify`, `release`                 | The namespaces your app ids live under.                                                    |
+| `schelf verification status`                                          | Whether a publisher is verified.                                                           |
+| `schelf request status <id>`, `cancel <id>`                           | Something waiting for your approval.                                                       |
+| `schelf login`, `logout`, `whoami`                                    | Sign in through the browser, sign out, and who you are.                                    |
 
-## Signing in
+`--publisher <slug>` picks the publisher when your account has more than one.
 
-`schelf login` shows a short code and opens `schelf.store/device`. Confirm the code there and the terminal is signed in. Commands that need an account sign you in the same way when you run them.
+## Approving in the browser
 
-## Examples
+Anything that changes who can do what, or what the public sees, waits for you: the command prints a link, opens it, and the page lists exactly what will happen, with **Approve** and **Cancel**. Several changes asked for together are one page. Deleting a project, changing who may publish, making tokens and changing roles or ownership also need your passkey. In a terminal the command waits for your decision; elsewhere pass `--wait`, or check later with `schelf request status <id> --wait`. Requests expire after 30 minutes. Everything else, like the listing, rollouts and channels, happens straight away.
 
-Hold a rollout while you look into a bug report, then carry on:
+Your account's settings and verification are only in the dashboard.
 
-```sh
-bunx schelf rollout 2.4.0 pause
-bunx schelf rollout 2.4.0 resume
-```
+## For scripts and agents
 
-Publish from your own computer with a token:
+- `--json` prints the result as JSON on standard output, and progress on standard error.
+- `--yes`, or not being in a terminal, means the command never asks; what it would have asked becomes an option.
+- `SCHELF_TOKEN` or `--token` publishes with an upload token, `SCHELF_API` or `--api` talks to another store, and `SCHELF_NO_BROWSER` stops it opening links.
 
-```sh
-SCHELF_TOKEN=schelf_… bunx schelf publish dist/*
-```
+| Exit code | Means                                          |
+| --------- | ---------------------------------------------- |
+| 0         | Done.                                          |
+| 1         | Failed, or a file needs fixing.                |
+| 2         | Wrong usage, or something it needs is missing. |
+| 3         | Not signed in.                                 |
+| 4         | Waiting for a person: an approval, or review.  |
+| 5         | The request was cancelled or expired.          |

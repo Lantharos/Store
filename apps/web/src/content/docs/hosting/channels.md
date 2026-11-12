@@ -22,15 +22,15 @@ Download links and feeds follow stable unless you name a channel: `/lantharos/ra
 
 ## Promoting
 
-When a beta is ready, open it in the dashboard and choose **Promote** with the channel. The same files go to that channel as a new release, without uploading them again, and the channel's review rules apply. A promoted release keeps its checks.
+When a beta is ready, open it in the dashboard and choose **Promote** with the channel, or run `schelf release promote 2.0.0-beta.3 stable`. The same files go to that channel as a new release, without uploading them again, and the channel's review rules apply. A promoted release keeps its checks.
 
 ## Keeping old releases
 
-Nightly keeps its last 10 releases; older ones are removed, files and all. You can change how many each channel keeps on the project's **Updates** tab. Stable keeps everything.
+Nightly keeps its last 10 releases; older ones are removed, files and all. Set how many each channel keeps with `keep` under `[channels.<name>]` in [schelf.toml](/docs/schelf-toml), or on the project's **Updates** tab if it has no `schelf.toml` applied. Stable keeps everything.
 
 ## Ending a channel
 
-When a channel has done its job, open the project's **Updates** tab and choose **End channel**, then pick where its people go: stable or another open channel. Anyone who can publish releases can do this, and it's recorded in the project's history. Stable can't be ended.
+When a channel has done its job, set `ended_into = "stable"` (or another open channel) under its `[channels.<name>]` table in `schelf.toml` and run `schelf apply`; without `schelf.toml`, choose **End channel** on the project's **Updates** tab. Anyone who can publish releases can do this, and it's recorded in the project's history. Stable can't be ended.
 
 - **People move on their next update check.** That covers Schelf, Sabine, electron-updater and Tauri, including people who picked the channel themselves in Schelf, whose page shows what they're really on.
 - **Nobody goes backwards.** Someone on a newer build than the destination has keeps it until the destination catches up. Update feeds can't tell which version is asking, so `beta.yml` and `/@beta/tauri.json` answer with the highest version among the ended channel and its destination. Until the destination catches up, someone behind on the old channel can still get that channel's last build.
@@ -42,4 +42,4 @@ A channel can't be ended while one of its releases is being checked or reviewed.
 
 ### Reopening
 
-Choose **Reopen** on an ended channel to publish to it again. People who were moved come back on their next update check. electron-updater accepts a lower version from a channel it's set to, so if the destination has passed the channel's newest release, have a newer one ready.
+Remove `ended_into`, or choose **Reopen**, to publish to it again. People who were moved come back on their next update check. electron-updater accepts a lower version from a channel it's set to, so if the destination has passed the channel's newest release, have a newer one ready.

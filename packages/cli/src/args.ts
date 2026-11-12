@@ -41,6 +41,16 @@ const VALUED = new Set([
   "summary",
   "publisher-name",
   "namespace",
+  "app",
+  "role",
+  "environment",
+  "ref",
+  "days",
+  "description",
+  "website",
+  "slug",
+  "logo",
+  "method",
 ])
 
 export function flag(args: Args, name: string) {

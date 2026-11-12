@@ -174,14 +174,44 @@ For local use and other CI, `schelf publish` uses a dashboard token instead of O
 
 ## The schelf command
 
-| Command                            | Does                                                                                                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `schelf init`                      | Sets up an app, extension or project, as above.                                                                                                                                            |
-| `schelf check`                     | Validates `schelf.toml`, the permission declaration and the listing locally, showing what the store page will look like in the terminal and what's missing.                                |
-| `schelf publish [files…]`          | Publishes from CI (OIDC when available, a token otherwise) or from a laptop with a token. `--version`, `--channel` and `--bridge` as in the action; `file#platform` names a file's system. |
-| `schelf status [version]`          | Where a release is: checks, review, rollout.                                                                                                                                               |
-| `schelf rollout <version> <percent | pause                                                                                                                                                                                      | resume | all>` | Rollout control. |
-| `schelf login` / `logout`          | Browser sign-in for the commands that need an account.                                                                                                                                     |
+The command does everything the dashboard does, so a person or an agent never has to open it; the public [command reference](https://schelf.store/docs/cli) and [From the terminal](https://schelf.store/docs/terminal) are written for both. Top-level verbs work on the project in the current repository (`init`, `check`, `apply`, `publish`, `status`, `rollout`); everything else is `schelf <noun> <verb>`. Every command takes `--json` (the result on standard output, progress on standard error), never prompts outside a terminal or with `--yes`, and exits 0 done, 1 failed, 2 wrong usage, 3 not signed in, 4 waiting for a person, 5 declined or expired. Approval actions wait with `--wait` (the default in a terminal), or leave the request for `schelf request status <id>`.
+
+| Dashboard                                                                                  | Command                                                    | Approval                  |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------------------------- |
+| New project, Add an app (id, namespace, workflow)                                          | `schelf init`                                              | yes                       |
+| Claim a namespace, give one up                                                             | `schelf namespace claim`, `release`                        | yes                       |
+| Prove a namespace                                                                          | `schelf namespace verify`                                  | no                        |
+| Listing: words, translations, categories, links, colour, icon, screenshots and their order | `store/listing.toml`, `schelf apply`                       | no                        |
+| Ask to be listed                                                                           | `listed = true`, `schelf apply`                            | yes                       |
+| Show the page in search engines                                                            | `indexed`, `schelf apply`                                  | no                        |
+| Links follow the rollout                                                                   | `links.follow_rollout`, `schelf apply`                     | no                        |
+| Channels: keep, step by step, end, reopen                                                  | `[channels.<name>]`, `schelf apply`; `schelf channel list` | no                        |
+| Change how this app updates, undo a move                                                   | `format`, `updater`, `schelf apply`                        | no                        |
+| Open or closed source, licence, repository                                                 | `distribution`, `licence`, `repository`, `schelf apply`    | no                        |
+| Address                                                                                    | `schelf project rename`                                    | yes                       |
+| Delete a project                                                                           | `schelf project delete`                                    | yes, with passkey         |
+| Restore a deleted project                                                                  | `schelf project restore`                                   | yes                       |
+| Trusted publishers                                                                         | `schelf trust list`, `add`, `remove`                       | yes, with passkey         |
+| Upload tokens: make, revoke                                                                | `schelf token create`, `revoke`                            | make: passkey; revoke: no |
+| Upload a release                                                                           | `schelf publish` (signed in, a token or GitHub Actions)    | no; goes to review        |
+| Releases, checks, review, what to do next                                                  | `schelf status`, `schelf release list`, `show`             | no                        |
+| Rollout: pause, resume, a percentage, everyone                                             | `schelf rollout`                                           | no                        |
+| Roll back (stop a release for everyone)                                                    | `schelf release rollback`                                  | yes                       |
+| Promote to a channel                                                                       | `schelf release promote`                                   | no                        |
+| Ask to run inside Luft                                                                     | `schelf release inside-luft`                               | yes                       |
+| Stats                                                                                      | `schelf project stats`                                     | no                        |
+| Links, feeds, files to commit                                                              | `schelf project show`; `init` writes the files             | no                        |
+| Publisher profile: description, website, logo                                              | `schelf publisher update`                                  | no                        |
+| Publisher name and address                                                                 | `schelf publisher update --name`, `--slug`                 | yes                       |
+| Create an organisation, or a first publisher                                               | `schelf publisher create`                                  | yes                       |
+| Members: invite, remove, leave                                                             | `schelf member invite`, `remove`, `leave`                  | yes                       |
+| Change a role, hand over ownership                                                         | `schelf member role`, `transfer`                           | yes, with passkey         |
+| Invitations: accept, decline, withdraw                                                     | `schelf invite accept`, `decline`, `revoke`                | accept: yes               |
+| Verification                                                                               | `schelf verification status`                               | dashboard only            |
+| Account: name, picture, email, passkeys, deleting it                                       | none                                                       | dashboard only            |
+| The developer agreement                                                                    | accepted on the approval page with the first publisher     |                           |
+
+Verification stays in the dashboard because it's a legal declaration with documents and an emailed code that a person makes for a company; account settings stay there because they're how a person proves who they are, and the command's session is the thing they'd protect against. The command can't reach Better Auth's account endpoints at all.
 
 ## From publish to install
 

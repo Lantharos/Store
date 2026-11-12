@@ -61,7 +61,6 @@ hostingRoutes.patch("/:id/hosting", async (c) => {
 
 hostingRoutes.post("/:id/listing-request", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
-  refuseIfListingInFiles(app)
   await requestListing(app, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, app.id)).app))
 })

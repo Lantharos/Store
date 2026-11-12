@@ -1,31 +1,27 @@
-import { readFile } from "node:fs/promises"
-import { join } from "node:path"
-import { type CheckResult, manifestName, readSchelfToml, SCHELF_TOML } from "@schelf/protocol"
-import { session } from "../api/auth.ts"
-import { type Dashboard, dashboard } from "../api/dashboard.ts"
-import { type Args, apiOrigin, flag } from "../args.ts"
-import { repositoryRoot } from "../project/git.ts"
-import { blank, Failure, field, line, title } from "../ui/output.ts"
+import type { CheckResult, ReleaseDetail, ReleaseSummary } from "@schelf/protocol"
+import type { Args } from "../args.ts"
+import { EXIT } from "../ui/exit.ts"
+import { blank, emit, field, line, note, title } from "../ui/output.ts"
 import { bad, good, link, muted, warn } from "../ui/style.ts"
+import { appOf, type Context, findRelease, signedIn } from "./context.ts"
 
 const MARKS = { passed: good("✓"), warning: warn("!"), failed: bad("✕") }
+const IN_FLIGHT = new Set<ReleaseSummary["status"]>([
+  "uploading",
+  "checking",
+  "in-review",
+  "changes-requested",
+  "rolling-out",
+])
+const WAITING_ON_YOU = new Set<ReleaseSummary["status"]>(["failed", "changes-requested", "uploading"])
 
 export function printChecks(checks: CheckResult[]) {
   if (!checks.length) return
-  blank()
   if (checks.every((check) => check.status === "passed")) {
     line(`${MARKS.passed} All ${checks.length} checks passed`)
     return
   }
   for (const check of checks) line(`${MARKS[check.status]} ${check.name.padEnd(15)}${muted(check.summary)}`)
-}
-
-export async function appIdHere(args: Args) {
-  const config = flag(args, "config") ?? join(await repositoryRoot(process.cwd()), SCHELF_TOML)
-  const text = await readFile(config, "utf8").catch(() => {
-    throw new Failure("There's no schelf.toml here", "Run this in the app's repository, or pass --config.")
-  })
-  return manifestName(readSchelfToml(text))
 }
 
 const ago = (iso: string) => {
@@ -36,35 +32,82 @@ const ago = (iso: string) => {
   return `${Math.round(hours / 24)} days ago`
 }
 
-export async function findRelease(account: Dashboard, id: string, version: string | undefined) {
-  const releases = await account.releases(id)
-  const found = version
-    ? releases.find((release) => release.version === version.replace(/^v/, ""))
-    : releases[0]
-  if (found) return found
-  throw version
-    ? new Failure(`${id} has no release ${version}`)
-    : new Failure(`${id} has no releases yet`, "Publish a GitHub release to send the first one.")
+const where = (release: ReleaseSummary) =>
+  release.status === "rolling-out" || release.status === "live"
+    ? `${release.status.replace("-", " ")}, ${release.rollout_percent}%${release.rollout_paused ? ", paused" : ""}`
+    : release.status.replace("-", " ")
+
+function printRelease(context: Context, id: string, release: ReleaseDetail) {
+  title(`${id} ${release.version} on ${release.channel}`)
+  const origin = release.origin === "oidc" ? "built on GitHub Actions" : "uploaded by the developer"
+  line(`${where(release)} ${muted(`· ${origin} · ${ago(release.created_at)}`)}`)
+  blank()
+  printChecks(release.checks)
+  blank()
+  if (release.next) field("Next", release.next)
+  if (release.run_url) field("Build", link(release.run_url))
+  field("Dashboard", link(`${context.api}/dashboard/apps/${id}/releases/${release.id}`))
+  blank()
+}
+
+async function overview(context: Context, id: string) {
+  const [settings, releases, approvals] = await Promise.all([
+    context.dashboard.app(id),
+    context.dashboard.releases(id),
+    context.dashboard.approvals(),
+  ])
+  const flying = releases.filter((release) => IN_FLIGHT.has(release.status))
+  const latestPerChannel = [...new Map(releases.map((release) => [release.channel, release])).values()]
+  const attention = latestPerChannel.filter((release) => WAITING_ON_YOU.has(release.status))
+  const details = await Promise.all(
+    [...flying, ...attention.filter((release) => !flying.includes(release))].map((release) =>
+      context.dashboard.release(id, release.id),
+    ),
+  )
+  const waiting = approvals
+  const app = settings.app
+  emit({ app: settings.app, releases: details, approvals: waiting, config: settings.config })
+
+  title(`${app.name} ${muted(app.id)}`)
+  field(
+    "Visibility",
+    app.visibility === "listed"
+      ? "listed"
+      : app.listing_requested
+        ? "unlisted, waiting for a reviewer to list it"
+        : "unlisted",
+  )
+  field(
+    "Files",
+    settings.config.applied_at
+      ? `applied ${ago(settings.config.applied_at)}`
+      : "never applied; run schelf apply",
+  )
+  blank()
+  if (!details.length) note(releases.length ? "Nothing in flight." : "No releases yet.")
+  for (const release of details) {
+    line(`${release.version} ${muted(`on ${release.channel}`)}  ${where(release)}`)
+    for (const check of release.checks.filter((entry) => entry.status !== "passed"))
+      line(`  ${MARKS[check.status]} ${check.name}: ${muted(check.summary)}`)
+    if (release.next) note(`  ${release.next}`)
+  }
+  if (waiting.length) {
+    blank()
+    line("Waiting for your approval:")
+    for (const approval of waiting)
+      line(`  ${approval.steps.map((step) => step.summary).join("; ")} ${muted(approval.url)}`)
+  }
+  blank()
+  return waiting.length || attention.length ? EXIT.waiting : EXIT.ok
 }
 
 export async function status(args: Args) {
-  const api = apiOrigin(args)
-  const id = await appIdHere(args)
-  const { token } = await session(api)
-  const account = dashboard(api, token)
-  const release = await account.release(id, (await findRelease(account, id, args.positionals[0])).id)
-
-  title(`${id} ${release.version}`)
-  const origin = release.origin === "oidc" ? "built on GitHub Actions" : "uploaded by the developer"
-  line(`${release.status.replace("-", " ")} ${muted(`· ${origin} · ${ago(release.created_at)}`)}`)
-  printChecks(release.checks)
-  blank()
-  if (release.status === "rolling-out" || release.status === "live") {
-    field("Rollout", `${release.rollout_percent}%${release.rollout_paused ? ", paused" : ""}`)
-  }
-  if (release.next) field("Next", release.next)
-  if (release.run_url) field("Build", link(release.run_url))
-  field("Dashboard", link(`${api}/dashboard/apps/${id}/releases/${release.id}`))
-  blank()
-  return 0
+  const context = await signedIn(args)
+  const id = await appOf(args)
+  const [version] = args.positionals
+  if (!version) return overview(context, id)
+  const release = await context.dashboard.release(id, (await findRelease(context.dashboard, id, version)).id)
+  emit(release)
+  printRelease(context, id, release)
+  return EXIT.ok
 }

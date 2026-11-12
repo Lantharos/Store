@@ -1,7 +1,7 @@
 import { createApproval, PASSKEY_MINUTES } from "@schelf/protocol"
-import { eq } from "drizzle-orm"
+import { and, desc, eq, gt } from "drizzle-orm"
 import { Hono } from "hono"
-import { inBrowser, type SignedInVars } from "../auth/session.ts"
+import { inBrowser, type SignedInVars, viewerOf } from "../auth/session.ts"
 import { dashboardRoutes } from "../dashboard/routes.ts"
 import { db, schema } from "../db/client.ts"
 import { fail, readBody } from "../lib/http.ts"
@@ -25,6 +25,21 @@ approvalRoutes.post("/", async (c) => {
   return c.json(approvalView(row, c.var.viewer.name), 201)
 })
 
+approvalRoutes.get("/", async (c) => {
+  const rows = await db
+    .select()
+    .from(schema.approval)
+    .where(
+      and(
+        eq(schema.approval.userId, c.var.viewer.id),
+        eq(schema.approval.status, "pending"),
+        gt(schema.approval.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(schema.approval.createdAt))
+  return c.json(rows.map((row) => approvalView(row, c.var.viewer.name)))
+})
+
 approvalRoutes.get("/:id", async (c) => {
   const row = await approvalFor(c.var.viewer, c.req.param("id"))
   const fromCommand = !inBrowser(c.var.signed)
@@ -34,11 +49,12 @@ approvalRoutes.get("/:id", async (c) => {
 })
 
 approvalRoutes.post("/:id/approve", async (c) => {
-  if (!inBrowser(c.var.signed)) fail(403, "Approve this in the browser")
+  const { signed } = (await viewerOf(c.req.raw.headers, true))!
+  if (!inBrowser(signed)) fail(403, "Approve this in the browser")
   const row = await approvalFor(c.var.viewer, c.req.param("id"))
   if (statusOf(row) !== "pending") fail(409, "This request was decided already, or it expired")
-  const fresh = Date.now() - c.var.signed.since.getTime() < PASSKEY_MINUTES * MINUTE
-  if (row.passkey && !(c.var.signed.via === "passkey" && fresh)) fail(403, "Confirm with your passkey first")
+  const fresh = Date.now() - signed.since.getTime() < PASSKEY_MINUTES * MINUTE
+  if (row.passkey && !(signed.via === "passkey" && fresh)) fail(403, "Confirm with your passkey first")
   const finished = await executeApproval(row, dashboardRoutes as never, c.req.raw.headers)
   return c.json(approvalView(finished, c.var.viewer.name))
 })

@@ -6,8 +6,8 @@ export type Viewer = { id: string; name: string; email: string; image: string | 
 export type Signed = { via: Via | null; since: Date }
 export type SignedInVars = { Variables: { viewer: Viewer; signed: Signed } }
 
-export async function viewerOf(headers: Headers) {
-  const session = await auth.api.getSession({ headers })
+export async function viewerOf(headers: Headers, uncached = false) {
+  const session = await auth.api.getSession({ headers, query: { disableCookieCache: uncached } })
   if (!session) return null
   return {
     viewer: { ...session.user, image: session.user.image ?? null } satisfies Viewer,

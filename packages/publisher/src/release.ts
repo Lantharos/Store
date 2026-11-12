@@ -96,18 +96,28 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
     token: input.token,
     body: JSON.stringify(body),
   })
+  return { applied, release, completed: await uploadRelease(input.api, release, input.artifacts, onEvent) }
+}
 
-  const pathOf = new Map(input.artifacts.map((artifact) => [artifact.name, artifact.path]))
+export async function uploadRelease(
+  api: string,
+  release: PublishResponse,
+  artifacts: HashedArtifact[],
+  onEvent: (event: PublishEvent) => void = () => {},
+) {
+  const pathOf = new Map(artifacts.map((artifact) => [artifact.name, artifact.path]))
   const parts = release.files.flatMap((target) => partsOf(target, pathOf.get(target.name)!))
   let done = 0
   await mapLimit(parts, UPLOAD_CONCURRENCY, async (part) => {
-    await uploadPart(input.api, release.upload_token, part)
+    await uploadPart(api, release.upload_token, part)
     onEvent({ type: "uploaded", name: part.target.name, done: ++done, total: parts.length })
   })
 
-  const completed = await request<CompleteResponse>(
-    `${input.api}${API_BASE}/publish/${encodeURIComponent(release.release)}/complete`,
-    { method: "POST", token: release.upload_token },
+  return request<CompleteResponse>(
+    `${api}${API_BASE}/publish/${encodeURIComponent(release.release)}/complete`,
+    {
+      method: "POST",
+      token: release.upload_token,
+    },
   )
-  return { applied, release, completed }
 }

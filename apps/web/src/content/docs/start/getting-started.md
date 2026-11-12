@@ -22,15 +22,15 @@ In your app's repository, run:
 bunx schelf init
 ```
 
-It opens your browser to sign in, then reads `Sabine.toml`, your AppStream metadata and the git remote. It claims your app id, connects the repository's workflow as a [trusted publisher](/docs/trusted-publishing), and writes two files:
+It opens your browser to sign in, then reads `Sabine.toml`, your AppStream metadata and the git remote. Claiming your app id and connecting the repository's workflow as a [trusted publisher](/docs/trusted-publishing) wait for you to approve them on a page it opens. Then it writes:
 
-- `schelf.toml`, which says what the app is. [Reference](/docs/schelf-toml).
+- `schelf.toml`, which says what the app is, and `store/listing.toml`, your store page, with the icon and screenshots it found. [Reference](/docs/schelf-toml).
 - `.github/workflows/schelf.yml`, which builds the app and sends it to Schelf when you press **Run workflow** on it, and, if you want, whenever the version in `Sabine.toml` changes on your default branch.
 
 Commit them and push:
 
 ```sh
-git add schelf.toml .github/workflows/schelf.yml
+git add schelf.toml store .github/workflows/schelf.yml
 git commit -m "Publish on Schelf"
 git push
 ```
@@ -55,8 +55,8 @@ You get an email at each step, and `schelf status` shows the same thing in your 
 
 ## Where to go next
 
-Using a coding agent? Point it at [llms.txt](/llms.txt), or [llms-full.txt](/llms-full.txt) for all of these docs in one file.
+Using a coding agent? Run `bunx schelf login`, point it at [From the terminal](/docs/terminal), and let it do the rest. [llms-full.txt](/llms-full.txt) has all of these docs in one file.
 
-- [Fill in your listing](/dashboard): screenshots, a description and categories make the difference on the store page.
+- Fill in `store/listing.toml` and run `bunx schelf apply`: screenshots, a description and categories make the difference on the store page.
 - [Declare permissions](/docs/permissions) so Luft can sandbox your app and people can see what it uses.
 - [Turn on built-in updates](/docs/sabine-apps) for Sabine apps on Windows and macOS.

@@ -5,10 +5,20 @@ import { ApiFailure, ArtifactError, ConfigError } from "@schelf/publisher"
 import { ZodError } from "zod"
 import { version } from "../package.json"
 import { type Args, parseArgs } from "./args.ts"
+import { token } from "./commands/access/token.ts"
+import { trust } from "./commands/access/trust.ts"
 import { apply } from "./commands/apply.ts"
 import { check } from "./commands/check.ts"
 import { init } from "./commands/init.ts"
 import { login, logout } from "./commands/login.ts"
+import { invite } from "./commands/people/invite.ts"
+import { member } from "./commands/people/member.ts"
+import { namespace } from "./commands/people/namespace.ts"
+import { publisher } from "./commands/people/publisher.ts"
+import { verification } from "./commands/people/verification.ts"
+import { channel } from "./commands/project/channel.ts"
+import { project } from "./commands/project/project.ts"
+import { release } from "./commands/project/release.ts"
 import { publish } from "./commands/publish.ts"
 import { request } from "./commands/request.ts"
 import { rollout } from "./commands/rollout.ts"
@@ -40,14 +50,44 @@ const COMMANDS: Record<
   publish: {
     run: publish,
     usage: "publish [files…] [--channel <name>] [--version <version>]",
-    about: "Publish a release from CI or with a token",
+    about: "Publish a release: from GitHub Actions, with a token, or signed in (goes to review)",
   },
-  status: { run: status, usage: "status [version]", about: "Where a release is: checks, review, rollout" },
+  status: {
+    run: status,
+    usage: "status [version]",
+    about: "What's happening: releases in flight, what checks flagged, what waits on you",
+  },
   rollout: {
     run: rollout,
     usage: "rollout <version> <change>",
     about: "Set a percentage, pause, resume or release to all",
   },
+  project: {
+    run: project,
+    usage: "project <list|show|stats|rename|delete|restore>",
+    about: "The project and its settings",
+  },
+  release: { run: release, usage: "release <list|show|promote|rollback|inside-luft>", about: "Releases" },
+  channel: { run: channel, usage: "channel list", about: "Channels" },
+  trust: { run: trust, usage: "trust <list|add|remove>", about: "Workflows trusted to publish" },
+  token: { run: token, usage: "token <list|create|revoke>", about: "Upload tokens" },
+  publisher: {
+    run: publisher,
+    usage: "publisher <list|show|create|update>",
+    about: "Publishers and their profiles",
+  },
+  member: {
+    run: member,
+    usage: "member <list|invite|role|remove|transfer|leave>",
+    about: "Organisation members",
+  },
+  invite: { run: invite, usage: "invite <list|accept|decline|revoke>", about: "Invitations" },
+  namespace: {
+    run: namespace,
+    usage: "namespace <list|claim|verify|release>",
+    about: "Namespaces app ids live under",
+  },
+  verification: { run: verification, usage: "verification status", about: "The publisher's verified mark" },
   request: {
     run: request,
     usage: "request <status|cancel> <id>",

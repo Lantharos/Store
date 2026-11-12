@@ -3,6 +3,7 @@
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import AgentPath from "#lib/dashboard/overview/AgentPath.svelte"
   import Agreement from "#lib/dashboard/publishers/Agreement.svelte"
   import PendingInvites from "#lib/dashboard/publishers/PendingInvites.svelte"
   import Logo from "#lib/Logo.svelte"
@@ -59,6 +60,7 @@
       {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
       <button class="button button-primary w-full" disabled={!agreed || !name.trim() || busy}>Continue</button>
     </form>
+    <AgentPath class="mt-4 text-center" />
     <button type="button" class="mt-3 w-full text-[15px] text-ink-muted hover:text-ink" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>
   </div>
 </main>

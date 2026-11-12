@@ -1,9 +1,10 @@
 import type { RolloutRequest } from "@schelf/protocol"
-import { session } from "../api/auth.ts"
-import { dashboard } from "../api/dashboard.ts"
-import { type Args, apiOrigin } from "../args.ts"
-import { blank, done, Failure, step } from "../ui/output.ts"
-import { appIdHere, findRelease } from "./status.ts"
+import type { Args } from "../args.ts"
+import { EXIT } from "../ui/exit.ts"
+import { blank, done, emit, Failure, step } from "../ui/output.ts"
+import { appOf, findRelease, needs, signedIn } from "./context.ts"
+
+const USAGE = "rollout <version> <percent|pause|resume|all>"
 
 export function rolloutRequest(change: string): RolloutRequest {
   if (change === "pause" || change === "resume" || change === "all") return { action: change }
@@ -12,6 +13,7 @@ export function rolloutRequest(change: string): RolloutRequest {
     throw new Failure(
       `${change} isn't a rollout change`,
       "Use a percentage from 1 to 100, pause, resume or all.",
+      EXIT.usage,
     )
   }
   return percent === 100 ? { action: "all" } : { action: "set", percent }
@@ -19,17 +21,15 @@ export function rolloutRequest(change: string): RolloutRequest {
 
 export async function rollout(args: Args) {
   const [version, change] = args.positionals
-  if (!version || !change) throw new Failure("Usage: schelf rollout <version> <percent|pause|resume|all>")
-  const request = rolloutRequest(change)
-  const api = apiOrigin(args)
-  const id = await appIdHere(args)
-  const { token } = await session(api)
+  const request = rolloutRequest(needs(change, USAGE))
+  const context = await signedIn(args)
+  const id = await appOf(args)
   blank()
-  const account = dashboard(api, token)
-  const release = await step(`Changing the rollout of ${id} ${version}`, async () =>
-    account.rollout(id, (await findRelease(account, id, version)).id, request),
+  const release = await step(`Changing the rollout of ${id} ${needs(version, USAGE)}`, async () =>
+    context.dashboard.rollout(id, (await findRelease(context.dashboard, id, version)).id, request),
   )
+  emit(release)
   done(`${release.rollout_percent}% of devices${release.rollout_paused ? ", paused" : ""}`)
   blank()
-  return 0
+  return EXIT.ok
 }

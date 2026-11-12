@@ -5,6 +5,7 @@ import {
   DEFAULT_LOCALE,
   NEW_PUBLISHER,
   ROLE_NAMES,
+  splitProjectPath,
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import type { Viewer } from "../auth/session.ts"
@@ -29,14 +30,20 @@ const app = (id: string) => `/apps/${encodeURIComponent(id)}`
 const publisher = (id: string) => `/publishers/${encodeURIComponent(id)}`
 
 async function appName(id: string) {
+  const path = splitProjectPath(id)
   const [row] = await db
     .select({ name: schema.listing.name, id: schema.app.id })
     .from(schema.app)
+    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
     .leftJoin(
       schema.listing,
       and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
     )
-    .where(eq(schema.app.id, id))
+    .where(
+      path
+        ? and(eq(schema.publisher.slug, path.publisher), eq(schema.app.slug, path.project))
+        : eq(schema.app.id, id),
+    )
   return row?.name ? `${row.name} (${row.id})` : id
 }
 

@@ -10,7 +10,7 @@ A Sabine app that updates from GitHub Releases doesn't need any of this. See [mo
 
 ## How it works
 
-On the project's **Updates** tab, choose **Change** next to how it updates, pick the new framework, and Schelf walks you through what happens next. From then on, you ship two things, in either order:
+Change `format` and `updater` in [schelf.toml](/docs/schelf-toml), for example from `format = "files"` with `updater = "electron"` to `format = "sabine"`, and run `schelf apply`; putting the old ones back undoes the move while nothing has shipped. Without a `schelf.toml`, choose **Change** next to how it updates on the project's **Updates** tab. From then on, you ship two things, in either order:
 
 1. **The first release built with the new framework.** Publish it as usual. Download links and the new feed serve it straight away.
 2. **A bridge.** One last release built the old way, whose only job is to install the new build and hand over. Publish it with `bridge: true` in the publish action, `schelf publish --bridge`, or by turning on **This is the bridge** when you upload.

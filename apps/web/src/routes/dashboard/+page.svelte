@@ -2,6 +2,7 @@
   import ArrowRight from "@lucide/svelte/icons/arrow-right"
   import Plus from "@lucide/svelte/icons/plus"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import AgentPath from "#lib/dashboard/overview/AgentPath.svelte"
   import { projectGroups } from "#lib/dashboard/project/groups.ts"
   import ProjectList from "#lib/dashboard/project/ProjectList.svelte"
   import Restorable from "#lib/dashboard/project/Restorable.svelte"
@@ -53,6 +54,7 @@
     <h2 class="text-2xl font-semibold tracking-[-0.02em]">Put your first project on Schelf</h2>
     <p class="mt-2 max-w-xl leading-relaxed text-ink-soft">An app for Luft and the store, or any app you want download links and updates for, open or closed source. Send releases from GitHub Actions or upload them yourself.</p>
     {#if session.can("apps")}<a href="/dashboard/projects/new" class="button button-primary mt-6">New project</a>{/if}
+    <AgentPath class="mt-4" />
   </section>
 {/if}
 

@@ -1,30 +1,57 @@
 import { join } from "node:path"
 import { manifestName, SCHELF_TOML } from "@schelf/protocol"
 import {
+  applyConfig,
   collectArtifacts,
   configBundle,
-  githubOidcToken,
+  type HashedArtifact,
   hashArtifacts,
-  oidcAvailable,
   publishRelease,
   releaseContext,
   releaseVersion,
+  uploadRelease,
 } from "@schelf/publisher"
+import { dashboard } from "../api/dashboard.ts"
+import { type Credential, credential } from "../api/identity.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { git, repositoryRoot } from "../project/git.ts"
+import { EXIT } from "../ui/exit.ts"
 import { blank, done, emit, Failure, field, line, step, title } from "../ui/output.ts"
 import { bold, link } from "../ui/style.ts"
 import { printApplied } from "./apply.ts"
 import { printChecks } from "./status.ts"
 
-async function credential(args: Args) {
-  const token = flag(args, "token") ?? process.env.SCHELF_TOKEN
-  if (token) return token
-  if (oidcAvailable()) return githubOidcToken()
-  throw new Failure(
-    "Nothing to publish with",
-    "In GitHub Actions, give the job id-token: write. Elsewhere, create a token in the dashboard and pass --token or SCHELF_TOKEN.",
-  )
+interface Release {
+  config: Awaited<ReturnType<typeof configBundle>>
+  version: string
+  channel: string | undefined
+  notes: string
+  artifacts: HashedArtifact[]
+}
+
+async function uploadAsPerson(
+  api: string,
+  signedIn: Credential,
+  appId: string,
+  release: Release,
+  bridge: boolean,
+) {
+  const applied = await applyConfig(api, signedIn.token, release.config)
+  const started = await dashboard(api, signedIn.token).upload(appId, {
+    version: release.version,
+    channel: release.channel,
+    notes: release.notes,
+    bridge,
+    files: release.artifacts.map((artifact) => ({
+      name: artifact.name,
+      platform: artifact.platform,
+      kind: artifact.kind,
+      size: artifact.size,
+      sha256: artifact.sha256,
+      signature: artifact.signature,
+    })),
+  })
+  return { applied, release: started, completed: await uploadRelease(api, started, release.artifacts) }
 }
 
 export async function publish(args: Args) {
@@ -42,36 +69,42 @@ export async function publish(args: Args) {
     commit,
     channel,
   }).catch((error: Error) => {
-    throw new Failure("This release has no version", `${error.message}.`)
+    throw new Failure("This release has no version", `${error.message}.`, EXIT.usage)
   })
   if (!args.positionals.length)
     throw new Failure(
       "Name the files to publish",
       "For example: schelf publish dist/*.AppImage, or dist/app.tar.gz#macos-aarch64 to say which system a file is for",
+      EXIT.usage,
     )
 
-  title(`Publishing ${manifestName(context.manifest)} ${version}`)
-  const artifacts = await collectArtifacts(args.positionals, context.manifest.format)
+  const id = manifestName(context.manifest)
+  title(`Publishing ${id} ${version}`)
+  const artifacts = await hashArtifacts(await collectArtifacts(args.positionals, context.manifest.format))
   for (const artifact of artifacts) field(artifact.platform, artifact.name, 18)
   blank()
 
-  const token = await credential(args)
-  const result = await step(
-    `Uploading ${artifacts.length} file${artifacts.length === 1 ? "" : "s"}`,
-    async () =>
-      publishRelease({
-        api,
-        token,
-        version,
-        channel,
-        bridge: args.flags.has("bridge"),
-        commit,
-        schelfToml: context.schelfToml,
-        permissionsToml: context.permissionsToml,
-        config: await configBundle(root, config),
-        notes: flag(args, "notes") ?? context.notes,
-        artifacts: await hashArtifacts(artifacts),
-      }),
+  const signed = await credential(args)
+  const release: Release = {
+    config: await configBundle(root, config),
+    version,
+    channel,
+    notes: flag(args, "notes") ?? context.notes,
+    artifacts,
+  }
+  const bridge = args.flags.has("bridge")
+  const result = await step(`Uploading ${artifacts.length} file${artifacts.length === 1 ? "" : "s"}`, () =>
+    signed.kind === "session"
+      ? uploadAsPerson(api, signed, id, release, bridge)
+      : publishRelease({
+          api,
+          token: signed.token,
+          bridge,
+          commit,
+          schelfToml: context.schelfToml,
+          permissionsToml: context.permissionsToml,
+          ...release,
+        }),
   )
   emit({
     applied: result.applied,
@@ -88,5 +121,5 @@ export async function publish(args: Args) {
   blank()
   line(link(result.completed.dashboard))
   blank()
-  return result.completed.checks.some((check) => check.status === "failed") ? 1 : 0
+  return result.completed.checks.some((check) => check.status === "failed") ? EXIT.failed : EXIT.ok
 }

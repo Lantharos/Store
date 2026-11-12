@@ -1,5 +1,5 @@
 export const DOC_SECTIONS = [
-  { title: "Start here", pages: ["getting-started", "app-ids", "schelf-toml", "permissions"] },
+  { title: "Start here", pages: ["getting-started", "terminal", "app-ids", "schelf-toml", "permissions"] },
   { title: "Publishers", pages: ["organisations", "verification"] },
   {
     title: "Publishing",
