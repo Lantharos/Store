@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AppSettings, ListingMeta, ListingSource, ListingText } from "@schelf/protocol"
+  import type { AppSettings, ListingMeta, ListingText } from "@schelf/protocol"
   import { untrack } from "svelte"
   import ColorField from "../../ui/fields/ColorField.svelte"
   import Field from "../../ui/fields/Field.svelte"
@@ -8,6 +8,8 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
+  import FileValue from "../files/FileValue.svelte"
+  import { listingFile } from "../files/files.ts"
   import CategoryPicker from "./CategoryPicker.svelte"
   import IconField from "./IconField.svelte"
   import Preview from "./Preview.svelte"
@@ -27,14 +29,8 @@
     pt: "Portuguese",
     ja: "Japanese",
   }
-  const SOURCE_NOTES: Partial<Record<ListingSource, string>> = {
-    appstream: "From your AppStream file",
-    sabine: "From Sabine.toml",
-    listing: "From your listing.toml",
-  }
-  const textNote = (field: string) =>
-    SOURCE_NOTES[settings.listing_sources[locale]?.[field] ?? "dashboard"] ?? null
-  const metaNote = (field: string) => SOURCE_NOTES[settings.meta_sources[field] ?? "dashboard"] ?? null
+  const file = $derived(listingFile(settings))
+  const wordKey = (field: string) => (locale === "en" ? field : `translations.${locale}.${field}`)
 
   let locale = $state("en")
   let listing = $state(untrack(() => $state.snapshot(settings.listing)))
@@ -49,10 +45,12 @@
       JSON.stringify(meta) !== JSON.stringify(settings.meta),
   )
   const locales = $derived(
-    [...new Set([...Object.keys(listing), ...Object.keys(LOCALE_NAMES)])].map((code) => ({
-      value: code,
-      label: `${LOCALE_NAMES[code] ?? code}${listing[code] ? "" : " (add)"}`,
-    })),
+    [...new Set([...Object.keys(listing), ...Object.keys(LOCALE_NAMES)])]
+      .map((code) => ({
+        value: code,
+        label: `${LOCALE_NAMES[code] ?? code}${listing[code] ? "" : " (add)"}`,
+      }))
+      .filter((option) => !file || listing[option.value]),
   )
 
   function chooseLocale(code: string) {
@@ -105,22 +103,29 @@
       {#snippet aside()}
         <div class="w-44"><Select value={locale} options={locales} label="Language" onchange={chooseLocale} /></div>
       {/snippet}
-      <Field label="Name" note={textNote("name")} count={{ used: text.name.length, max: 60 }}>
+      {#if file}
+        <Field label="Name"><FileValue value={text.name} {file} key={wordKey("name")} /></Field>
+        <Field label="Summary"><FileValue value={text.summary} {file} key={wordKey("summary")} /></Field>
+        <Field label="Description"><FileValue value={text.description} {file} key={wordKey("description")} /></Field>
+        <Field label="Search words"><FileValue value={text.keywords.join(", ")} {file} key={wordKey("keywords")} /></Field>
+      {:else}
+      <Field label="Name" count={{ used: text.name.length, max: 60 }}>
         <input class="field" bind:value={listing[locale]!.name} maxlength="60" />
       </Field>
-      <Field label="Summary" note={textNote("summary")} count={{ used: text.summary.length, max: 120 }}>
+      <Field label="Summary" count={{ used: text.summary.length, max: 120 }}>
         <input class="field" bind:value={listing[locale]!.summary} maxlength="120" />
       </Field>
-      <Field label="Description" note={textNote("description")} hint="Plain paragraphs and lists. Links and **bold** work.">
+      <Field label="Description" hint="Plain paragraphs and lists. Links and **bold** work.">
         <textarea class="field min-h-48 resize-y py-3 leading-relaxed" bind:value={listing[locale]!.description} maxlength="10000"></textarea>
       </Field>
-      <Field label="Search words" note={textNote("keywords")} hint="Other words people might search for, separated by commas.">
+      <Field label="Search words" hint="Other words people might search for, separated by commas.">
         <input
           class="field"
           value={text.keywords.join(", ")}
           onchange={(event) => (listing[locale]!.keywords = event.currentTarget.value.split(",").map((word) => word.trim()).filter(Boolean).slice(0, 20))}
         />
       </Field>
+      {/if}
     </Section>
 
     <Section
@@ -129,22 +134,32 @@
         ? "Your icon, and screenshots of the extension at work. Lists show the first screenshot cropped to a 2:1 strip from the middle, with your icon in its lower left corner."
         : "Your icon, and screenshots of the app doing what it's for."}
     >
-      <IconField appId={settings.app.id} bind:icon={meta.icon} name={text.name} />
-      <Screenshots appId={settings.app.id} bind:screenshots />
+      <IconField appId={settings.app.id} bind:icon={meta.icon} name={text.name} {file} />
+      <Screenshots appId={settings.app.id} bind:screenshots {file} />
     </Section>
 
     <Section title="Details">
-      <Field label="Categories" note={metaNote("categories")} hint="Up to four. Drag to change the order; the first one is your primary category.">
-        <CategoryPicker bind:categories={meta.categories} saved={settings.meta.categories} />
-      </Field>
-      <div class="grid gap-6 sm:grid-cols-2">
-        <Field label="Website" note={metaNote("homepage")}><input class="field" type="url" placeholder="https://" bind:value={meta.homepage} /></Field>
-        <Field label="Help and support" note={metaNote("support")}><input class="field" type="url" placeholder="https://" bind:value={meta.support} /></Field>
-        <Field label="Privacy policy" note={metaNote("privacy_url")} hint="Needed if your app sends anything about people anywhere."><input class="field" type="url" placeholder="https://" bind:value={meta.privacy_url} /></Field>
-      </div>
-      <Field label="Colour" note={metaNote("brand_color")} hint="Used behind your app when it's featured.">
-        <ColorField bind:value={meta.brand_color} label="Colour" />
-      </Field>
+      {#if file}
+        <Field label="Categories"><FileValue value={meta.categories.join(", ")} {file} key="categories" /></Field>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <Field label="Website"><FileValue value={meta.homepage} {file} key="homepage" /></Field>
+          <Field label="Help and support"><FileValue value={meta.support} {file} key="support" /></Field>
+          <Field label="Privacy policy"><FileValue value={meta.privacy_url} {file} key="privacy_url" /></Field>
+          <Field label="Colour"><FileValue value={meta.brand_color} {file} key="brand_color" /></Field>
+        </div>
+      {:else}
+        <Field label="Categories" hint="Up to four. Drag to change the order; the first one is your primary category.">
+          <CategoryPicker bind:categories={meta.categories} saved={settings.meta.categories} />
+        </Field>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <Field label="Website"><input class="field" type="url" placeholder="https://" bind:value={meta.homepage} /></Field>
+          <Field label="Help and support"><input class="field" type="url" placeholder="https://" bind:value={meta.support} /></Field>
+          <Field label="Privacy policy" hint="Needed if your app sends anything about people anywhere."><input class="field" type="url" placeholder="https://" bind:value={meta.privacy_url} /></Field>
+        </div>
+        <Field label="Colour" hint="Used behind your app when it's featured.">
+          <ColorField bind:value={meta.brand_color} label="Colour" />
+        </Field>
+      {/if}
     </Section>
   </div>
 

@@ -9,7 +9,11 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
 
-  let { appId, screenshots = $bindable() }: { appId: string; screenshots: DashboardScreenshot[] } = $props()
+  let {
+    appId,
+    screenshots = $bindable(),
+    file,
+  }: { appId: string; screenshots: DashboardScreenshot[]; file: string | null } = $props()
 
   interface Pending {
     id: string
@@ -144,13 +148,13 @@
   aria-label="Screenshots"
   ondragover={(event) => {
     event.preventDefault()
-    over = true
+    over = !file
   }}
   ondragleave={() => (over = false)}
   ondrop={(event) => {
     event.preventDefault()
     over = false
-    add(event.dataTransfer?.files)
+    if (!file) add(event.dataTransfer?.files)
   }}
   class="rounded-2xl transition-shadow {over ? 'shadow-[0_0_0_2px_var(--accent)]' : ''}"
 >
@@ -162,6 +166,7 @@
         class="group relative overflow-hidden rounded-xl bg-well transition-[box-shadow,scale] {dragging === shot.id ? 'z-10 scale-[1.03] shadow-float' : ''}"
       >
         <img src={shot.url} alt={shot.caption ?? `Screenshot ${index + 1}`} class="pointer-events-none aspect-[16/10] w-full object-cover" draggable="false" />
+        {#if !file}
         <div class="absolute inset-x-0 top-0 flex items-start justify-between p-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
           <button
             type="button"
@@ -177,6 +182,7 @@
             <Trash2 class="size-4" />
           </button>
         </div>
+        {/if}
         {#if index === 0}<span class="absolute bottom-1.5 left-1.5 rounded-md bg-raised/90 px-1.5 py-0.5 text-[12px] backdrop-blur">Shown first</span>{/if}
       </li>
     {/each}
@@ -185,6 +191,7 @@
         <span class="flex items-center gap-2"><LoaderCircle class="size-4 animate-spin" />Uploading</span>
       </li>
     {/each}
+    {#if !file}
     <li>
       <button
         type="button"
@@ -194,7 +201,12 @@
         <span class="flex flex-col items-center gap-1.5"><ImagePlus class="size-5" />Add screenshots</span>
       </button>
     </li>
+    {/if}
   </ul>
-  <input bind:this={picker} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onchange={(event) => add(event.currentTarget.files)} />
-  <p class="mt-2 text-[13px] text-ink-muted">Drag to reorder, or drop images here. PNG, JPEG or WebP, up to 8 MB. Two or more look best.</p>
+  {#if file}
+    <p class="mt-2 font-mono text-[12px] text-ink-muted">{file} · screenshots</p>
+  {:else}
+    <input bind:this={picker} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onchange={(event) => add(event.currentTarget.files)} />
+    <p class="mt-2 text-[13px] text-ink-muted">Drag to reorder, or drop images here. PNG, JPEG or WebP, up to 8 MB. Two or more look best.</p>
+  {/if}
 </div>

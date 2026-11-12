@@ -1,10 +1,21 @@
 import process from "node:process"
+import { EXIT } from "./exit.ts"
 import { accent, bad, bold, dim, good, interactive, muted, warn } from "./style.ts"
 
 const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const indent = "  "
 
-const write = (line = "") => process.stdout.write(`${line}\n`)
+let json = false
+
+export function printJson() {
+  json = true
+}
+
+const write = (line = "") => (json ? process.stderr : process.stdout).write(`${line}\n`)
+
+export function emit(data: unknown) {
+  if (json) process.stdout.write(`${JSON.stringify(data, null, 2)}\n`)
+}
 
 export const blank = () => write()
 export const title = (text: string) => write(`\n${indent}${bold(text)}\n`)
@@ -63,6 +74,7 @@ export class Failure extends Error {
   constructor(
     message: string,
     readonly hint?: string,
+    readonly code: number = EXIT.failed,
   ) {
     super(message)
   }

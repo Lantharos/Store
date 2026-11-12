@@ -22,14 +22,19 @@ export function wrap(text: string, width: number): string[] {
   return lines
 }
 
-export function preview({ listing, access, fullAccess }: Validation) {
-  line(bold(listing.name ?? "Unnamed app"))
-  if (listing.summary) line(listing.summary)
-  const byline = [listing.developer, listing.licence, fullAccess ? "Full access" : "Limited access"]
+export function preview({ manifest, listing, access, fullAccess }: Validation) {
+  if (!listing) return false
+  const page = listing.value
+  line(bold(page.name))
+  line(page.summary)
+  const byline = [
+    manifest?.licence ?? (manifest?.distribution === "proprietary" ? "Closed source" : undefined),
+    fullAccess ? "Full access" : "Limited access",
+  ]
   line(muted(byline.filter(Boolean).join(" · ")))
-  if (listing.description) {
+  if (page.description) {
     blank()
-    const lines = wrap(listing.description, WIDTH)
+    const lines = wrap(page.description, WIDTH)
     for (const text of lines.slice(0, DESCRIPTION_LINES)) line(text)
     if (lines.length > DESCRIPTION_LINES) line(muted("…"))
   }
@@ -37,8 +42,10 @@ export function preview({ listing, access, fullAccess }: Validation) {
   const [first = "Nothing beyond its own place on the desktop", ...rest] = access
   field("Permissions", first)
   for (const text of rest) field("", text)
-  field("Screenshots", String(listing.screenshots))
-  if (listing.categories.length) field("Categories", listing.categories.join(", "))
-  if (listing.homepage) field("Homepage", listing.homepage)
-  if (listing.support) field("Support", listing.support)
+  field("Screenshots", String(page.screenshots?.length ?? 0))
+  if (page.categories?.length) field("Categories", page.categories.join(", "))
+  if (page.homepage) field("Homepage", page.homepage)
+  if (page.support) field("Support", page.support)
+  if (page.translations) field("Languages", ["en", ...Object.keys(page.translations)].join(", "))
+  return true
 }

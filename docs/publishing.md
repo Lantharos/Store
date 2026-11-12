@@ -34,17 +34,35 @@ Proofs are re-checked monthly. A lapsed proof keeps existing apps listed but blo
 - Disputes go to the Claims inbox. Trademark holders win over first-come, with evidence.
 - Forks are welcome under their own id and a name that doesn't pass for the original.
 
-## schelf.toml
+## The files
+
+Two files describe a project completely; everything that isn't a person, a secret or a permission to publish has a key in one of them. The full reference, with every key, is the public [schelf.toml and listing.toml](https://schelf.store/docs/schelf-toml) page; editors complete both from the JSON Schemas at `https://schelf.store/schemas/schelf.toml.json` and `https://schelf.store/schemas/listing.toml.json`, which `schelf init` names on each file's first line.
 
 ```toml
+#:schema https://schelf.store/schemas/schelf.toml.json
 id = "io.github.alice.Notes"
-kind = "app"                 # or "extension" (Luft only)
-format = "sabine"            # "appimage", or "luft-extension" for extensions
+kind = "app"                       # or "extension" (Luft only)
+format = "sabine"                  # "appimage", "files", or "luft-extension" for extensions
 permissions = "permissions.toml"   # Luft's shared permission format; omit for full access
-listing = "store/"           # optional: a folder with a listing.toml, sent with every release
+listing = "store"                  # the folder with listing.toml, the icon and screenshots
+licence = "MIT"
+repository = "alice/notes"
+
+[channels.nightly]
+keep = 10
 ```
 
-Most of the listing comes from `Sabine.toml`, the AppStream metainfo file and the repository; a `listing.toml` in the `listing` folder sets the summary, description, keywords, categories, links and colour with each release, and the dashboard edits the rest. A field last changed in the dashboard stays as it is. Categories are in order: the first is the primary one, shown under the name and in lists, and a project can have up to four. The file is sent with every release, so the store always reviews the declaration that matches the build.
+`schelf.toml` is about building and publishing: the id or project address, kind, format, updater, permission file, listing folder, distribution, licence, repository, requirements, whether download links follow the rollout, and each channel's keep count, rollout and ending. `listing.toml` is the store page: name, summary, description, keywords, categories, links, content rating, colour, icon, screenshots in order, translations, `listed` (asking to be listed) and `indexed`.
+
+**The files win.** `schelf apply` (or the publish action, before every release) sends both, with the hash of each image; the store asks for the images it doesn't have, then replaces whatever it had for every field the files cover, and the dashboard shows those fields read-only with the file and key that set them. A project without a listing folder keeps the store page the dashboard edits. The store validates the files with the same schemas as `schelf check` and answers with the file, key and allowed values of each mistake. What a person decides stays with a person: `listed = true` asks to be listed (from a person's CLI session that needs their approval in the browser first, see [approvals](#approving-in-the-browser)); wider permissions and a name or icon that looks like another app's are reviewed with the next release as before.
+
+**Room to grow.** The format is built so these fit later without breaking a file:
+
+- `platforms = ["linux-x86_64", "windows-x86_64"]`, the targets every release must carry, at the top of `schelf.toml`. It belongs to the default part (below).
+- `[parts.<name>]` tables, each with its own `platforms`: named groups of files inside one release, sharing its version, review and channels, like a framework's `runtime`, `cli` and `daemon`. The default part is the app itself and is the only one the listing, the Schelf app and the update feeds use; named parts are served at `latest/<part>/<platform>` and `v/<version>/<part>/…` and show in the files view, `latest.json` and checksums. A project with only named parts has no listing folder and can't ask to be listed. Anything with its own version line is its own project.
+- `domain = "downloads.example.com"` for a custom domain, which attaching would need approval for, like every change to what the public sees.
+- `[channels.<name>] invite_only = true` with the invitations themselves kept out of the file, since they're people.
+- A `[privacy]` table in `listing.toml` (`telemetry`, `ads`, `ai`), shown on the page and checked in review.
 
 ## Trusted publishing
 

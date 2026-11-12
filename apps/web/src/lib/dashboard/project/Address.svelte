@@ -4,10 +4,12 @@
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
   import { session } from "../api/session.svelte.ts"
+  import { schelfFile } from "../files/files.ts"
   import { saveHosting } from "./save.ts"
 
   let { settings = $bindable() }: { settings: AppSettings } = $props()
   const app = $derived(settings.app)
+  const file = $derived(schelfFile(settings))
   let slug = $state(settings.app.slug)
   let saving = $state(false)
 
@@ -35,7 +37,11 @@
   {/if}
   {#if app.kind !== "extension"}
     <Row title="Links follow the rollout" description="Off, download links wait until a release reaches everyone. On, they hand it out to the same share of people as it rolls out.">
-      <Switch label="Links follow the rollout" checked={app.latest_follows_rollout} onchange={async (latest_follows_rollout) => (settings = await saveHosting(settings, { latest_follows_rollout }))} />
+      {#if file}
+        <span class="text-[15px] text-ink-soft">{app.latest_follows_rollout ? "On" : "Off"}<span class="ml-2 font-mono text-[12px] text-ink-muted">{file} · links.follow_rollout</span></span>
+      {:else}
+        <Switch label="Links follow the rollout" checked={app.latest_follows_rollout} onchange={async (latest_follows_rollout) => (settings = await saveHosting(settings, { latest_follows_rollout }))} />
+      {/if}
     </Row>
   {/if}
 </Group>

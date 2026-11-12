@@ -1,67 +1,21 @@
-import type { ListingFile } from "@schelf/protocol"
-import { type Project, SUMMARY_LIMIT } from "../project/detect.ts"
+import type { ListingToml } from "@schelf/protocol"
 import type { Issue } from "./issues.ts"
 
-export interface Listing {
-  name?: string
-  summary?: string
-  description?: string
-  developer?: string
-  licence?: string
-  icon?: string
-  screenshots: number
-  categories: string[]
-  homepage?: string
-  support?: string
-  contentRating: boolean
-}
-
-const NAME_LIMIT = 60
 const MIN_SCREENSHOTS = 2
 
-export function readListing(project: Project, extraScreenshots: number, file?: ListingFile): Listing {
-  const component = project.appstream?.component
-  return {
-    name: project.name,
-    summary: file?.summary ?? project.summary,
-    description: file?.description ?? (component?.description || project.sabine?.description),
-    developer: component?.developer,
-    licence: project.licence,
-    icon: project.icon,
-    screenshots: (component?.screenshots.length ?? 0) + extraScreenshots,
-    categories: file?.categories ?? component?.categories ?? [],
-    homepage: file?.homepage ?? component?.urls.homepage,
-    support: file?.support ?? component?.urls.bugtracker ?? component?.urls.help ?? component?.urls.contact,
-    contentRating: component?.contentRating !== undefined,
-  }
-}
-
-export function listingIssues(listing: Listing): Issue[] {
+export function listingIssues(file: string, listing: ListingToml): Issue[] {
   const issues: Issue[] = []
-  const later = "Add it to the AppStream file, or in the dashboard."
-  if (!listing.name) issues.push({ level: "error", message: "The app has no name" })
-  else if (listing.name.length > NAME_LIMIT)
-    issues.push({ level: "error", message: `The name is longer than ${NAME_LIMIT} characters` })
-  if (!listing.summary) issues.push({ level: "error", message: "The app has no summary", hint: later })
-  else if (listing.summary.length > SUMMARY_LIMIT)
-    issues.push({ level: "error", message: `The summary is longer than ${SUMMARY_LIMIT} characters` })
-  if (!listing.description) issues.push({ level: "warning", message: "No description", hint: later })
-  if (!listing.icon) issues.push({ level: "warning", message: "No icon", hint: later })
-  if (listing.screenshots < MIN_SCREENSHOTS)
-    issues.push({
-      level: "warning",
-      message: `${listing.screenshots} screenshot${listing.screenshots === 1 ? "" : "s"}, and review asks for at least ${MIN_SCREENSHOTS}`,
-      hint: later,
-    })
-  if (!listing.categories.length) issues.push({ level: "warning", message: "No categories", hint: later })
-  if (!listing.homepage) issues.push({ level: "warning", message: "No homepage", hint: later })
-  if (!listing.support) issues.push({ level: "warning", message: "No support link", hint: later })
-  if (!listing.contentRating) issues.push({ level: "warning", message: "No content rating", hint: later })
-  if (!listing.licence)
-    issues.push({
-      level: "warning",
-      message: "No licence found",
-      hint: "Add a LICENSE file or project_license.",
-    })
+  const missing = (key: string, message: string) => issues.push({ level: "warning", file, key, message })
+  if (!listing.description) missing("description", "No description; review asks for one")
+  if (!listing.icon) missing("icon", "No icon")
+  const screenshots = listing.screenshots?.length ?? 0
+  if (screenshots < MIN_SCREENSHOTS)
+    missing(
+      "screenshots",
+      `${screenshots} screenshot${screenshots === 1 ? "" : "s"}, and review asks for at least ${MIN_SCREENSHOTS}`,
+    )
+  if (!listing.categories?.length) missing("categories", "No categories")
+  if (!listing.homepage) missing("homepage", "No homepage")
+  if (!listing.support) missing("support", "No support link")
   return issues
 }

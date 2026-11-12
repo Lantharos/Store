@@ -73,7 +73,7 @@ export async function replacedWorkflows(root: string) {
 
 export interface PlannedFile {
   path: string
-  contents: string
+  contents: string | Uint8Array
   existing?: string
 }
 

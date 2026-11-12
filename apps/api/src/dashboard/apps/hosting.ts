@@ -12,6 +12,7 @@ import {
 import { and, eq, ne } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
+import { refuseIfListingInFiles, refuseIfSetInFiles } from "../../config/managed.ts"
 import { db, schema } from "../../db/client.ts"
 import { ensureChannel, promote } from "../../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../../hosting/ended.ts"
@@ -29,6 +30,8 @@ export const hostingRoutes = new Hono<SignedInVars>()
 hostingRoutes.patch("/:id/hosting", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   const input = await readBody(c, updateHosting)
+  if (input.page_indexed !== undefined) refuseIfListingInFiles(app)
+  if (input.latest_follows_rollout !== undefined) refuseIfSetInFiles(app)
   if (input.slug && input.slug !== app.slug) {
     if (RESERVED_SLUGS.has(input.slug)) fail(422, "That name is reserved")
     const taken = await db.$count(
@@ -58,12 +61,14 @@ hostingRoutes.patch("/:id/hosting", async (c) => {
 
 hostingRoutes.post("/:id/listing-request", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
+  refuseIfListingInFiles(app)
   await requestListing(app, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, app.id)).app))
 })
 
 hostingRoutes.post("/:id/switch", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
+  refuseIfSetInFiles(app)
   const { to } = await readBody(c, startSwitchRequest)
   await startSwitch(app, to, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, app.id)).app))
@@ -71,12 +76,14 @@ hostingRoutes.post("/:id/switch", async (c) => {
 
 hostingRoutes.delete("/:id/switch", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
+  refuseIfSetInFiles(app)
   await cancelSwitch(app, c.var.viewer.name)
   return c.json(await appSettings((await appAccess(c.var.viewer, app.id)).app))
 })
 
 hostingRoutes.patch("/:id/channels/:channel", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfSetInFiles(app)
   const changes = await readBody(c, updateChannel)
   const name = c.req.param("channel")
   await ensureChannel(app.id, name)
@@ -89,6 +96,7 @@ hostingRoutes.patch("/:id/channels/:channel", async (c) => {
 
 hostingRoutes.post("/:id/channels/:channel/end", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfSetInFiles(app)
   const { into } = await readBody(c, endChannelRequest)
   await endChannel(app, c.req.param("channel"), into, c.var.viewer.name)
   return c.json(await appSettings(app))
@@ -96,6 +104,7 @@ hostingRoutes.post("/:id/channels/:channel/end", async (c) => {
 
 hostingRoutes.post("/:id/channels/:channel/reopen", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfSetInFiles(app)
   await reopenChannel(app, c.req.param("channel"), c.var.viewer.name)
   return c.json(await appSettings(app))
 })

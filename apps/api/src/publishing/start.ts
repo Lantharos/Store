@@ -9,50 +9,37 @@ import {
   type PublishFile,
   type PublishRequest,
   type PublishResponse,
+  parseConfig,
   partsFor,
   paths,
   type Requires,
   readExtensionAccess,
-  readListingFile,
   readLuftMinimum,
   readPermissions,
-  readSchelfToml,
+  SCHELF_TOML,
   type SchelfToml,
+  schelfToml,
   splitProjectPath,
 } from "@schelf/protocol"
 import { and, eq, sql } from "drizzle-orm"
-import { ZodError } from "zod"
 import { db, insertRows, schema } from "../db/client.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { refuseEnded } from "../hosting/ended.ts"
 import { limitManualUploads } from "../hosting/limits.ts"
 import { releaseLine } from "../hosting/switches.ts"
-import { fail } from "../lib/http.ts"
+import { fail, failConfig } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { acceptingSubmissions } from "../ops/events.ts"
 import type { AppRow } from "../signing/records.ts"
-import { applyListingFile } from "./listing-file.ts"
 import { identifyPublisher, type Publisher } from "./publisher.ts"
 import { issueUploadToken } from "./upload-token.ts"
 
 const RETRYABLE = new Set(["uploading", "failed"])
 
 function readManifest(text: string): SchelfToml {
-  try {
-    return readSchelfToml(text)
-  } catch (error) {
-    if (error instanceof ZodError) throw error
-    fail(422, `schelf.toml doesn't parse: ${(error as Error).message}`)
-  }
-}
-
-function readListing(text: string) {
-  try {
-    return readListingFile(text)
-  } catch (error) {
-    if (error instanceof ZodError) throw error
-    fail(422, `listing.toml doesn't parse: ${(error as Error).message}`)
-  }
+  const read = parseConfig(SCHELF_TOML, schelfToml, text)
+  if (!read.ok) failConfig(read.issues)
+  return read.value
 }
 
 function declared(manifest: SchelfToml, text: string | undefined) {
@@ -86,7 +73,7 @@ export async function appByProject(publisherSlug: string, slug: string) {
   return row?.app
 }
 
-function appOfManifest(manifest: SchelfToml) {
+export function appOfManifest(manifest: SchelfToml) {
   if (manifest.id) return appById(manifest.id)
   const path = splitProjectPath(manifest.project!)!
   return appByProject(path.publisher, path.project)
@@ -235,8 +222,7 @@ export async function startRelease(
     fail(422, `${app.id} is registered as an ${app.kind}, not an ${manifest.kind}`)
   const publisher = await identifyPublisher(credential, app)
   await publishable(app)
-  const listing = body.listing_toml === undefined ? undefined : readListing(body.listing_toml)
-  const release = await createRelease({
+  return createRelease({
     app,
     publisher,
     version: body.version,
@@ -250,6 +236,4 @@ export async function startRelease(
     bridge: body.bridge,
     files: body.files,
   })
-  if (listing) await applyListingFile(app, listing)
-  return release
 }

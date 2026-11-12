@@ -1,4 +1,4 @@
-import type { ApiError } from "@schelf/protocol"
+import { type ApiError, type ConfigIssue, describeIssue } from "@schelf/protocol"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 import { ZodError, type z } from "zod"
@@ -8,6 +8,16 @@ export function fail(
   message: string,
 ): never {
   throw new HTTPException(status, { message })
+}
+
+export class ConfigFailure extends Error {
+  constructor(readonly issues: ConfigIssue[]) {
+    super(issues.map(describeIssue).join("\n"))
+  }
+}
+
+export function failConfig(issues: ConfigIssue[]): never {
+  throw new ConfigFailure(issues)
 }
 
 export async function readBody<Schema extends z.ZodType>(
@@ -23,6 +33,17 @@ export function readQuery<Schema extends z.ZodType>(c: Context, schema: Schema):
 }
 
 export function errorResponse(error: unknown) {
+  if (error instanceof ConfigFailure)
+    return Response.json(
+      {
+        error:
+          error.issues.length === 1
+            ? describeIssue(error.issues[0]!)
+            : `${error.issues.length} things in the files need fixing`,
+        config: error.issues,
+      } satisfies ApiError,
+      { status: 422 },
+    )
   if (error instanceof HTTPException)
     return Response.json({ error: error.message || "Not found" } satisfies ApiError, { status: error.status })
   if (error instanceof ZodError)

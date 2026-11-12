@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { SCHELF_WORKFLOW, schelfTomlFor, workflowFor } from "@schelf/protocol"
+import { issueText } from "../src/check/issues.ts"
 import { validate } from "../src/check/validate.ts"
 import { detectProject } from "../src/project/detect.ts"
 import { helperBuild } from "../src/setup/helper.ts"
@@ -76,16 +77,12 @@ test("schelf check asks for the oldest Luft the extension runs on", async () => 
   const luft = async () =>
     (await validate(await detectProject(root))).issues.filter((issue) => issue.message.includes("Luft"))
 
-  expect(await luft()).toEqual([
-    {
-      level: "error",
-      message: "extension.toml doesn't say the oldest Luft it runs on",
-      hint: 'Add [luft] with minimum = "1.0", or a nightly such as minimum = "1.0-nightly.27".',
-    },
+  expect((await luft()).map(issueText)).toEqual([
+    "extension.toml luft.minimum: doesn't say the oldest Luft it runs on",
   ])
   await writeFile(join(root, "extension.toml"), `${RAIN}\n[luft]\nminimum = "1.2.0"\n`)
-  expect((await luft()).map((issue) => issue.message)).toEqual([
-    "extension.toml [luft] minimum: A Luft version looks like 1.2 or 1.2-nightly.21",
+  expect((await luft()).map(issueText)).toEqual([
+    "extension.toml luft.minimum: A Luft version looks like 1.2 or 1.2-nightly.21",
   ])
   await writeFile(join(root, "extension.toml"), `${RAIN}\n[luft]\nminimum = "1.0-nightly.27"\n`)
   expect(await luft()).toEqual([])

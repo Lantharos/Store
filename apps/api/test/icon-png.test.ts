@@ -1,6 +1,6 @@
+import { sniffImage } from "@schelf/protocol"
 import { expect, test } from "vitest"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
-import { sniffImage } from "../src/dashboard/apps/images.ts"
 
 test("an SVG icon becomes a square PNG mail clients can draw", async () => {
   const svg = new TextEncoder().encode(

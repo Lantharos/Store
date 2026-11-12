@@ -6,7 +6,12 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
 
-  let { appId, icon = $bindable(), name }: { appId: string; icon: string | null; name: string } = $props()
+  let {
+    appId,
+    icon = $bindable(),
+    name,
+    file,
+  }: { appId: string; icon: string | null; name: string; file: string | null } = $props()
   let picker = $state<HTMLInputElement>()
   let busy = $state(false)
 
@@ -33,9 +38,13 @@
     <AppIcon src={icon} name={name || "?"} class="size-20 text-2xl" />
     {#if busy}<span class="absolute inset-0 grid place-items-center rounded-[22%] bg-raised/70"><LoaderCircle class="size-5 animate-spin" /></span>{/if}
   </div>
-  <div>
-    <button type="button" class="button button-sm button-quiet" onclick={() => picker?.click()} disabled={busy}>Replace icon</button>
-    <p class="mt-1.5 text-[13px] text-ink-muted">A square SVG, or a square PNG of at least 512 pixels.</p>
-  </div>
-  <input bind:this={picker} type="file" accept="image/svg+xml,image/png" hidden onchange={(event) => upload(event.currentTarget.files?.[0])} />
+  {#if file}
+    <p class="font-mono text-[12px] text-ink-muted">{file} · icon</p>
+  {:else}
+    <div>
+      <button type="button" class="button button-sm button-quiet" onclick={() => picker?.click()} disabled={busy}>Replace icon</button>
+      <p class="mt-1.5 text-[13px] text-ink-muted">A square SVG, or a square PNG of at least 512 pixels.</p>
+    </div>
+    <input bind:this={picker} type="file" accept="image/svg+xml,image/png" hidden onchange={(event) => upload(event.currentTarget.files?.[0])} />
+  {/if}
 </div>

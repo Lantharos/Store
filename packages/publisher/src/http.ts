@@ -1,15 +1,17 @@
-import type { ApiError } from "@schelf/protocol"
+import { type ApiError, type ConfigIssue, describeIssue } from "@schelf/protocol"
 
 export class ApiFailure extends Error {
   constructor(
     readonly status: number,
     message: string,
     readonly issues: NonNullable<ApiError["issues"]> = [],
+    readonly config: ConfigIssue[] = [],
   ) {
     super(message)
   }
 
   get detail() {
+    if (this.config.length) return this.config.map(describeIssue).join("\n")
     return [this.message, ...this.issues.map((issue) => `${issue.path}: ${issue.message}`)].join("\n")
   }
 }
@@ -18,7 +20,7 @@ async function failureFrom(response: Response) {
   const text = await response.text()
   try {
     const body = JSON.parse(text) as ApiError
-    return new ApiFailure(response.status, body.error, body.issues)
+    return new ApiFailure(response.status, body.error, body.issues, body.config)
   } catch {
     return new ApiFailure(response.status, text.trim() || `${response.status} ${response.statusText}`)
   }

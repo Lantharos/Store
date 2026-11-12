@@ -8,16 +8,17 @@ import {
   reorderScreenshots,
   screenshotUpload,
   sha256Hex,
+  sniffImage,
 } from "@schelf/protocol"
 import { and, eq, max } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
+import { refuseIfListingInFiles } from "../../config/managed.ts"
 import { db, schema } from "../../db/client.ts"
 import { fail, readBody, readQuery } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
 import { appAccess } from "../../publishers/access.ts"
 import { fileUrl } from "../../signing/records.ts"
-import { sniffImage } from "./images.ts"
 import { listingChanged } from "./listing.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
@@ -51,6 +52,7 @@ async function storeIconPng(svgKey: string, svg: Uint8Array) {
 
 mediaRoutes.put("/:id/icon", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfListingInFiles(app)
   const { key, image, bytes } = await storeImage(
     c.req.raw,
     (hash, extension) => paths.media(app.id, hash, extension),
@@ -69,6 +71,7 @@ mediaRoutes.put("/:id/icon", async (c) => {
 
 mediaRoutes.post("/:id/screenshots", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfListingInFiles(app)
   const options = readQuery(c, screenshotUpload)
   const { key, image } = await storeImage(
     c.req.raw,
@@ -110,6 +113,7 @@ mediaRoutes.post("/:id/screenshots", async (c) => {
 
 mediaRoutes.put("/:id/screenshots/order", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfListingInFiles(app)
   const { ids } = await readBody(c, reorderScreenshots)
   await db.batch(
     ids.map((id, position) =>
@@ -125,6 +129,7 @@ mediaRoutes.put("/:id/screenshots/order", async (c) => {
 
 mediaRoutes.delete("/:id/screenshots/:shot", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
+  refuseIfListingInFiles(app)
   await db
     .delete(schema.screenshot)
     .where(and(eq(schema.screenshot.id, c.req.param("shot")), eq(schema.screenshot.appId, app.id)))

@@ -38,6 +38,7 @@ const VALUED = new Set([
   "name",
   "publisher",
   "channel",
+  "summary",
 ])
 
 export function flag(args: Args, name: string) {

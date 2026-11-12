@@ -23,7 +23,6 @@ interface Release {
   version?: string
   channel?: string
   announcedSha?: string
-  listingToml?: string
   names?: string[]
   blockmap?: string
 }
@@ -38,7 +37,6 @@ async function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>
         channel: release.channel,
         schelf_toml: schelfToml(appId),
         permissions_toml: PERMISSIONS,
-        listing_toml: release.listingToml,
         files: await Promise.all(
           (release.names ?? ["notes.AppImage"]).map(async (name) => ({
             name,
@@ -196,54 +194,6 @@ describe("publishing with a dashboard token", () => {
     const started = await publish(token, appId, nightly, { version: "0.1.0-nightly.202611030415.g1a2b3c4" })
     expect(started.channel).toBe("nightly")
     expect(versionCheck(await uploadAndComplete(started, nightly))?.status).toBe("passed")
-  })
-})
-
-describe("a listing.toml sent with a release", () => {
-  const listingToml = (summary: string, categories: string[]) =>
-    `summary = "${summary}"\ncategories = ${JSON.stringify(categories)}\nbrand_color = "#3e6b4f"\n`
-
-  test("sets the listing, but leaves what was changed in the dashboard", async () => {
-    const { appId, token } = await publisherWithApp()
-    const file = bytesOf("#!/bin/sh\n")
-    await publish(token, appId, file, {
-      listingToml: listingToml("From the repository", ["Office", "Utility"]),
-    })
-
-    const row = await env.DB.prepare(
-      "SELECT categories, brand_color, m.sources AS meta, summary, l.sources AS words FROM listing_meta m JOIN listing l USING (app_id) WHERE app_id = ?",
-    )
-      .bind(appId)
-      .first<Record<string, string>>()
-    expect(JSON.parse(row!.categories!)).toEqual(["Office", "Utility"])
-    expect(row!.brand_color).toBe("#3e6b4f")
-    expect(row!.summary).toBe("From the repository")
-    expect(JSON.parse(row!.words!).summary).toBe("listing")
-
-    await env.DB.batch([
-      env.DB.prepare("UPDATE listing_meta SET categories = ?, sources = ? WHERE app_id = ?").bind(
-        JSON.stringify(["Utility", "Office"]),
-        JSON.stringify({ ...JSON.parse(row!.meta!), categories: "dashboard" }),
-        appId,
-      ),
-    ])
-    await publish(token, appId, file, {
-      version: "1.0.1",
-      listingToml: listingToml("Changed again", ["Game"]),
-    })
-    const after = await env.DB.prepare(
-      "SELECT categories, summary FROM listing_meta JOIN listing USING (app_id) WHERE app_id = ?",
-    )
-      .bind(appId)
-      .first<Record<string, string>>()
-    expect(JSON.parse(after!.categories!)).toEqual(["Utility", "Office"])
-    expect(after!.summary).toBe("Changed again")
-  })
-
-  test("that doesn't parse is refused before anything is uploaded", async () => {
-    const { appId, token } = await publisherWithApp()
-    const response = await start(token, appId, bytesOf("#!/bin/sh\n"), { listingToml: "brand_color = 3" })
-    expect(response.status).toBe(422)
   })
 })
 

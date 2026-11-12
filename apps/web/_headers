@@ -1,2 +1,6 @@
 /fonts/*
   Access-Control-Allow-Origin: *
+
+/schemas/*
+  Access-Control-Allow-Origin: *
+  Content-Type: application/schema+json

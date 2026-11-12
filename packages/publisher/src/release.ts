@@ -8,6 +8,7 @@ import {
   type UploadTarget,
 } from "@schelf/protocol"
 import type { InferredArtifact } from "./artifacts.ts"
+import { applyConfig, type ConfigBundle } from "./config.ts"
 import { digest, mapLimit } from "./files.ts"
 import { request } from "./http.ts"
 
@@ -20,7 +21,7 @@ export interface ReleaseInput {
   commit?: string
   schelfToml: string
   permissionsToml?: string
-  listingToml?: string
+  config: ConfigBundle
   notes: string
   artifacts: HashedArtifact[]
 }
@@ -69,12 +70,12 @@ export function hashArtifacts(artifacts: InferredArtifact[]): Promise<HashedArti
 }
 
 export async function publishRelease(input: ReleaseInput, onEvent: (event: PublishEvent) => void = () => {}) {
+  const applied = await applyConfig(input.api, input.token, input.config)
   const body: PublishRequest = {
     version: input.version,
     commit: input.commit,
     schelf_toml: input.schelfToml,
     permissions_toml: input.permissionsToml,
-    listing_toml: input.listingToml,
     notes: input.notes,
     channel: input.channel,
     bridge: input.bridge ?? false,
@@ -108,5 +109,5 @@ export async function publishRelease(input: ReleaseInput, onEvent: (event: Publi
     `${input.api}${API_BASE}/publish/${encodeURIComponent(release.release)}/complete`,
     { method: "POST", token: release.upload_token },
   )
-  return { release, completed }
+  return { applied, release, completed }
 }

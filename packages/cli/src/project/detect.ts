@@ -1,6 +1,6 @@
 import { join } from "node:path"
 import { type Component, parseMetainfo } from "@schelf/appstream"
-import type { Format, Kind } from "@schelf/protocol"
+import { type Format, type Kind, SUMMARY_LIMIT } from "@schelf/protocol"
 
 export type Framework = { updater: "electron" | "tauri"; evidence: string; id?: string }
 
@@ -27,8 +27,6 @@ export interface Project {
   repository?: Repository
   found: string[]
 }
-
-export const SUMMARY_LIMIT = 120
 
 const METAINFO = /\.(metainfo|appdata)\.xml$/
 const APPIMAGE_CONFIGS = [

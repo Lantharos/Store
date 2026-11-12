@@ -6,6 +6,7 @@ export {
   inferArtifact,
 } from "./artifacts.ts"
 export { collectArtifacts, expandFiles } from "./collect.ts"
+export { applyConfig, type ConfigBundle, ConfigError, configBundle } from "./config.ts"
 export { type ReleaseContext, releaseContext } from "./context.ts"
 export { digest, mapLimit } from "./files.ts"
 export { ApiFailure, request } from "./http.ts"

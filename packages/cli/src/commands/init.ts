@@ -1,4 +1,4 @@
-import { rm, stat } from "node:fs/promises"
+import { rm } from "node:fs/promises"
 import { join } from "node:path"
 import { SCHELF_WORKFLOW, type SetupInput } from "@schelf/protocol"
 import { greet, session } from "../api/auth.ts"
@@ -11,10 +11,11 @@ import { sourceOf } from "../project/source.ts"
 import { plannedFiles, replacedWorkflows, sabineInputs, sabineVersion, writePlanned } from "../setup/files.ts"
 import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
-import { importListing } from "../setup/listing.ts"
+import { LISTING_FOLDER, listingFiles } from "../setup/listing.ts"
 import { ensureNamespace } from "../setup/namespace.ts"
 import { initProject } from "../setup/project.ts"
 import { choosePublisher, registerApp, registeredApp } from "../setup/register.ts"
+import { EXIT } from "../ui/exit.ts"
 import { blank, caution, done, Failure, field, next, note, step, title } from "../ui/output.ts"
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
@@ -42,35 +43,41 @@ async function permissionsFile(project: Project) {
 
 const VERSION_FILES = { sabine: "Sabine.toml", "luft-extension": "extension.toml" } as const
 
-async function publishBranch(project: Project) {
-  if (!interactive || !(project.format === "sabine" || project.format === "luft-extension")) return undefined
+async function publishBranch(project: Project, args: Args) {
+  if (!(project.format === "sabine" || project.format === "luft-extension")) return undefined
   const branch = await defaultBranch(project.root)
+  if (args.flags.has("publish-on-version-change")) return branch
+  if (!interactive) return undefined
   const question = `Also publish whenever the version in ${VERSION_FILES[project.format]} changes on ${branch}?`
   return (await confirm(question, false)) ? branch : undefined
 }
 
-async function setupInput(project: Project, id: string): Promise<SetupInput> {
+async function setupInput(project: Project, id: string, args: Args): Promise<SetupInput> {
+  const repository = project.repository!
   return {
     id,
     kind: project.kind,
     format: project.format,
     permissions: await permissionsFile(project),
-    listing: (await stat(join(project.root, "store")).catch(() => undefined))?.isDirectory()
-      ? "store/"
-      : undefined,
+    listing: LISTING_FOLDER,
+    ...sourceOf(project.licence),
+    repository: `${repository.owner}/${repository.name}`,
     sabineVersion: project.format === "sabine" ? await sabineVersion(project.root) : undefined,
     sabineInputs: project.format === "sabine" ? await sabineInputs(project.root) : undefined,
     extensionApi: project.extension?.api,
     helper: project.extension?.helper
       ? { path: project.extension.helper, build: await helperBuild(project.root, project.extension.helper) }
       : undefined,
-    branch: await publishBranch(project),
+    branch: await publishBranch(project, args),
   }
 }
 
-async function retireReleaseWorkflows(root: string) {
+async function retireReleaseWorkflows(root: string, args: Args) {
   for (const path of await replacedWorkflows(root)) {
-    if (interactive && (await confirm(`Remove ${path}? It won't publish anything from now on`))) {
+    const remove =
+      args.flags.has("remove-old-workflows") ||
+      (interactive && (await confirm(`Remove ${path}? It won't publish anything from now on`)))
+    if (remove) {
       await rm(join(root, path))
       done(`Removed ${path}`)
     } else {
@@ -99,7 +106,11 @@ export async function init(args: Args) {
     return initProject(api, project, flag(args, "publisher"), flag(args, "id"))
   }
   const repository = `${project.repository.owner}/${project.repository.name}`
-  const identity = await settleIdentity(project)
+  const identity = await settleIdentity(project, {
+    id: flag(args, "id"),
+    name: flag(args, "name"),
+    summary: flag(args, "summary"),
+  })
   blank()
   field("App", bold(identity.name))
   field("Id", identity.id)
@@ -116,7 +127,7 @@ export async function init(args: Args) {
     (await choosePublisher(api, account, current, flag(args, "publisher")))
   done(`Publishing as ${bold(publisher.name)}`)
   await ensureNamespace(account, publisher.id, identity.id)
-  const created = await registerApp(account, publisher, existing, {
+  await registerApp(account, publisher, existing, {
     ...identity,
     kind: project.kind,
     format: project.format,
@@ -124,23 +135,28 @@ export async function init(args: Args) {
     repository,
     workflow: SCHELF_WORKFLOW,
   })
-  if (created) await importListing(account, project, identity)
 
-  const files = await plannedFiles(root, await setupInput(project, identity.id))
+  const files = [
+    ...(await plannedFiles(root, await setupInput(project, identity.id, args))),
+    ...(await listingFiles(project, identity)),
+  ]
   const replaced = files.filter((file) => file.existing !== undefined && file.path !== "Sabine.toml")
-  if (replaced.length && interactive) {
+  if (replaced.length && !args.flags.has("replace")) {
     const names = replaced.map((file) => file.path).join(" and ")
+    if (!interactive)
+      throw new Failure(`${names} already exist`, "Pass --replace to write them again.", EXIT.usage)
     if (!(await confirm(`Replace ${names}?`))) throw new Failure("Left the files as they were")
   }
   await writePlanned(root, files)
   for (const file of files) done(`${file.existing === undefined ? "Wrote" : "Updated"} ${file.path}`)
-  if (project.format === "sabine") await retireReleaseWorkflows(root)
+  if (project.format === "sabine") await retireReleaseWorkflows(root, args)
   if (project.sabine?.updatesProvider === "github") {
     note(`Copies already installed need one more GitHub release: ${api}/docs/moving-from-github-releases`)
   }
 
   next([
-    `git add ${files.map((file) => file.path).join(" ")} && git commit -m "Publish on Schelf" && git push`,
+    `${bold("schelf check")} shows the store page and anything missing, and ${bold("schelf apply")} sends the listing.`,
+    `git add ${[...new Set(files.map((file) => (file.path.startsWith(`${LISTING_FOLDER}/`) ? LISTING_FOLDER : file.path)))].join(" ")} && git commit -m "Publish on Schelf" && git push`,
     project.format === "appimage"
       ? "Publish a GitHub release with the AppImages. They go through the checks and land in review."
       : "Open Publish to Schelf in the repository's Actions tab and press Run workflow. It builds, goes through the checks and lands in review.",

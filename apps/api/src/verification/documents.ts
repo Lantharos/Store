@@ -1,7 +1,6 @@
 import { env } from "cloudflare:workers"
-import { MAX_DOCUMENT_BYTES, MAX_DOCUMENTS, paths, sha256Hex } from "@schelf/protocol"
+import { MAX_DOCUMENT_BYTES, MAX_DOCUMENTS, paths, sha256Hex, sniffImage } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
-import { sniffImage } from "../dashboard/apps/images.ts"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"

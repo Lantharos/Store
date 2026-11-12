@@ -7,10 +7,12 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
+  import { listingFile } from "../files/files.ts"
   import { saveHosting } from "./save.ts"
 
   let { settings = $bindable() }: { settings: AppSettings } = $props()
   const app = $derived(settings.app)
+  const file = $derived(listingFile(settings))
   let asking = $state(false)
 
   async function askToList() {
@@ -27,13 +29,19 @@
         ? "A reviewer is looking at the project and its latest release. You'll get an email when they decide."
         : "Only people with the link find it. Releases from GitHub go out once Schelf's checks pass."}
   >
-    {#if app.visibility === "unlisted" && !app.listing_requested && session.can("apps")}
+    {#if file}
+      <span class="font-mono text-[12px] text-ink-muted">{file} · listed</span>
+    {:else if app.visibility === "unlisted" && !app.listing_requested && session.can("apps")}
       <button type="button" class="button button-sm button-quiet" onclick={() => (asking = true)}>Ask to be listed</button>
     {/if}
   </Row>
   {#if app.visibility === "unlisted"}
     <Row title="Show the page in search engines" description="Off, the page asks them to leave it out.">
-      <Switch label="Show the page in search engines" checked={app.page_indexed} onchange={async (page_indexed) => (settings = await saveHosting(settings, { page_indexed }))} />
+      {#if file}
+        <span class="text-[15px] text-ink-soft">{app.page_indexed ? "On" : "Off"}<span class="ml-2 font-mono text-[12px] text-ink-muted">{file} · indexed</span></span>
+      {:else}
+        <Switch label="Show the page in search engines" checked={app.page_indexed} onchange={async (page_indexed) => (settings = await saveHosting(settings, { page_indexed }))} />
+      {/if}
     </Row>
   {/if}
 </Group>

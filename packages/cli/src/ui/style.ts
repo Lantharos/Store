@@ -23,4 +23,8 @@ export const muted = rgb(162, 157, 147, "90")
 export const link = (url: string, text = url) =>
   enabled ? `\x1b]8;;${url}\x1b\\${underline(text)}\x1b]8;;\x1b\\` : url
 
-export const interactive = Boolean(process.stdout.isTTY && process.stdin.isTTY) && !process.env.CI
+export let interactive = Boolean(process.stdout.isTTY && process.stdin.isTTY) && !process.env.CI
+
+export function withoutPrompts() {
+  interactive = false
+}

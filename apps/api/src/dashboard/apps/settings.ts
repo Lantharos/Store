@@ -124,8 +124,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
         },
       ]),
     ),
-    listing_sources: Object.fromEntries(listings.map((entry) => [entry.locale, entry.sources])),
-    meta_sources: meta?.sources ?? {},
+    config: app.configFiles ?? { schelf_toml: null, listing_toml: null, applied_at: null },
     meta: {
       icon: mediaUrl(meta?.iconKey),
       categories: meta?.categories ?? [],
@@ -166,6 +165,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       publisherSlug,
       publisher?.workflow ?? ".github/workflows/schelf.yml",
       publisher?.environment ?? null,
+      channels,
     ),
   }
 }

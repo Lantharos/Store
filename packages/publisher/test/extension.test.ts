@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   API_BASE,
+  type ApplyResponse,
   type CompleteResponse,
   EXTENSION_MANIFEST,
   type PublishRequest,
@@ -11,7 +12,13 @@ import {
   readExtensionAccess,
   schelfTomlFor,
 } from "@schelf/protocol"
-import { collectArtifacts, hashArtifacts, publishRelease, releaseContext } from "../src/index.ts"
+import {
+  collectArtifacts,
+  configBundle,
+  hashArtifacts,
+  publishRelease,
+  releaseContext,
+} from "../src/index.ts"
 
 const RAIN_MANIFEST = `id = "com.lantharos.Rain"
 name = "Rain"
@@ -69,6 +76,18 @@ beforeAll(async () => {
           } satisfies PublishResponse)
         },
       },
+      [`${API_BASE}/apply`]: {
+        POST: () =>
+          Response.json({
+            app: "com.lantharos.Rain",
+            applied: true,
+            changes: [],
+            missing_media: [],
+            review: [],
+            notes: [],
+            request: null,
+          } satisfies ApplyResponse),
+      },
       [`${API_BASE}/publish/r1/files/:name`]: {
         PUT: async (request) => {
           received.upload = new Uint8Array(await request.arrayBuffer())
@@ -109,6 +128,7 @@ test("an extension is published with its manifest as the permission declaration"
     version: "1.0.0",
     schelfToml: context.schelfToml,
     permissionsToml: context.permissionsToml,
+    config: await configBundle(root),
     notes: "",
     artifacts,
   })

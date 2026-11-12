@@ -1,7 +1,7 @@
 import { z } from "zod"
+import { requires } from "../config/schelf-toml.ts"
 import { extensionAccess } from "../extensions.ts"
 import { luftVersion } from "../luft.ts"
-import { requires } from "../manifest.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
 import { publisherSummary } from "./catalog.ts"

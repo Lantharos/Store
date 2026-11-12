@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { ConfigIssue } from "../config/issues.ts"
 import { type AppIndex, DEFAULT_LOCALE } from "../files/app.ts"
 import type { CatalogEntry, MirrorEntry } from "../files/catalog.ts"
 import { type ArtifactKind, kind, type Platform, platform } from "../platforms.ts"
@@ -117,4 +118,5 @@ export interface ReportResponse {
 export interface ApiError {
   error: string
   issues?: { path: string; message: string }[]
+  config?: ConfigIssue[]
 }

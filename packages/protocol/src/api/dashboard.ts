@@ -1,4 +1,7 @@
 import { z } from "zod"
+import type { ConfigFiles } from "../config/apply.ts"
+import { MAX_CATEGORIES } from "../config/listing-toml.ts"
+import { repositoryName } from "../config/schelf-toml.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
 import type { Permissions } from "../permissions.ts"
 import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
@@ -60,7 +63,6 @@ export interface DashboardApp {
   installs_7d: number
 }
 
-const repositoryName = z.string().regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "A repository is owner/name")
 const workflowPath = z
   .string()
   .regex(/^\.github\/workflows\/[A-Za-z0-9._-]+\.ya?ml$/, "A workflow lives in .github/workflows")
@@ -191,15 +193,7 @@ export interface ListingMeta {
   brand_color: string | null
 }
 
-export const LISTING_SOURCES = ["appstream", "sabine", "listing", "dashboard"] as const
-export const listingSource = z.enum(LISTING_SOURCES)
-export type ListingSource = z.infer<typeof listingSource>
-export type FieldSources = Record<string, ListingSource>
-
-export const MAX_CATEGORIES = 4
-
 export const updateMeta = z.object({
-  source: listingSource.default("dashboard"),
   categories: z.array(z.string().max(40)).max(MAX_CATEGORIES).optional(),
   homepage: z.url().nullable().optional(),
   support: z.url().nullable().optional(),
@@ -215,7 +209,7 @@ export const updateMeta = z.object({
 })
 export type UpdateMeta = z.input<typeof updateMeta>
 
-export const updateListing = listingText.extend({ source: listingSource.default("dashboard") })
+export const updateListing = listingText
 export type UpdateListing = z.input<typeof updateListing>
 
 export interface DashboardScreenshot extends Screenshot {
@@ -276,8 +270,7 @@ export interface AppSettings {
   channels: Channel[]
   switches: UpdaterSwitch[]
   listing: Record<string, z.infer<typeof listingText>>
-  listing_sources: Record<string, FieldSources>
-  meta_sources: FieldSources
+  config: ConfigFiles
   meta: ListingMeta
   screenshots: DashboardScreenshot[]
   trusted_publishers: TrustedPublisher[]

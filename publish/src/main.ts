@@ -1,9 +1,12 @@
+import { resolve } from "node:path"
 import { attestProvenance } from "@actions/attest"
 import * as core from "@actions/core"
-import { manifestName } from "@schelf/protocol"
+import { describeIssue, manifestName } from "@schelf/protocol"
 import {
   ApiFailure,
+  ConfigError,
   collectArtifacts,
+  configBundle,
   githubOidcToken,
   hashArtifacts,
   publishRelease,
@@ -31,7 +34,9 @@ async function attest(artifacts: { name: string; sha256: string }[], token: stri
 async function run() {
   const api = core.getInput("api").replace(/\/$/, "")
   const githubToken = core.getInput("github-token")
-  const context = await releaseContext(core.getInput("schelf-toml"))
+  const schelfToml = resolve(core.getInput("schelf-toml"))
+  const context = await releaseContext(schelfToml)
+  const config = await configBundle(process.env.GITHUB_WORKSPACE ?? process.cwd(), schelfToml)
   const channel = core.getInput("channel") || undefined
   const version = await releaseVersion({
     version: core.getInput("version") || undefined,
@@ -57,7 +62,7 @@ async function run() {
 
   await core.group("Recording build provenance", () => attest(artifacts, githubToken))
   const token = await githubOidcToken()
-  const { release, completed } = await core.group(
+  const { applied, release, completed } = await core.group(
     `Publishing ${manifestName(context.manifest)} ${version}`,
     () =>
       publishRelease(
@@ -70,7 +75,7 @@ async function run() {
           commit: context.commit,
           schelfToml: context.schelfToml,
           permissionsToml: context.permissionsToml,
-          listingToml: context.listingToml,
+          config,
           notes: core.getInput("notes") || context.notes,
           artifacts,
         },
@@ -80,6 +85,8 @@ async function run() {
       ),
   )
 
+  for (const change of applied.changes) core.info(`${change.file} ${change.key}: ${change.change}`)
+  for (const text of [...applied.review, ...applied.notes]) core.notice(text)
   core.setOutput("release", release.release)
   core.setOutput("status", completed.status)
   core.setOutput("url", completed.dashboard)
@@ -95,8 +102,10 @@ async function run() {
     )
 }
 
-run().catch((error: unknown) => {
-  core.setFailed(
-    error instanceof ApiFailure ? `Schelf refused the release: ${error.detail}` : (error as Error).message,
-  )
-})
+function failure(error: unknown) {
+  if (error instanceof ConfigError) return error.issues.map(describeIssue).join("\n")
+  if (error instanceof ApiFailure) return `Schelf refused the release: ${error.detail}`
+  return (error as Error).message
+}
+
+run().catch((error: unknown) => core.setFailed(failure(error)))

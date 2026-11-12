@@ -1,16 +1,16 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import {
-  type ListingFile,
+  listingToml,
   paths,
   rasterIcon,
-  readListingFile,
   readLuftMinimum,
+  screenshotFile,
   sha256Hex,
   slugFromId,
+  sniffImage,
 } from "@schelf/protocol"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
-import { sniffImage } from "../src/dashboard/apps/images.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
 
 const LUFT = process.env.LUFT ?? join(import.meta.dirname, "../../../../luft")
@@ -25,12 +25,7 @@ const PIPELINE = { workflow: ".github/workflows/image.yml", ref: "refs/heads/mai
 const FOLDERS = ["apps/store", "extensions"]
 const ONLY = process.argv.find((argument) => argument.startsWith("--only="))?.slice("--only=".length)
 
-interface StoreListing extends ListingFile {
-  summary: string
-  description: string
-  categories: string[]
-  screenshots: string[]
-}
+const storeListing = listingToml.extend({ name: listingToml.shape.name.optional() })
 
 function storeItems() {
   return FOLDERS.flatMap((parent) =>
@@ -43,17 +38,11 @@ function storeItems() {
 function readStoreListing(folder: string) {
   const path = join(LUFT, folder, "store/listing.toml")
   if (!existsSync(path)) throw new Error(`${folder} has a schelf.toml but no store/listing.toml`)
-  const text = readFileSync(path, "utf8")
-  const listing = { ...(Bun.TOML.parse(text) as StoreListing), ...readListingFile(text) }
-  return { ...listing, screenshots: listing.screenshots.map((file) => `${folder}/store/${file}`) }
-}
-
-function fromListingFile(listing: StoreListing, fields: (keyof StoreListing)[]) {
-  return JSON.stringify(
-    Object.fromEntries(
-      fields.filter((field) => listing[field] !== undefined).map((field) => [field, "listing"]),
-    ),
-  )
+  const listing = storeListing.parse(Bun.TOML.parse(readFileSync(path, "utf8")))
+  return {
+    ...listing,
+    screenshots: (listing.screenshots ?? []).map((entry) => `${folder}/store/${screenshotFile(entry).file}`),
+  }
 }
 
 function sql(value: string | number | null | undefined) {
@@ -130,23 +119,20 @@ for (const folder of folders) {
   const listing = readStoreListing(folder)
   const icon = await iconWithPng(manifest.id, manifest.icon, uploads)
   const keywords = (listing.keywords ?? manifest.keywords).slice(0, 20)
-  const wordSources = fromListingFile(listing, ["summary", "description", "keywords"])
-  const metaSources = fromListingFile(listing, [
-    "categories",
-    "homepage",
-    "support",
-    "privacy_url",
-    "brand_color",
-  ])
+  const files = JSON.stringify({
+    schelf_toml: `${folder}/schelf.toml`,
+    listing_toml: `${folder}/store/listing.toml`,
+    applied_at: new Date(now).toISOString(),
+  })
   statements.push(
-    `INSERT INTO app (id, slug, publisher_id, kind, format, updater, repository, repository_id, licence, distribution, status, created_at) VALUES (${sql(manifest.id)}, ${sql(slugFromId(manifest.id))}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${manifest.format === "sabine" ? "'sabine'" : "NULL"}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'published', ${now})
-     ON CONFLICT (id) DO UPDATE SET status = 'published', repository = excluded.repository;`,
+    `INSERT INTO app (id, slug, publisher_id, kind, format, updater, repository, repository_id, licence, distribution, status, config_files, created_at) VALUES (${sql(manifest.id)}, ${sql(slugFromId(manifest.id))}, ${sql(PUBLISHER.id)}, ${sql(manifest.kind)}, ${sql(manifest.format)}, ${manifest.format === "sabine" ? "'sabine'" : "NULL"}, ${sql(REPOSITORY.name)}, ${sql(REPOSITORY.id)}, 'GPL-3.0-or-later', 'open', 'published', ${sql(files)}, ${now})
+     ON CONFLICT (id) DO UPDATE SET status = 'published', repository = excluded.repository, config_files = excluded.config_files;`,
     `DELETE FROM trusted_publisher WHERE app_id = ${sql(manifest.id)} AND repository_id = ${sql(REPOSITORY.id)};`,
     `INSERT INTO trusted_publisher (id, app_id, owner_id, repository_id, repository, workflow, environment, ref, created_at) VALUES (${sql(`${manifest.id}:luft`)}, ${sql(manifest.id)}, ${sql(REPOSITORY.ownerId)}, ${sql(REPOSITORY.id)}, ${sql(REPOSITORY.name)}, ${sql(PIPELINE.workflow)}, NULL, ${sql(PIPELINE.ref)}, ${now});`,
-    `INSERT INTO listing (app_id, locale, name, summary, description, keywords, sources) VALUES (${sql(manifest.id)}, 'en', ${sql(manifest.name)}, ${sql(listing.summary)}, ${sql(listing.description)}, ${sql(JSON.stringify(keywords))}, ${sql(wordSources)})
-     ON CONFLICT (app_id, locale) DO UPDATE SET name = excluded.name, summary = excluded.summary, description = excluded.description, keywords = excluded.keywords, sources = excluded.sources;`,
-    `INSERT INTO listing_meta (app_id, icon_key, categories, homepage, support, privacy_url, brand_color, sources) VALUES (${sql(manifest.id)}, ${sql(icon.key)}, ${sql(JSON.stringify(listing.categories))}, ${sql(listing.homepage)}, ${sql(listing.support)}, ${sql(listing.privacy_url)}, ${sql(listing.brand_color)}, ${sql(metaSources)})
-     ON CONFLICT (app_id) DO UPDATE SET icon_key = excluded.icon_key, categories = excluded.categories, homepage = excluded.homepage, support = excluded.support, privacy_url = excluded.privacy_url, brand_color = excluded.brand_color, sources = excluded.sources;`,
+    `INSERT INTO listing (app_id, locale, name, summary, description, keywords) VALUES (${sql(manifest.id)}, 'en', ${sql(listing.name ?? manifest.name)}, ${sql(listing.summary)}, ${sql(listing.description ?? "")}, ${sql(JSON.stringify(keywords))})
+     ON CONFLICT (app_id, locale) DO UPDATE SET name = excluded.name, summary = excluded.summary, description = excluded.description, keywords = excluded.keywords;`,
+    `INSERT INTO listing_meta (app_id, icon_key, categories, homepage, support, privacy_url, brand_color) VALUES (${sql(manifest.id)}, ${sql(icon.key)}, ${sql(JSON.stringify(listing.categories ?? []))}, ${sql(listing.homepage)}, ${sql(listing.support)}, ${sql(listing.privacy_url)}, ${sql(listing.brand_color)})
+     ON CONFLICT (app_id) DO UPDATE SET icon_key = excluded.icon_key, categories = excluded.categories, homepage = excluded.homepage, support = excluded.support, privacy_url = excluded.privacy_url, brand_color = excluded.brand_color;`,
     ...(manifest.luft
       ? [
           `UPDATE release SET luft_minimum = ${sql(manifest.luft)} WHERE app_id = ${sql(manifest.id)} AND luft_minimum IS NULL;`,

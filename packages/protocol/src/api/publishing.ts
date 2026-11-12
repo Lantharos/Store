@@ -41,7 +41,6 @@ export const publishRequest = z.object({
     .optional(),
   schelf_toml: z.string().max(20_000),
   permissions_toml: z.string().max(20_000).optional(),
-  listing_toml: z.string().max(20_000).optional(),
   notes: z.string().max(20_000).default(""),
   channel: channelName.optional(),
   bridge: z.boolean().default(false),

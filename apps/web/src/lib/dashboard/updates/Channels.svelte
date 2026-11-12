@@ -10,6 +10,7 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
+  import { schelfFile } from "../files/files.ts"
   import EndChannel from "./EndChannel.svelte"
 
   let { settings = $bindable() }: { settings: AppSettings } = $props()
@@ -19,6 +20,7 @@
     ...[3, 5, 10, 20, 50].map((count) => ({ value: String(count), label: `Keep the last ${count}` })),
   ]
 
+  const file = $derived(schelfFile(settings))
   let ending = $state<Channel>()
   let endOpen = $state(false)
   let reopening = $state<Channel>()
@@ -59,19 +61,24 @@
 >
   {#each settings.channels as channel (channel.name)}
     <Row title={channel.name} description={describe(channel)}>
-      {#if !channel.ended_into}
+      {#if file}
+        <span class="text-[15px] text-ink-soft">
+          {channel.gradual ? "Step by step" : "Everyone at once"}{#if channel.name !== "stable"}, {channel.keep === null ? "keeps every release" : `keeps the last ${channel.keep}`}{/if}
+          <span class="ml-2 font-mono text-[12px] text-ink-muted">{file} · channels.{channel.name}</span>
+        </span>
+      {:else if !channel.ended_into}
         <label class="flex items-center gap-3 text-[15px] text-ink-soft">
           Step by step
           <Switch label="Roll out {channel.name} releases step by step" checked={channel.gradual} onchange={(gradual) => change(channel.name, { gradual })} />
         </label>
       {/if}
-      {#if channel.name !== "stable"}
+      {#if channel.name !== "stable" && !file}
         <div class="w-56">
           <Select label="How many {channel.name} releases to keep" value={channel.keep === null ? "all" : String(channel.keep)} options={KEEP} onchange={(value) => change(channel.name, { keep: value === "all" ? null : Number(value) })} />
         </div>
       {/if}
       {#snippet below()}
-        {#if channel.name !== "stable" && session.can("releases")}
+        {#if channel.name !== "stable" && session.can("releases") && !file}
           <div class="flex justify-end">
             {#if channel.ended_into}
               <button type="button" class="button button-sm button-quiet" onclick={() => askToReopen(channel)}>Reopen</button>

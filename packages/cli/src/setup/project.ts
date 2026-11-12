@@ -77,6 +77,9 @@ export async function initProject(
     project: settings.app.id === projectId(publisher.slug, slug) ? `${publisher.slug}/${slug}` : undefined,
     kind: "app",
     format: "files",
+    updater: project.framework?.updater,
+    ...source,
+    repository: `${repository.owner}/${repository.name}`,
   })
   await writePlanned(project.root, files)
   for (const file of files) done(`${file.existing === undefined ? "Wrote" : "Updated"} ${file.path}`)

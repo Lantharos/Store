@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import process from "node:process"
-import { ApiFailure, ArtifactError } from "@schelf/publisher"
+import { describeIssue, STORE_ORIGIN } from "@schelf/protocol"
+import { ApiFailure, ArtifactError, ConfigError } from "@schelf/publisher"
 import { ZodError } from "zod"
 import { version } from "../package.json"
 import { type Args, parseArgs } from "./args.ts"
+import { apply } from "./commands/apply.ts"
 import { check } from "./commands/check.ts"
 import { init } from "./commands/init.ts"
 import { login, logout } from "./commands/login.ts"
@@ -11,7 +13,9 @@ import { publish } from "./commands/publish.ts"
 import { rollout } from "./commands/rollout.ts"
 import { status } from "./commands/status.ts"
 import { whoami } from "./commands/whoami.ts"
-import { blank, Failure, failure, field, note, title } from "./ui/output.ts"
+import { EXIT } from "./ui/exit.ts"
+import { blank, emit, Failure, failure, field, note, printJson, title } from "./ui/output.ts"
+import { withoutPrompts } from "./ui/style.ts"
 
 const COMMANDS: Record<
   string,
@@ -22,7 +26,16 @@ const COMMANDS: Record<
     usage: "init [--publisher <slug>] [--id <app id>]",
     about: "Set up this app, extension or project for Schelf",
   },
-  check: { run: check, usage: "check", about: "Check schelf.toml and preview the store page" },
+  check: {
+    run: check,
+    usage: "check",
+    about: "Check schelf.toml and the listing, and preview the store page",
+  },
+  apply: {
+    run: apply,
+    usage: "apply [--dry-run]",
+    about: "Make the store match schelf.toml and the listing folder",
+  },
   publish: {
     run: publish,
     usage: "publish [files…] [--channel <name>] [--version <version>]",
@@ -45,7 +58,11 @@ function help() {
   const width = Math.max(...commands.map((command) => command.usage.length)) + 2
   for (const command of commands) field(command.usage, command.about, width)
   blank()
-  note("Options: --api <origin> to use another store, --token <token> for publish outside GitHub Actions")
+  note(
+    "Everywhere: --json prints the result as JSON, --yes never asks, --api <origin> talks to another store",
+  )
+  note("Exits 0 when done, 1 on failure, 2 for wrong usage, 3 when not signed in,")
+  note(`4 while waiting for a person, 5 when declined or expired. More at ${STORE_ORIGIN}/docs/cli`)
   blank()
   return 0
 }
@@ -54,8 +71,19 @@ function report(error: unknown) {
   if (error instanceof Failure) {
     failure(error.message)
     if (error.hint) note(error.hint)
-  } else if (error instanceof ApiFailure) {
+    emit({ error: error.message, hint: error.hint ?? null })
+    return error.code
+  }
+  if (error instanceof ConfigError || (error instanceof ApiFailure && error.config.length)) {
+    const issues = error instanceof ConfigError ? error.issues : (error as ApiFailure).config
+    for (const issue of issues) failure(describeIssue(issue))
+    emit({ error: error.message, issues })
+    return EXIT.failed
+  }
+  emit({ error: error instanceof ApiFailure ? error.detail : String((error as Error).message ?? error) })
+  if (error instanceof ApiFailure) {
     failure(error.detail)
+    if (error.status === 401) return EXIT.signIn
   } else if (error instanceof ZodError) {
     for (const issue of error.issues) failure(`${issue.path.join(".") || "schelf.toml"}: ${issue.message}`)
   } else if (error instanceof ArtifactError || error instanceof Error) {
@@ -63,10 +91,16 @@ function report(error: unknown) {
   } else {
     failure(String(error))
   }
+  return EXIT.failed
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+  if (args.flags.has("json")) {
+    printJson()
+    withoutPrompts()
+  }
+  if (args.flags.has("yes")) withoutPrompts()
   if (args.flags.get("version") === true) {
     console.log(version)
     return 0
@@ -76,14 +110,15 @@ async function main() {
   const command = COMMANDS[name]
   if (!command) {
     failure(`There's no ${name} command`)
-    return help() + 1
+    help()
+    return EXIT.usage
   }
   try {
-    return (await command.run(args)) ?? 0
+    return (await command.run(args)) ?? EXIT.ok
   } catch (error) {
-    report(error)
+    const code = report(error)
     blank()
-    return 1
+    return code
   }
 }
 

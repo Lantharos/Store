@@ -1,6 +1,9 @@
 import { stringify } from "smol-toml"
+import { LISTING_TOML, type ListingToml } from "./config/listing-toml.ts"
+import { SCHELF_TOML, type SchelfToml } from "./config/schelf-toml.ts"
+import { schemaDirective } from "./config/schemas.ts"
 import { EXTENSION_MANIFEST } from "./extensions.ts"
-import type { Format, Kind } from "./platforms.ts"
+import type { Distribution, Format, Kind } from "./platforms.ts"
 
 export const SCHELF_WORKFLOW = ".github/workflows/schelf.yml"
 export const SABINE_REPOSITORY = "Lantharos/Sabine"
@@ -20,6 +23,12 @@ export interface SetupInput {
   helper?: { path: string; build: string }
   environment?: string | null
   branch?: string
+  updater?: SchelfToml["updater"]
+  distribution?: Distribution
+  licence?: string
+  repository?: string
+  followRollout?: boolean
+  channels?: SchelfToml["channels"]
 }
 
 export function schelfTomlFor(input: SetupInput) {
@@ -29,14 +38,30 @@ export function schelfTomlFor(input: SetupInput) {
     ...(sabine && { sabine: sabine.replace(/^v/, "") }),
     ...(input.extensionApi !== undefined && { extension_api: input.extensionApi }),
   }
-  return stringify({
+  const toml = stringify({
     ...(input.project ? { project: input.project } : { id: input.id }),
     kind: input.kind,
     format: input.format,
+    ...(input.updater && { updater: input.updater }),
     ...(permissions && { permissions }),
     ...(input.listing && { listing: input.listing }),
+    ...(input.distribution && { distribution: input.distribution }),
+    ...(input.licence && input.distribution !== "proprietary" && { licence: input.licence }),
+    ...(input.repository && { repository: input.repository }),
     ...(Object.keys(requires).length > 0 && { requires }),
+    ...(input.followRollout && { links: { follow_rollout: true } }),
+    ...(input.channels && Object.keys(input.channels).length > 0 && { channels: input.channels }),
   })
+  return `${schemaDirective(SCHELF_TOML)}${toml}\n`
+}
+
+export function listingTomlFor(listing: ListingToml) {
+  const { translations, ...page } = listing
+  const toml = stringify({
+    ...page,
+    ...(translations && Object.keys(translations).length > 0 && { translations }),
+  })
+  return `${schemaDirective(LISTING_TOML)}${toml}\n`
 }
 
 const RELEASE_TRIGGER = `on:

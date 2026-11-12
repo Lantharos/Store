@@ -5,10 +5,12 @@
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
   import { session } from "../api/session.svelte.ts"
+  import { schelfFile } from "../files/files.ts"
   import { feedSetup, frameworkName } from "./framework.ts"
 
   let { settings }: { settings: AppSettings } = $props()
   const app = $derived(settings.app)
+  const file = $derived(schelfFile(settings))
   const moving = $derived(settings.switches.some((entry) => !entry.completed_at))
   const current = $derived(settings.links.feeds.find((feed) => feed.updater === app.updater))
   const setup = $derived(app.updater && current ? feedSetup(app.updater, current.url) : null)
@@ -21,7 +23,9 @@
 
 <Group title="How it updates" rows>
   <Row title={frameworkName(app.updater)} description={app.updater ? DESCRIPTIONS[app.updater] : "People download each new version themselves, from your links."}>
-    {#if !moving && session.can("apps")}
+    {#if file}
+      <span class="font-mono text-[12px] text-ink-muted">{file} · {app.format === "files" ? "updater" : "format"}</span>
+    {:else if !moving && session.can("apps")}
       <a href="/dashboard/apps/{app.id}/updates/move" class="button button-sm button-quiet">{app.updater ? "Change" : "Add an updater"}</a>
     {/if}
   </Row>

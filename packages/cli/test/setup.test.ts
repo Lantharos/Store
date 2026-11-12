@@ -2,10 +2,10 @@ import { afterEach, beforeEach, expect, test } from "bun:test"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { SCHELF_WORKFLOW, workflowFor } from "@schelf/protocol"
-import { validate } from "../src/check/validate.ts"
+import { readListingToml, SCHELF_WORKFLOW, workflowFor } from "@schelf/protocol"
 import { detectProject } from "../src/project/detect.ts"
 import { replacedWorkflows, sabineInputs, sabineVersion } from "../src/setup/files.ts"
+import { listingFiles } from "../src/setup/listing.ts"
 
 const CALLS_SABINE = `jobs:
   release:
@@ -90,12 +90,14 @@ test("a description too long for a summary isn't used as one", async () => {
   expect((await detectProject(root)).summary).toBeUndefined()
 })
 
-test("screenshots named in the metainfo aren't counted twice", async () => {
+test("the listing init writes keeps screenshots already in the listing folder where they are", async () => {
   await write("Sabine.toml", '[app]\nid = "al.kaleid.notes"\nname = "Notes"\n')
-  await write("schelf.toml", 'id = "al.kaleid.notes"\nformat = "sabine"\nlisting = "store/"\n')
   await write("store/al.kaleid.notes.metainfo.xml", METAINFO)
-  await write("store/screenshots/one.png", "")
-  await write("store/screenshots/two.png", "")
-  await write("store/screenshots/extra.png", "")
-  expect((await validate(await detectProject(root))).listing.screenshots).toBe(3)
+  const project = await detectProject(root)
+  const files = await listingFiles(project, { id: "al.kaleid.notes", name: "Notes", summary: "Notes" })
+  expect(files.map((file) => file.path)).toEqual(["store/listing.toml"])
+  expect(readListingToml(files[0]!.contents as string).screenshots).toEqual([
+    "screenshots/one.png",
+    "screenshots/two.png",
+  ])
 })

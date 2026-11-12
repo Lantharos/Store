@@ -2,6 +2,7 @@ import { join } from "node:path"
 import { manifestName, SCHELF_TOML } from "@schelf/protocol"
 import {
   collectArtifacts,
+  configBundle,
   githubOidcToken,
   hashArtifacts,
   oidcAvailable,
@@ -11,8 +12,9 @@ import {
 } from "@schelf/publisher"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { git, repositoryRoot } from "../project/git.ts"
-import { blank, done, Failure, field, line, step, title } from "../ui/output.ts"
+import { blank, done, emit, Failure, field, line, step, title } from "../ui/output.ts"
 import { bold, link } from "../ui/style.ts"
+import { printApplied } from "./apply.ts"
 import { printChecks } from "./status.ts"
 
 async function credential(args: Args) {
@@ -28,7 +30,8 @@ async function credential(args: Args) {
 export async function publish(args: Args) {
   const api = apiOrigin(args)
   const root = await repositoryRoot(process.cwd())
-  const context = await releaseContext(flag(args, "config") ?? join(root, SCHELF_TOML))
+  const config = flag(args, "config") ?? join(root, SCHELF_TOML)
+  const context = await releaseContext(config)
   const commit = context.commit ?? (await git(root, "rev-parse", "HEAD").catch(() => undefined))
   const channel = flag(args, "channel")
   const version = await releaseVersion({
@@ -65,11 +68,19 @@ export async function publish(args: Args) {
         commit,
         schelfToml: context.schelfToml,
         permissionsToml: context.permissionsToml,
-        listingToml: context.listingToml,
+        config: await configBundle(root, config),
         notes: flag(args, "notes") ?? context.notes,
         artifacts: await hashArtifacts(artifacts),
       }),
   )
+  emit({
+    applied: result.applied,
+    release: result.release.release,
+    status: result.completed.status,
+    checks: result.completed.checks,
+    url: result.completed.dashboard,
+  })
+  printApplied(result.applied)
   done(
     `${bold(`${result.release.app} ${result.release.version}`)} is ${result.completed.status.replace("-", " ")}`,
   )

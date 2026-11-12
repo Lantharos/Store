@@ -1,15 +1,21 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { MAX_CATEGORIES } from "@schelf/protocol"
-import { ApiFailure } from "@schelf/publisher"
-import type { Dashboard } from "../api/dashboard.ts"
+import {
+  LISTING_TOML,
+  type ListingToml,
+  listingTomlFor,
+  MAX_CATEGORIES,
+  MAX_KEYWORDS,
+  MAX_SCREENSHOTS,
+  sniffImage,
+} from "@schelf/protocol"
 import type { Project } from "../project/detect.ts"
-import { caution, done, step } from "../ui/output.ts"
+import { readOptional } from "../project/files.ts"
+import { caution } from "../ui/output.ts"
+import type { PlannedFile } from "./files.ts"
 import type { Identity } from "./identity.ts"
-import { imageSize } from "./images.ts"
 
-const MAX_SCREENSHOTS = 8
-const MAX_KEYWORDS = 20
+export const LISTING_FOLDER = "store"
 
 async function bytesOf(root: string, location: string) {
   if (!/^https?:/.test(location)) return new Uint8Array(await readFile(join(root, location)))
@@ -18,47 +24,52 @@ async function bytesOf(root: string, location: string) {
   return new Uint8Array(await response.arrayBuffer())
 }
 
-const reason = (error: unknown) => (error instanceof ApiFailure ? error.detail : (error as Error).message)
+async function copied(root: string, location: string, name: string) {
+  try {
+    const bytes = await bytesOf(root, location)
+    const image = sniffImage(bytes, true)
+    if (!image) throw new Error("it isn't a PNG, JPEG, WebP or SVG")
+    return { path: `${name}.${image.extension}`, bytes }
+  } catch (error) {
+    caution(`Left out ${location}: ${(error as Error).message}`)
+    return undefined
+  }
+}
 
-export async function importListing(account: Dashboard, project: Project, identity: Identity) {
+const inFolder = (location: string) => location.startsWith(`${LISTING_FOLDER}/`)
+
+export async function listingFiles(project: Project, identity: Identity): Promise<PlannedFile[]> {
+  const file = `${LISTING_FOLDER}/${LISTING_TOML}`
+  if ((await readOptional(join(project.root, file))) !== undefined) return []
   const component = project.appstream?.component
-  await step("Filling in the listing from the project", async () => {
-    await account.putListing(identity.id, "en", {
-      name: identity.name,
-      summary: identity.summary,
-      description: component?.description || project.sabine?.description || "",
-      keywords: (component?.keywords ?? []).slice(0, MAX_KEYWORDS),
-      source: component ? "appstream" : project.sabine ? "sabine" : "dashboard",
-    })
-    if (component)
-      await account.patchMeta(identity.id, {
-        categories: component.categories.slice(0, MAX_CATEGORIES),
-        homepage: component.urls.homepage ?? null,
-        support: component.urls.bugtracker ?? component.urls.help ?? component.urls.contact ?? null,
-        content_rating: component.contentRating?.type ?? null,
-        licence: project.licence ?? null,
-        source: "appstream",
-      })
-  })
-  if (project.icon) {
-    try {
-      await account.putIcon(identity.id, await bytesOf(project.root, project.icon))
-      done("Uploaded the icon")
-    } catch (error) {
-      caution(`The icon didn't upload: ${reason(error)}`)
-    }
+  const media: PlannedFile[] = []
+  const place = async (location: string, name: string) => {
+    if (inFolder(location) && !/^https?:/.test(location)) return location.slice(LISTING_FOLDER.length + 1)
+    const image = await copied(project.root, location, name)
+    if (!image) return undefined
+    media.push({ path: `${LISTING_FOLDER}/${image.path}`, contents: image.bytes })
+    return image.path
   }
-  let uploaded = 0
-  for (const screenshot of component?.screenshots.slice(0, MAX_SCREENSHOTS) ?? []) {
-    try {
-      const bytes = await bytesOf(project.root, screenshot.url)
-      const size = imageSize(bytes)
-      if (!size) throw new Error("it isn't a PNG or JPEG")
-      await account.addScreenshot(identity.id, bytes, size)
-      uploaded++
-    } catch (error) {
-      caution(`${screenshot.url} didn't upload: ${reason(error)}`)
-    }
+  const icon = project.icon ? await place(project.icon, "icon") : undefined
+  const screenshots: string[] = []
+  for (const [index, shot] of (component?.screenshots ?? []).slice(0, MAX_SCREENSHOTS).entries()) {
+    const placed = await place(shot.url, `screenshots/${index + 1}`)
+    if (placed) screenshots.push(placed)
   }
-  if (uploaded) done(`Uploaded ${uploaded} screenshot${uploaded === 1 ? "" : "s"}`)
+  const listing: ListingToml = {
+    name: identity.name,
+    summary: identity.summary,
+    description: component?.description || project.sabine?.description || undefined,
+    keywords: component?.keywords.length ? component.keywords.slice(0, MAX_KEYWORDS) : undefined,
+    categories: component?.categories.length ? component.categories.slice(0, MAX_CATEGORIES) : undefined,
+    homepage: component?.urls.homepage,
+    support: component?.urls.bugtracker ?? component?.urls.help ?? component?.urls.contact,
+    content_rating: component?.contentRating?.type,
+    icon,
+    screenshots: screenshots.length ? screenshots : undefined,
+  }
+  const defined = Object.fromEntries(
+    Object.entries(listing).filter(([, value]) => value !== undefined),
+  ) as ListingToml
+  return [{ path: file, contents: listingTomlFor(defined) }, ...media]
 }

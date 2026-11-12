@@ -3,6 +3,7 @@ import { API_BASE } from "@schelf/protocol"
 import { Hono } from "hono"
 import { authRoutes } from "./auth/routes.ts"
 import { avatarRoutes } from "./avatars/github.ts"
+import { configRoutes } from "./config/routes.ts"
 import { recheckNamespaces } from "./dashboard/account/namespaces.ts"
 import { dashboardRoutes } from "./dashboard/routes.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
@@ -46,6 +47,7 @@ app.post("/api/ops", (c) => {
 app.route(`${API_BASE}/avatars`, avatarRoutes)
 app.route(API_BASE, storefrontRoutes)
 app.route(API_BASE, publishingRoutes)
+app.route(API_BASE, configRoutes)
 app.route(`${API_BASE}/dev`, dashboardRoutes)
 app.all("*", () => fail(404, "Not found"))
 
