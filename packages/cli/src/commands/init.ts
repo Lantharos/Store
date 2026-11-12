@@ -1,6 +1,6 @@
 import { rm } from "node:fs/promises"
 import { join } from "node:path"
-import { SCHELF_WORKFLOW, type SetupInput } from "@schelf/protocol"
+import { type ApprovalAction, SCHELF_WORKFLOW, type SetupInput } from "@schelf/protocol"
 import { greet, session } from "../api/auth.ts"
 import { dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
@@ -12,11 +12,12 @@ import { plannedFiles, replacedWorkflows, sabineInputs, sabineVersion, writePlan
 import { helperBuild } from "../setup/helper.ts"
 import { settleIdentity } from "../setup/identity.ts"
 import { LISTING_FOLDER, listingFiles } from "../setup/listing.ts"
-import { ensureNamespace } from "../setup/namespace.ts"
+import { planNamespace, retryDomainProof } from "../setup/namespace.ts"
+import { runPlan } from "../setup/plan.ts"
 import { initProject } from "../setup/project.ts"
-import { choosePublisher, registerApp, registeredApp } from "../setup/register.ts"
+import { choosePublisher, type Owner, registeredApp, trusts } from "../setup/register.ts"
 import { EXIT } from "../ui/exit.ts"
-import { blank, caution, done, Failure, field, next, note, step, title } from "../ui/output.ts"
+import { blank, caution, done, emit, Failure, field, next, note, step, title } from "../ui/output.ts"
 import { confirm } from "../ui/prompt.ts"
 import { bold, interactive, muted } from "../ui/style.ts"
 
@@ -103,7 +104,7 @@ export async function init(args: Args) {
       note(
         "Nothing here builds a Sabine app or a Luft extension, so Schelf hosts its release files as they are.",
       )
-    return initProject(api, project, flag(args, "publisher"), flag(args, "id"))
+    return initProject(api, project, args)
   }
   const repository = `${project.repository.owner}/${project.repository.name}`
   const identity = await settleIdentity(project, {
@@ -122,19 +123,39 @@ export async function init(args: Args) {
   greet(current)
   const account = dashboard(api, token)
   const existing = await registeredApp(account, identity.id)
-  const publisher =
+  const plan: ApprovalAction[] = []
+  let owner: Owner =
     current.publishers.find((candidate) => candidate.id === existing?.app.publisher) ??
-    (await choosePublisher(api, account, current, flag(args, "publisher")))
-  done(`Publishing as ${bold(publisher.name)}`)
-  await ensureNamespace(account, publisher.id, identity.id)
-  await registerApp(account, publisher, existing, {
-    ...identity,
-    kind: project.kind,
-    format: project.format,
-    ...sourceOf(project.licence),
-    repository,
-    workflow: SCHELF_WORKFLOW,
-  })
+    (await choosePublisher(
+      current,
+      { slug: flag(args, "publisher"), name: flag(args, "publisher-name") },
+      plan,
+    ))
+  done(`Publishing as ${bold(owner.name)}`)
+  const namespace = await planNamespace(account, owner, identity.id, flag(args, "namespace"), plan)
+  if (!namespace.proven) {
+    owner = await runPlan(api, token, account, owner, plan, args)
+    await retryDomainProof(account, owner.id, namespace.prefix)
+  }
+  if (!existing)
+    plan.push({
+      type: "app.create",
+      publisher: owner.id,
+      app: {
+        id: identity.id,
+        name: identity.name,
+        summary: identity.summary,
+        kind: project.kind,
+        format: project.format,
+        ...sourceOf(project.licence),
+        repository,
+        workflow: SCHELF_WORKFLOW,
+      },
+    })
+  else if (!trusts(existing, repository))
+    plan.push({ type: "trust.add", app: identity.id, rule: { repository, workflow: SCHELF_WORKFLOW } })
+  else done(`${repository} already publishes ${bold(identity.id)}`)
+  await runPlan(api, token, account, owner, plan, args)
 
   const files = [
     ...(await plannedFiles(root, await setupInput(project, identity.id, args))),
@@ -150,17 +171,17 @@ export async function init(args: Args) {
   await writePlanned(root, files)
   for (const file of files) done(`${file.existing === undefined ? "Wrote" : "Updated"} ${file.path}`)
   if (project.format === "sabine") await retireReleaseWorkflows(root, args)
-  if (project.sabine?.updatesProvider === "github") {
+  if (project.sabine?.updatesProvider === "github")
     note(`Copies already installed need one more GitHub release: ${api}/docs/moving-from-github-releases`)
-  }
+  emit({ app: identity.id, files: files.map((file) => file.path) })
 
   next([
     `${bold("schelf check")} shows the store page and anything missing, and ${bold("schelf apply")} sends the listing.`,
     `git add ${[...new Set(files.map((file) => (file.path.startsWith(`${LISTING_FOLDER}/`) ? LISTING_FOLDER : file.path)))].join(" ")} && git commit -m "Publish on Schelf" && git push`,
     project.format === "appimage"
       ? "Publish a GitHub release with the AppImages. They go through the checks and land in review."
-      : "Open Publish to Schelf in the repository's Actions tab and press Run workflow. It builds, goes through the checks and lands in review.",
-    `${bold("schelf status")} shows where it is.`,
+      : "Run the Publish to Schelf workflow (gh workflow run schelf.yml). It builds, goes through the checks and lands in review.",
+    `${bold("schelf status")} shows where it is. To be in the store, set listed = true in store/listing.toml and run schelf apply.`,
   ])
   return 0
 }

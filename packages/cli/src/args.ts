@@ -39,6 +39,8 @@ const VALUED = new Set([
   "publisher",
   "channel",
   "summary",
+  "publisher-name",
+  "namespace",
 ])
 
 export function flag(args: Args, name: string) {

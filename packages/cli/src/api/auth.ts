@@ -1,6 +1,7 @@
-import { spawn } from "node:child_process"
 import { type Account, CLI_CLIENT_ID } from "@schelf/protocol"
 import { ApiFailure, request } from "@schelf/publisher"
+import { openBrowser } from "../ui/browser.ts"
+import { EXIT } from "../ui/exit.ts"
 import { blank, done, Failure, line, note, step } from "../ui/output.ts"
 import { accent, bold, interactive } from "../ui/style.ts"
 import { storedSession, storeSession } from "./credentials.ts"
@@ -21,18 +22,6 @@ interface DeviceToken {
 }
 
 const GRANT = "urn:ietf:params:oauth:grant-type:device_code"
-
-function openBrowser(url: string) {
-  const command =
-    process.platform === "darwin"
-      ? ["open", url]
-      : process.platform === "win32"
-        ? ["cmd", "/c", "start", "", url]
-        : ["xdg-open", url]
-  const child = spawn(command[0]!, command.slice(1), { stdio: "ignore", detached: true })
-  child.on("error", () => {})
-  child.unref()
-}
 
 async function pollForToken(api: string, code: DeviceCode) {
   let interval = code.interval * 1000
@@ -62,7 +51,7 @@ export async function signIn(api: string) {
   const url = code.verification_uri_complete ?? code.verification_uri
   line(`Sign in to Schelf in your browser and check the code matches: ${bold(accent(code.user_code))}`)
   note(url)
-  if (interactive) openBrowser(url)
+  openBrowser(url)
   blank()
   const token = await step(
     "Waiting for the browser",
@@ -83,10 +72,10 @@ export async function session(api: string): Promise<{ token: string; account: Ac
       if (!(error instanceof ApiFailure && error.status === 401)) throw error
     }
   }
-  if (!interactive) throw new Failure("Not signed in", "Run schelf login first.")
+  if (!interactive) throw new Failure("Not signed in", "Run schelf login first.", EXIT.signIn)
   return signIn(api)
 }
 
 export function greet(account: Account) {
-  done(`Signed in as ${bold(account.github ?? account.user.name)}`)
+  done(`Signed in as ${bold(account.github ?? (account.user.name || account.user.email))}`)
 }

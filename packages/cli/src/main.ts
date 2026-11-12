@@ -10,6 +10,7 @@ import { check } from "./commands/check.ts"
 import { init } from "./commands/init.ts"
 import { login, logout } from "./commands/login.ts"
 import { publish } from "./commands/publish.ts"
+import { request } from "./commands/request.ts"
 import { rollout } from "./commands/rollout.ts"
 import { status } from "./commands/status.ts"
 import { whoami } from "./commands/whoami.ts"
@@ -46,6 +47,11 @@ const COMMANDS: Record<
     run: rollout,
     usage: "rollout <version> <change>",
     about: "Set a percentage, pause, resume or release to all",
+  },
+  request: {
+    run: request,
+    usage: "request <status|cancel> <id>",
+    about: "Check on, wait for or cancel something waiting for your approval",
   },
   login: { run: login, usage: "login", about: "Sign in through the browser" },
   whoami: { run: whoami, usage: "whoami", about: "The account you're signed in as and its publishers" },

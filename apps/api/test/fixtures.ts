@@ -70,21 +70,25 @@ const DEV = "https://schelf.store/api/v1/dev"
 export interface Person {
   id: string
   email: string
+  token: string
   call: (method: string, path: string, body?: unknown) => Promise<Response>
 }
 
-export async function person(name: string, existing?: string): Promise<Person> {
+type Via = "browser" | "passkey" | "cli"
+
+export async function person(name: string, existing?: string, via: Via = "browser"): Promise<Person> {
   const id = existing ?? randomId()
   const token = randomId(32)
   const email = `${name.toLowerCase()}-${id}@example.com`
   const session = db
     .insert(schema.session)
-    .values({ id: randomId(), token, userId: id, expiresAt: new Date(Date.now() + 3_600_000) })
+    .values({ id: randomId(), token, userId: id, via, expiresAt: new Date(Date.now() + 3_600_000) })
   if (existing) await session
   else await db.batch([db.insert(schema.user).values({ id, name, email, emailVerified: true }), session])
   return {
     id,
     email,
+    token,
     call: (method, path, body) =>
       exports.default.fetch(
         new Request(`${DEV}${path}`, {

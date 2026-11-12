@@ -60,3 +60,10 @@ export function errorResponse(error: unknown) {
 export function bearer(request: Request) {
   return request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? null
 }
+
+export function handleError(error: Error, c: Context) {
+  const known = errorResponse(error)
+  if (known) return known
+  console.error(error)
+  return c.json({ error: "Something went wrong" } satisfies ApiError, 500)
+}

@@ -148,7 +148,7 @@ export async function listingChanges(app: AppRow, desired: DesiredListing): Prom
   for (const [locale, words] of desired.locales) {
     const current = rows.find((row) => row.locale === locale)
     const prefix = locale === DEFAULT_LOCALE ? "" : `translations.${locale}.`
-    if (!current) change(prefix || "name", locale === DEFAULT_LOCALE ? "set" : "added")
+    if (!current) change(locale === DEFAULT_LOCALE ? "name" : `translations.${locale}`, "added")
     else
       for (const field of ["name", "summary", "description", "keywords"] as const)
         if (!same(current[field], words[field])) change(`${prefix}${field}`, "changed")

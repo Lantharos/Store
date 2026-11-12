@@ -2,6 +2,7 @@ import { hostname } from "node:os"
 import { join } from "node:path"
 import { type ApplyResponse, SCHELF_TOML } from "@schelf/protocol"
 import { applyConfig, configBundle } from "@schelf/publisher"
+import { presentApproval } from "../api/approvals.ts"
 import { credential } from "../api/identity.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
 import { repositoryRoot } from "../project/git.ts"
@@ -37,5 +38,7 @@ export async function apply(args: Args) {
   if (!dryRun && result.applied) done(`${result.app} matches its files`)
   if (dryRun) note("Nothing was changed.")
   blank()
-  return EXIT.ok
+  if (!result.request) return EXIT.ok
+  line("Asking to be listed needs you to approve it.")
+  return (await presentApproval(api, token, result.request, args)).code
 }

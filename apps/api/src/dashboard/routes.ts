@@ -1,5 +1,8 @@
 import { Hono } from "hono"
+import { approvalGuard } from "../approvals/guard.ts"
+import { approvalRoutes } from "../approvals/routes.ts"
 import { type SignedInVars, signedIn } from "../auth/session.ts"
+import { handleError } from "../lib/http.ts"
 import { inviteRoutes } from "../publishers/invites.ts"
 import { publisherRoutes } from "../publishers/routes.ts"
 import { accountRoutes } from "./account/account.ts"
@@ -14,7 +17,10 @@ import { statsRoutes } from "./releases/stats.ts"
 
 export const dashboardRoutes = new Hono<SignedInVars>()
 
+dashboardRoutes.onError(handleError)
 dashboardRoutes.use("*", signedIn)
+dashboardRoutes.use("*", approvalGuard)
+dashboardRoutes.route("/requests", approvalRoutes)
 dashboardRoutes.route("/account", accountRoutes)
 dashboardRoutes.route("/invites", inviteRoutes)
 dashboardRoutes.route("/publishers", publisherRoutes)

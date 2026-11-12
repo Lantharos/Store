@@ -10,7 +10,7 @@ import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { pruneChannels } from "./hosting/channels.ts"
 import { purgeDeleted } from "./hosting/deletion.ts"
-import { errorResponse, fail } from "./lib/http.ts"
+import { fail, handleError } from "./lib/http.ts"
 import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
 import { backOffice, publishDefinitions } from "./ops/pult.ts"
@@ -25,12 +25,7 @@ const downloadHost = new URL(env.DOWNLOAD_URL).hostname
 
 const app = new Hono()
 
-app.onError((error, c) => {
-  const known = errorResponse(error)
-  if (known) return known
-  console.error(error)
-  return c.json({ error: "Something went wrong" }, 500)
-})
+app.onError(handleError)
 
 app.use("/api/*", async (_, next) => {
   if (!env.BETTER_AUTH_SECRET || !env.UPLOAD_SECRET || !env.STORE_SIGNING_KEY)

@@ -15,9 +15,10 @@ import {
 } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import type { z } from "zod"
+import { approvalUrl, openApproval } from "../approvals/store.ts"
 import { listingChanged } from "../dashboard/apps/listing.ts"
 import { db, schema } from "../db/client.ts"
-import { requestListing } from "../hosting/listing.ts"
+import { listingRefusal, requestListing } from "../hosting/listing.ts"
 import { fail, failConfig } from "../lib/http.ts"
 import { recordHistory } from "../ops/events.ts"
 import { appOfManifest } from "../publishing/start.ts"
@@ -60,20 +61,31 @@ async function askToBeListed(
   app: AppRow,
   listing: DesiredListing,
   caller: Caller,
-  review: string[],
-  notes: string[],
+  host: string | undefined,
+  result: ApplyResponse,
 ) {
   if (!listing.listed) {
     if (app.visibility === "listed")
-      notes.push(`${listing.file}: it's listed in the store; listed = true keeps saying so`)
+      result.notes.push(`${listing.file}: it's listed in the store; set listed = true to say so`)
     return
   }
-  if (app.visibility === "listed" || app.listingRequestedAt) return
-  try {
+  const refusal = await listingRefusal(app)
+  if (refusal) {
+    if (app.visibility !== "listed" && !app.listingRequestedAt)
+      result.notes.push(`${listing.file} listed: ${refusal}`)
+    return
+  }
+  if (caller.kind === "workflow") {
     await requestListing(app, caller.by)
-    review.push("Asked to be listed; a reviewer looks at the project and its latest release")
-  } catch (error) {
-    notes.push(`${listing.file} listed: ${(error as Error).message}`)
+    result.review.push("Asked to be listed; a reviewer looks at the project and its latest release")
+  } else if (caller.kind === "person") {
+    const row = await openApproval(caller.viewer, [{ type: "listing.request", app: app.id, note: "" }], {
+      host,
+      place: null,
+    })
+    result.request = { id: row.id, url: approvalUrl(row.id), expires_at: row.expiresAt.toISOString() }
+  } else {
+    result.notes.push(`${listing.file} listed: ask with schelf apply while signed in, or in the dashboard`)
   }
 }
 
@@ -134,6 +146,6 @@ export async function applyFiles(request: Request, body: Body): Promise<ApplyRes
       caller.by,
     )
   const result: ApplyResponse = { ...response, applied: true }
-  if (desired) await askToBeListed(current, desired, caller, result.review, result.notes)
+  if (desired) await askToBeListed(current, desired, caller, body.host, result)
   return result
 }

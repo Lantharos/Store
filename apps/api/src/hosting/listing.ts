@@ -10,14 +10,19 @@ import { resignApp } from "../signing/queue.ts"
 import type { AppRow } from "../signing/records.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 
-export async function requestListing(app: AppRow, by: string) {
-  if (app.visibility === "listed") fail(409, "It's listed already")
-  if (app.listingRequestedAt) fail(409, "It's waiting for a reviewer already")
+export async function listingRefusal(app: AppRow) {
+  if (app.visibility === "listed") return "It's listed already"
+  if (app.listingRequestedAt) return "It's waiting for a reviewer already"
   const shipped = await db.$count(
     schema.release,
     and(eq(schema.release.appId, app.id), inArray(schema.release.status, [...SHIPPED_STATUSES])),
   )
-  if (!shipped) fail(409, "Publish a release first; the reviewer looks at it with the listing")
+  return shipped ? null : "Publish a release first; the reviewer looks at it with the listing"
+}
+
+export async function requestListing(app: AppRow, by: string) {
+  const refusal = await listingRefusal(app)
+  if (refusal) fail(409, refusal)
   await db
     .update(schema.app)
     .set({ listingRequestedAt: new Date(), listingItem: null })

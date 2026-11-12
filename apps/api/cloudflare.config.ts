@@ -80,6 +80,13 @@ export default defineConfig({
       SEALING_KEY: bindings.secret(),
       ANALYTICS_TOKEN: bindings.secret(),
       PULT_KEY: bindings.secret(),
+      REQUEST_LIMIT: bindings.rateLimit({
+        namespace: "2004",
+        simple: {
+          limit: 10,
+          period: 60,
+        },
+      }),
       MAIL_LIMIT: bindings.rateLimit({
         namespace: "2003",
         simple: {

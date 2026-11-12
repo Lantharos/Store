@@ -12,6 +12,13 @@ import { releaseOwnerships } from "../publishers/ownership.ts"
 import { CODE_MINUTES, sendCode } from "./mail.ts"
 
 const publicUrl = new URL(env.PUBLIC_URL)
+
+export type Via = "browser" | "passkey" | "cli"
+
+function viaOf(path: string | undefined): Via {
+  if (path === "/device/token") return "cli"
+  return path === "/passkey/verify-authentication" ? "passkey" : "browser"
+}
 const SESSION_CACHE_SECONDS = 5 * 60
 
 export const auth = betterAuth({
@@ -20,7 +27,15 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   trustedOrigins: [publicUrl.origin],
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
-  session: { cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS } },
+  session: {
+    cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS },
+    additionalFields: { via: { type: "string", required: false, input: false } },
+  },
+  databaseHooks: {
+    session: {
+      create: { before: async (session, context) => ({ data: { ...session, via: viaOf(context?.path) } }) },
+    },
+  },
   account: { accountLinking: { enabled: true, trustedProviders: ["github"] } },
   user: {
     deleteUser: {
