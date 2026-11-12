@@ -4,13 +4,13 @@ title: Privacy
 description: What Schelf knows about you, which is very little, and why.
 ---
 
-Last changed on 3 November 2026. Questions go to [privacy@schelf.store](mailto:privacy@schelf.store).
+Last changed on 12 November 2026. Questions go to [privacy@schelf.store](mailto:privacy@schelf.store).
 
 ## If you install apps
 
 You don't need an account to download or install apps, and Schelf doesn't track you.
 
-- **Downloads and updates** are counted per app, version and system, and whether it was a new install or an update. Nothing about your device, your address or you is written down. We only see totals per day.
+- **Downloads and updates** are counted per app, version and kind of system (such as Linux on Arm), and whether it was a new install or an update. Nothing that identifies your device, no address and nothing about you is stored with those counts. We only see totals per day.
 - **The Schelf app** never sends us the list of apps you have. It downloads the public catalog and checks for updates on its own.
 - **Rollouts** are decided on your computer from a random number that stays on your computer.
 - **Server logs** with IP addresses are kept by our hosting provider for up to 7 days to keep the service running and stop abuse, then deleted.
