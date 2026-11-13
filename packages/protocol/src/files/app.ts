@@ -4,6 +4,7 @@ import { extensionAccess } from "../extensions.ts"
 import { luftVersion } from "../luft.ts"
 import { permissions } from "../permissions.ts"
 import { access, artifactKind, distribution, format, kind, platform } from "../platforms.ts"
+import { privacy } from "../privacy.ts"
 import { publisherSummary } from "./catalog.ts"
 import { stamp } from "./stamp.ts"
 
@@ -91,6 +92,7 @@ export const appIndex = stamp.extend({
   licence: z.string().nullable(),
   repository: z.string().nullable(),
   distribution,
+  privacy: privacy.optional(),
   replaced_by: z.object({ id: z.string(), note: z.string() }).optional(),
   ended_channels: z.record(z.string(), z.string()).optional(),
   releases: z.array(indexedRelease),

@@ -7,8 +7,8 @@
   import ExtensionArt from "../../store/apps/ExtensionArt.svelte"
   import { tileStyle } from "../../store/apps/tile.ts"
   import { categoryLabel, primaryCategory } from "../../store/categories.ts"
-  import ExtensionPermissions from "../../store/page/ExtensionPermissions.svelte"
-  import { type ExtensionGrant, extensionGrants } from "../../store/page/extension.ts"
+  import ExtensionPermissions from "../../store/page/access/ExtensionPermissions.svelte"
+  import { type ExtensionGrant, extensionGrants } from "../../store/page/access/extension.ts"
   import { scheme as dashboardScheme } from "../../theme/scheme.svelte.ts"
   import Segmented from "../../ui/fields/Segmented.svelte"
 

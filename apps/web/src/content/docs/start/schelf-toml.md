@@ -30,6 +30,11 @@ repository = "alice/notes"
 [requires]
 sabine = "0.70"
 
+[privacy]
+telemetry = "opt-in"
+ads = false
+ai = "none"
+
 [channels.nightly]
 keep = 10
 ```
@@ -49,6 +54,9 @@ keep = 10
 | `requires.extension_api`     | The Luft extension API version an extension was built for.                                                                                                            |
 | `platforms`                  | The [systems](/docs/systems-and-parts) every release carries. A system left out stops being offered.                                                                  |
 | `parts.<name>`               | A [part](/docs/systems-and-parts#parts) shipped in every release beside the app: its `files` by name and its `platforms`.                                             |
+| `privacy.telemetry`          | `none`, `opt-in` when people turn it on, or `opt-out` when it's on until they turn it off. Shown on the page.                                                         |
+| `privacy.ads`                | `true` if the app shows ads.                                                                                                                                          |
+| `privacy.ai`                 | `none`, `on-device` when AI features run on the computer, or `online` when they send what people give them to a service.                                              |
 | `links.follow_rollout`       | `true` lets [download links](/docs/download-links) hand out a release while it rolls out.                                                                             |
 | `channels.<name>.keep`       | Keep only the newest releases on that [channel](/docs/channels).                                                                                                      |
 | `channels.<name>.gradual`    | Roll out step by step (`true`) or to everyone at once (`false`). Stable is gradual unless you say otherwise.                                                          |
@@ -100,6 +108,8 @@ summary = "Notizen, die nicht im Weg sind"
 | `translations.<language>`            | `name`, `summary`, `description` and `keywords` in another language; anything left out falls back to English. |
 
 A project without a `listing` folder keeps the store page the dashboard has, and the dashboard edits it as usual.
+
+The `[privacy]` table is what the page says about your app's data, in plain words, so declare it honestly: reviewers check it against what the app does, and a declaration that doesn't match is a reason to stop a release.
 
 ## What still goes to review
 

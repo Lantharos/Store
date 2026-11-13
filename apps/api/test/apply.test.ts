@@ -121,4 +121,26 @@ describe("applying the files", () => {
       `media/${appId}/${media[0]!.sha256}.png`,
     ])
   })
+
+  test("systems, parts and the privacy declaration come from schelf.toml", async () => {
+    const { appId, token } = await publisherWithApp()
+    const result = (await (
+      await apply(token, {
+        schelf_toml: schelf(
+          appId,
+          'platforms = ["linux-x86_64"]\n[privacy]\ntelemetry = "opt-in"\nads = false\nai = "none"\n[parts.cli]\nfiles = ["notes-cli-*"]\nplatforms = ["linux-x86_64"]\n',
+        ),
+        listing_toml: 'name = "Notes"\nsummary = "Notes"\n',
+      })
+    ).json()) as ApplyResponse
+    expect(result.changes.map((change) => change.key)).toEqual(
+      expect.arrayContaining(["platforms", "parts.cli", "privacy"]),
+    )
+    const row = await env.DB.prepare("SELECT platforms, parts, privacy FROM app WHERE id = ?")
+      .bind(appId)
+      .first<{ platforms: string; parts: string; privacy: string }>()
+    expect(JSON.parse(row!.platforms)).toEqual(["linux-x86_64"])
+    expect(JSON.parse(row!.parts)).toEqual({ cli: { files: ["notes-cli-*"], platforms: ["linux-x86_64"] } })
+    expect(JSON.parse(row!.privacy)).toEqual({ telemetry: "opt-in", ads: false, ai: "none" })
+  })
 })

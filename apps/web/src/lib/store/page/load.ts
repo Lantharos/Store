@@ -2,7 +2,7 @@ import { type AppPage, STABLE } from "@schelf/protocol"
 import { error } from "@sveltejs/kit"
 import { renderUserMarkdown } from "#lib/content/markdown.ts"
 import { appSchema } from "#lib/seo/schema.ts"
-import { extensionGrants } from "./extension.ts"
+import { extensionGrants } from "./access/extension.ts"
 
 export function storePage(found: AppPage, path: string) {
   if (found.status === "pulled") error(410, "This app was removed from Schelf.")

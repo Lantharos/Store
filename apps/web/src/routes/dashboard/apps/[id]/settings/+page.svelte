@@ -1,6 +1,7 @@
 <script lang="ts">
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import { appSettings } from "#lib/dashboard/apps/context.ts"
+  import Privacy from "#lib/dashboard/files/Privacy.svelte"
   import Address from "#lib/dashboard/project/Address.svelte"
   import DeleteProject from "#lib/dashboard/project/DeleteProject.svelte"
   import Publishers from "#lib/dashboard/project/Publishers.svelte"
@@ -18,6 +19,7 @@
   <Visibility bind:settings={() => data, (next) => settings.set(next)} />
   <Address bind:settings={() => data, (next) => settings.set(next)} />
   <Systems settings={data} />
+  <Privacy settings={data} />
   <Publishers appId={data.app.id} bind:publishers={data.trusted_publishers} />
   <Tokens appId={data.app.id} bind:tokens={data.tokens} />
   {#if session.can("apps")}<DeleteProject settings={data} />{/if}

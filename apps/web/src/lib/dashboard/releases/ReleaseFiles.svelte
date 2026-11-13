@@ -3,7 +3,7 @@
   import type { ReleaseDetail } from "@schelf/protocol"
   import CopyButton from "../../code/CopyButton.svelte"
   import { bytes } from "../../format.ts"
-  import Permissions from "../../store/page/Permissions.svelte"
+  import Permissions from "../../store/page/access/Permissions.svelte"
   import { KIND_NAMES, PLATFORM_NAMES } from "../../system/artifacts.ts"
   import ReleaseNotes from "./ReleaseNotes.svelte"
 

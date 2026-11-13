@@ -4,6 +4,7 @@ import {
   FORMATS,
   type PartPlan,
   type Platform,
+  type Privacy,
   UPDATERS,
   VISIBILITIES,
 } from "@schelf/protocol"
@@ -58,6 +59,7 @@ export const app = sqliteTable(
     replacedNote: text("replaced_note"),
     configFiles: text("config_files", { mode: "json" }).$type<ConfigFiles>(),
     platforms: text("platforms", { mode: "json" }).$type<Platform[]>(),
+    privacy: text("privacy", { mode: "json" }).$type<Privacy>(),
     parts: text("parts", { mode: "json" }).$type<PartPlan["parts"]>().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
   },

@@ -19,7 +19,14 @@ import type { Caller } from "./caller.ts"
 
 type AppFields = Pick<
   AppRow,
-  "distribution" | "licence" | "repository" | "repositoryId" | "latestFollowsRollout" | "platforms" | "parts"
+  | "distribution"
+  | "licence"
+  | "repository"
+  | "repositoryId"
+  | "latestFollowsRollout"
+  | "platforms"
+  | "parts"
+  | "privacy"
 >
 
 export interface DesiredProject {
@@ -65,6 +72,7 @@ export async function desiredProject(
       latestFollowsRollout: manifest.links.follow_rollout,
       platforms: manifest.platforms ?? null,
       parts: manifest.parts,
+      privacy: manifest.privacy ?? null,
     },
     updater: updaterOf(manifest),
     channels: manifest.channels,
@@ -79,6 +87,7 @@ const FIELD_KEYS: Record<keyof AppFields, string | null> = {
   latestFollowsRollout: "links.follow_rollout",
   platforms: "platforms",
   parts: null,
+  privacy: null,
 }
 
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right)
@@ -107,6 +116,15 @@ export async function projectChanges(app: AppRow, desired: DesiredProject): Prom
     if (key && !same(app[field], desired.fields[field]))
       change(key, [desired.fields[field] ?? "cleared"].flat().join(", "))
   partChanges(app, desired, change)
+  if (!same(app.privacy, desired.fields.privacy))
+    change(
+      "privacy",
+      desired.fields.privacy
+        ? Object.entries(desired.fields.privacy)
+            .map(([key, value]) => `${key} ${value}`)
+            .join(", ")
+        : "cleared",
+    )
   if (desired.updater && desired.updater !== app.updater)
     change("updater", `moves to ${UPDATER_NAMES[desired.updater]}`)
   const rows = await db.select().from(schema.channel).where(eq(schema.channel.appId, app.id))

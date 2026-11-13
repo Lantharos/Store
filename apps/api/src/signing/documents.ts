@@ -159,6 +159,7 @@ export function appIndex(record: AppRecord): Unstamped<AppIndex> {
     licence: record.app.licence,
     repository: record.app.repository,
     distribution: record.app.distribution,
+    ...(record.app.privacy ? { privacy: record.app.privacy } : {}),
     ...(record.app.replacedBy
       ? { replaced_by: { id: record.app.replacedBy, note: record.app.replacedNote ?? "" } }
       : {}),

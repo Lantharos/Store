@@ -52,7 +52,9 @@ repository = "alice/notes"
 keep = 10
 ```
 
-`schelf.toml` is about building and publishing: the id or project address, kind, format, updater, permission file, listing folder, distribution, licence, repository, requirements, the systems every release carries, its parts, whether download links follow the rollout, and each channel's keep count, rollout and ending.
+`schelf.toml` is about building and publishing: the id or project address, kind, format, updater, permission file, listing folder, distribution, licence, repository, requirements, the systems every release carries, its parts, its privacy declaration, whether download links follow the rollout, and each channel's keep count, rollout and ending.
+
+**Privacy.** `[privacy]` declares `telemetry` (`none`, `opt-in`, `opt-out`), `ads` (true or false) and `ai` (`none`, `on-device`, `online`). It's stored on the app, signed into the app's index file, and shown in plain words on the page and in the dashboard; reviewers check it against the release.
 
 **Systems and parts.** `platforms` lists the systems every release of the app carries; the store refuses a release that's missing one, and a system taken out stops being offered on the page, the latest links and the feeds, while old versions stay reachable by version. `[parts.<name>]` tables, each with `files` (name globs) and `platforms`, are named groups of files inside one release, sharing its version, review and channels, like a framework's `runtime`, `cli` and `daemon`. The store sorts each file into the part whose globs its name matches when the release starts, the app being every file that matches none, and refuses a name that matches two. The app is the only part the listing, the Schelf app and the update feeds use; named parts are served at `latest/<part>/<platform>` and `v/<version>/<part>/…` and show in the page's files, `latest.json` (each file names its `part`), checksums and the dashboard. With parts and no top-level `platforms` a project is only its parts: every file has to match one, it has no listing folder and it can't ask to be listed. Anything with its own version line is its own project. `listing.toml` is the store page: name, summary, description, keywords, categories, links, content rating, colour, icon, screenshots in order, translations, `listed` (asking to be listed) and `indexed`.
 
@@ -62,7 +64,6 @@ keep = 10
 
 - `domain = "downloads.example.com"` for a custom domain, which attaching would need approval for, like every change to what the public sees.
 - `[channels.<name>] invite_only = true` with the invitations themselves kept out of the file, since they're people.
-- A `[privacy]` table in `listing.toml` (`telemetry`, `ads`, `ai`), shown on the page and checked in review.
 
 ## Approving in the browser
 

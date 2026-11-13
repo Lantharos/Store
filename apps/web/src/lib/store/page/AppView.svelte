@@ -7,12 +7,13 @@
   import AppIcon from "../apps/AppIcon.svelte"
   import ExtensionArt from "../apps/ExtensionArt.svelte"
   import { categoryHref, categoryLabel, primaryCategory } from "../categories.ts"
+  import ExtensionPermissions from "./access/ExtensionPermissions.svelte"
+  import type { ExtensionGrant } from "./access/extension.ts"
+  import Permissions from "./access/Permissions.svelte"
+  import Privacy from "./access/Privacy.svelte"
   import Download from "./Download.svelte"
-  import ExtensionPermissions from "./ExtensionPermissions.svelte"
-  import type { ExtensionGrant } from "./extension.ts"
   import Facts from "./Facts.svelte"
   import OtherSystems from "./OtherSystems.svelte"
-  import Permissions from "./Permissions.svelte"
   import Releases from "./Releases.svelte"
   import Screenshots from "./Screenshots.svelte"
 
@@ -124,6 +125,9 @@
         <ExtensionPermissions grants={extensionAccess} />
       {:else if latest && !hosted}
         <Permissions permissions={latest.permissions} />
+      {/if}
+      {#if app.privacy}
+        <Privacy privacy={app.privacy} />
       {/if}
       <Facts {app} {installs} />
       <a href="/report/{app.id}" class="inline-flex items-center gap-2 text-[13px] text-ink-muted hover:text-ink">

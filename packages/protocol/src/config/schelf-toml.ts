@@ -2,6 +2,7 @@ import { parse } from "smol-toml"
 import { z } from "zod"
 import { partName, partSettings } from "../parts.ts"
 import { appId, distribution, format, formatFits, kind, platform, platformsFor } from "../platforms.ts"
+import { privacy } from "../privacy.ts"
 import { projectPath } from "../projects.ts"
 import { channelName, STABLE } from "../releases.ts"
 
@@ -82,6 +83,9 @@ export const schelfToml = z
       .min(1)
       .optional()
       .describe("The systems every release carries the app for; a system left out stops being offered"),
+    privacy: privacy
+      .optional()
+      .describe("What the app does with people's data, shown on its page: telemetry, ads and AI features"),
     parts: z
       .record(partName, partSettings)
       .default({})

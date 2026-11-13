@@ -12,6 +12,7 @@ These are examples, not a contract. If you're unsure about something, [ask us](/
 
 - **What it does matches what it says.** The description, screenshots and permissions describe the app people will get.
 - **Permissions it uses.** Reviewers see what your binary can actually do next to what you declared. Ask for what you use and nothing more.
+- **Its privacy declaration.** What `[privacy]` in `schelf.toml` says about usage data, ads and AI features is what the app does.
 - **The change since last time.** For open-source apps, reviewers read the source diff since your last approved release.
 - **Where it was built.** Every file is traced to the workflow run that built it.
 - **The licence.** Apps are open source at launch: an OSI-approved or FSF-free licence, and bundled code whose licences allow it.

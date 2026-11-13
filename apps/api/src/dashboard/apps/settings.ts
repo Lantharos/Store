@@ -90,6 +90,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       latest_follows_rollout: app.latestFollowsRollout,
       platforms: app.platforms,
       parts: app.parts,
+      privacy: app.privacy,
       created_at: app.createdAt.toISOString(),
     },
     links: projectLinks(app, publisherSlug, [
