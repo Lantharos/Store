@@ -51,6 +51,26 @@ export interface AppPage {
   /** Whether the project has the app itself, or only named parts. */
   has_app: boolean
   parts: ProjectFile[]
+  /** Channels only invited people can download from; who is invited is never public. */
+  invite_only: string[]
+}
+
+export interface InvitedChannel {
+  app: string
+  project: string
+  name: string
+  channel: string
+  page: string
+  /** The app's signed index with this channel's releases in it, for the Schelf app. */
+  index: string
+  /** Sabine's update feed for the channel, when the app updates through Sabine. */
+  sabine: string | null
+  latest: string
+}
+
+export interface InvitedDownloads extends ProjectDownloads {
+  /** How long the file addresses in it keep working. */
+  expires: string
 }
 
 export interface Replacement {

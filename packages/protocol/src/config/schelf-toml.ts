@@ -42,6 +42,10 @@ export const channelSettings = z.strictObject({
   ended_into: channelName
     .optional()
     .describe("End this channel: publishing to it is refused and its people move to the named channel"),
+  invite_only: z
+    .boolean()
+    .optional()
+    .describe("Only people and machines the dashboard or schelf channel invite let in can download from it"),
 })
 export type ChannelSettings = z.infer<typeof channelSettings>
 
@@ -150,6 +154,18 @@ export const schelfToml = z
           code: "custom",
           path: ["channels", name],
           message: "stable keeps every release and can't be ended",
+        })
+      if (name === STABLE && settings.invite_only)
+        context.addIssue({
+          code: "custom",
+          path: ["channels", name, "invite_only"],
+          message: "stable is for everyone; make another channel invite-only",
+        })
+      if (settings.ended_into && manifest.channels[settings.ended_into]?.invite_only)
+        context.addIssue({
+          code: "custom",
+          path: ["channels", name, "ended_into"],
+          message: `${settings.ended_into} is invite-only, so its people couldn't follow; end into an open channel`,
         })
       if (settings.ended_into === name)
         context.addIssue({

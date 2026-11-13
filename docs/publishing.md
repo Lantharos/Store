@@ -63,7 +63,6 @@ keep = 10
 **Room to grow.** The format is built so these fit later without breaking a file:
 
 - `domain = "downloads.example.com"` for a custom domain, which attaching would need approval for, like every change to what the public sees.
-- `[channels.<name>] invite_only = true` with the invitations themselves kept out of the file, since they're people.
 
 ## Approving in the browser
 
@@ -186,7 +185,8 @@ The command does everything the dashboard does, so a person or an agent never ha
 | Ask to be listed                                                                           | `listed = true`, `schelf apply`                            | yes                       |
 | Show the page in search engines                                                            | `indexed`, `schelf apply`                                  | no                        |
 | Links follow the rollout                                                                   | `links.follow_rollout`, `schelf apply`                     | no                        |
-| Channels: keep, step by step, end, reopen                                                  | `[channels.<name>]`, `schelf apply`; `schelf channel list` | no                        |
+| Channels: keep, step by step, end, reopen, invite-only                                     | `[channels.<name>]`, `schelf apply`; `schelf channel list` | no                        |
+| Invite-only channel: invite, take back, download tokens                                    | `schelf channel invite`, `uninvite`, `token`, `revoke`     | invite and token: yes     |
 | Change how this app updates, undo a move                                                   | `format`, `updater`, `schelf apply`                        | no                        |
 | Open or closed source, licence, repository                                                 | `distribution`, `licence`, `repository`, `schelf apply`    | no                        |
 | Address                                                                                    | `schelf project rename`                                    | yes                       |

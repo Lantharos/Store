@@ -10,6 +10,7 @@ import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { pruneChannels } from "./hosting/channels.ts"
 import { purgeDeleted } from "./hosting/deletion.ts"
+import { invitedRoutes } from "./invited/people.ts"
 import { fail, handleError } from "./lib/http.ts"
 import { receiveMail } from "./mail/receive.ts"
 import { deliverPending } from "./ops/pending.ts"
@@ -41,6 +42,7 @@ app.post("/api/ops", (c) => {
 })
 app.route(`${API_BASE}/avatars`, avatarRoutes)
 app.route(API_BASE, storefrontRoutes)
+app.route(API_BASE, invitedRoutes)
 app.route(API_BASE, publishingRoutes)
 app.route(API_BASE, configRoutes)
 app.route(`${API_BASE}/dev`, dashboardRoutes)

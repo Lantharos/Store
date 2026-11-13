@@ -19,6 +19,9 @@ import {
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { channelsOpenTo } from "../invited/access.ts"
+import { inviteOnlyChannels } from "../invited/channels.ts"
+import { signReleases } from "../invited/links.ts"
 import { partPlan } from "../publishing/parts.ts"
 import { linkBase, pageUrl } from "./addresses.ts"
 import { channelRoute } from "./ended.ts"
@@ -118,25 +121,25 @@ function serveVersion(releases: HostedRelease[], path: string[], channel: string
     : notFound(`${version} has nothing for ${[part, target].filter(Boolean).join(" ") || "that"}`)
 }
 
-export async function serveProject(request: Request, segments: string[]) {
-  const [publisherSlug, slug, ...path] = segments
-  const project = await findProject(publisherSlug!, slug!)
-  if (
-    !project ||
-    project.status === "draft" ||
-    project.status === "in-review" ||
-    project.status === "delisted" ||
-    project.status === "deleted"
-  )
-    return notFound("There's no project here")
-  if (project.status === "pulled") return text("This project was pulled from Schelf", 410)
-  const channelMatch = path[0] ? CHANNEL.exec(path[0]) : null
-  const named = channelMatch ? channelMatch[1]! : STABLE
-  if (channelMatch) path.shift()
+const unauthorized = () =>
+  new Response("This channel is invite-only. Sign in to Schelf or send a download token.", {
+    status: 401,
+    headers: { "www-authenticate": "Bearer", "cache-control": "no-store" },
+  })
 
-  const route = await channelRoute(project.id, named)
+interface Asked {
+  request: Request
+  project: Project
+  named: string
+  route: string[]
+  path: string[]
+  invited: Set<string>
+  sign: (releases: HostedRelease[]) => Promise<HostedRelease[]>
+}
+
+async function answer({ request, project, named, route, path, invited, sign }: Asked) {
   const channel = route.at(-1)!
-  const releases = await linkReleases(project.id, route)
+  const releases = await sign(await linkReleases(project.id, route))
   const plan = partPlan(project)
   const offered = offeredReleases(releases, plan)
   const options: LinkOptions = { followRollout: project.latestFollowsRollout, draw: Math.random() }
@@ -162,19 +165,21 @@ export async function serveProject(request: Request, segments: string[]) {
       cache,
     )
   }
-  const app = (list: HostedRelease[]) => partReleases(offeredReleases(list, plan), null)
+  const app = async (list: HostedRelease[]) => partReleases(offeredReleases(await sign(list), plan), null)
   if (first === "tauri.json" && !second) {
-    const release = updaterRelease(app(await feedReleases(project.id, route)), "tauri", options)
+    const release = updaterRelease(await app(await feedReleases(project.id, route)), "tauri", options)
     const feed = release && tauriFeed(release)
     return feed ? json(feed, cache) : new Response(null, { status: 204 })
   }
   if (first && !second && electronFeedName(first)) {
     const line = electronFeedName(first)!.channel
+    if (line !== named && invited.has(line) && !(await channelsOpenTo(request, project, [line])))
+      return unauthorized()
     const lineReleases = await feedReleases(
       project.id,
       line === named ? route : await channelRoute(project.id, line),
     )
-    const feed = app(lineReleases)
+    const feed = (await app(lineReleases))
       .filter((candidate) => candidate.updater === "electron")
       .map((release) => electronFeed(release, first))
       .find(Boolean)
@@ -183,7 +188,44 @@ export async function serveProject(request: Request, segments: string[]) {
   return notFound()
 }
 
-export const DOWNLOAD_ROOTS = new Set(["apps", "index", "trust", "sabine", "media", "private"])
+export async function serveProject(request: Request, segments: string[]) {
+  const [publisherSlug, slug, ...path] = segments
+  const project = await findProject(publisherSlug!, slug!)
+  if (
+    !project ||
+    project.status === "draft" ||
+    project.status === "in-review" ||
+    project.status === "delisted" ||
+    project.status === "deleted"
+  )
+    return notFound("There's no project here")
+  if (project.status === "pulled") return text("This project was pulled from Schelf", 410)
+  const channelMatch = path[0] ? CHANNEL.exec(path[0]) : null
+  const named = channelMatch ? channelMatch[1]! : STABLE
+  if (channelMatch) path.shift()
+
+  const [route, invited] = await Promise.all([
+    channelRoute(project.id, named),
+    inviteOnlyChannels(project.id),
+  ])
+  const guarded = invited.has(named)
+  if (guarded && !(await channelsOpenTo(request, project, [named]))) return unauthorized()
+  const response = await answer({
+    request,
+    project,
+    named,
+    route,
+    path,
+    invited,
+    sign: (releases) => (invited.size ? signReleases(releases) : Promise.resolve(releases)),
+  })
+  if (!guarded) return response
+  const headers = new Headers(response.headers)
+  headers.set("cache-control", "no-store")
+  return new Response(response.body, { status: response.status, headers })
+}
+
+export const DOWNLOAD_ROOTS = new Set(["apps", "index", "trust", "sabine", "media", "private", "invited"])
 
 export function isProjectPath(segments: string[]) {
   return segments.length >= 2 && !DOWNLOAD_ROOTS.has(segments[0]!)

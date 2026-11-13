@@ -6,7 +6,7 @@ import {
   UPDATER_NAMES,
   type Updater,
 } from "@schelf/protocol"
-import { and, eq } from "drizzle-orm"
+import { and, count, eq } from "drizzle-orm"
 import { githubAccount } from "../dashboard/access.ts"
 import { db, schema } from "../db/client.ts"
 import { repository as githubRepository } from "../github/api.ts"
@@ -127,7 +127,15 @@ export async function projectChanges(app: AppRow, desired: DesiredProject): Prom
     )
   if (desired.updater && desired.updater !== app.updater)
     change("updater", `moves to ${UPDATER_NAMES[desired.updater]}`)
-  const rows = await db.select().from(schema.channel).where(eq(schema.channel.appId, app.id))
+  const [rows, counts] = await Promise.all([
+    db.select().from(schema.channel).where(eq(schema.channel.appId, app.id)),
+    db
+      .select({ channel: schema.release.channel, releases: count() })
+      .from(schema.release)
+      .where(eq(schema.release.appId, app.id))
+      .groupBy(schema.release.channel),
+  ])
+  const releasesOn = new Map(counts.map((row) => [row.channel, row.releases]))
   const names = new Set([...rows.map((row) => row.name), ...Object.keys(desired.channels)])
   for (const name of names) {
     const row = rows.find((entry) => entry.name === name)
@@ -137,6 +145,14 @@ export async function projectChanges(app: AppRow, desired: DesiredProject): Prom
       change(`channels.${name}.keep`, keep === null ? "keeps every release" : `keeps ${keep}`)
     if ((row?.gradual ?? null) !== (wanted.gradual ?? null))
       change(`channels.${name}.gradual`, String(wanted.gradual ?? "default"))
+    if ((row?.inviteOnly ?? false) !== (wanted.invite_only ?? false)) {
+      if (wanted.invite_only && releasesOn.get(name))
+        fail(
+          422,
+          `${desired.file} channels.${name}.invite_only: ${name} already has releases anyone could download; make a new channel invite-only`,
+        )
+      change(`channels.${name}.invite_only`, wanted.invite_only ? "only invited people" : "open to everyone")
+    }
     if ((row?.endedInto ?? null) !== (wanted.ended_into ?? null))
       change(`channels.${name}.ended_into`, wanted.ended_into ? `ends into ${wanted.ended_into}` : "reopens")
   }
@@ -164,6 +180,7 @@ async function settleChannels(app: AppRow, desired: DesiredProject, by: string) 
         .set({
           keep: desired.channels[name]?.keep ?? defaultKeep(name),
           gradual: desired.channels[name]?.gradual ?? null,
+          inviteOnly: desired.channels[name]?.invite_only ?? false,
         })
         .where(and(eq(schema.channel.appId, app.id), eq(schema.channel.name, name))),
     ) as never,

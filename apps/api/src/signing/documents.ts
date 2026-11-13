@@ -45,7 +45,11 @@ function appFiles(record: AppRecord, artifacts: IndexedArtifact[]) {
 const appReleases = (record: AppRecord) =>
   record.releases.map(({ release, artifacts }) => ({ release, artifacts: appFiles(record, artifacts) }))
 
-const indexable = (record: AppRecord) => appReleases(record).filter(({ release }) => !release.bridge)
+const indexable = (record: AppRecord, invitedTo?: string) =>
+  appReleases(record).filter(
+    ({ release }) =>
+      !release.bridge && (!record.inviteOnly.has(release.channel) || release.channel === invitedTo),
+  )
 const stable = (record: AppRecord) => indexable(record).filter(({ release }) => release.channel === STABLE)
 
 export function catalogEntry(record: AppRecord): CatalogEntry {
@@ -123,7 +127,8 @@ function indexedRelease(
   }
 }
 
-export function appIndex(record: AppRecord): Unstamped<AppIndex> {
+/** The app's index; with `invitedTo`, the copy for people invited to that channel, with its releases in. */
+export function appIndex(record: AppRecord, invitedTo?: string): Unstamped<AppIndex> {
   return {
     version: 1,
     generated: new Date().toISOString(),
@@ -170,7 +175,9 @@ export function appIndex(record: AppRecord): Unstamped<AppIndex> {
           ),
         }
       : {}),
-    releases: indexable(record).map(({ release, artifacts }) => indexedRelease(record, release, artifacts)),
+    releases: indexable(record, invitedTo).map(({ release, artifacts }) =>
+      indexedRelease(record, release, artifacts),
+    ),
   }
 }
 

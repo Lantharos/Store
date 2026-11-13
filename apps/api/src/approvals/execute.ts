@@ -63,7 +63,8 @@ export async function executeApproval(row: ApprovalRow, dashboard: Hono<never>, 
       break
     }
     if (action.type === "publisher.create") created = answer.id!
-    if (action.type === "token.create") secrets[action.name] = answer.token!
+    if (action.type === "token.create" || action.type === "channel.token")
+      secrets[action.name] = answer.token!
     steps[index] = { ...steps[index]!, outcome: "done", detail: null }
   }
   const [finished] = await db

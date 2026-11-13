@@ -25,6 +25,7 @@ import { db, schema } from "../db/client.ts"
 import { linkBase, projectSummary } from "../hosting/addresses.ts"
 import { latestFiles } from "../hosting/files.ts"
 import { linkReleases } from "../hosting/releases.ts"
+import { inviteOnlyChannels } from "../invited/channels.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
@@ -114,7 +115,7 @@ storefrontRoutes.get("/featured", async (c) => {
 async function appPage(app: AppRow | undefined): Promise<AppPage> {
   if (!app || (app.status !== "published" && app.status !== "delisted" && app.status !== "pulled"))
     fail(404, "There's no app with that id")
-  const [object, owner, last30, [total], replacement, releases] = await Promise.all([
+  const [object, owner, last30, [total], replacement, releases, inviteOnly] = await Promise.all([
     env.BUCKET.get(paths.app(app.id)),
     db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
     installsSince([app.id], 30),
@@ -124,6 +125,7 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
       .where(eq(schema.countDaily.appId, app.id)),
     replacementOf(app),
     linkReleases(app.id, [STABLE]),
+    inviteOnlyChannels(app.id),
   ])
   if (!object) fail(404, "There's no app with that id")
   const plan = partPlan(app)
@@ -136,6 +138,7 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
     replacement,
     has_app: hasAppPart(plan),
     parts: parts.filter((file) => file.part !== null),
+    invite_only: [...inviteOnly],
   }
 }
 

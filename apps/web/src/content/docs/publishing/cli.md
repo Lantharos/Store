@@ -36,6 +36,7 @@ These read the project from `schelf.toml`; elsewhere pass `--app <id>`.
 | `schelf release rollback <version>`                                   | Stop a release for everyone and offer the one before it again.                             |
 | `schelf release inside-luft <version>`                                | Ask for an extension release to run inside Luft.                                           |
 | `schelf channel list`                                                 | Channels; change them in `schelf.toml`.                                                    |
+| `schelf channel people`, `invite`, `uninvite`, `token`, `revoke`      | Who gets an [invite-only channel](/docs/channels#invite-only-channels).                    |
 | `schelf trust list`, `add <owner/repository>`, `remove <id>`          | The workflows trusted to publish (`--workflow`, `--environment`, `--ref`).                 |
 | `schelf token list`, `create <name>`, `revoke <id>`                   | Upload tokens for publishing outside GitHub Actions.                                       |
 | `schelf publisher list`, `show`, `create <name>`, `update`            | Publishers and their profile (`--description`, `--website`, `--logo`, `--name`, `--slug`). |

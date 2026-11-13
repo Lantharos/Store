@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { type DeletedProject, paths } from "@schelf/protocol"
+import { type DeletedProject, INVITED_PREFIX, paths } from "@schelf/protocol"
 import { and, eq, inArray, isNotNull, isNull, lt } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
@@ -14,7 +14,14 @@ const R2_DELETE_BATCH = 1000
 
 export const purgeAt = (deletedAt: Date) => new Date(deletedAt.getTime() + GRACE_MS)
 
-const ownFiles = (id: string) => [`apps/${id}/`, `media/${id}/`, `sabine/${id}/`]
+const ownFiles = (id: string) => [
+  `apps/${id}/`,
+  `media/${id}/`,
+  `sabine/${id}/`,
+  `${INVITED_PREFIX}apps/${id}/`,
+  `${INVITED_PREFIX}sabine/${id}/`,
+  `${INVITED_PREFIX}index/v1/apps/${id}/`,
+]
 
 async function removeFiles(prefixes: string[], extra: string[] = []) {
   const keys = [...extra]

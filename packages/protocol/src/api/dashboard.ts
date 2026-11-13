@@ -131,6 +131,36 @@ export interface Channel {
   gradual: boolean
   releases: number
   ended_into: string | null
+  invite_only: boolean
+}
+
+export const CHANNEL_TOKEN_PREFIX = "schelfdl_"
+
+export interface ChannelInvite {
+  id: string
+  email: string
+  invited_by: string
+  created_at: string
+}
+
+export interface ChannelToken {
+  id: string
+  name: string
+  created_at: string
+  last_used_at: string | null
+  revoked_at: string | null
+}
+
+export interface ChannelAccess {
+  channel: string
+  invites: ChannelInvite[]
+  tokens: ChannelToken[]
+}
+
+export const inviteToChannel = z.object({ email: z.email().trim().toLowerCase() })
+export const createChannelToken = z.object({ name: z.string().trim().min(1).max(80) })
+export interface CreatedChannelToken extends ChannelToken {
+  token: string
 }
 export const updateChannel = z.object({
   keep: z.number().int().min(1).max(100).nullable().optional(),

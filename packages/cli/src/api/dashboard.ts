@@ -3,6 +3,7 @@ import {
   API_BASE,
   type Approval,
   type AppSettings,
+  type ChannelAccess,
   type DashboardApp,
   type DashboardPublisher,
   type ManualUpload,
@@ -55,6 +56,12 @@ export function dashboard(api: string, token: string) {
     deletedApps: (owner: string) => get<RestorableProject[]>(`${publisher(owner)}/apps/deleted`),
     app: (id: string) => get<AppSettings>(app(id)),
     revokeToken: (id: string, token: string) => remove<void>(`${app(id)}/tokens/${token}`),
+    channelAccess: (id: string, channel: string) =>
+      get<ChannelAccess>(`${app(id)}/channels/${channel}/access`),
+    uninvite: (id: string, channel: string, invite: string) =>
+      remove<ChannelAccess>(`${app(id)}/channels/${channel}/invites/${invite}`),
+    revokeChannelToken: (id: string, channel: string, token: string) =>
+      remove<ChannelAccess>(`${app(id)}/channels/${channel}/tokens/${token}`),
     releases: (id: string) => get<ReleaseSummary[]>(`${app(id)}/releases`),
     release: (id: string, release: string) => get<ReleaseDetail>(`${app(id)}/releases/${release}`),
     rollout: (id: string, release: string, body: RolloutRequest) =>

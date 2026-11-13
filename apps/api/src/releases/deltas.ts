@@ -2,12 +2,14 @@ import { env } from "cloudflare:workers"
 import {
   DELTA_KINDS,
   type DeltaReport,
+  INVITED_PREFIX,
   MAX_ARTIFACT_SIZE,
   paths,
   platform as platformSchema,
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { isInvitedKey } from "../invited/links.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { storeHashed } from "../publishing/hashing.ts"
@@ -50,7 +52,8 @@ export async function receiveDelta(
   if (!request.body || !Number.isInteger(size) || size <= 0) fail(422, "The delta has no length")
   if (size >= Math.min(artifact.size, MAX_ARTIFACT_SIZE)) fail(422, "The delta isn't smaller than the file")
 
-  const key = paths.delta(app.id, previous.version, release.version, platform)
+  const delta = paths.delta(app.id, previous.version, release.version, platform)
+  const key = isInvitedKey(artifact.key) ? `${INVITED_PREFIX}${delta}` : delta
   const { sha256 } = await storeHashed(env.BUCKET, key, request.body, size)
   await db
     .delete(schema.delta)

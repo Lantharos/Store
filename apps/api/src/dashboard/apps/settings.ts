@@ -104,6 +104,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       gradual: rollsOutGradually(name, channels.find((row) => row.name === name)?.gradual ?? null),
       releases: releasesIn.get(name) ?? 0,
       ended_into: ended.has(name) ? channelNow(name, ended) : null,
+      invite_only: channels.find((row) => row.name === name)?.inviteOnly ?? false,
     })),
     switches: switches.map((row) => ({
       id: row.id,

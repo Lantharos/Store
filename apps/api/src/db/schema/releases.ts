@@ -94,7 +94,10 @@ export const artifact = sqliteTable(
     uploadedAt: integer("uploaded_at", { mode: "timestamp_ms" }),
     attestationUrl: text("attestation_url"),
   },
-  (table) => [uniqueIndex("artifact_name").on(table.releaseId, table.name)],
+  (table) => [
+    uniqueIndex("artifact_name").on(table.releaseId, table.name),
+    index("artifact_key").on(table.key),
+  ],
 )
 
 export const delta = sqliteTable("delta", {

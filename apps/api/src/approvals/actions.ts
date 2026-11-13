@@ -163,6 +163,24 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
     describe: async ({ app: id, name }) =>
       `Make an upload token called ${name} that can publish ${await appName(id)} for a year`,
   },
+  "channel.invite": {
+    call: ({ app: id, channel, email }) => ({
+      method: "POST",
+      path: `${app(id)}/channels/${channel}/invites`,
+      body: { email },
+    }),
+    describe: async ({ app: id, channel, email }) =>
+      `Let ${email} download ${await appName(id)} from its invite-only ${channel} channel, and email them`,
+  },
+  "channel.token": {
+    call: ({ app: id, channel, name }) => ({
+      method: "POST",
+      path: `${app(id)}/channels/${channel}/tokens`,
+      body: { name },
+    }),
+    describe: async ({ app: id, channel, name }) =>
+      `Make a download token called ${name} that can get ${await appName(id)} from its invite-only ${channel} channel`,
+  },
   "member.invite": {
     call: ({ publisher: id, to, role }) => ({
       method: "POST",

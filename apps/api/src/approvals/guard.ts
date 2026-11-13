@@ -29,6 +29,7 @@ const NEEDS_APPROVAL = [
   rule("POST", "/apps/:id/listing-request"),
   rule("POST DELETE", "/apps/:id/trusted-publishers(/:id)?"),
   rule("POST", "/apps/:id/tokens"),
+  rule("POST", "/apps/:id/channels/:id/(invites|tokens)"),
   rule("POST", "/apps/:id/releases/:id/rollout", (body) => body.action === "rollback"),
   rule("POST", "/apps/:id/releases/:id/inside-luft"),
 ]

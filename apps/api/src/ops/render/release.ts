@@ -1,11 +1,14 @@
 import { b } from "@lantharos/pult"
 import { CHECK_TITLES, extensionLabels, luftVersionLabel } from "@schelf/protocol"
+import { isInvitedKey, signedFileUrl } from "../../invited/links.ts"
 import { fileUrl } from "../../signing/records.ts"
 import { CHECK_RESULT, ORIGIN, RELEASE_STATUS, SHELL_REVIEW, SOURCE, VISIBILITY } from "../data/labels.ts"
 import { appPage, link } from "../data/links.ts"
 import { type ReleaseView, releases } from "../data/releases.ts"
 import { checkDetailBlocks, factBlocks } from "./facts.ts"
 import { listingBlocks } from "./listing.ts"
+
+const REVIEW_MINUTES = 14 * 24 * 60
 
 const DECISION = { approved: "Approved", "changes-requested": "Asked for changes", rejected: "Rejected" }
 
@@ -105,13 +108,20 @@ export async function releaseBlocks(release: ReleaseView) {
         ),
     ...(await checkDetailBlocks(checks)),
     b.table(
-      artifacts.map((artifact) => ({
-        file: b.link(fileUrl(artifact.key), artifact.name),
-        system: artifact.platform,
-        kind: artifact.kind,
-        size: megabytes(artifact.size),
-        attestation: artifact.attestationUrl ? b.link(artifact.attestationUrl, "Verified") : "None",
-      })),
+      await Promise.all(
+        artifacts.map(async (artifact) => ({
+          file: b.link(
+            isInvitedKey(artifact.key)
+              ? await signedFileUrl(artifact.key, REVIEW_MINUTES)
+              : fileUrl(artifact.key),
+            artifact.name,
+          ),
+          system: artifact.platform,
+          kind: artifact.kind,
+          size: megabytes(artifact.size),
+          attestation: artifact.attestationUrl ? b.link(artifact.attestationUrl, "Verified") : "None",
+        })),
+      ),
       { title: "Files" },
     ),
     b.table(

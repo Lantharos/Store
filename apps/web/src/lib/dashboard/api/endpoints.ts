@@ -54,6 +54,13 @@ export const endpoints = {
   channel: (id: string, channel: string) => `${app(id)}/channels/${channel}`,
   endChannel: (id: string, channel: string) => `${app(id)}/channels/${channel}/end`,
   reopenChannel: (id: string, channel: string) => `${app(id)}/channels/${channel}/reopen`,
+  channelAccess: (id: string, channel: string) => `${app(id)}/channels/${channel}/access`,
+  channelInvites: (id: string, channel: string) => `${app(id)}/channels/${channel}/invites`,
+  channelInvite: (id: string, channel: string, invite: string) =>
+    `${app(id)}/channels/${channel}/invites/${invite}`,
+  channelTokens: (id: string, channel: string) => `${app(id)}/channels/${channel}/tokens`,
+  channelToken: (id: string, channel: string, token: string) =>
+    `${app(id)}/channels/${channel}/tokens/${token}`,
   promote: (id: string, release: string) => `${app(id)}/releases/${encodeURIComponent(release)}/promote`,
   uploads: (id: string) => `${app(id)}/uploads`,
   restore: (id: string) => `${app(id)}/restore`,

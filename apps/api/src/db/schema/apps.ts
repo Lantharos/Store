@@ -79,9 +79,45 @@ export const channel = sqliteTable(
     keep: integer("keep"),
     gradual: integer("gradual", { mode: "boolean" }),
     endedInto: text("ended_into"),
+    inviteOnly: integer("invite_only", { mode: "boolean" }).notNull().default(false),
     createdAt: createdAt(),
   },
   (table) => [primaryKey({ columns: [table.appId, table.name] })],
+)
+
+export const channelInvite = sqliteTable(
+  "channel_invite",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => app.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    email: text("email").notNull(),
+    invitedBy: text("invited_by").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("channel_invite_email").on(table.appId, table.channel, table.email),
+    index("channel_invite_person").on(table.email),
+  ],
+)
+
+export const channelToken = sqliteTable(
+  "channel_token",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => app.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    name: text("name").notNull(),
+    hash: text("hash").notNull().unique(),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (table) => [index("channel_token_app").on(table.appId, table.channel)],
 )
 
 export const updaterSwitch = sqliteTable(

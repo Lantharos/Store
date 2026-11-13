@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers"
 import {
   type Catalog,
+  INVITED_PREFIX,
   type MirrorCatalog,
   type MirrorOrigin,
   paths,
@@ -31,13 +32,37 @@ export async function rebuildApp(id: string) {
   }
   await writeSigned(paths.app(id), appIndex(record!))
   const key = await signingKey()
-  for (const [channel, feed] of sabineFeeds(record!))
-    await writeFeed(paths.sabine(id, channel), await signSabineFeed(key, feed))
+  const written = new Set<string>()
+  for (const [channel, feed] of sabineFeeds(record!)) {
+    const invited = record!.inviteOnly.has(channel)
+    const path = invited ? paths.invitedSabine(id, channel) : paths.sabine(id, channel)
+    await writeFeed(path, await signSabineFeed(key, feed))
+    if (invited) written.add(path)
+  }
+  for (const channel of record!.inviteOnly) {
+    const path = paths.invitedApp(id, channel)
+    await writeSigned(path, appIndex(record!, channel))
+    written.add(path).add(paths.signature(path))
+  }
+  await removeInvited(id, written)
+}
+
+async function removeInvited(id: string, kept: Set<string>) {
+  const listed = await Promise.all(
+    [`${INVITED_PREFIX}index/v1/apps/${id}/`, `${INVITED_PREFIX}sabine/${id}/`].map((prefix) =>
+      env.BUCKET.list({ prefix }),
+    ),
+  )
+  const stale = listed
+    .flatMap((list) => list.objects.map((object) => object.key))
+    .filter((key) => !kept.has(key))
+  if (stale.length) await env.BUCKET.delete(stale)
 }
 
 async function removeSabineFeeds(id: string) {
   const feeds = await env.BUCKET.list({ prefix: `sabine/${id}/` })
   if (feeds.objects.length) await env.BUCKET.delete(feeds.objects.map((object) => object.key))
+  await removeInvited(id, new Set())
 }
 
 export async function rebuildCatalog() {

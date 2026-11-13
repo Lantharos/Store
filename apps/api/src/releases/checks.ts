@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { GitHubError, github } from "../github/api.ts"
 import { type WorkflowClaims, workflowPath } from "../github/oidc.ts"
+import { isInvitedKey, signedFileUrl } from "../invited/links.ts"
 import { fail } from "../lib/http.ts"
 import { recordHistory } from "../ops/events.ts"
 import { previousRelease, saveChecks } from "../publishing/complete.ts"
@@ -26,6 +27,7 @@ const MAIN = "refs/heads/main"
 const HOUR_MS = 3_600_000
 const LONGEST_CHECKS_MS = 2 * HOUR_MS
 const CHECKS_GIVE_UP_MS = 24 * HOUR_MS
+const CHECKS_MINUTES = 3 * 60
 
 export function requireStoreWorkflow(claims: WorkflowClaims, workflow: string) {
   if (
@@ -58,13 +60,17 @@ export async function dispatchChecks(
     commit: release.origin === "oidc" ? release.commit : null,
     previous_commit: previous?.origin === "oidc" ? previous.commit : null,
     permissions: release.permissions,
-    files: artifacts.map((artifact) => ({
-      name: artifact.name,
-      platform: artifact.platform as Platform,
-      kind: artifact.kind as ArtifactKind,
-      url: fileUrl(artifact.key),
-      sha256: artifact.sha256,
-    })),
+    files: await Promise.all(
+      artifacts.map(async (artifact) => ({
+        name: artifact.name,
+        platform: artifact.platform as Platform,
+        kind: artifact.kind as ArtifactKind,
+        url: isInvitedKey(artifact.key)
+          ? await signedFileUrl(artifact.key, CHECKS_MINUTES)
+          : fileUrl(artifact.key),
+        sha256: artifact.sha256,
+      })),
+    ),
     callback: `${env.PUBLIC_URL}/api/v1/checks/${release.id}`,
   }
   await github(`/repositories/${env.STORE_REPOSITORY_ID}/dispatches`, {

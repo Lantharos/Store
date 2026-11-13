@@ -43,3 +43,22 @@ A channel can't be ended while one of its releases is being checked or reviewed.
 ### Reopening
 
 Remove `ended_into`, or choose **Reopen**, to publish to it again. People who were moved come back on their next update check. electron-updater accepts a lower version from a channel it's set to, so if the destination has passed the channel's newest release, have a newer one ready.
+
+## Invite-only channels
+
+A channel can be for invited people only, like a closed beta:
+
+```toml
+[channels.beta]
+invite_only = true
+```
+
+Run `schelf apply`, then invite people from **People** on the channel in the project's **Updates** tab, or with `schelf channel invite beta ada@example.com`. Who is invited never goes in a file, and inviting asks you in the browser first. Each person gets an email, and once they sign in to Schelf with that address:
+
+- **On the web**, the project's page shows them the channel's newest files.
+- **In the Schelf app**, they get its releases and updates.
+- **Machines**, like a test lab or CI, use a download token from **People** or `schelf channel token beta "Test lab"`, sent as `Authorization: Bearer <token>` to the channel's links and feeds, like `/@beta/latest/windows`. electron-updater and Tauri can send it with their request headers.
+
+Members of the publisher always get in. The channel's links, feeds and files answer everyone else with 401, it's left out of the public listing and Schelf's index, and nobody but the people and tokens you add can see its releases. Take an invitation back or revoke a token and it stops working at once.
+
+A channel becomes invite-only before its first release, so nothing on it was ever public; for a channel that already has releases, make a new one. Stable is always for everyone, and a channel can't end into an invite-only one, since its people couldn't follow. Promoting a release from an invite-only channel to an open one makes it public.

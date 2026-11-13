@@ -2,6 +2,7 @@ export const DOWNLOAD_ORIGIN = "https://dl.schelf.store"
 export const STORE_ORIGIN = "https://schelf.store"
 
 export const PRIVATE_PREFIX = "private/"
+export const INVITED_PREFIX = "invited/"
 
 export const paths = {
   catalog: "index/v1/catalog.json",
@@ -13,6 +14,10 @@ export const paths = {
   revocations: "trust/v1/revocations.json",
   artifact: (id: string, version: string, platform: string, file: string) =>
     `apps/${id}/${version}/${platform}/${file}`,
+  invitedArtifact: (id: string, version: string, platform: string, file: string) =>
+    `${INVITED_PREFIX}apps/${id}/${version}/${platform}/${file}`,
+  invitedApp: (id: string, channel: string) => `${INVITED_PREFIX}index/v1/apps/${id}/${channel}.json`,
+  invitedSabine: (id: string, channel: string) => `${INVITED_PREFIX}sabine/${id}/${channel}.json`,
   blockmap: (artifact: string) => `${artifact}.blockmap`,
   check: (id: string, version: string, name: string) => `apps/${id}/${version}/checks/${name}.json`,
   delta: (id: string, from: string, to: string, platform: string) =>

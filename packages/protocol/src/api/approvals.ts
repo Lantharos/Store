@@ -1,11 +1,14 @@
 import { z } from "zod"
 import { projectSlug } from "../projects.ts"
+import { channelName } from "../releases.ts"
 import {
   addTrustedPublisher,
   claimNamespace,
   createApp,
+  createChannelToken,
   createProject,
   createToken,
+  inviteToChannel,
   verifyNamespace,
 } from "./dashboard.ts"
 import { githubLogin, PUBLISHER_KINDS, role, slug } from "./publishers.ts"
@@ -51,6 +54,18 @@ export const approvalAction = z.discriminatedUnion("type", [
   z.object({ type: z.literal("trust.add"), app, rule: addTrustedPublisher }),
   z.object({ type: z.literal("trust.remove"), app, rule: id }),
   z.object({ type: z.literal("token.create"), app, name: createToken.shape.name }),
+  z.object({
+    type: z.literal("channel.invite"),
+    app,
+    channel: channelName,
+    email: inviteToChannel.shape.email,
+  }),
+  z.object({
+    type: z.literal("channel.token"),
+    app,
+    channel: channelName,
+    name: createChannelToken.shape.name,
+  }),
   z.object({
     type: z.literal("member.invite"),
     publisher,

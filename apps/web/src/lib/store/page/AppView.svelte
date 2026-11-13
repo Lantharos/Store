@@ -13,6 +13,7 @@
   import Privacy from "./access/Privacy.svelte"
   import Download from "./Download.svelte"
   import Facts from "./Facts.svelte"
+  import InvitedChannels from "./InvitedChannels.svelte"
   import OtherSystems from "./OtherSystems.svelte"
   import Releases from "./Releases.svelte"
   import Screenshots from "./Screenshots.svelte"
@@ -27,11 +28,13 @@
     project,
     hasApp,
     parts,
+    inviteOnly,
   }: {
     app: AppIndex
     project: ProjectSummary
     hasApp: boolean
     parts: ProjectFile[]
+    inviteOnly: string[]
     installs: Installs
     description: string
     releases: { version: string; published: string; notes: string }[]
@@ -104,6 +107,10 @@
 
   {#if latest && !extension}
     <OtherSystems {artifacts} {parts} open={others || unavailable} id={panel} {note} />
+  {/if}
+
+  {#if inviteOnly.length}
+    <InvitedChannels {project} />
   {/if}
 
   {#if app.screenshots.length}

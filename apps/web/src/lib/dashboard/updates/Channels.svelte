@@ -11,6 +11,7 @@
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
   import { schelfFile } from "../files/files.ts"
+  import ChannelPeople from "./ChannelPeople.svelte"
   import EndChannel from "./EndChannel.svelte"
 
   let { settings = $bindable() }: { settings: AppSettings } = $props()
@@ -25,6 +26,8 @@
   let endOpen = $state(false)
   let reopening = $state<Channel>()
   let reopenOpen = $state(false)
+  let people = $state<string>()
+  let peopleOpen = $state(false)
 
   function end(channel: Channel) {
     ending = channel
@@ -41,9 +44,13 @@
   }
 
   const describe = (channel: Channel) =>
-    channel.ended_into
-      ? `Ended, people on it follow ${channel.ended_into}. ${plural(channel.releases, "release")}`
-      : plural(channel.releases, "release")
+    [
+      channel.ended_into ? `Ended, people on it follow ${channel.ended_into}.` : null,
+      channel.invite_only ? "Only invited people." : null,
+      plural(channel.releases, "release"),
+    ]
+      .filter(Boolean)
+      .join(" ")
 
   async function change(channel: string, changes: { keep?: number | null; gradual?: boolean }) {
     try {
@@ -78,6 +85,11 @@
         </div>
       {/if}
       {#snippet below()}
+        {#if channel.invite_only && session.can("apps")}
+          <div class="flex justify-end">
+            <button type="button" class="button button-sm button-quiet" onclick={() => ((people = channel.name), (peopleOpen = true))}>People</button>
+          </div>
+        {/if}
         {#if channel.name !== "stable" && session.can("releases") && !file}
           <div class="flex justify-end">
             {#if channel.ended_into}
@@ -91,6 +103,8 @@
     </Row>
   {/each}
 </Group>
+
+{#if people}{#key people}<ChannelPeople bind:open={peopleOpen} appId={settings.app.id} channel={people} />{/key}{/if}
 
 {#if ending}{#key ending.name}<EndChannel bind:open={endOpen} channel={ending} bind:settings />{/key}{/if}
 

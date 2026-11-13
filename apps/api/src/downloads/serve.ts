@@ -1,9 +1,11 @@
 import { env } from "cloudflare:workers"
-import { PRIVATE_PREFIX } from "@schelf/protocol"
+import { INVITED_PREFIX, PRIVATE_PREFIX } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { embedScript } from "../hosting/embed.ts"
 import { isProjectPath, serveProject } from "../hosting/serve.ts"
+import { invitedFileOpen } from "../invited/access.ts"
+import { isInvitedKey } from "../invited/links.ts"
 import { INDEX_CACHE } from "../signing/write.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
@@ -17,7 +19,9 @@ export interface Download {
 }
 
 export function downloadOf(key: string): Download | null {
-  const [root, app, version, platform, file, ...rest] = key.split("/")
+  const [root, app, version, platform, file, ...rest] = (
+    isInvitedKey(key) ? key.slice(INVITED_PREFIX.length) : key
+  ).split("/")
   if (root !== "apps" || !app || !version || !platform || !file || rest.length || platform === "checks")
     return null
   if (file.endsWith(".blockmap")) return null
@@ -42,6 +46,7 @@ function count(download: Download, url: URL) {
 }
 
 function cacheControl(key: string) {
+  if (isInvitedKey(key)) return "private, no-store"
   return SIGNED_PREFIXES.some((prefix) => key.startsWith(prefix)) ? INDEX_CACHE : IMMUTABLE
 }
 
@@ -75,6 +80,11 @@ export async function serveDownload(request: Request) {
     key.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
   )
     return new Response("Not found", { status: 404 })
+  if (isInvitedKey(key) && !(await invitedFileOpen(request, key)))
+    return new Response("This is for invited people. Sign in to Schelf or send a download token.", {
+      status: 401,
+      headers: { "www-authenticate": "Bearer", "cache-control": "no-store" },
+    })
 
   const object =
     request.method === "HEAD"

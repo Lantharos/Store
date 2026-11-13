@@ -27,6 +27,7 @@ import { ensureChannel } from "../hosting/channels.ts"
 import { refuseEnded } from "../hosting/ended.ts"
 import { limitManualUploads } from "../hosting/limits.ts"
 import { releaseLine } from "../hosting/switches.ts"
+import { inviteOnlyChannels } from "../invited/channels.ts"
 import { fail, failConfig } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { acceptingSubmissions } from "../ops/events.ts"
@@ -141,11 +142,13 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
   if (publisher.origin === "manual") await limitManualUploads(app.publisherId)
   await clearAbandoned(app, version)
   await ensureChannel(app.id, channel)
+  const invited = (await inviteOnlyChannels(app.id)).has(channel)
+  const keyOf = invited ? paths.invitedArtifact : paths.artifact
 
   const releaseId = randomId()
   const artifacts = await Promise.all(
     files.map(async (file) => {
-      const key = paths.artifact(app.id, version, file.platform, file.name)
+      const key = keyOf(app.id, version, file.platform, file.name)
       const parts = partsFor(file.size)
       const uploadId = parts > 1 ? (await env.BUCKET.createMultipartUpload(key)).uploadId : null
       if (file.blockmap) await env.BUCKET.put(paths.blockmap(key), fromBase64(file.blockmap))

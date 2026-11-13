@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
 import { DEFAULT_LOCALE, type EndedChannels, endedChannelsOf, SHIPPED_STATUSES } from "@schelf/protocol"
-import { and, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from "drizzle-orm"
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core"
 import { db, schema } from "../db/client.ts"
 import { DAY_MS, dayOf } from "../lib/time.ts"
@@ -20,6 +20,7 @@ export interface AppRecord {
   screenshots: (typeof schema.screenshot.$inferSelect)[]
   releases: { release: ReleaseRow; artifacts: IndexedArtifact[] }[]
   endedChannels: EndedChannels
+  inviteOnly: Set<string>
   installs30d: number
 }
 
@@ -123,7 +124,12 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
     db
       .select()
       .from(schema.channel)
-      .where(and(within(schema.channel.appId, ids), isNotNull(schema.channel.endedInto))),
+      .where(
+        and(
+          within(schema.channel.appId, ids),
+          or(isNotNull(schema.channel.endedInto), eq(schema.channel.inviteOnly, true)),
+        ),
+      ),
     blockedReleaseIds(ids),
     installsSince(ids, 30),
   ])
@@ -186,6 +192,9 @@ export async function loadApps(apps: AppRow[]): Promise<AppRecord[]> {
             })),
           })),
       endedChannels: endedChannelsOf(endedByApp.get(app.id) ?? []),
+      inviteOnly: new Set(
+        (endedByApp.get(app.id) ?? []).flatMap((row) => (row.inviteOnly ? [row.name] : [])),
+      ),
       installs30d: installs.get(app.id) ?? 0,
     }
   })

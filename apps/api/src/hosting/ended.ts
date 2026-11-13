@@ -41,6 +41,8 @@ export async function endChannel(app: AppRow, name: string, into: string, by: st
   const destination = channels.find((row) => row.name === into)
   if (!destination && into !== STABLE) fail(404, `There's no ${into} channel`)
   if (destination?.endedInto) fail(409, `${into} has ended too. Choose a channel that's still open`)
+  if (destination?.inviteOnly && !channel.inviteOnly)
+    fail(409, `${into} is invite-only, so the people on ${name} couldn't follow. Choose an open channel`)
   const waiting = await db.$count(
     schema.release,
     and(

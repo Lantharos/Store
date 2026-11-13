@@ -12,6 +12,7 @@ import { desc, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
+import { fileLink } from "../../invited/links.ts"
 import { readBody } from "../../lib/http.ts"
 import { iso } from "../../lib/time.ts"
 import { recordHistory } from "../../ops/events.ts"
@@ -19,7 +20,7 @@ import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
 import { requestShell } from "../../releases/shell.ts"
 import { runsInShell, shellRequestable } from "../../releases/shell-files.ts"
-import { type AppRow, type ArtifactRow, fileUrl, type ReleaseRow } from "../../signing/records.ts"
+import type { AppRow, ArtifactRow, ReleaseRow } from "../../signing/records.ts"
 
 export const releaseRoutes = new Hono<SignedInVars>()
 
@@ -157,16 +158,18 @@ async function detail(release: ReleaseRow, owner: Owner): Promise<ReleaseDetail>
     permissions_widened: release.permissionsWidened,
     luft: release.luftMinimum,
     shell: shellStatus(release, artifacts, owner),
-    artifacts: artifacts.map((artifact) => ({
-      part: artifact.part,
-      platform: artifact.platform as Platform,
-      kind: artifact.kind as ArtifactKind,
-      name: artifact.name,
-      size: artifact.size,
-      sha256: artifact.sha256,
-      url: fileUrl(artifact.key),
-      attestation: artifact.attestationUrl,
-    })),
+    artifacts: await Promise.all(
+      artifacts.map(async (artifact) => ({
+        part: artifact.part,
+        platform: artifact.platform as Platform,
+        kind: artifact.kind as ArtifactKind,
+        name: artifact.name,
+        size: artifact.size,
+        sha256: artifact.sha256,
+        url: await fileLink(artifact.key),
+        attestation: artifact.attestationUrl,
+      })),
+    ),
     checks: checkResults,
     timeline,
     next: NEXT_STEPS[release.status] ?? null,

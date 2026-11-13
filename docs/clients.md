@@ -39,6 +39,10 @@ It's **ranked lower** when it's unverified, uses a deprecated runtime, or has ha
 
 Updates join Schelf's existing background check (a few minutes after sign-in, then every six hours).
 
+### Invite-only channels
+
+A person signs in to Schelf in the app with the device sign-in the `schelf` command uses, which gives it a session token. With it, as `Authorization: Bearer <session>`, the app asks `GET https://schelf.store/api/v1/invited` for the channels the person may get, each with its `index` (`invited/index/v1/apps/<id>/<channel>.json`, signed like any index and naming its own path) and, for Sabine apps, its `sabine` feed. It reads those with the same header instead of the public index for apps the person follows on such a channel, downloads their files (under `dl.schelf.store/invited/…`) with the header too, and checks everything as usual. A 401 means the invitation was taken back: the app keeps what's installed and goes back to the public index.
+
 ## The Schelf app on other Linux systems
 
 The same app, shipped as a Sabine bundle (deb, rpm and AppImage) in phase 3. Store apps and Flathub; Fedora packages and Luft-only pages are hidden. AppImages run in bubblewrap with the same permission declaration.
