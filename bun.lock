@@ -91,7 +91,7 @@
     },
     "packages/cli": {
       "name": "schelf",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "bin": {
         "schelf": "dist/schelf.js",
       },

@@ -1,6 +1,6 @@
 {
   "name": "schelf",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Install apps and command-line tools, and publish your own on schelf.store",
   "type": "module",
   "license": "MIT",
