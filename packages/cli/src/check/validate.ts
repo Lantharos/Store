@@ -1,4 +1,5 @@
-import { join } from "node:path"
+import { readdir } from "node:fs/promises"
+import { join, relative, sep } from "node:path"
 import {
   accessOf,
   extensionLabels,
@@ -19,6 +20,7 @@ import {
   schelfToml,
 } from "@schelf/protocol"
 import { ZodError } from "zod"
+import type { ConfigPlace } from "../project/config.ts"
 import type { Project } from "../project/detect.ts"
 import { readOptional } from "../project/files.ts"
 import { describePermissions } from "../project/permissions.ts"
@@ -156,9 +158,33 @@ function identityIssues(project: Project, manifest: SchelfToml): Issue[] {
   return issues
 }
 
-async function workflowIssues(project: Project, manifest: SchelfToml): Promise<Issue[]> {
-  const workflow = await readOptional(join(project.root, SCHELF_WORKFLOW))
-  if (!workflow)
+async function workflowFor(place: ConfigPlace) {
+  const file = relative(place.root, place.config).split(sep).join("/")
+  const folder = join(place.root, ".github", "workflows")
+  const names = (await readdir(folder).catch(() => [])).filter((name) => /\.ya?ml$/.test(name)).sort()
+  for (const name of names) {
+    const text = await readOptional(join(folder, name))
+    if (text?.includes(file)) return { file: `.github/workflows/${name}`, text }
+  }
+  return { file, text: undefined }
+}
+
+async function workflowIssues(place: ConfigPlace, manifest: SchelfToml): Promise<Issue[]> {
+  const inMonorepo = place.folder !== place.root
+  const found = inMonorepo
+    ? await workflowFor(place)
+    : { file: SCHELF_WORKFLOW, text: await readOptional(join(place.root, SCHELF_WORKFLOW)) }
+  if (!found.text && inMonorepo)
+    return [
+      {
+        level: "warning",
+        file: found.file,
+        key: null,
+        message: "isn't named by any workflow in .github/workflows",
+        hint: `Publish it from a workflow with schelf-toml: ${found.file}, or from your own pipeline.`,
+      },
+    ]
+  if (!found.text)
     return [
       {
         level: "error",
@@ -168,11 +194,13 @@ async function workflowIssues(project: Project, manifest: SchelfToml): Promise<I
         hint: "Run schelf init to write it.",
       },
     ]
+  const workflow = found.text
+  const workflowFile = found.file
   const issues: Issue[] = []
   if (!workflow.includes(PUBLISH_ACTION.split("@")[0]!))
     issues.push({
       level: "error",
-      file: SCHELF_WORKFLOW,
+      file: workflowFile,
       key: null,
       message: `doesn't use ${PUBLISH_ACTION}`,
     })
@@ -185,16 +213,16 @@ async function workflowIssues(project: Project, manifest: SchelfToml): Promise<I
   )
     issues.push({
       level: "warning",
-      file: SCHELF_WORKFLOW,
+      file: workflowFile,
       key: null,
       message: `builds with Sabine ${pinned}, schelf.toml requires ${manifest.requires.sabine}`,
     })
   return issues
 }
 
-export async function validate(project: Project): Promise<Validation> {
+export async function validate(project: Project, place: ConfigPlace): Promise<Validation> {
   const issues: Issue[] = []
-  const text = await readOptional(join(project.root, SCHELF_TOML))
+  const text = await readOptional(place.config)
   if (text === undefined)
     issues.push({
       level: "error",
@@ -235,7 +263,7 @@ export async function validate(project: Project): Promise<Validation> {
   }
 
   if (!manifest) return { access, fullAccess, issues }
-  issues.push(...identityIssues(project, manifest), ...(await workflowIssues(project, manifest)))
+  issues.push(...identityIssues(project, manifest), ...(await workflowIssues(place, manifest)))
   const listing = await readListingFiles(project.root, manifest, issues)
   if (!manifest.listing && manifest.format !== "files")
     issues.push({

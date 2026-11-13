@@ -42,8 +42,12 @@ async function write(path: string, contents: string | Uint8Array) {
   await writeFile(join(root, path), contents)
 }
 
-const messages = async () =>
-  (await validate(await detectProject(root))).issues.map((issue) => `${issue.level}: ${issueText(issue)}`)
+const at = (folder: string) => ({ root, folder, config: join(folder, "schelf.toml") })
+
+const messages = async (folder = root) =>
+  (await validate(await detectProject(folder), at(folder))).issues.map(
+    (issue) => `${issue.level}: ${issueText(issue)}`,
+  )
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), "schelf-project-"))
@@ -121,4 +125,20 @@ test("a screenshot too small for the store page is named with its key", async ()
 test("a missing workflow is an error", async () => {
   await rm(join(root, SCHELF_WORKFLOW))
   expect(await messages()).toContain(`error: ${SCHELF_WORKFLOW}: doesn't exist`)
+})
+
+test("an app in a folder of a bigger repository is checked from its own folder", async () => {
+  const app = join(root, "apps", "notes")
+  await mkdir(app, { recursive: true })
+  for (const file of ["Sabine.toml", "schelf.toml", "store", "data"])
+    await cp(join(root, file), join(app, file), { recursive: true })
+  await rm(join(root, "schelf.toml"))
+  expect(await messages(app)).toEqual([
+    "warning: apps/notes/schelf.toml: isn't named by any workflow in .github/workflows",
+  ])
+  await write(
+    ".github/workflows/apps.yml",
+    "uses: Lantharos/Store/publish@v1\nwith:\n  schelf-toml: apps/notes/schelf.toml\n",
+  )
+  expect(await messages(app)).toEqual([])
 })

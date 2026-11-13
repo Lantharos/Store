@@ -1,11 +1,10 @@
 import { hostname } from "node:os"
-import { join } from "node:path"
-import { type ApplyResponse, SCHELF_TOML } from "@schelf/protocol"
+import type { ApplyResponse } from "@schelf/protocol"
 import { applyConfig, configBundle } from "@schelf/publisher"
 import { presentApproval } from "../api/approvals.ts"
 import { credential } from "../api/identity.ts"
-import { type Args, apiOrigin, flag } from "../args.ts"
-import { repositoryRoot } from "../project/git.ts"
+import { type Args, apiOrigin } from "../args.ts"
+import { configPlace } from "../project/config.ts"
 import { EXIT } from "../ui/exit.ts"
 import { blank, caution, done, emit, field, line, note, step, title } from "../ui/output.ts"
 import { muted } from "../ui/style.ts"
@@ -20,8 +19,8 @@ export function printApplied(result: ApplyResponse) {
 
 export async function apply(args: Args) {
   const api = apiOrigin(args)
-  const root = await repositoryRoot(process.cwd())
-  const bundle = await configBundle(root, flag(args, "config") ?? join(root, SCHELF_TOML))
+  const { root, config } = await configPlace(args)
+  const bundle = await configBundle(root, config)
   const dryRun = args.flags.has("dry-run")
   const { token } = await credential(args)
   title(dryRun ? "What applying would change" : "Applying the files")

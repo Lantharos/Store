@@ -1,5 +1,4 @@
-import { join } from "node:path"
-import { manifestName, SCHELF_TOML } from "@schelf/protocol"
+import { manifestName } from "@schelf/protocol"
 import {
   applyConfig,
   collectArtifacts,
@@ -14,7 +13,8 @@ import {
 import { dashboard } from "../api/dashboard.ts"
 import { type Credential, credential } from "../api/identity.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
-import { git, repositoryRoot } from "../project/git.ts"
+import { configPlace } from "../project/config.ts"
+import { git } from "../project/git.ts"
 import { EXIT } from "../ui/exit.ts"
 import { blank, done, emit, Failure, field, line, step, title } from "../ui/output.ts"
 import { bold, link } from "../ui/style.ts"
@@ -56,8 +56,7 @@ async function uploadAsPerson(
 
 export async function publish(args: Args) {
   const api = apiOrigin(args)
-  const root = await repositoryRoot(process.cwd())
-  const config = flag(args, "config") ?? join(root, SCHELF_TOML)
+  const { root, config } = await configPlace(args)
   const context = await releaseContext(config)
   const commit = context.commit ?? (await git(root, "rev-parse", "HEAD").catch(() => undefined))
   const channel = flag(args, "channel")

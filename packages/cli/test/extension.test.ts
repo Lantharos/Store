@@ -75,7 +75,9 @@ test("schelf check asks for the oldest Luft the extension runs on", async () => 
   await mkdir(join(root, ".github/workflows"), { recursive: true })
   await writeFile(join(root, SCHELF_WORKFLOW), workflowFor(setup))
   const luft = async () =>
-    (await validate(await detectProject(root))).issues.filter((issue) => issue.message.includes("Luft"))
+    (
+      await validate(await detectProject(root), { root, folder: root, config: join(root, "schelf.toml") })
+    ).issues.filter((issue) => issue.message.includes("Luft"))
 
   expect((await luft()).map(issueText)).toEqual([
     "extension.toml luft.minimum: doesn't say the oldest Luft it runs on",

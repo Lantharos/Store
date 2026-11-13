@@ -1,17 +1,10 @@
 import { readFile } from "node:fs/promises"
-import { join } from "node:path"
-import {
-  type Account,
-  type ApprovalAction,
-  manifestName,
-  readSchelfToml,
-  SCHELF_TOML,
-} from "@schelf/protocol"
+import { type Account, type ApprovalAction, manifestName, readSchelfToml } from "@schelf/protocol"
 import { askApproval } from "../api/approvals.ts"
 import { session } from "../api/auth.ts"
 import { type Dashboard, dashboard } from "../api/dashboard.ts"
 import { type Args, apiOrigin, flag } from "../args.ts"
-import { repositoryRoot } from "../project/git.ts"
+import { configPlace } from "../project/config.ts"
 import { EXIT } from "../ui/exit.ts"
 import { Failure, field, title } from "../ui/output.ts"
 
@@ -31,7 +24,7 @@ export async function signedIn(args: Args): Promise<Context> {
 export async function appOf(args: Args) {
   const given = flag(args, "app")
   if (given) return given
-  const config = flag(args, "config") ?? join(await repositoryRoot(process.cwd()), SCHELF_TOML)
+  const { config } = await configPlace(args)
   const text = await readFile(config, "utf8").catch(() => {
     throw new Failure(
       "There's no schelf.toml here",

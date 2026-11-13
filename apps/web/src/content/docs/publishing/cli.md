@@ -19,11 +19,12 @@ New here? [From the terminal](/docs/terminal) walks through it in order.
 | `schelf init`                       | Registers the app or project, trusts its workflow, and writes `schelf.toml`, `store/listing.toml` and `.github/workflows/schelf.yml`. |
 | `schelf check`                      | Validates [both files](/docs/schelf-toml) and the permission declaration, and previews the store page.                                |
 | `schelf apply [--dry-run]`          | Makes the store match the files. `--dry-run` only lists what would change.                                                            |
+| `schelf listing pull [--force]`     | Writes the store page as it is now into `listing.toml`, with its icon and screenshots, so the files can take over.                    |
 | `schelf publish [files…]`           | Applies the files and publishes a release: from GitHub Actions, with a token, or signed in, which sends it to review.                 |
 | `schelf status [version]`           | What's in flight and where each release is, what checks flagged, what waits on you; or one release in full.                           |
 | `schelf rollout <version> <change>` | Sets a percentage like `50`, or `pause`, `resume` or `all`.                                                                           |
 
-These read the project from `schelf.toml`; elsewhere pass `--app <id>`.
+These read the project from the nearest `schelf.toml`, looking up from the folder you're in, so in a repository with several apps run them in the app's folder, or pass `--config apps/notes/schelf.toml`. Elsewhere pass `--app <id>`.
 
 ## Everything else
 

@@ -2,15 +2,16 @@ import type { Args } from "../args.ts"
 import { issueText } from "../check/issues.ts"
 import { preview } from "../check/preview.ts"
 import { validate } from "../check/validate.ts"
+import { configPlace } from "../project/config.ts"
 import { detectProject } from "../project/detect.ts"
-import { repositoryRoot } from "../project/git.ts"
 import { EXIT } from "../ui/exit.ts"
 import { blank, caution, done, emit, line, note, problem, title } from "../ui/output.ts"
 import { bold } from "../ui/style.ts"
 
-export async function check(_args: Args) {
-  const project = await detectProject(await repositoryRoot(process.cwd()))
-  const validation = await validate(project)
+export async function check(args: Args) {
+  const place = await configPlace(args)
+  const project = await detectProject(place.folder)
+  const validation = await validate(project, place)
   const errors = validation.issues.filter((issue) => issue.level === "error")
   const warnings = validation.issues.filter((issue) => issue.level === "warning")
   emit({ ok: errors.length === 0, issues: validation.issues })

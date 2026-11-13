@@ -10,6 +10,7 @@ import { trust } from "./commands/access/trust.ts"
 import { apply } from "./commands/apply.ts"
 import { check } from "./commands/check.ts"
 import { init } from "./commands/init.ts"
+import { listing } from "./commands/listing.ts"
 import { login, logout } from "./commands/login.ts"
 import { invite } from "./commands/people/invite.ts"
 import { member } from "./commands/people/member.ts"
@@ -64,11 +65,16 @@ const COMMANDS: Record<
   },
   project: {
     run: project,
-    usage: "project <list|show|stats|rename|delete|restore>",
+    usage: "project <list|show|domain|stats|rename|delete|restore>",
     about: "The project and its settings",
   },
   release: { run: release, usage: "release <list|show|promote|rollback|inside-luft>", about: "Releases" },
-  channel: { run: channel, usage: "channel list", about: "Channels" },
+  channel: {
+    run: channel,
+    usage: "channel <list|people|invite|uninvite|token|revoke>",
+    about: "Channels, and who gets an invite-only one",
+  },
+  listing: { run: listing, usage: "listing pull", about: "Bring the store page into listing.toml" },
   trust: { run: trust, usage: "trust <list|add|remove>", about: "Workflows trusted to publish" },
   token: { run: token, usage: "token <list|create|revoke>", about: "Upload tokens" },
   publisher: {
