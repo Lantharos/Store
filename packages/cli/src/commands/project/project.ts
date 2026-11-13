@@ -1,3 +1,4 @@
+import { PROJECT_GROUPS } from "@schelf/protocol"
 import type { Args } from "../../args.ts"
 import { EXIT } from "../../ui/exit.ts"
 import { blank, emit, field, note, title } from "../../ui/output.ts"
@@ -15,12 +16,17 @@ async function list(args: Args) {
   emit({ apps, deleted })
   title(`Projects of ${owner.name}`)
   if (!apps.length) note("None yet. schelf init sets one up.")
-  for (const app of apps)
-    field(
-      app.id,
-      `${app.name} ${muted(`${app.visibility} · ${app.version ?? "no release"} · ${app.installs_7d} installs this week`)}`,
-      32,
-    )
+  for (const { label, group } of PROJECT_GROUPS) {
+    const listed = apps.filter((app) => app.group === group)
+    if (!listed.length) continue
+    title(label)
+    for (const app of listed)
+      field(
+        app.id,
+        `${app.name} ${muted(`${app.visibility} · ${app.version ?? "no release"} · ${app.installs_7d} installs this week`)}`,
+        32,
+      )
+  }
   for (const app of deleted)
     field(app.id, muted(`deleted, restorable until ${app.restorable_until.slice(0, 10)}`), 32)
   blank()

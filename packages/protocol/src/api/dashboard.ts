@@ -4,7 +4,7 @@ import { MAX_CATEGORIES } from "../config/listing-toml.ts"
 import { repositoryName } from "../config/schelf-toml.ts"
 import type { CustomDomainState } from "../domains.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
-import type { PartPlan } from "../parts.ts"
+import type { PartPlan, ProjectGroup } from "../parts.ts"
 import type { Permissions } from "../permissions.ts"
 import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
 import type { Privacy } from "../privacy.ts"
@@ -64,6 +64,7 @@ export interface DashboardApp {
   listing_requested: boolean
   updater: Updater | null
   kind: z.infer<typeof kind>
+  group: ProjectGroup
   format: z.infer<typeof format>
   name: string
   icon: string | null

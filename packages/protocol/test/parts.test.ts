@@ -7,6 +7,7 @@ import {
   parseConfig,
   partOf,
   partReleases,
+  projectGroup,
   resolveLink,
   SCHELF_TOML,
   schelfToml,
@@ -142,5 +143,34 @@ describe("links to parts", () => {
   test("a project of only parts offers nothing as the app", () => {
     const offered = offeredReleases(releases, { platforms: null, parts: plan.parts })
     expect(offered.flatMap((release) => release.files.map((file) => file.part))).toEqual(["cli", "cli"])
+  })
+})
+
+describe("projectGroup", () => {
+  const plan = (platforms: PartPlan["platforms"], parts: PartPlan["parts"] = {}) => ({ platforms, parts })
+  const tool = { files: ["x-*"], platforms: ["linux-x86_64" as const], tool: "x" }
+
+  test("a project's own tool is a command-line tool", () => {
+    expect(projectGroup({ kind: "app", tool: "schelf", ...plan(null) })).toBe("tool")
+  })
+
+  test("an app with a tool part stays an app", () => {
+    expect(projectGroup({ kind: "app", tool: null, ...plan(["linux-x86_64"], { cli: tool }) })).toBe("app")
+  })
+
+  test("parts only: tools make a tool, anything else is files", () => {
+    expect(projectGroup({ kind: "app", tool: null, ...plan(null, { cli: tool }) })).toBe("tool")
+    expect(
+      projectGroup({
+        kind: "app",
+        tool: null,
+        ...plan(null, { docs: { files: ["docs-*"], platforms: ["linux-x86_64"] } }),
+      }),
+    ).toBe("files")
+  })
+
+  test("plain projects and extensions", () => {
+    expect(projectGroup({ kind: "app", tool: null, ...plan(null) })).toBe("app")
+    expect(projectGroup({ kind: "extension", tool: null, ...plan(null) })).toBe("extension")
   })
 })

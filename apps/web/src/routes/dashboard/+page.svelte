@@ -43,7 +43,7 @@
 {#if !session.appsLoaded}
   <div class="mt-8"><Loading /></div>
 {:else if session.apps.length}
-  {#each projectGroups(session.apps) as group (group.kind)}
+  {#each projectGroups(session.apps) as group (group.group)}
     <section class="mt-8">
       <h2 class="mb-2.5 px-1 font-semibold">{group.label}</h2>
       <ProjectList apps={group.apps} />

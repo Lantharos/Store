@@ -1,11 +1,6 @@
-import type { DashboardApp } from "@schelf/protocol"
-
-const GROUPS = [
-  { kind: "app", label: "Apps" },
-  { kind: "extension", label: "Extensions" },
-] as const
+import { type DashboardApp, PROJECT_GROUPS } from "@schelf/protocol"
 
 export const projectGroups = (apps: DashboardApp[]) =>
-  GROUPS.map((group) => ({ ...group, apps: apps.filter((app) => app.kind === group.kind) })).filter(
-    (group) => group.apps.length,
+  PROJECT_GROUPS.map((entry) => ({ ...entry, apps: apps.filter((app) => app.group === entry.group) })).filter(
+    (entry) => entry.apps.length,
   )

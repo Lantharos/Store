@@ -30,7 +30,7 @@
   </button>
 
   <nav aria-label="Projects" class="-mx-4 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-4">
-    {#each projectGroups(session.apps) as group (group.kind)}
+    {#each projectGroups(session.apps) as group (group.group)}
       <p class="px-2 pt-3 pb-1 text-[13px] text-ink-muted first:pt-0">{group.label}</p>
       {#each group.apps as app (app.id)}
         {@const status = app.release_status ? RELEASE_STATUS[app.release_status] : null}

@@ -1,4 +1,4 @@
-import { type AppSettings, type DashboardApp, DEFAULT_LOCALE } from "@schelf/protocol"
+import { type AppSettings, type DashboardApp, DEFAULT_LOCALE, projectGroup } from "@schelf/protocol"
 import { and, desc, eq, inArray, ne } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
@@ -57,6 +57,7 @@ publisherAppRoutes.get("/", async (c) => {
       listing_requested: app.listingRequestedAt !== null,
       updater: app.updater,
       kind: app.kind,
+      group: projectGroup(app),
       format: app.format,
       name: name ?? app.slug,
       icon: mediaUrl(iconKey),

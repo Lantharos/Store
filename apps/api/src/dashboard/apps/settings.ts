@@ -3,6 +3,7 @@ import {
   channelNow,
   DEFAULT_LOCALE,
   endedChannelsOf,
+  projectGroup,
   rollsOutGradually,
 } from "@schelf/protocol"
 import { count, desc, eq } from "drizzle-orm"
@@ -80,6 +81,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       listing_requested: app.listingRequestedAt !== null,
       updater: app.updater,
       kind: app.kind,
+      group: projectGroup(app),
       format: app.format,
       name: english?.name ?? app.id,
       icon: mediaUrl(meta?.iconKey),

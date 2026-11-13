@@ -8,6 +8,7 @@
   import Dialog from "../../ui/overlay/Dialog.svelte"
   import { session } from "../api/session.svelte.ts"
   import { projectTabs } from "../apps/tabs.ts"
+  import { projectGroups } from "../project/groups.ts"
   import {
     accountSections,
     publisherSections,
@@ -22,6 +23,7 @@
     label: string
     group: string
     hint?: string
+    project?: boolean
     icon?: { src: string | null; name: string }
     run: () => unknown
   }
@@ -36,14 +38,17 @@
 
   const commands = $derived.by<Command[]>(() => {
     const go = (href: string) => () => goto(href)
-    const appCommands = session.apps.map((app) => ({
-      id: `app:${app.id}`,
-      label: app.name,
-      hint: app.id,
-      group: "Apps",
-      icon: { src: app.icon, name: app.name },
-      run: go(`/dashboard/apps/${app.id}`),
-    }))
+    const appCommands = projectGroups(session.apps).flatMap((entry) =>
+      entry.apps.map((app) => ({
+        id: `app:${app.id}`,
+        label: app.name,
+        hint: app.id,
+        group: entry.label,
+        project: true,
+        icon: { src: app.icon, name: app.name },
+        run: go(`/dashboard/apps/${app.id}`),
+      })),
+    )
     const sections = currentApp
       ? projectTabs(currentApp.kind).map((tab) => ({
           id: `section:${tab.label}`,
@@ -178,7 +183,7 @@
       >
         {#if command.icon}<AppIcon src={command.icon.src} name={command.icon.name} class="size-6 text-xs" />{/if}
         <span class="flex-1 truncate">{command.label}</span>
-        {#if command.hint && command.group === "Apps"}<span class="truncate font-mono text-xs text-ink-muted">{command.hint}</span>{/if}
+        {#if command.hint && command.project}<span class="truncate font-mono text-xs text-ink-muted">{command.hint}</span>{/if}
         {#if index === active}<CornerDownLeft class="size-3.5 text-ink-muted" />{/if}
       </button>
     {:else}

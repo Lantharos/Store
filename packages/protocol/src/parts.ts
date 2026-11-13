@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { appId, FILE_PLATFORMS, PLATFORMS, type Platform, platform } from "./platforms.ts"
 import { FILE_UPDATERS, type Updater } from "./releases.ts"
-import { toolName } from "./tools.ts"
+import { toolName, toolsOf } from "./tools.ts"
 
 export const PART_FORMATS = ["files", "sabine"] as const
 
@@ -55,6 +55,23 @@ export function partUpdater(part: Pick<PartSettings, "format" | "updater">): Upd
 }
 
 export const hasAppPart = (plan: PartPlan) => plan.platforms !== null || !Object.keys(plan.parts).length
+
+export const PROJECT_GROUPS = [
+  { group: "app", label: "Apps" },
+  { group: "extension", label: "Extensions" },
+  { group: "tool", label: "Command-line tools" },
+  { group: "files", label: "Files" },
+] as const
+export type ProjectGroup = (typeof PROJECT_GROUPS)[number]["group"]
+
+export function projectGroup(
+  project: { kind: "app" | "extension"; tool: string | null } & PartPlan,
+): ProjectGroup {
+  if (project.kind === "extension") return "extension"
+  if (project.tool) return "tool"
+  if (hasAppPart(project)) return "app"
+  return toolsOf(project).length ? "tool" : "files"
+}
 
 function namePattern(glob: string) {
   const escaped = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&")
