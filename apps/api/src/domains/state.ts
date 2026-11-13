@@ -1,5 +1,5 @@
 import { type CustomDomainState, DOMAIN_TARGET, domainProofName } from "@schelf/protocol"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
@@ -14,7 +14,15 @@ export const domainOf = (appId: string) =>
 export const publisherDomainOf = (publisherId: string) =>
   db.query.customDomain.findFirst({ where: eq(schema.customDomain.publisherId, publisherId) })
 
-export function domainState(row: DomainRow): CustomDomainState {
+export function domainState(row: DomainRow, verified: boolean): CustomDomainState {
+  if (!verified)
+    return {
+      domain: row.domain,
+      status: "paused",
+      records: [],
+      waiting: "Not serving links while the publisher isn't verified; it comes back once it is",
+      checked_at: iso(row.checkedAt),
+    }
   return {
     domain: row.domain,
     status: row.activeAt ? "active" : row.provenAt ? "connecting" : "proving",
@@ -42,17 +50,37 @@ const ownerColumn = (owner: DomainOwner) =>
 const historyOf = (owner: DomainOwner) =>
   "appId" in owner ? (["app", owner.appId] as const) : (["publisher", owner.publisherId] as const)
 
-export async function refuseTaken(owner: DomainOwner, domain: string) {
+async function refuseTaken(owner: DomainOwner, domain: string) {
   const taken = await db.query.customDomain.findFirst({ where: eq(schema.customDomain.domain, domain) })
   const ours =
     taken && ("appId" in owner ? taken.appId === owner.appId : taken.publisherId === owner.publisherId)
   if (taken && !ours) fail(409, `${domain} is connected to another project or publisher on Schelf`)
 }
 
+export const UNVERIFIED_DOMAIN =
+  "Custom domains come with a verified publisher. Ask for verification under Settings → Verification in the dashboard to connect one."
+
+async function refuseUnverified(owner: DomainOwner) {
+  const [row] = await db
+    .select({ verifiedAt: schema.publisher.verifiedAt })
+    .from(schema.publisher)
+    .where(
+      "publisherId" in owner
+        ? eq(schema.publisher.id, owner.publisherId)
+        : sql`${schema.publisher.id} = (select ${schema.app.publisherId} from ${schema.app} where ${schema.app.id} = ${owner.appId})`,
+    )
+  if (!row?.verifiedAt) fail(403, UNVERIFIED_DOMAIN)
+}
+
+export async function refuseDomainClaim(owner: DomainOwner, domain: string) {
+  await refuseUnverified(owner)
+  await refuseTaken(owner, domain)
+}
+
 export async function settleDomain(owner: DomainOwner, wanted: string | null, by: string) {
   const current = await db.query.customDomain.findFirst({ where: ownerColumn(owner) })
   if ((current?.domain ?? null) === wanted) return current ?? null
-  if (wanted) await refuseTaken(owner, wanted)
+  if (wanted) await refuseDomainClaim(owner, wanted)
   if (current) await release(current)
   const [kind, id] = historyOf(owner)
   if (!wanted) {

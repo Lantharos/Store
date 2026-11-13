@@ -44,4 +44,12 @@ describe("search", () => {
     expect(await keys("remimders")).toContain("schelf:com.lantharos.Reminders")
     expect(await keys("draft")).not.toContain("flathub:com.mojang.Minecraft")
   })
+
+  test("an app indexed again takes the place of an entry under its id's old case", async () => {
+    const name = `Heft${Math.random().toString(36).slice(2, 7)}`
+    const entry = (key: string) => ({ key, name, summary: "", keywords: [], publisher: "Someone" })
+    await env.DB.batch(indexStatements([entry("schelf:com.example.Ledger")]))
+    await env.DB.batch(indexStatements([entry("schelf:com.example.ledger")]))
+    expect((await searchKeys(name, 10)).map((hit) => hit.key)).toEqual(["schelf:com.example.ledger"])
+  })
 })

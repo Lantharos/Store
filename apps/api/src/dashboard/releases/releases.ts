@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers"
 import {
   type ArtifactKind,
   type CheckResult,
@@ -115,11 +116,17 @@ async function detail(release: ReleaseRow, owner: Owner): Promise<ReleaseDetail>
       .where(eq(schema.review.releaseId, release.id))
       .orderBy(schema.review.createdAt),
   ])
-  const checkResults: CheckResult[] = checks.map((check) => ({
-    name: check.name,
-    status: check.status,
-    summary: check.summary,
-  }))
+  const checkResults: CheckResult[] = await Promise.all(
+    checks.map(async (check) => {
+      const detail = check.status !== "passed" && check.detailKey && (await env.BUCKET.get(check.detailKey))
+      return {
+        name: check.name,
+        status: check.status,
+        summary: check.summary,
+        ...(detail && { detail: await detail.json() }),
+      }
+    }),
+  )
   const timeline: TimelineStep[] = [
     {
       kind: "uploaded",

@@ -19,6 +19,7 @@
     proving: "Waiting for its DNS records",
     connecting: "Connecting",
     active: "Serving your links",
+    paused: "Paused",
   }
 
   async function check() {
@@ -38,7 +39,7 @@
     <Row title={domain.domain} description={domain.waiting ?? STATUS[domain.status]}>
       <span class="font-mono text-[12px] text-ink-muted">{file} · domain</span>
     </Row>
-    {#if domain.status !== "active"}
+    {#if domain.status === "proving" || domain.status === "connecting"}
       {#each domain.records as record (record.type)}
         <Row title="{record.type} {record.name}">
           <code class="max-w-64 truncate font-mono text-[13px] text-ink-soft">{record.value}</code>

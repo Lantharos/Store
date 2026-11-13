@@ -6,6 +6,7 @@ import {
   type ProjectDownloads,
   type PublishResponse,
   paths,
+  type ReleaseDetail,
   sha256Hex,
 } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
@@ -13,7 +14,7 @@ import { describe, expect, test, vi } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { reviewRoute } from "../src/hosting/scrutiny.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { bytesOf, publisherWithApp } from "./fixtures.ts"
+import { bytesOf, json, person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
 const DL = "https://dl.schelf.store"
@@ -200,6 +201,38 @@ describe("serving a release file", () => {
     const response = await exports.default.fetch(new Request(`${DL}/${typed}`))
     expect(response.headers.get("content-type")).toBe("application/x-rpm")
     await response.body?.cancel()
+  })
+})
+
+describe("check details", () => {
+  test("aren't served to the public, and the publisher's members see them in the dashboard", async () => {
+    const { appId, userId } = await publisherWithApp("files")
+    const id = randomId()
+    await db.insert(schema.release).values({
+      id,
+      appId,
+      version: "1.0.0",
+      origin: "oidc",
+      format: "files",
+      manifest: "",
+      requires: {},
+      status: "in-review",
+    })
+    const key = paths.check(appId, "1.0.0", "inspection")
+    await env.BUCKET.put(key, JSON.stringify([{ permission: "network" }]))
+    await db.insert(schema.check).values({
+      releaseId: id,
+      name: "inspection",
+      status: "warning",
+      summary: "Uses more than it declares: network",
+      detailKey: key,
+    })
+    expect((await fetchDl(key)).status).toBe(404)
+    const owner = await person("Mira", userId)
+    const detail = await json<ReleaseDetail>(await owner.call("GET", `/apps/${appId}/releases/${id}`))
+    expect(detail.checks.find((check) => check.name === "inspection")?.detail).toEqual([
+      { permission: "network" },
+    ])
   })
 })
 

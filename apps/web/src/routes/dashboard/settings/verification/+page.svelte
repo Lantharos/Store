@@ -61,6 +61,14 @@
         <p class="text-[15px] leading-relaxed text-ink-soft">You can change what you sent and ask again.</p>
       {:else}
         <div>
+          <h2 class="text-lg font-semibold">What it gives</h2>
+          <ul class="mt-2 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-ink-soft">
+            <li>the checkmark beside your name, on your page, your apps and in Schelf;</li>
+            <li>extensions that can run inside Luft once reviewed;</li>
+            <li>download links on a domain of your own.</li>
+          </ul>
+        </div>
+        <div>
           <h2 class="text-lg font-semibold">What you'll need</h2>
           <ul class="mt-2 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-ink-soft">
             <li>your legal or trading name and website;</li>

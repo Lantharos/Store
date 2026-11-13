@@ -31,8 +31,10 @@ export function matchExpression(query: string) {
   return grams.length ? grams.map((gram) => `"${gram}"`).join(" OR ") : null
 }
 
+const REMOVE = "DELETE FROM search WHERE lower(key) = lower(?)"
+
 export function indexStatements(documents: SearchDocument[]) {
-  const remove = env.DB.prepare("DELETE FROM search WHERE key = ?")
+  const remove = env.DB.prepare(REMOVE)
   const insert = env.DB.prepare(
     "INSERT INTO search (key, name, summary, keywords, developer) VALUES (?, ?, ?, ?, ?)",
   )
@@ -48,8 +50,9 @@ export function indexStatements(documents: SearchDocument[]) {
   ])
 }
 
+/** App ids are compared without case, so an entry left under an id's old spelling goes too. */
 export function unindexStatement(key: string) {
-  return env.DB.prepare("DELETE FROM search WHERE key = ?").bind(key)
+  return env.DB.prepare(REMOVE).bind(key)
 }
 
 export function clearOriginStatement(origin: string) {

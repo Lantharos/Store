@@ -10,7 +10,7 @@ export const customDomain = z
   )
   .refine((name) => !/(^|\.)schelf\.store$/.test(name), "Use a domain of your own")
 
-export const DOMAIN_STATUSES = ["proving", "connecting", "active"] as const
+export const DOMAIN_STATUSES = ["proving", "connecting", "active", "paused"] as const
 export type DomainStatus = (typeof DOMAIN_STATUSES)[number]
 
 export const DOMAIN_TARGET = "domains.schelf.store"

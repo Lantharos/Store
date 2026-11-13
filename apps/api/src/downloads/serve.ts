@@ -11,6 +11,7 @@ import { INDEX_CACHE } from "../signing/write.ts"
 const IMMUTABLE = "public, max-age=31536000, immutable"
 const MEDIA_POLICY = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 const SIGNED_PREFIXES = ["index/", "trust/", "sabine/"]
+const CHECK_DETAIL = /^apps\/[^/]+\/[^/]+\/checks\//
 
 export interface Download {
   app: string
@@ -77,6 +78,7 @@ export async function serveDownload(request: Request) {
   if (
     !key ||
     key.startsWith(PRIVATE_PREFIX) ||
+    CHECK_DETAIL.test(key) ||
     key.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
   )
     return new Response("Not found", { status: 404 })

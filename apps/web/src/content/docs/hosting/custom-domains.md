@@ -4,6 +4,8 @@ title: Custom domains
 description: Serve your download links from a domain of your own, for one project or all of them.
 ---
 
+Custom domains come with [verification](/docs/verification): only a verified publisher can connect one. If a publisher stops being verified, its domains stop serving and every link Schelf shows goes back to `dl.schelf.store`; they come back on their own once it's verified again.
+
 ## For one project
 
 Put one line in [schelf.toml](/docs/schelf-toml) and run `schelf apply`:

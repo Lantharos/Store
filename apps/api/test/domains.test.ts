@@ -9,6 +9,14 @@ import { person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
 
+async function verified(appId: string) {
+  const app = (await db.query.app.findFirst({ where: eq(schema.app.id, appId) }))!
+  await db
+    .update(schema.publisher)
+    .set({ verifiedAt: new Date() })
+    .where(eq(schema.publisher.id, app.publisherId))
+}
+
 async function apply(token: string, appId: string, domain: string) {
   const dns = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}))
   const response = await exports.default.fetch(
@@ -57,12 +65,13 @@ describe("a custom domain", () => {
       .set({ status: "published", visibility: "unlisted" })
       .where(eq(schema.app.id, appId))
     await shipped(appId)
+    await verified(appId)
     const domain = `downloads-${randomId(4).toLowerCase()}.example.com`
     const result = (await (await apply(token, appId, domain)).json()) as ApplyResponse
     expect(result.changes.map((change) => change.key)).toContain("domain")
 
     const row = (await db.query.customDomain.findFirst({ where: eq(schema.customDomain.appId, appId) }))!
-    const state = domainState(row)
+    const state = domainState(row, true)
     expect(state.status).toBe("proving")
     expect(state.records.map((record) => record.name)).toEqual([`_schelf.${domain}`, domain])
 
@@ -80,6 +89,8 @@ describe("a custom domain", () => {
   test("serves one project only, and nothing before it's connected", async () => {
     const first = await publisherWithApp("files")
     const second = await publisherWithApp("files")
+    await verified(first.appId)
+    await verified(second.appId)
     const domain = `shared-${randomId(4).toLowerCase()}.example.com`
     await apply(first.token, first.appId, domain)
     expect((await apply(second.token, second.appId, domain)).status).toBe(409)
@@ -105,6 +116,7 @@ describe("a publisher's domain", () => {
       .set({ status: "published", visibility: "unlisted" })
       .where(eq(schema.app.id, appId))
     await shipped(appId)
+    await verified(appId)
     const domain = `dl-${randomId(4).toLowerCase()}.example.com`
     await connected(publisherId, domain)
 
@@ -125,6 +137,7 @@ describe("a publisher's domain", () => {
       .set({ status: "published", visibility: "unlisted" })
       .where(eq(schema.app.id, appId))
     await shipped(appId)
+    await verified(appId)
     const own = `get-${randomId(4).toLowerCase()}.example.com`
     await connected(publisherId, `dl-${randomId(4).toLowerCase()}.example.com`)
     await apply(token, appId, own)
@@ -143,5 +156,28 @@ describe("a publisher's domain", () => {
     expect((await owner.call("PUT", `/publishers/${publisherId}/domain`, { domain: own })).status).toBe(409)
     const cli = await person("Mira", userId, "cli")
     expect((await cli.call("PUT", `/publishers/${publisherId}/domain`, { domain: null })).status).toBe(403)
+  })
+
+  test("comes with verification, and stops serving while the publisher isn't verified", async () => {
+    const { appId, publisherId, token, userId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    const refused = await apply(token, appId, `get-${randomId(4).toLowerCase()}.example.com`)
+    expect(refused.status).toBe(403)
+    expect(((await refused.json()) as { error: string }).error).toContain("verified publisher")
+    const owner = await person("Mira", userId)
+    const domain = `dl-${randomId(4).toLowerCase()}.example.com`
+    expect((await owner.call("PUT", `/publishers/${publisherId}/domain`, { domain })).status).toBe(403)
+
+    await connected(publisherId, domain)
+    expect((await exports.default.fetch(`https://${domain}/notes/latest/windows`)).status).toBe(404)
+    const slug = (await db.query.publisher.findFirst({ where: eq(schema.publisher.id, publisherId) }))!.slug
+    const latest = (await (
+      await exports.default.fetch(`https://dl.schelf.store/${slug}/notes/latest.json`)
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://dl.schelf.store/${slug}/notes/latest/windows-x86_64/exe`)
   })
 })

@@ -89,5 +89,5 @@
 </form>
 
 {#key publisher.id}
-  <div class="mt-12 max-w-3xl"><DomainGroup publisher={publisher.id} slug={publisher.slug} {editable} /></div>
+  <div class="mt-12 max-w-3xl"><DomainGroup publisher={publisher.id} slug={publisher.slug} {editable} verified={publisher.verified} /></div>
 {/key}

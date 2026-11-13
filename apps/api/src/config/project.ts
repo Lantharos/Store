@@ -9,7 +9,7 @@ import {
 import { and, count, eq } from "drizzle-orm"
 import { githubAccount } from "../dashboard/access.ts"
 import { db, schema } from "../db/client.ts"
-import { domainOf, refuseTaken, settleDomain } from "../domains/state.ts"
+import { domainOf, refuseDomainClaim, settleDomain } from "../domains/state.ts"
 import { repository as githubRepository } from "../github/api.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../hosting/ended.ts"
@@ -117,8 +117,9 @@ async function domainChange(
   desired: DesiredProject,
   change: (key: string, text: string) => void,
 ) {
-  if (desired.domain) await refuseTaken({ appId: app.id }, desired.domain)
   const current = await domainOf(app.id)
+  if (desired.domain && desired.domain !== current?.domain)
+    await refuseDomainClaim({ appId: app.id }, desired.domain)
   if ((current?.domain ?? null) !== desired.domain)
     change(
       "domain",

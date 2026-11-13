@@ -16,6 +16,7 @@ async function lookUp(domain: string): Promise<Mapped | null> {
       publisher: schema.publisher.slug,
       project: schema.app.slug,
       active: schema.customDomain.activeAt,
+      verified: schema.publisher.verifiedAt,
     })
     .from(schema.customDomain)
     .leftJoin(schema.app, eq(schema.app.id, schema.customDomain.appId))
@@ -24,7 +25,7 @@ async function lookUp(domain: string): Promise<Mapped | null> {
       eq(schema.publisher.id, sql`coalesce(${schema.customDomain.publisherId}, ${schema.app.publisherId})`),
     )
     .where(eq(schema.customDomain.domain, domain))
-  return row?.active ? { publisher: row.publisher, project: row.project } : null
+  return row?.active && row.verified ? { publisher: row.publisher, project: row.project } : null
 }
 
 async function mapped(domain: string) {

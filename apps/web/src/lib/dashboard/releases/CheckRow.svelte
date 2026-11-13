@@ -3,6 +3,8 @@
   import CircleX from "@lucide/svelte/icons/circle-x"
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert"
   import { CHECK_TITLES, type CheckResult } from "@schelf/protocol"
+  import CodeBlock from "../../code/CodeBlock.svelte"
+  import Dialog from "../../ui/overlay/Dialog.svelte"
   import { CHECK_FIXES } from "./checks.ts"
 
   let {
@@ -16,6 +18,7 @@
   const fixHref = $derived(
     fix?.href ?? (check.name === "listing" ? `/dashboard/apps/${appId}/listing` : undefined),
   )
+  let details = $state(false)
 </script>
 
 <li class="flex gap-3 border-t border-hairline py-3 first:mt-3">
@@ -33,7 +36,10 @@
         {check.status === "passed" ? "Passed" : check.status === "warning" ? "Warning" : "Failed"}
       </span>
     </p>
-    <p class="mt-0.5 text-ink-soft">{check.summary}</p>
+    <p class="mt-0.5 text-ink-soft">
+      {check.summary}
+      {#if check.detail !== undefined}<button type="button" class="ml-1 text-[13px] text-accent hover:underline" onclick={() => (details = true)}>Details</button>{/if}
+    </p>
     {#if fix}
       <p class="mt-1.5 text-[13px] leading-relaxed text-ink-muted">
         {fix.text}
@@ -42,3 +48,13 @@
     {/if}
   </div>
 </li>
+
+{#if check.detail !== undefined}
+  <Dialog bind:open={details} class="max-w-2xl" label="{CHECK_TITLES[check.name]} in detail">
+    <div class="space-y-4 p-6 sm:p-7">
+      <h2 class="font-semibold">{CHECK_TITLES[check.name]}</h2>
+      <CodeBlock title="{check.name}.json" lang="json" code={JSON.stringify(check.detail, null, 2)} />
+      <div class="flex justify-end"><button type="button" class="button button-primary" onclick={() => (details = false)}>Done</button></div>
+    </div>
+  </Dialog>
+{/if}

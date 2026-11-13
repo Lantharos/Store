@@ -95,7 +95,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       platforms: app.platforms,
       parts: app.parts,
       privacy: app.privacy,
-      domain: domain ? domainState(domain) : null,
+      domain: domain ? domainState(domain, owner!.verifiedAt !== null) : null,
       created_at: app.createdAt.toISOString(),
     },
     links: projectLinks(

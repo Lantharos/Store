@@ -9,7 +9,12 @@
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
 
-  let { publisher, slug, editable }: { publisher: string; slug: string; editable: boolean } = $props()
+  let {
+    publisher,
+    slug,
+    editable,
+    verified,
+  }: { publisher: string; slug: string; editable: boolean; verified: boolean } = $props()
 
   let domain = $state<CustomDomainState | null>(null)
   let wanted = $state("")
@@ -19,6 +24,7 @@
     proving: "Waiting for its DNS records",
     connecting: "Connecting",
     active: "Serving your links",
+    paused: "Paused",
   }
 
   $effect(() => {
@@ -49,7 +55,7 @@
     <Row title={domain.domain} description={domain.waiting ?? STATUS[domain.status]}>
       {#if editable}<button type="button" class="button button-sm button-quiet" disabled={busy} onclick={() => (removing = true)}>Remove</button>{/if}
     </Row>
-    {#if domain.status !== "active"}
+    {#if domain.status === "proving" || domain.status === "connecting"}
       {#each domain.records as record (record.type)}
         <Row title="{record.type} {record.name}">
           <code class="max-w-64 truncate font-mono text-[13px] text-ink-soft">{record.value}</code>
@@ -62,6 +68,10 @@
         </Row>
       {/if}
     {/if}
+  {:else if !verified}
+    <Row title="Comes with verification" description="A verified publisher can serve its links from its own domain.">
+      <a href="/dashboard/settings/verification" class="button button-sm button-quiet">Verification</a>
+    </Row>
   {:else if editable}
     <form class="flex gap-2 px-5 py-3.5" onsubmit={connect}>
       <input class="field min-w-0 flex-1" placeholder="dl.example.com" aria-label="Domain" bind:value={wanted} spellcheck="false" />

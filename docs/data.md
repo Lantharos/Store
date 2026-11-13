@@ -42,7 +42,7 @@ One bucket, `schelf-store`, served on `dl.schelf.store` through the api Worker s
 
 ```
 apps/<id>/<version>/<platform>/<file>        the artifact, immutable
-apps/<id>/<version>/checks/<name>.json       detail of each check
+apps/<id>/<version>/checks/<name>.json       detail of each check, never served; the dashboard and Pult read it
 apps/<id>/deltas/<from>-<to>/<platform>.zst
 media/<id>/<hash>.<ext>                      icons and screenshots, content-addressed
 media/publishers/<id>/<hash>.<ext>           publisher logos, content-addressed

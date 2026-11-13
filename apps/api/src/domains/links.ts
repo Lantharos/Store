@@ -9,9 +9,11 @@ async function customRoot(app: Pick<AppRow, "id" | "publisherId" | "slug">) {
   const rows = await db
     .select({ domain: schema.customDomain.domain, appId: schema.customDomain.appId })
     .from(schema.customDomain)
+    .innerJoin(schema.publisher, eq(schema.publisher.id, app.publisherId))
     .where(
       and(
         isNotNull(schema.customDomain.activeAt),
+        isNotNull(schema.publisher.verifiedAt),
         or(eq(schema.customDomain.appId, app.id), eq(schema.customDomain.publisherId, app.publisherId)),
       ),
     )

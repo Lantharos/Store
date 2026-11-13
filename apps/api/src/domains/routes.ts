@@ -25,26 +25,26 @@ async function publisherFor(viewer: SignedInVars["Variables"]["viewer"], id: str
   return publisher
 }
 
-const stateOf = async (publisherId: string) => {
-  const row = await publisherDomainOf(publisherId)
-  return row ? domainState(row) : null
+const stateOf = async (publisher: { id: string; verifiedAt: Date | null }) => {
+  const row = await publisherDomainOf(publisher.id)
+  return row ? domainState(row, publisher.verifiedAt !== null) : null
 }
 
 publisherDomainRoutes.get("/:id/domain", async (c) => {
   const { publisher } = await membership(c.var.viewer.id, c.req.param("id"))
-  return c.json((await stateOf(publisher.id)) satisfies CustomDomainState | null)
+  return c.json((await stateOf(publisher)) satisfies CustomDomainState | null)
 })
 
 publisherDomainRoutes.put("/:id/domain", async (c) => {
   const publisher = await publisherFor(c.var.viewer, c.req.param("id"))
   const { domain } = await readBody(c, setPublisherDomain)
   await settleDomain({ publisherId: publisher.id }, domain, c.var.viewer.name)
-  return c.json(await stateOf(publisher.id))
+  return c.json(await stateOf(publisher))
 })
 
 publisherDomainRoutes.post("/:id/domain/check", async (c) => {
   const publisher = await publisherFor(c.var.viewer, c.req.param("id"))
   const row = await publisherDomainOf(publisher.id)
   if (!row) fail(404, "Connect a domain first")
-  return c.json(domainState(await checkDomain(row)))
+  return c.json(domainState(await checkDomain(row), publisher.verifiedAt !== null))
 })
