@@ -10,8 +10,8 @@ import { recordHistory } from "../ops/events.ts"
 import { dispatchChecks, failedChecks } from "../releases/checks.ts"
 import { routeRelease } from "../releases/review.ts"
 import type { ArtifactRow, ReleaseRow } from "../signing/records.ts"
-import { searchKeys, storeKey } from "../storefront/search-index.ts"
 import { digestsOfStream } from "./hashing.ts"
+import { acceptedLookalikes, lookalikes } from "./lookalikes.ts"
 import { quickChecks } from "./quick-checks.ts"
 import { dashboardUrl } from "./start.ts"
 
@@ -51,14 +51,6 @@ async function attestationsFor(release: ReleaseRow, artifacts: ArtifactRow[], re
     for (const artifact of artifacts) found.set(artifact.id, "unverifiable")
   }
   return found
-}
-
-async function lookalikes(appId: string, name: string | undefined) {
-  if (!name) return []
-  const hits = await searchKeys(name, 20)
-  return hits
-    .filter((hit) => hit.key !== storeKey(appId))
-    .map((hit) => ({ id: hit.key.slice(hit.key.indexOf(":") + 1), name: hit.name }))
 }
 
 export function previousRelease(release: ReleaseRow) {
@@ -140,7 +132,8 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
     listing,
     meta: meta ?? null,
     screenshots,
-    lookalikes: await lookalikes(app.id, name),
+    lookalikes: await lookalikes(app, name),
+    acceptedLookalikes: await acceptedLookalikes(app.id),
   })
   await Promise.all(
     artifacts.flatMap((artifact) => {

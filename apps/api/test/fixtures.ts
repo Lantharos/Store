@@ -74,7 +74,7 @@ export interface Person {
   call: (method: string, path: string, body?: unknown) => Promise<Response>
 }
 
-type Via = "browser" | "passkey" | "cli"
+type Via = "browser" | "passkey" | "cli" | "app"
 
 export async function person(name: string, existing?: string, via: Via = "browser"): Promise<Person> {
   const id = existing ?? randomId()

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
 import { passkey } from "@better-auth/passkey"
-import { CLI_CLIENT_ID } from "@schelf/protocol"
+import { APP_CLIENT_ID, APP_SESSION_DAYS, CLI_CLIENT_ID } from "@schelf/protocol"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError } from "better-auth/api"
@@ -13,11 +13,13 @@ import { CODE_MINUTES, sendCode } from "./mail.ts"
 
 const publicUrl = new URL(env.PUBLIC_URL)
 
-export type Via = "browser" | "passkey" | "cli"
+export type Via = "browser" | "passkey" | "cli" | "app"
 
-function viaOf(path: string | undefined): Via {
-  if (path === "/device/token") return "cli"
-  return path === "/passkey/verify-authentication" ? "passkey" : "browser"
+export const APP_SESSION_MS = APP_SESSION_DAYS * 24 * 3_600_000
+
+function viaOf(context: { path?: string; body?: { client_id?: string } } | null | undefined): Via {
+  if (context?.path === "/device/token") return context.body?.client_id === APP_CLIENT_ID ? "app" : "cli"
+  return context?.path === "/passkey/verify-authentication" ? "passkey" : "browser"
 }
 const SESSION_CACHE_SECONDS = 5 * 60
 
@@ -33,7 +35,18 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     session: {
-      create: { before: async (session, context) => ({ data: { ...session, via: viaOf(context?.path) } }) },
+      create: {
+        before: async (session, context) => {
+          const via = viaOf(context)
+          return {
+            data: {
+              ...session,
+              via,
+              ...(via === "app" && { expiresAt: new Date(Date.now() + APP_SESSION_MS) }),
+            },
+          }
+        },
+      },
     },
   },
   account: { accountLinking: { enabled: true, trustedProviders: ["github"] } },
@@ -65,7 +78,7 @@ export const auth = betterAuth({
       expiresIn: "10m",
       interval: "5s",
       verificationUri: `${publicUrl.origin}/device`,
-      validateClient: (clientId) => clientId === CLI_CLIENT_ID,
+      validateClient: (clientId) => clientId === CLI_CLIENT_ID || clientId === APP_CLIENT_ID,
     }),
     bearer(),
   ],

@@ -27,7 +27,7 @@ export const session = sqliteTable(
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    via: text("via", { enum: ["browser", "passkey", "cli"] }),
+    via: text("via", { enum: ["browser", "passkey", "cli", "app"] }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

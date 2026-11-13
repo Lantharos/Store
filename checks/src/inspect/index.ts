@@ -3,6 +3,7 @@ import { parseMetainfo } from "@schelf/appstream"
 import type { Permissions } from "@schelf/protocol"
 import { linkedLibraries } from "./libraries.ts"
 import { comparePermissions } from "./permissions.ts"
+import { settingsSchemas } from "./schemas.ts"
 import { scanStrings } from "./strings.ts"
 import { walkTree } from "./tree.ts"
 
@@ -20,7 +21,12 @@ async function bundledLicence(files: { path: string; absolute: string }[]) {
 
 export async function inspectArtifact(root: string, declared: Permissions | null) {
   const files = await walkTree(root)
-  const [libraries, strings] = await Promise.all([linkedLibraries(files), scanStrings(files)])
+  const [libraries, found, schemas] = await Promise.all([
+    linkedLibraries(files),
+    scanStrings(files),
+    settingsSchemas(files),
+  ])
+  const strings = { ...found, busNames: found.busNames.filter((name) => !schemas.has(name.value)) }
   return {
     files: files.length,
     bytes: files.reduce((total, file) => total + file.size, 0),

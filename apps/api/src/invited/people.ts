@@ -8,6 +8,7 @@ import {
 import { and, eq, inArray, or, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { auth } from "../auth/auth.ts"
+import { renewAppSession } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
 import { linkRoot } from "../domains/links.ts"
 import { linkBase, pageUrl } from "../hosting/addresses.ts"
@@ -30,6 +31,7 @@ export const invitedRoutes = new Hono()
 async function person(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers })
   if (!session) fail(401, "Sign in to see what you're invited to")
+  await renewAppSession(session.session)
   return session.user
 }
 

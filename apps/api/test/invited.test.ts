@@ -101,7 +101,7 @@ describe("an invite-only channel", () => {
     expect(artifact?.key.startsWith("invited/apps/")).toBe(true)
   })
 
-  test("serves nobody without an invitation, and a download token or an invited person gets in", async () => {
+  test("asks for a sign-in without one, refuses the uninvited, and lets a token or an invited person in", async () => {
     const { appId, publisherSlug, userId } = await project()
     const key = await shipOnBeta(appId)
     expect((await exports.default.fetch(`${DL}/${publisherSlug}/notes/@beta/latest/windows`)).status).toBe(
@@ -121,7 +121,8 @@ describe("an invite-only channel", () => {
     expect(await signed.text()).toBe("an early build")
 
     const tester = await person("Ada")
-    expect((await call(tester.token, `/${key}`, {}, DL)).status).toBe(401)
+    expect((await call(tester.token, `/${key}`, {}, DL)).status).toBe(403)
+    expect((await call("schelfdl_unknown", `/${key}`, {}, DL)).status).toBe(401)
     await owner.call("POST", `/apps/${appId}/channels/beta/invites`, { email: tester.email })
     const file = await call(tester.token, `/${key}`, {}, DL)
     expect(file.status).toBe(200)
@@ -163,5 +164,16 @@ describe("an invite-only channel", () => {
     const cli = await person("Mira", userId, "cli")
     const asked = await cli.call("POST", `/apps/${appId}/channels/beta/invites`, { email: "ada@example.com" })
     expect(asked.status).toBe(403)
+  })
+
+  test("keeps the Schelf app signed in for as long as it's used", async () => {
+    const tester = await person("Ada", undefined, "app")
+    await db
+      .update(schema.session)
+      .set({ expiresAt: new Date(Date.now() + 86_400_000) })
+      .where(eq(schema.session.token, tester.token))
+    expect((await call(tester.token, "/invited")).status).toBe(200)
+    const session = await db.query.session.findFirst({ where: eq(schema.session.token, tester.token) })
+    expect(session!.expiresAt.getTime()).toBeGreaterThan(Date.now() + 89 * 86_400_000)
   })
 })

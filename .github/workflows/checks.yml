@@ -25,7 +25,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -yq --no-install-recommends \
-            clamav yara squashfs-tools msitools p7zip-full libarchive-tools binutils-multiarch zstd rpm
+            clamav yara squashfs-tools msitools p7zip-full libarchive-tools binutils-multiarch zstd rpm \
+            gsettings-desktop-schemas
       - id: day
         run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6

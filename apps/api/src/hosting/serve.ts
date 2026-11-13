@@ -21,7 +21,7 @@ import {
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { linkRoot } from "../domains/links.ts"
-import { channelsOpenTo } from "../invited/access.ts"
+import { channelsOpenTo, shutOut } from "../invited/access.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
 import { signReleases } from "../invited/links.ts"
 import { partPlan } from "../publishing/parts.ts"
@@ -123,12 +123,6 @@ function serveVersion(releases: HostedRelease[], path: string[], channel: string
     : notFound(`${version} has nothing for ${[part, target].filter(Boolean).join(" ") || "that"}`)
 }
 
-const unauthorized = () =>
-  new Response("This channel is invite-only. Sign in to Schelf or send a download token.", {
-    status: 401,
-    headers: { "www-authenticate": "Bearer", "cache-control": "no-store" },
-  })
-
 interface Asked {
   request: Request
   project: Project
@@ -198,8 +192,9 @@ async function serveFeed(asked: Asked, file: string, part: string | null, option
     return feed ? json(feed, cache) : new Response(null, { status: 204 })
   }
   const line = electronFeedName(file)!.channel
-  if (line !== named && invited.has(line) && !(await channelsOpenTo(request, project, [line])))
-    return unauthorized()
+  const lineAccess =
+    line !== named && invited.has(line) ? await channelsOpenTo(request, project, [line]) : "open"
+  if (lineAccess !== "open") return shutOut(lineAccess)
   const lineReleases = await feedReleases(
     project.id,
     line === named ? route : await channelRoute(project.id, line),
@@ -232,7 +227,8 @@ export async function serveProject(request: Request, segments: string[]) {
     inviteOnlyChannels(project.id),
   ])
   const guarded = invited.has(named)
-  if (guarded && !(await channelsOpenTo(request, project, [named]))) return unauthorized()
+  const access = guarded ? await channelsOpenTo(request, project, [named]) : "open"
+  if (access !== "open") return shutOut(access)
   const response = await answer({
     request,
     project,

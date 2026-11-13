@@ -33,6 +33,7 @@ export interface QuickCheckInput {
   meta: typeof schema.listingMeta.$inferSelect | null
   screenshots: number
   lookalikes: { name: string; id: string }[]
+  acceptedLookalikes: Set<string>
 }
 
 const passed = (name: CheckResult["name"], summary: string): CheckResult => ({
@@ -185,19 +186,18 @@ function folded(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "")
 }
 
-function impersonationCheck({ listing, lookalikes }: QuickCheckInput) {
+function impersonationCheck({ listing, lookalikes, acceptedLookalikes }: QuickCheckInput) {
   const name = listing.find((entry) => entry.locale === DEFAULT_LOCALE)?.name
   if (!name) return passed("impersonation", "No name to compare yet")
   const close = lookalikes.filter((other) => editDistance(folded(name), folded(other.name)) <= NAME_DISTANCE)
-  return close.length
-    ? warning(
-        "impersonation",
-        `The name is close to ${close.map((other) => `${other.name} (${other.id})`).join(", ")}`,
-        {
-          matches: close,
-        },
-      )
-    : passed("impersonation", "No listed app has a similar name")
+  const named = (others: typeof close) => others.map((other) => `${other.name} (${other.id})`).join(", ")
+  if (!close.length) return passed("impersonation", "No listed app has a similar name")
+  if (close.every((other) => acceptedLookalikes.has(other.id)))
+    return passed(
+      "impersonation",
+      `Close to ${named(close)}, which a reviewer accepted with an earlier release`,
+    )
+  return warning("impersonation", `The name is close to ${named(close)}`, { matches: close })
 }
 
 function extensionCheck({ app, release }: QuickCheckInput) {

@@ -59,6 +59,6 @@ Run `schelf apply`, then invite people from **People** on the channel in the pro
 - **In the Schelf app**, they get its releases and updates.
 - **Machines**, like a test lab or CI, use a download token from **People** or `schelf channel token beta "Test lab"`, sent as `Authorization: Bearer <token>` to the channel's links and feeds, like `/@beta/latest/windows`. electron-updater and Tauri can send it with their request headers.
 
-Members of the publisher always get in. The channel's links, feeds and files answer everyone else with 401, it's left out of the public listing and Schelf's index, and nobody but the people and tokens you add can see its releases. Take an invitation back or revoke a token and it stops working at once.
+Members of the publisher always get in. The channel's links, feeds and files answer 401 without a sign-in or token, and 403 to someone signed in or a token that isn't let in, it's left out of the public listing and Schelf's index, and nobody but the people and tokens you add can see its releases. Take an invitation back or revoke a token and it stops working at once.
 
 A channel becomes invite-only before its first release, so nothing on it was ever public; for a channel that already has releases, make a new one. Stable is always for everyone, and a channel can't end into an invite-only one, since its people couldn't follow. Promoting a release from an invite-only channel to an open one makes it public.

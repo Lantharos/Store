@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { embedScript } from "../hosting/embed.ts"
 import { isProjectPath, serveProject } from "../hosting/serve.ts"
-import { invitedFileOpen } from "../invited/access.ts"
+import { invitedFileOpen, shutOut } from "../invited/access.ts"
 import { isInvitedKey } from "../invited/links.ts"
 import { INDEX_CACHE } from "../signing/write.ts"
 
@@ -80,11 +80,8 @@ export async function serveDownload(request: Request) {
     key.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
   )
     return new Response("Not found", { status: 404 })
-  if (isInvitedKey(key) && !(await invitedFileOpen(request, key)))
-    return new Response("This is for invited people. Sign in to Schelf or send a download token.", {
-      status: 401,
-      headers: { "www-authenticate": "Bearer", "cache-control": "no-store" },
-    })
+  const access = isInvitedKey(key) ? await invitedFileOpen(request, key) : "open"
+  if (access !== "open") return shutOut(access)
 
   const object =
     request.method === "HEAD"

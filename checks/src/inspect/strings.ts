@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { mapLimit } from "@schelf/publisher"
 import { run } from "../run.ts"
 import type { TreeFile } from "./tree.ts"
@@ -20,7 +22,7 @@ const DESCRIPTIVE =
   /(^|\/)share\/(metainfo|appdata|applications|doc|licenses|man|icons|locale|mime)\/|(^|\/)(licen[cs]e|copying|notice|credits|authors|third[_-]?party)[^/]*$|\.(md|txt|desktop|xml|svg|png|jpe?g|webp|ico|mo|po|ttf|otf|ttc|woff2?)$/i
 const MAX_PER_KIND = 200
 const URL =
-  /\b(?:https?|wss?|ftp):\/\/([A-Za-z0-9.-]+\.[A-Za-z]{2,}|\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?(\/[^\s"'`<>()\\]*)?/g
+  /\b(?:https?|wss?|ftp):\/\/([A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![A-Za-z0-9.-])|\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?(\/[^\s"'`<>()\\]*)?/g
 const ADDRESS = /^(\d{1,3}(?:\.\d{1,3}){3})(?::\d{2,5})?$/
 const BUS_NAME = /^(?:org|com|net|io)(?:\.[A-Za-z_][A-Za-z0-9_-]{0,31}){2,7}$/
 const DEVICE =
@@ -33,8 +35,15 @@ const REFERENCE_SITES = /^(www\.)?(gnu\.org|fsf\.org|apache\.org|mozilla\.org|un
 const CODE_HOSTS = /^(www\.)?(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org|sourceforge\.net)$/
 const DOWNLOAD_PATH = /^\/[^?#]*\/(releases|raw|archive|download)(\/|$)/
 const BARE_WWW = /^www\.[a-z0-9-]+$/
+const TOP_LEVEL_DOMAINS = new Set(
+  readFileSync(join(import.meta.dirname, "../../rules/tlds.txt"), "utf8")
+    .split("\n")
+    .filter((line) => line && !line.startsWith("#"))
+    .map((line) => line.toLowerCase()),
+)
 
 const reachesHost = (host: string, path = "") =>
+  TOP_LEVEL_DOMAINS.has(host.slice(host.lastIndexOf(".") + 1)) &&
   !REFERENCE_DOMAINS.test(host) &&
   !REFERENCE_SITES.test(host) &&
   !BARE_WWW.test(host) &&

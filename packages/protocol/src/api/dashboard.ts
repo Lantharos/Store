@@ -23,6 +23,9 @@ import { SCHELF_WORKFLOW } from "../setup.ts"
 import { MAX_RELEASE_FILES } from "./publishing.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
+/** The Schelf app's device sign-in; its sessions last APP_SESSION_DAYS from when they're last used. */
+export const APP_CLIENT_ID = "schelf-app"
+export const APP_SESSION_DAYS = 90
 export const PROOF_METHODS = ["dns", "well-known", "github"] as const
 export type ProofMethod = (typeof PROOF_METHODS)[number]
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const

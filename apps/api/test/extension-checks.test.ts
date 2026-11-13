@@ -24,6 +24,7 @@ function checks(platforms: string[], helper: boolean, iconKey: string | null = n
     meta: { iconKey, categories: [] },
     screenshots: 0,
     lookalikes: [],
+    acceptedLookalikes: new Set(),
   } as unknown as QuickCheckInput
   return quickChecks(input)
 }
