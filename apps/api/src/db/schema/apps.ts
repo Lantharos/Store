@@ -177,3 +177,18 @@ export const token = sqliteTable(
   },
   (table) => [index("token_app").on(table.appId)],
 )
+
+export const customDomain = sqliteTable("custom_domain", {
+  domain: text("domain").primaryKey(),
+  appId: text("app_id")
+    .notNull()
+    .unique()
+    .references(() => app.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  provenAt: integer("proven_at", { mode: "timestamp_ms" }),
+  hostnameId: text("hostname_id"),
+  activeAt: integer("active_at", { mode: "timestamp_ms" }),
+  waiting: text("waiting"),
+  checkedAt: integer("checked_at", { mode: "timestamp_ms" }),
+  createdAt: createdAt(),
+})

@@ -60,9 +60,7 @@ keep = 10
 
 **The files win.** `schelf apply` (or the publish action, before every release) sends both, with the hash of each image; the store asks for the images it doesn't have, then replaces whatever it had for every field the files cover, and the dashboard shows those fields read-only with the file and key that set them. A project without a listing folder keeps the store page the dashboard edits. The store validates the files with the same schemas as `schelf check` and answers with the file, key and allowed values of each mistake. What a person decides stays with a person: `listed = true` asks to be listed (from a person's CLI session that needs their approval in the browser first, see [approvals](#approving-in-the-browser)); wider permissions and a name or icon that looks like another app's are reviewed with the next release as before.
 
-**Room to grow.** The format is built so these fit later without breaking a file:
-
-- `domain = "downloads.example.com"` for a custom domain, which attaching would need approval for, like every change to what the public sees.
+**Custom domains.** `domain = "downloads.example.com"` maps a subdomain the publisher owns onto the project's download address. Applying it stores the domain with a fresh token; the domain itself is the approval: it connects only once `_schelf.<domain>` carries `schelf-verify=<token>` (checked hourly, or on **Check now**), and then the Worker creates a Cloudflare for SaaS custom hostname on the schelf.store zone, which issues its certificate over HTTP once the domain's CNAME points at `domains.schelf.store`. Requests for any host other than schelf.store and dl.schelf.store reach the api Worker through the zone's `*/*` route and are answered as `/<publisher>/<project>/…` for the active domain, `/` being `latest`. A domain serves one project; removing the key deletes the custom hostname.
 
 ## Approving in the browser
 

@@ -22,6 +22,10 @@ export default defineConfig({
         pattern: "schelf.store/api/*",
         zone: "schelf.store",
       }),
+      triggers.fetch({
+        pattern: "*/*",
+        zone: "schelf.store",
+      }),
       triggers.scheduled({
         schedule: "0 * * * *",
       }),
@@ -43,6 +47,7 @@ export default defineConfig({
       STORE_REPOSITORY_ID: bindings.text("1429206588"),
       ROOT_PUBLIC_KEY: bindings.text("kP/cqtRR3PN+8X1gMdRBXRsfqLq0l5Lsbv54K6FnqJg="),
       ACCOUNT_ID: bindings.text("2e3bfcbc9512a7ab1ea3a9cb9a474b30"),
+      ZONE_ID: bindings.text("9e8a783fcabea6b50799a30fbb6ba9dc"),
       DOWNLOADS: bindings.analyticsEngineDataset({
         name: "schelf_downloads",
       }),
@@ -80,6 +85,7 @@ export default defineConfig({
       SEALING_KEY: bindings.secret(),
       ANALYTICS_TOKEN: bindings.secret(),
       PULT_KEY: bindings.secret(),
+      CUSTOM_HOSTNAMES_TOKEN: bindings.secret(),
       REQUEST_LIMIT: bindings.rateLimit({
         namespace: "2004",
         simple: {

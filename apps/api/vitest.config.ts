@@ -25,6 +25,7 @@ export default defineConfig({
           GITHUB_TOKEN: "",
           ANALYTICS_TOKEN: "",
           PULT_KEY: "",
+          CUSTOM_HOSTNAMES_TOKEN: "",
         },
       },
     })),

@@ -54,6 +54,7 @@ export const endpoints = {
   channel: (id: string, channel: string) => `${app(id)}/channels/${channel}`,
   endChannel: (id: string, channel: string) => `${app(id)}/channels/${channel}/end`,
   reopenChannel: (id: string, channel: string) => `${app(id)}/channels/${channel}/reopen`,
+  checkDomain: (id: string) => `${app(id)}/domain/check`,
   channelAccess: (id: string, channel: string) => `${app(id)}/channels/${channel}/access`,
   channelInvites: (id: string, channel: string) => `${app(id)}/channels/${channel}/invites`,
   channelInvite: (id: string, channel: string, invite: string) =>

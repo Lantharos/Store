@@ -69,6 +69,26 @@ async function rename(args: Args) {
   return approve(context, [{ type: "project.rename", app: await appOf(args), slug }], args)
 }
 
+async function domain(args: Args) {
+  const context = await signedIn(args)
+  const id = await appOf(args)
+  const settings = args.flags.has("check")
+    ? await context.dashboard.checkDomain(id)
+    : await context.dashboard.app(id)
+  const state = settings.app.domain
+  emit(state)
+  if (!state) {
+    note('No custom domain. Set domain = "downloads.example.com" in schelf.toml and run schelf apply.')
+    return EXIT.ok
+  }
+  title(state.domain)
+  field("Status", state.waiting ?? state.status)
+  if (state.status !== "active")
+    for (const record of state.records) field(record.type, `${record.name} ${muted("→")} ${record.value}`)
+  blank()
+  return EXIT.ok
+}
+
 async function stats(args: Args) {
   const context = await signedIn(args)
   const id = await appOf(args)
@@ -95,6 +115,11 @@ export const project = verbs("project", {
     run: list,
   },
   show: { usage: "show", about: "Links, feeds, channels and where its settings come from", run: show },
+  domain: {
+    usage: "domain [--check]",
+    about: "The custom domain's DNS records and whether it serves the links yet",
+    run: domain,
+  },
   stats: { usage: "stats [--days <n>]", about: "Installs and updates by version and system", run: stats },
   rename: {
     usage: "rename <address>",

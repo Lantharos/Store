@@ -6,6 +6,8 @@ import { avatarRoutes } from "./avatars/github.ts"
 import { configRoutes } from "./config/routes.ts"
 import { recheckNamespaces } from "./dashboard/account/namespaces.ts"
 import { dashboardRoutes } from "./dashboard/routes.ts"
+import { checkDomains } from "./domains/check.ts"
+import { serveDomain } from "./domains/serve.ts"
 import { rollUpDownloads } from "./downloads/rollup.ts"
 import { serveDownload } from "./downloads/serve.ts"
 import { pruneChannels } from "./hosting/channels.ts"
@@ -23,6 +25,7 @@ import { storefrontRoutes } from "./storefront/routes.ts"
 
 const HOURLY = "0 * * * *"
 const downloadHost = new URL(env.DOWNLOAD_URL).hostname
+const storeHost = new URL(env.PUBLIC_URL).hostname
 
 const app = new Hono()
 
@@ -51,7 +54,9 @@ app.all("*", () => fail(404, "Not found"))
 export default {
   fetch(request, environment, context) {
     context.waitUntil(publishDefinitions())
-    if (new URL(request.url).hostname === downloadHost) return serveDownload(request)
+    const host = new URL(request.url).hostname
+    if (host === downloadHost) return serveDownload(request)
+    if (host !== storeHost) return serveDomain(request)
     return app.fetch(request, environment, context)
   },
   async scheduled(controller) {
@@ -60,6 +65,7 @@ export default {
       await Promise.all([
         stepRollouts(),
         restartStalledChecks(),
+        checkDomains(),
         pruneChannels(),
         resignIfRequested(),
         publishDefinitions(),

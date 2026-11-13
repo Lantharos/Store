@@ -30,6 +30,7 @@ These read the project from `schelf.toml`; elsewhere pass `--app <id>`.
 | Command                                                               | What it does                                                                               |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `schelf project list`, `show`, `stats`                                | Projects, their links, feeds and channels, and installs.                                   |
+| `schelf project domain [--check]`                                     | The [custom domain](/docs/custom-domains)'s records and status.                            |
 | `schelf project rename <address>`, `delete`, `restore <id>`           | Move, delete or restore a project.                                                         |
 | `schelf release list`, `show [version]`                               | Releases and their checks, review and rollout.                                             |
 | `schelf release promote <version> <channel>`                          | Put a shipped release on another channel.                                                  |

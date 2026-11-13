@@ -11,6 +11,7 @@ export const DOC_SECTIONS = [
       "host-your-releases",
       "download-links",
       "systems-and-parts",
+      "custom-domains",
       "update-feeds",
       "channels",
       "manual-uploads",

@@ -7,6 +7,7 @@ import {
 } from "@schelf/protocol"
 import { count, desc, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
+import { domainOf, domainState } from "../../domains/state.ts"
 import { projectLinks } from "../../hosting/addresses.ts"
 import { iso } from "../../lib/time.ts"
 import { type AppRow, fileUrl, installsSince, mediaUrl } from "../../signing/records.ts"
@@ -25,6 +26,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
     channels,
     counts,
     switches,
+    domain,
   ] = await Promise.all([
     db.select().from(schema.listing).where(eq(schema.listing.appId, app.id)),
     db.query.listingMeta.findFirst({ where: eq(schema.listingMeta.appId, app.id) }),
@@ -58,6 +60,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       .from(schema.updaterSwitch)
       .where(eq(schema.updaterSwitch.appId, app.id))
       .orderBy(desc(schema.updaterSwitch.createdAt)),
+    domainOf(app.id),
   ])
   const publisherSlug = owner!.slug
   const releasesIn = new Map(counts.map((row) => [row.channel, row.releases]))
@@ -91,6 +94,7 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       platforms: app.platforms,
       parts: app.parts,
       privacy: app.privacy,
+      domain: domain ? domainState(domain) : null,
       created_at: app.createdAt.toISOString(),
     },
     links: projectLinks(app, publisherSlug, [

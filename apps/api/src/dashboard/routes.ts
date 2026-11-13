@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { approvalGuard } from "../approvals/guard.ts"
 import { approvalRoutes } from "../approvals/routes.ts"
 import { type SignedInVars, signedIn } from "../auth/session.ts"
+import { domainRoutes } from "../domains/routes.ts"
 import { channelAccessRoutes } from "../invited/routes.ts"
 import { handleError } from "../lib/http.ts"
 import { inviteRoutes } from "../publishers/invites.ts"
@@ -28,6 +29,7 @@ dashboardRoutes.route("/publishers", publisherRoutes)
 for (const routes of [
   appRoutes,
   channelAccessRoutes,
+  domainRoutes,
   deletingRoutes,
   hostingRoutes,
   listingRoutes,

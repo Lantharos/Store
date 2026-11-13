@@ -56,6 +56,7 @@ export function dashboard(api: string, token: string) {
     deletedApps: (owner: string) => get<RestorableProject[]>(`${publisher(owner)}/apps/deleted`),
     app: (id: string) => get<AppSettings>(app(id)),
     revokeToken: (id: string, token: string) => remove<void>(`${app(id)}/tokens/${token}`),
+    checkDomain: (id: string) => post<AppSettings>(`${app(id)}/domain/check`),
     channelAccess: (id: string, channel: string) =>
       get<ChannelAccess>(`${app(id)}/channels/${channel}/access`),
     uninvite: (id: string, channel: string, invite: string) =>

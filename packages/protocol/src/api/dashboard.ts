@@ -2,6 +2,7 @@ import { z } from "zod"
 import type { ConfigFiles } from "../config/apply.ts"
 import { MAX_CATEGORIES } from "../config/listing-toml.ts"
 import { repositoryName } from "../config/schelf-toml.ts"
+import type { CustomDomainState } from "../domains.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
 import type { PartPlan } from "../parts.ts"
 import type { Permissions } from "../permissions.ts"
@@ -300,6 +301,7 @@ export interface AppSettings {
     platforms: Platform[] | null
     parts: PartPlan["parts"]
     privacy: Privacy | null
+    domain: CustomDomainState | null
     created_at: string
   }
   links: Links

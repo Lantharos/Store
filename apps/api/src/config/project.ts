@@ -9,6 +9,7 @@ import {
 import { and, count, eq } from "drizzle-orm"
 import { githubAccount } from "../dashboard/access.ts"
 import { db, schema } from "../db/client.ts"
+import { domainOf, settleDomain } from "../domains/state.ts"
 import { repository as githubRepository } from "../github/api.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../hosting/ended.ts"
@@ -31,6 +32,7 @@ type AppFields = Pick<
 
 export interface DesiredProject {
   file: string
+  domain: string | null
   fields: AppFields
   updater: Updater | null
   channels: SchelfToml["channels"]
@@ -65,6 +67,7 @@ export async function desiredProject(
 ): Promise<DesiredProject> {
   return {
     file,
+    domain: manifest.domain ?? null,
     fields: {
       distribution: manifest.distribution,
       licence: manifest.licence ?? null,
@@ -109,9 +112,30 @@ function partChanges(app: AppRow, desired: DesiredProject, change: (key: string,
 
 const defaultKeep = (name: string) => (name === NIGHTLY ? NIGHTLY_KEEP : null)
 
+async function domainChange(
+  app: AppRow,
+  desired: DesiredProject,
+  change: (key: string, text: string) => void,
+) {
+  const [current, taken] = await Promise.all([
+    domainOf(app.id),
+    desired.domain
+      ? db.query.customDomain.findFirst({ where: eq(schema.customDomain.domain, desired.domain) })
+      : undefined,
+  ])
+  if (taken && taken.appId !== app.id)
+    fail(409, `${desired.file} domain: ${desired.domain} serves another project`)
+  if ((current?.domain ?? null) !== desired.domain)
+    change(
+      "domain",
+      desired.domain ? `serves the links once its DNS records are in` : "stops serving the links",
+    )
+}
+
 export async function projectChanges(app: AppRow, desired: DesiredProject): Promise<ConfigChange[]> {
   const changes: ConfigChange[] = []
   const change = (key: string, text: string) => changes.push({ file: desired.file, key, change: text })
+  await domainChange(app, desired, change)
   for (const [field, key] of Object.entries(FIELD_KEYS) as [keyof AppFields, string | null][])
     if (key && !same(app[field], desired.fields[field]))
       change(key, [desired.fields[field] ?? "cleared"].flat().join(", "))
@@ -197,5 +221,6 @@ async function settleUpdater(app: AppRow, updater: Updater | null, by: string) {
 export async function writeProject(app: AppRow, desired: DesiredProject, by: string) {
   await settleChannels(app, desired, by)
   await settleUpdater(app, desired.updater, by)
+  await settleDomain(app.id, desired.domain, by)
   await db.update(schema.app).set(desired.fields).where(eq(schema.app.id, app.id))
 }

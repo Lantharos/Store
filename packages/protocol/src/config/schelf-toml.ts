@@ -1,5 +1,6 @@
 import { parse } from "smol-toml"
 import { z } from "zod"
+import { customDomain } from "../domains.ts"
 import { partName, partSettings } from "../parts.ts"
 import { appId, distribution, format, formatFits, kind, platform, platformsFor } from "../platforms.ts"
 import { privacy } from "../privacy.ts"
@@ -87,6 +88,9 @@ export const schelfToml = z
       .min(1)
       .optional()
       .describe("The systems every release carries the app for; a system left out stops being offered"),
+    domain: customDomain
+      .optional()
+      .describe("A domain of yours, like downloads.example.com, that serves this project's download links"),
     privacy: privacy
       .optional()
       .describe("What the app does with people's data, shown on its page: telemetry, ads and AI features"),

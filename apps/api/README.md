@@ -41,6 +41,11 @@ Set with `cf workers secrets update <name> --worker schelf-api`.
 | `GITHUB_TOKEN`                             | Fine-grained token with Contents read and write on Lantharos/Store, to start the checks workflow. Without it releases go straight to review. |
 | `ANALYTICS_TOKEN`                          | API token with Account Analytics Read, for the nightly download counts.                                                                      |
 | `PULT_KEY`                                 | The `schelf` project's Pult key. Without it nothing reaches Pult.                                                                            |
+| `CUSTOM_HOSTNAMES_TOKEN`                   | API token with SSL and Certificates Edit on the schelf.store zone, to connect custom domains. Without it they're proven but wait.            |
+
+## Custom domains
+
+Projects' own domains are Cloudflare for SaaS custom hostnames on the schelf.store zone (100 included, then $0.10 each a month). Once per zone: a proxied `AAAA domains.schelf.store 100::` record set as the fallback origin under **SSL/TLS → Custom Hostnames**, and the `CUSTOM_HOSTNAMES_TOKEN` secret. The Worker's `*/*` route takes the domains' traffic.
 
 ## Store keys
 
