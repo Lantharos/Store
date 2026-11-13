@@ -1,0 +1,5 @@
+project = "lantharos/tool-test"
+format = "files"
+distribution = "proprietary"
+tool = "schelf"
+platforms = ["linux-x86_64"]

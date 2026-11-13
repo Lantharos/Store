@@ -1,0 +1,38 @@
+name: Tool test
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Commit of the publish action to test
+        required: true
+      version:
+        description: Version to publish
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the stand-in
+        run: |
+          mkdir dist
+          gcc -static -O2 -o dist/schelf-linux-x86_64 .github/tool-test/schelf.c
+          strip dist/schelf-linux-x86_64
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.action }}
+          path: action
+      - uses: ./action/publish
+        with:
+          files: dist/**
+          schelf-toml: .github/tool-test/schelf.toml
+          version: ${{ inputs.version }}
+          channel: nightly
