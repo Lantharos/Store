@@ -1,11 +1,11 @@
 import { parse } from "smol-toml"
 import { z } from "zod"
 import { customDomain } from "../domains.ts"
-import { partName, partSettings } from "../parts.ts"
+import { partFormat, partName, partSettings } from "../parts.ts"
 import { appId, distribution, format, formatFits, kind, platform, platformsFor } from "../platforms.ts"
 import { privacy } from "../privacy.ts"
 import { projectPath } from "../projects.ts"
-import { channelName, STABLE } from "../releases.ts"
+import { channelName, FILE_UPDATERS, STABLE } from "../releases.ts"
 
 export const SCHELF_TOML = "schelf.toml"
 
@@ -25,8 +25,6 @@ export const requires = z.strictObject({
     .describe("The Luft extension API version an extension was built for"),
 })
 export type Requires = z.infer<typeof requires>
-
-export const FILE_UPDATERS = ["electron", "tauri"] as const
 
 export const channelSettings = z.strictObject({
   keep: z
@@ -135,6 +133,27 @@ export const schelfToml = z
         path: ["licence"],
         message: 'A licence is for open source; remove it or set distribution = "open"',
       })
+    for (const [name, part] of Object.entries(manifest.parts)) {
+      if (partFormat(part) === "sabine" && !part.id)
+        context.addIssue({
+          code: "custom",
+          path: ["parts", name, "id"],
+          message: "A Sabine part has its own app id, the one in its Sabine.toml",
+        })
+      if (part.updater && partFormat(part) !== "files")
+        context.addIssue({
+          code: "custom",
+          path: ["parts", name, "updater"],
+          message: "A Sabine part updates through Sabine; updater is for a part of files",
+        })
+      for (const [index, each] of part.platforms.entries())
+        if (!platformsFor(partFormat(part)).includes(each))
+          context.addIssue({
+            code: "custom",
+            path: ["parts", name, "platforms", index],
+            message: `A ${partFormat(part)} part isn't built for ${each}`,
+          })
+    }
     for (const [index, each] of (manifest.platforms ?? []).entries())
       if (!platformsFor(manifest.format).includes(each))
         context.addIssue({

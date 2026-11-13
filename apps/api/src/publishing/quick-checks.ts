@@ -6,6 +6,7 @@ import {
   EXTENSION_MANIFEST,
   extensionLabels,
   extensionWidens,
+  type Format,
   formatFits,
   isProjectId,
   kindsFor,
@@ -82,7 +83,7 @@ function platformCheck({ app, release, artifacts }: QuickCheckInput) {
   const format = release.format
   if (!formatFits(app.kind, format)) return failed("platforms", `A ${app.kind} can't be a ${format}`)
   for (const artifact of artifacts) {
-    const shape = artifact.part ? "files" : format
+    const shape = artifact.part ? (artifact.format as Format) : format
     if (!platformsFor(shape).includes(artifact.platform as never))
       return failed("platforms", `${artifact.name} is for ${artifact.platform}, which ${shape} can't target`)
     if (!kindsFor(shape).includes(artifact.kind as never))

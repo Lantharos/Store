@@ -39,29 +39,29 @@ ai = "none"
 keep = 10
 ```
 
-| Key                           | What it is                                                                                                                                                            |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id` or `project`             | Your [app id](/docs/app-ids), or the address of a [project](/docs/host-your-releases) without one, like `alice/notes`.                                                |
-| `kind`                        | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                                                                     |
-| `format`                      | `sabine`, `appimage`, `luft-extension`, or `files` for anything else Schelf hosts.                                                                                    |
-| `updater`                     | For `files`: `electron` or `tauri`, whose [feeds](/docs/update-feeds) Schelf serves. Changing it starts a [move to a new framework](/docs/moving-to-a-new-framework). |
-| `permissions`                 | The file holding your [permission declaration](/docs/permissions). Leave it out and the app is listed with full access.                                               |
-| `listing`                     | The folder holding `listing.toml`, the icon and the screenshots.                                                                                                      |
-| `distribution`                | `open` (the default) or `proprietary`. [Closed-source apps](/docs/closed-source-apps) skip the licence check and source diff.                                         |
-| `licence`                     | An SPDX expression, like `MIT` or `GPL-3.0-or-later`.                                                                                                                 |
-| `repository`                  | The GitHub repository the source is in, shown on the page and used for the source diff.                                                                               |
-| `requires.sabine`             | The oldest Sabine version the app runs on.                                                                                                                            |
-| `requires.extension_api`      | The Luft extension API version an extension was built for.                                                                                                            |
-| `platforms`                   | The [systems](/docs/systems-and-parts) every release carries. A system left out stops being offered.                                                                  |
-| `parts.<name>`                | A [part](/docs/systems-and-parts#parts) shipped in every release beside the app: its `files` by name and its `platforms`.                                             |
-| `privacy.telemetry`           | `none`, `opt-in` when people turn it on, or `opt-out` when it's on until they turn it off. Shown on the page.                                                         |
-| `privacy.ads`                 | `true` if the app shows ads.                                                                                                                                          |
-| `privacy.ai`                  | `none`, `on-device` when AI features run on the computer, or `online` when they send what people give them to a service.                                              |
-| `links.follow_rollout`        | `true` lets [download links](/docs/download-links) hand out a release while it rolls out.                                                                             |
-| `channels.<name>.keep`        | Keep only the newest releases on that [channel](/docs/channels).                                                                                                      |
-| `channels.<name>.gradual`     | Roll out step by step (`true`) or to everyone at once (`false`). Stable is gradual unless you say otherwise.                                                          |
-| `channels.<name>.ended_into`  | End that channel and move its people to another one. Remove the key to reopen it.                                                                                     |
-| `channels.<name>.invite_only` | `true` lets only [invited people and download tokens](/docs/channels#invite-only-channels) get that channel's releases.                                               |
+| Key                           | What it is                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id` or `project`             | Your [app id](/docs/app-ids), or the address of a [project](/docs/host-your-releases) without one, like `alice/notes`.                                                         |
+| `kind`                        | `app` (the default) or `extension`, for [Luft extensions](/docs/luft-extensions).                                                                                              |
+| `format`                      | `sabine`, `appimage`, `luft-extension`, or `files` for anything else Schelf hosts.                                                                                             |
+| `updater`                     | For `files`: `electron` or `tauri`, whose [feeds](/docs/update-feeds) Schelf serves. Changing it starts a [move to a new framework](/docs/moving-to-a-new-framework).          |
+| `permissions`                 | The file holding your [permission declaration](/docs/permissions). Leave it out and the app is listed with full access.                                                        |
+| `listing`                     | The folder holding `listing.toml`, the icon and the screenshots.                                                                                                               |
+| `distribution`                | `open` (the default) or `proprietary`. [Closed-source apps](/docs/closed-source-apps) skip the licence check and source diff.                                                  |
+| `licence`                     | An SPDX expression, like `MIT` or `GPL-3.0-or-later`.                                                                                                                          |
+| `repository`                  | The GitHub repository the source is in, shown on the page and used for the source diff.                                                                                        |
+| `requires.sabine`             | The oldest Sabine version the app runs on.                                                                                                                                     |
+| `requires.extension_api`      | The Luft extension API version an extension was built for.                                                                                                                     |
+| `platforms`                   | The [systems](/docs/systems-and-parts) every release carries. A system left out stops being offered.                                                                           |
+| `parts.<name>`                | A [part](/docs/systems-and-parts#parts) shipped in every release beside the app: its `files` by name, its `platforms`, and `format`, `id` or `updater` when it updates itself. |
+| `privacy.telemetry`           | `none`, `opt-in` when people turn it on, or `opt-out` when it's on until they turn it off. Shown on the page.                                                                  |
+| `privacy.ads`                 | `true` if the app shows ads.                                                                                                                                                   |
+| `privacy.ai`                  | `none`, `on-device` when AI features run on the computer, or `online` when they send what people give them to a service.                                                       |
+| `links.follow_rollout`        | `true` lets [download links](/docs/download-links) hand out a release while it rolls out.                                                                                      |
+| `channels.<name>.keep`        | Keep only the newest releases on that [channel](/docs/channels).                                                                                                               |
+| `channels.<name>.gradual`     | Roll out step by step (`true`) or to everyone at once (`false`). Stable is gradual unless you say otherwise.                                                                   |
+| `channels.<name>.ended_into`  | End that channel and move its people to another one. Remove the key to reopen it.                                                                                              |
+| `channels.<name>.invite_only` | `true` lets only [invited people and download tokens](/docs/channels#invite-only-channels) get that channel's releases.                                                        |
 
 A project Schelf only hosts files for needs very little:
 

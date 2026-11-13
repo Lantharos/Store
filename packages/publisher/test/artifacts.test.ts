@@ -102,6 +102,20 @@ describe("Sabine bundles", () => {
       platform: "linux-x86_64",
       kind: "tarball",
     })
+    const helper = {
+      ...shape,
+      parts: {
+        helper: {
+          files: ["notes-helper-*"],
+          platforms: ["linux-x86_64" as const],
+          format: "sabine" as const,
+        },
+      },
+    }
+    expect(await inferArtifact("/x/notes-helper-linux-x86_64-deb.deb", helper)).toMatchObject({
+      part: "helper",
+      kind: "deb",
+    })
     expect(await inferArtifact("/x/Notes-0.1.0-linux-x86_64-deb.deb", shape)).toMatchObject({
       part: null,
       kind: "deb",

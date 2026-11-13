@@ -110,7 +110,7 @@ export interface Links {
   latest: string
   json: string
   embed: string
-  feeds: { updater: Updater; url: string }[]
+  feeds: { updater: Updater; part: string | null; url: string }[]
 }
 
 export interface DeletedProject {

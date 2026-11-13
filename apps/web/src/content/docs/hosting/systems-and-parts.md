@@ -28,7 +28,7 @@ platforms = ["linux-x86_64", "linux-aarch64", "macos-aarch64"]
 
 A file belongs to the part whose `files` its name matches, with `*` for any run of characters, and to the app otherwise. Publish them all together, with one `files` glob in the [publish action](/docs/publish-action) or `schelf publish`.
 
-The app is what the store page, the install button, Schelf on Luft and the [update feeds](/docs/update-feeds) use. A part never shows there: it has its own links, and is in the page's list of files, `latest.json`, `SHA256SUMS` and the dashboard.
+The app is what the store page, the install button and Schelf on Luft use, and its [update feed](/docs/update-feeds) stays the app's. A part never shows on the page's button or in the listing: it has its own links and feed, and is in the page's list of files, `latest.json`, `SHA256SUMS` and the dashboard.
 
 | Link                                              | Goes to                            |
 | ------------------------------------------------- | ---------------------------------- |
@@ -37,6 +37,31 @@ The app is what the store page, the install button, Schelf on Luft and the [upda
 | `/<publisher>/<project>/v/1.4.0/cli/linux-x86_64` | One version of it                  |
 
 A part's name is short and lowercase and can't be the name of a system.
+
+### Updates for a part
+
+A part can update itself too. A part of files takes an `updater`, and a part that's a Sabine app takes `format = "sabine"` with its own app id:
+
+```toml
+[parts.cli]
+files = ["notes-cli-*"]
+platforms = ["linux-x86_64", "windows-x86_64"]
+updater = "electron"
+
+[parts.helper]
+files = ["notes-helper-*"]
+platforms = ["linux-x86_64", "windows-x86_64"]
+format = "sabine"
+id = "io.github.alice.NotesHelper"
+```
+
+| Updater          | The part's feed                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------ |
+| Sabine           | `https://dl.schelf.store/sabine/<id>/parts/<part>/stable.json`                                         |
+| electron-updater | `https://dl.schelf.store/<publisher>/<project>/latest/<part>/`, with `latest.yml` and the others in it |
+| Tauri            | `https://dl.schelf.store/<publisher>/<project>/latest/<part>/tauri.json`                               |
+
+Each feed names its part: Sabine's carries the part's app id, and electron-updater's and Tauri's have a `part` field. The project's **Updates** tab and `schelf project show` list them.
 
 ## Only parts
 

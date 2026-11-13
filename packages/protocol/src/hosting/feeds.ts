@@ -3,6 +3,7 @@ import { STABLE } from "../releases.ts"
 import { type HostedFile, type HostedRelease, type LinkOptions, pickFile } from "./pick.ts"
 
 export interface TauriFeed {
+  part?: string
   version: string
   notes: string
   pub_date: string
@@ -35,7 +36,7 @@ export function updaterRelease(releases: HostedRelease[], updater: string, optio
   )
 }
 
-export function tauriFeed(release: HostedRelease): TauriFeed | null {
+export function tauriFeed(release: HostedRelease, part: string | null = null): TauriFeed | null {
   const platforms: TauriFeed["platforms"] = {}
   const signed = release.files.filter((file) => file.signature && TAURI_BUNDLES[file.kind])
   for (const target of new Set(signed.flatMap((file) => tauriTargets(file.platform)))) {
@@ -46,7 +47,13 @@ export function tauriFeed(release: HostedRelease): TauriFeed | null {
     platforms[target] = { signature: preferred.signature!, url: preferred.url }
   }
   if (!Object.keys(platforms).length) return null
-  return { version: release.version, notes: release.notes, pub_date: release.published, platforms }
+  return {
+    ...(part && { part }),
+    version: release.version,
+    notes: release.notes,
+    pub_date: release.published,
+    platforms,
+  }
 }
 
 const ELECTRON_FILES: Record<string, { platforms: Platform[]; kinds: ArtifactKind[] }> = {
@@ -66,7 +73,11 @@ export function electronFeedName(file: string) {
 
 const yamlString = (value: string) => JSON.stringify(value)
 
-export function electronFeed(release: HostedRelease, file: string): string | null {
+export function electronFeed(
+  release: HostedRelease,
+  file: string,
+  part: string | null = null,
+): string | null {
   const wanted = electronFeedName(file)?.files
   if (!wanted) return null
   const files = release.files
@@ -84,6 +95,7 @@ export function electronFeed(release: HostedRelease, file: string): string | nul
   const main = files[0]
   if (!main) return null
   return [
+    ...(part ? [`part: ${yamlString(part)}`] : []),
     `version: ${yamlString(release.version)}`,
     "files:",
     ...files.flatMap((each) => [

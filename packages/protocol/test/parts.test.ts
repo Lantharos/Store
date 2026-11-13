@@ -72,6 +72,19 @@ describe("parts in schelf.toml", () => {
   })
 })
 
+test("a Sabine part has its own app id, and a part of files its updater", () => {
+  const sabine = read(
+    SABINE.replace(
+      'platforms = ["linux-x86_64"]\n',
+      'platforms = ["linux-x86_64"]\nformat = "sabine"\nupdater = "tauri"\n',
+    ),
+  )
+  expect(!sabine.ok && sabine.issues.map((issue) => issue.key)).toEqual([
+    "parts.runtime.id",
+    "parts.runtime.updater",
+  ])
+})
+
 describe("files and their parts", () => {
   test("a file joins the part whose names it matches, and the app otherwise", () => {
     expect(partOf("notes-cli-linux-x86_64.tar.gz", plan)).toBe("cli")

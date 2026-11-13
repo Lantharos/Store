@@ -12,6 +12,8 @@ The project's **Updates** tab shows which updater it uses, its feed's address an
 | electron-updater | `https://dl.schelf.store/<publisher>/<project>/latest.yml` and the `-mac`, `-linux` and `-linux-arm64` files | Your code signature; the feed carries each file's SHA-512 |
 | Tauri            | `https://dl.schelf.store/<publisher>/<project>/tauri.json`                                                   | Your Tauri updater key                                    |
 
+A [part](/docs/systems-and-parts#updates-for-a-part) with its own updater gets a feed of its own under the part.
+
 ## Sabine
 
 Set the provider in `Sabine.toml` and Sabine follows the feed, its rollout and Schelf's list of stopped releases:

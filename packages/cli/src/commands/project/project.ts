@@ -42,7 +42,8 @@ async function show(args: Args) {
     field("Part", `${name} for ${part.platforms.join(", ")} ${muted(`${settings.links.latest}/${name}`)}`)
   field("Page", link(settings.links.page))
   field("Latest", link(settings.links.latest))
-  for (const feed of settings.links.feeds) field("Feed", link(feed.url))
+  for (const feed of settings.links.feeds)
+    field("Feed", `${link(feed.url)}${feed.part ? ` ${muted(`for ${feed.part}`)}` : ""}`)
   for (const channel of settings.channels)
     field(
       "Channel",

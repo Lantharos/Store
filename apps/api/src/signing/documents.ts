@@ -11,6 +11,7 @@ import {
   type Platform,
   type PlatformRelease,
   parseSabineVersion,
+  partFormat,
   type SabineFeed,
   STABLE,
   sabineTarget,
@@ -37,13 +38,18 @@ function updatedAt(record: AppRecord) {
   return (record.releases[0]?.release.approvedAt ?? record.app.createdAt).toISOString()
 }
 
-function appFiles(record: AppRecord, artifacts: IndexedArtifact[]) {
+function partFiles(record: AppRecord, artifacts: IndexedArtifact[], part: string | null) {
   const plan = partPlan(record.app)
-  return artifacts.filter((artifact) => artifact.part === null && offeredIn(plan, artifact))
+  return artifacts.filter((artifact) => artifact.part === part && offeredIn(plan, artifact))
 }
 
-const appReleases = (record: AppRecord) =>
-  record.releases.map(({ release, artifacts }) => ({ release, artifacts: appFiles(record, artifacts) }))
+const partReleases = (record: AppRecord, part: string | null) =>
+  record.releases.map(({ release, artifacts }) => ({
+    release,
+    artifacts: partFiles(record, artifacts, part),
+  }))
+
+const appReleases = (record: AppRecord) => partReleases(record, null)
 
 const indexable = (record: AppRecord, invitedTo?: string) =>
   appReleases(record).filter(
@@ -190,13 +196,16 @@ function endedFeeds(record: AppRecord, feeds: Map<string, SabineFeed>) {
   })
 }
 
-export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
+/** Sabine's feed of each channel, for the app itself, or with `part` for a Sabine part under its own id. */
+export function sabineFeeds(record: AppRecord, part: string | null = null): Map<string, SabineFeed> {
   const feeds = new Map<string, SabineFeed>()
-  for (const { release, artifacts } of appReleases(record)) {
-    if (release.updater !== "sabine" || feeds.has(release.channel)) continue
+  const settings = part ? record.app.parts[part]! : null
+  for (const { release, artifacts } of partReleases(record, part)) {
+    const sabine = settings ? artifacts.length > 0 : release.updater === "sabine"
+    if (!sabine || feeds.has(release.channel)) continue
     feeds.set(release.channel, {
       schema: 1,
-      app_id: record.app.id,
+      app_id: settings?.id ?? record.app.id,
       version: release.version,
       channel: release.channel,
       published_at: String(Math.floor((release.approvedAt ?? release.createdAt).getTime() / 1000)),
@@ -216,6 +225,11 @@ export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
   }
   return new Map([...feeds, ...endedFeeds(record, feeds)])
 }
+
+export const sabineParts = (record: AppRecord) =>
+  Object.entries(record.app.parts).flatMap(([name, settings]) =>
+    partFormat(settings) === "sabine" ? [name] : [],
+  )
 
 export function mirrorCatalogEntry(row: typeof schema.mirrorApp.$inferSelect): MirrorEntry {
   const base = {

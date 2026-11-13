@@ -61,7 +61,7 @@ export async function channelsOpenTo(
 function ownerOfKey(key: string) {
   const [, root, ...rest] = key.split("/")
   if (root === "apps") return { app: rest[0]!, channel: null }
-  if (root === "sabine") return { app: rest[0]!, channel: rest[1]!.replace(/\.json(\.sig)?$/, "") }
+  if (root === "sabine") return { app: rest[0]!, channel: rest.at(-1)!.replace(/\.json(\.sig)?$/, "") }
   if (root === "index") return { app: rest[2]!, channel: rest[3]!.replace(/\.json(\.sig)?$/, "") }
   return null
 }

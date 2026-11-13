@@ -12,7 +12,9 @@
   const app = $derived(settings.app)
   const file = $derived(schelfFile(settings))
   const moving = $derived(settings.switches.some((entry) => !entry.completed_at))
-  const current = $derived(settings.links.feeds.find((feed) => feed.updater === app.updater))
+  const current = $derived(
+    settings.links.feeds.find((feed) => feed.part === null && feed.updater === app.updater),
+  )
   const setup = $derived(app.updater && current ? feedSetup(app.updater, current.url) : null)
   const DESCRIPTIONS = {
     sabine: "The app checks Schelf's signed feed and updates itself on every system.",
@@ -30,7 +32,13 @@
     {/if}
   </Row>
   {#each settings.links.feeds as feed (feed.url)}
-    <Row title={settings.links.feeds.length > 1 ? `${frameworkName(feed.updater)} feed` : "Feed"}>
+    <Row
+      title={feed.part
+        ? `${feed.part} · ${frameworkName(feed.updater)} feed`
+        : settings.links.feeds.length > 1
+          ? `${frameworkName(feed.updater)} feed`
+          : "Feed"}
+    >
       <CopyButton text={feed.url} label="Copy" />
       {#snippet below()}<p class="truncate font-mono text-[13px] text-ink-soft">{feed.url}</p>{/snippet}
     </Row>

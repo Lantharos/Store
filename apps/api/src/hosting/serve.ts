@@ -12,6 +12,7 @@ import {
   type ProjectDownloads,
   partNames,
   partReleases,
+  partUpdater,
   resolveLink,
   STABLE,
   tauriFeed,
@@ -137,7 +138,8 @@ interface Asked {
   sign: (releases: HostedRelease[]) => Promise<HostedRelease[]>
 }
 
-async function answer({ request, project, named, route, path, invited, sign }: Asked) {
+async function answer(asked: Asked) {
+  const { request, project, route, path, sign } = asked
   const channel = route.at(-1)!
   const releases = await sign(await linkReleases(project.id, route))
   const plan = partPlan(project)
@@ -146,6 +148,9 @@ async function answer({ request, project, named, route, path, invited, sign }: A
   const [first, second] = path
   const cache = options.followRollout ? "no-store" : SHORT_CACHE
 
+  const [, part, file, extra] = path
+  if (first === "latest" && part && file && !extra && isFeed(file) && partNames(offered).has(part))
+    return serveFeed(asked, file, part, options)
   if (first === "latest") return serveLatest(request, project, offered, path.slice(1), options)
   if (first === "v" && second) return serveVersion(releases, path.slice(1), channel, options)
   if (first === "latest.json" && !second) {
@@ -165,27 +170,40 @@ async function answer({ request, project, named, route, path, invited, sign }: A
       cache,
     )
   }
-  const app = async (list: HostedRelease[]) => partReleases(offeredReleases(await sign(list), plan), null)
-  if (first === "tauri.json" && !second) {
-    const release = updaterRelease(await app(await feedReleases(project.id, route)), "tauri", options)
-    const feed = release && tauriFeed(release)
+  if (first && !second && isFeed(first)) return serveFeed(asked, first, null, options)
+  return notFound()
+}
+
+const isFeed = (file: string) => file === "tauri.json" || electronFeedName(file) !== null
+
+async function serveFeed(asked: Asked, file: string, part: string | null, options: LinkOptions) {
+  const { request, project, named, route, invited, sign } = asked
+  const plan = partPlan(project)
+  const updater = part ? partUpdater(plan.parts[part]!) : null
+  const scoped = async (list: HostedRelease[]) => {
+    const releases = partReleases(offeredReleases(await sign(list), plan), part)
+    return part
+      ? releases.filter((release) => release.files.length).map((release) => ({ ...release, updater }))
+      : releases
+  }
+  const cache = options.followRollout ? "no-store" : SHORT_CACHE
+  if (file === "tauri.json") {
+    const release = updaterRelease(await scoped(await feedReleases(project.id, route)), "tauri", options)
+    const feed = release && tauriFeed(release, part)
     return feed ? json(feed, cache) : new Response(null, { status: 204 })
   }
-  if (first && !second && electronFeedName(first)) {
-    const line = electronFeedName(first)!.channel
-    if (line !== named && invited.has(line) && !(await channelsOpenTo(request, project, [line])))
-      return unauthorized()
-    const lineReleases = await feedReleases(
-      project.id,
-      line === named ? route : await channelRoute(project.id, line),
-    )
-    const feed = (await app(lineReleases))
-      .filter((candidate) => candidate.updater === "electron")
-      .map((release) => electronFeed(release, first))
-      .find(Boolean)
-    return feed ? text(feed, 200, "text/yaml; charset=utf-8") : notFound(`There's no ${first} here`)
-  }
-  return notFound()
+  const line = electronFeedName(file)!.channel
+  if (line !== named && invited.has(line) && !(await channelsOpenTo(request, project, [line])))
+    return unauthorized()
+  const lineReleases = await feedReleases(
+    project.id,
+    line === named ? route : await channelRoute(project.id, line),
+  )
+  const feed = (await scoped(lineReleases))
+    .filter((candidate) => candidate.updater === "electron")
+    .map((release) => electronFeed(release, file, part))
+    .find(Boolean)
+  return feed ? text(feed, 200, "text/yaml; charset=utf-8") : notFound(`There's no ${file} here`)
 }
 
 export async function serveProject(request: Request, segments: string[]) {

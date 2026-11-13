@@ -1,5 +1,8 @@
 import { z } from "zod"
-import { FILE_PLATFORMS, PLATFORMS, type Platform, platform } from "./platforms.ts"
+import { appId, FILE_PLATFORMS, PLATFORMS, type Platform, platform } from "./platforms.ts"
+import { FILE_UPDATERS, type Updater } from "./releases.ts"
+
+export const PART_FORMATS = ["files", "sabine"] as const
 
 const SYSTEM_WORDS = ["windows", "macos", "linux", "android", "luft", "phone", "other"]
 const TAKEN = new Set<string>([...PLATFORMS, ...SYSTEM_WORDS])
@@ -24,12 +27,27 @@ export const partSettings = z.strictObject({
     .array(platform.extract(FILE_PLATFORMS))
     .min(1)
     .describe("The systems every release carries this part for"),
+  id: appId.optional().describe("A Sabine part's own app id, which its Sabine.toml and update feed carry"),
+  format: z
+    .enum(PART_FORMATS)
+    .optional()
+    .describe("files (the default), or sabine for a Sabine app that updates through its own feed"),
+  updater: z
+    .enum(FILE_UPDATERS)
+    .optional()
+    .describe("The updater a part of files ships with, whose feeds Schelf serves under the part"),
 })
 export type PartSettings = z.infer<typeof partSettings>
 
 export interface PartPlan {
   platforms: Platform[] | null
-  parts: Record<string, Pick<PartSettings, "files" | "platforms">>
+  parts: Record<string, PartSettings>
+}
+
+export const partFormat = (part: Pick<PartSettings, "format">) => part.format ?? "files"
+
+export function partUpdater(part: Pick<PartSettings, "format" | "updater">): Updater | null {
+  return partFormat(part) === "sabine" ? "sabine" : (part.updater ?? null)
 }
 
 export const hasAppPart = (plan: PartPlan) => plan.platforms !== null || !Object.keys(plan.parts).length

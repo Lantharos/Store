@@ -8,6 +8,7 @@ import {
   MAX_BLOCKMAP_BASE64,
   PartMismatch,
   type Platform,
+  partFormat,
   partOf,
   platform as platformSchema,
   type SchelfToml,
@@ -52,7 +53,7 @@ async function readExecutable(path: string, target: string) {
   }
 }
 
-async function sabineArtifact(path: string, name: string): Promise<InferredArtifact> {
+async function sabineArtifact(path: string, name: string, part: string | null): Promise<InferredArtifact> {
   const match = SABINE_NAME.exec(name)
   if (!match) {
     throw new ArtifactError(
@@ -66,7 +67,7 @@ async function sabineArtifact(path: string, name: string): Promise<InferredArtif
     throw new ArtifactError(`${name} has no package kind after its platform`)
   }
   const updateTarget = target ? `${platform}-${target.toLowerCase()}` : platform
-  return { path, name, part: null, platform, kind, executable: await readExecutable(path, updateTarget) }
+  return { path, name, part, platform, kind, executable: await readExecutable(path, updateTarget) }
 }
 
 export async function elfArchitecture(path: string) {
@@ -172,8 +173,9 @@ function partNamed(name: string, shape: Shape) {
 export function inferArtifact(path: string, shape: Shape): Promise<InferredArtifact> {
   const name = basename(path)
   const part = partNamed(name, shape)
-  if (part || shape.format === "files") return generalArtifact(path, name, part)
-  if (shape.format === "sabine") return sabineArtifact(path, name)
+  const format = part ? partFormat(shape.parts[part]!) : shape.format
+  if (format === "sabine") return sabineArtifact(path, name, part)
+  if (format === "files") return generalArtifact(path, name, part)
   if (shape.format === "appimage") return appImageArtifact(path, name)
   return Promise.resolve(extensionArtifact(path, name))
 }

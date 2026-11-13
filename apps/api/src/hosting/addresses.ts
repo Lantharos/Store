@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import type { Links, ProjectSummary, Updater } from "@schelf/protocol"
+import { type Links, type ProjectSummary, partUpdater, paths, STABLE, type Updater } from "@schelf/protocol"
 import type { AppRow } from "../signing/records.ts"
 
 type Addressed = Pick<AppRow, "id" | "kind" | "slug" | "visibility">
@@ -34,19 +34,31 @@ export function projectSummary(
   }
 }
 
-function feedUrl(app: Addressed, updater: Updater, base: string) {
-  if (updater === "sabine") return `${env.DOWNLOAD_URL}/sabine/${app.id}/stable.json`
-  if (updater === "electron") return base
-  return `${base}/tauri.json`
+function feedUrl(app: Addressed, updater: Updater, base: string, part: string | null) {
+  if (updater === "sabine")
+    return `${env.DOWNLOAD_URL}/${part ? paths.sabinePart(app.id, part, STABLE) : paths.sabine(app.id, STABLE)}`
+  const root = part ? `${base}/latest/${part}` : base
+  return updater === "electron" ? root : `${root}/tauri.json`
 }
 
-export function projectLinks(app: Addressed, publisherSlug: string, updaters: Updater[]): Links {
+export function projectLinks(
+  app: Addressed & Pick<AppRow, "parts">,
+  publisherSlug: string,
+  updaters: Updater[],
+): Links {
   const base = linkBase(app, publisherSlug)
+  const partFeeds = Object.entries(app.parts).flatMap(([part, settings]) => {
+    const updater = partUpdater(settings)
+    return updater ? [{ updater, part, url: feedUrl(app, updater, base, part) }] : []
+  })
   return {
     page: pageUrl(app, publisherSlug),
     latest: `${base}/latest`,
     json: `${base}/latest.json`,
     embed: `<a href="${base}/latest" data-schelf="${publisherSlug}/${app.slug}">Download</a>\n<script src="${env.DOWNLOAD_URL}/embed.js" async></script>`,
-    feeds: updaters.map((updater) => ({ updater, url: feedUrl(app, updater, base) })),
+    feeds: [
+      ...updaters.map((updater) => ({ updater, part: null, url: feedUrl(app, updater, base, null) })),
+      ...partFeeds,
+    ],
   }
 }

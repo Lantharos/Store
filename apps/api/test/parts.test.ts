@@ -1,9 +1,10 @@
-import { exports } from "cloudflare:workers"
+import { env, exports } from "cloudflare:workers"
 import { type ProjectDownloads, paths, sha256Hex } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
+import { rebuildApp } from "../src/signing/rebuild.ts"
 import { bytesOf, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -41,10 +42,11 @@ async function shipped(appId: string, version: string, files: [string, string | 
       part,
       platform,
       format: "files",
-      kind: name.endsWith(".exe") ? "exe" : "tarball",
+      kind: name.endsWith(".exe") ? "exe" : name.endsWith(".deb") ? "deb" : "tarball",
       key: paths.artifact(appId, version, platform, name),
       size: 10,
       sha256: "b".repeat(64),
+      sha512: "c2hh",
     })),
   )
 }
@@ -127,5 +129,43 @@ describe("links to parts", () => {
     expect(sums).not.toContain("notes-cli")
     const pinned = await fetchDl(`${publisherSlug}/notes/v/1.0.0/cli/linux-x86_64`)
     expect(pinned.headers.get("location")).toContain("notes-cli-linux.tar.gz")
+  })
+})
+
+describe("update feeds of parts", () => {
+  test("live under the part and name it, and a Sabine part gets a signed feed of its own", async () => {
+    const { appId, publisherSlug } = await project()
+    await db
+      .update(schema.app)
+      .set({
+        parts: {
+          cli: { files: ["notes-cli-*"], platforms: ["windows-x86_64"], updater: "electron" },
+          helper: {
+            files: ["helper-*"],
+            platforms: ["linux-x86_64"],
+            format: "sabine",
+            id: "com.example.Helper",
+          },
+        },
+      })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId, "1.0.0", [
+      ["notes.exe", null, "windows-x86_64"],
+      ["notes-cli-1.0.0.exe", "cli", "windows-x86_64"],
+      ["helper-linux-x86_64-deb.deb", "helper", "linux-x86_64"],
+    ])
+    const yml = await (await fetchDl(`${publisherSlug}/notes/latest/cli/latest.yml`)).text()
+    expect(yml).toContain('part: "cli"')
+    expect(yml).toContain("notes-cli-1.0.0.exe")
+    expect(yml).not.toContain("notes.exe")
+
+    await rebuildApp(appId)
+    const feed = (await (await env.BUCKET.get(paths.sabinePart(appId, "helper", "stable")))!.json()) as {
+      app_id: string
+      artifacts: Record<string, { url: string }>
+    }
+    expect(feed.app_id).toBe("com.example.Helper")
+    expect(Object.keys(feed.artifacts)).toEqual(["linux-x86_64-deb"])
+    expect(await env.BUCKET.get(paths.sabine(appId, "stable"))).toBeNull()
   })
 })

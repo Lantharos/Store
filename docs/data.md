@@ -49,12 +49,13 @@ media/publishers/<id>/<hash>.<ext>           publisher logos, content-addressed
 private/verification/<request>/<hash>.<ext>  documents sent for verification, never served
 invited/apps/<id>/<version>/<platform>/<file>  the files of releases made on an invite-only channel
 invited/index/v1/apps/<id>/<channel>.json    the app's index with that channel's releases in, signed
-invited/sabine/<id>/<channel>.json           Sabine's feed for an invite-only channel
+invited/sabine/<id>/<channel>.json           Sabine's feed for an invite-only channel, and parts/<part>/<channel>.json beside it
 index/v1/catalog.json                        every listed app and extension
 index/v1/apps/<id>.json                      one app: listing in every locale, releases, artifacts, rollout, what replaced it, and for each extension release the Luft it needs and whether it runs inside Luft
 index/v1/mirror/flathub.json                 Flathub apps that pass the quality rules
 index/v1/mirror/fedora.json                  Fedora desktop apps that aren't on Flathub
 sabine/<id>/<channel>.json                   Sabine update feed, in Sabine's own manifest format
+sabine/<id>/parts/<part>/<channel>.json      the same for a Sabine part, under the part's own app id
 trust/v1/root.pub                            also built into every client
 trust/v1/store-keys.json                     current store signing keys, signed by the root
 trust/v1/revocations.json                    blocked apps and releases
