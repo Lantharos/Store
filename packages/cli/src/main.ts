@@ -79,7 +79,7 @@ const COMMANDS: Record<
   token: { run: token, usage: "token <list|create|revoke>", about: "Upload tokens" },
   publisher: {
     run: publisher,
-    usage: "publisher <list|show|create|update>",
+    usage: "publisher <list|show|create|update|domain>",
     about: "Publishers and their profiles",
   },
   member: {

@@ -20,6 +20,7 @@ import {
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { linkRoot } from "../domains/links.ts"
 import { channelsOpenTo } from "../invited/access.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
 import { signReleases } from "../invited/links.ts"
@@ -165,7 +166,11 @@ async function answer(asked: Asked) {
         published: newest.published,
         notes: newest.notes,
         page: pageUrl(project, project.publisherSlug),
-        files: latestFiles(linkBase(project, project.publisherSlug, channel), offered, options),
+        files: latestFiles(
+          linkBase(await linkRoot(project, project.publisherSlug), channel),
+          offered,
+          options,
+        ),
       } satisfies ProjectDownloads,
       cache,
     )

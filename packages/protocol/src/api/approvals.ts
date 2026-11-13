@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { customDomain } from "../domains.ts"
 import { projectSlug } from "../projects.ts"
 import { channelName } from "../releases.ts"
 import {
@@ -38,6 +39,7 @@ export const approvalAction = z.discriminatedUnion("type", [
     slug: slug.optional(),
   }),
   z.object({ type: z.literal("namespace.claim"), publisher, prefix: claimNamespace.shape.prefix }),
+  z.object({ type: z.literal("publisher.domain"), publisher, domain: customDomain.nullable() }),
   z.object({
     type: z.literal("namespace.verify"),
     publisher,

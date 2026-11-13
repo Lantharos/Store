@@ -1,8 +1,10 @@
 ---
 
 title: Custom domains
-description: Serve your project's download links from a domain of your own.
+description: Serve your download links from a domain of your own, for one project or all of them.
 ---
+
+## For one project
 
 Put one line in [schelf.toml](/docs/schelf-toml) and run `schelf apply`:
 
@@ -26,4 +28,14 @@ The TXT record proves the domain is yours. Schelf checks every hour, or straight
 | `downloads.example.com/@beta/latest.json` | `…/@beta/latest.json`                          |
 | `downloads.example.com/latest.yml`        | `…/latest.yml`, so updaters can use it too     |
 
-Use a subdomain, like `downloads.` or `get.`, not the bare domain. A domain serves one project. Remove the line and run `schelf apply` to stop serving links from it.
+Remove the line and run `schelf apply` to stop serving links from it.
+
+## For all your projects
+
+A publisher can connect one domain for everything it publishes: `dl.example.com/<project>/…` answers like `dl.schelf.store/<publisher>/<project>/…`, invite-only channels included. Connect it under **Settings → Profile → Download domain**, or with `schelf publisher domain dl.example.com`; both ask you in the browser first. It takes the same two records, and `schelf publisher domain --check` checks them. `--remove` disconnects it.
+
+## Which links Schelf shows
+
+Once a domain serves the links, the page's download buttons, `latest.json`, feeds and `schelf project show` use it: the project's own domain first, then the publisher's. The files themselves, signed indexes and Sabine feeds stay on `dl.schelf.store`.
+
+Use a subdomain, like `dl.` or `get.`, not the bare domain. A domain belongs to one project or one publisher.

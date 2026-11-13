@@ -3,7 +3,7 @@
   import type { Artifact, ProjectFile } from "@schelf/protocol"
   import CopyButton from "../../code/CopyButton.svelte"
   import { bytes } from "../../format.ts"
-  import { groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
+  import { downloadHref, groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
 
   let {
     artifacts,
@@ -11,7 +11,17 @@
     open,
     id,
     note,
-  }: { artifacts: Artifact[]; parts: ProjectFile[]; open: boolean; id: string; note: string } = $props()
+    downloads,
+    version,
+  }: {
+    artifacts: Artifact[]
+    parts: ProjectFile[]
+    open: boolean
+    id: string
+    note: string
+    downloads: string | null
+    version: string
+  } = $props()
   const groups = $derived([...groupByPlatform(artifacts), ...groupByPlatform(parts)])
 </script>
 
@@ -24,7 +34,7 @@
           <ul class="mt-1.5 space-y-0.5">
             {#each group.files as file (file.url)}
               <li>
-                <a href={file.url} download class="group flex items-center justify-between gap-3 rounded-lg py-1 text-[15px] text-ink-soft hover:text-ink">
+                <a href={downloadHref(file, downloads, version)} download class="group flex items-center justify-between gap-3 rounded-lg py-1 text-[15px] text-ink-soft hover:text-ink">
                   <span class="flex items-center gap-1.5">
                     {KIND_NAMES[file.kind]}
                     <ArrowUpRight class="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />

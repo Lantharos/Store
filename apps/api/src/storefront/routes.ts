@@ -22,7 +22,8 @@ import { eq, sum } from "drizzle-orm"
 import { Hono } from "hono"
 import { avatarUrl } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
-import { linkBase, projectSummary } from "../hosting/addresses.ts"
+import { customLinkRoot } from "../domains/links.ts"
+import { defaultRoot, linkBase, projectSummary } from "../hosting/addresses.ts"
 import { latestFiles } from "../hosting/files.ts"
 import { linkReleases } from "../hosting/releases.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
@@ -115,7 +116,7 @@ storefrontRoutes.get("/featured", async (c) => {
 async function appPage(app: AppRow | undefined): Promise<AppPage> {
   if (!app || (app.status !== "published" && app.status !== "delisted" && app.status !== "pulled"))
     fail(404, "There's no app with that id")
-  const [object, owner, last30, [total], replacement, releases, inviteOnly] = await Promise.all([
+  const [object, owner, last30, [total], replacement, releases, inviteOnly, custom] = await Promise.all([
     env.BUCKET.get(paths.app(app.id)),
     db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
     installsSince([app.id], 30),
@@ -126,15 +127,20 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
     replacementOf(app),
     linkReleases(app.id, [STABLE]),
     inviteOnlyChannels(app.id),
+    customLinkRoot(app),
   ])
   if (!object) fail(404, "There's no app with that id")
   const plan = partPlan(app)
-  const parts = latestFiles(linkBase(app, owner!.slug), offeredReleases(releases, plan), PAGE_LINKS)
+  const parts = latestFiles(
+    linkBase(custom ?? defaultRoot(app, owner!.slug)),
+    offeredReleases(releases, plan),
+    PAGE_LINKS,
+  )
   return {
     app: await object.json<AppIndex>(),
     status: app.status,
     installs: { last_30_days: last30.get(app.id) ?? 0, total: Number(total?.installs ?? 0) },
-    project: projectSummary(app, owner!.slug),
+    project: projectSummary(app, owner!.slug, custom),
     replacement,
     has_app: hasAppPart(plan),
     parts: parts.filter((file) => file.part !== null),

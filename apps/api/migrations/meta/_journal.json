@@ -162,6 +162,13 @@
       "when": 1794529477372,
       "tag": "0022_custom_domains",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1794533091790,
+      "tag": "0023_publisher_domains",
+      "breakpoints": true
     }
   ]
 }

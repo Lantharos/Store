@@ -5,6 +5,7 @@
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
+  import DomainGroup from "#lib/dashboard/publishers/DomainGroup.svelte"
   import LogoField from "#lib/dashboard/publishers/LogoField.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
@@ -86,3 +87,7 @@
   </Group>
   {#if editable}<button class="button button-primary mt-5" disabled={!changed || busy}>Save</button>{/if}
 </form>
+
+{#key publisher.id}
+  <div class="mt-12 max-w-3xl"><DomainGroup publisher={publisher.id} slug={publisher.slug} {editable} /></div>
+{/key}

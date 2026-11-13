@@ -7,6 +7,7 @@ import {
 } from "@schelf/protocol"
 import { count, desc, eq } from "drizzle-orm"
 import { db, schema } from "../../db/client.ts"
+import { linkRoot } from "../../domains/links.ts"
 import { domainOf, domainState } from "../../domains/state.ts"
 import { projectLinks } from "../../hosting/addresses.ts"
 import { iso } from "../../lib/time.ts"
@@ -97,11 +98,16 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       domain: domain ? domainState(domain) : null,
       created_at: app.createdAt.toISOString(),
     },
-    links: projectLinks(app, publisherSlug, [
-      ...new Set(
-        [app.updater, ...switches.map((row) => row.fromUpdater)].filter((updater) => updater !== null),
-      ),
-    ]),
+    links: projectLinks(
+      app,
+      publisherSlug,
+      [
+        ...new Set(
+          [app.updater, ...switches.map((row) => row.fromUpdater)].filter((updater) => updater !== null),
+        ),
+      ],
+      await linkRoot(app, publisherSlug),
+    ),
     channels: channelNames.map((name) => ({
       name,
       keep: channels.find((row) => row.name === name)?.keep ?? null,

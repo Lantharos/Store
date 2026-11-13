@@ -3,7 +3,7 @@
   import type { Artifact, System } from "@schelf/protocol"
   import { onMount } from "svelte"
   import { bytes } from "../../format.ts"
-  import { KIND_NAMES, pickArtifact, schelfLink, systemName } from "../../system/artifacts.ts"
+  import { downloadHref, KIND_NAMES, pickArtifact, schelfLink, systemName } from "../../system/artifacts.ts"
   import { refine } from "../../system/refine.ts"
 
   let {
@@ -14,6 +14,8 @@
     others = $bindable(false),
     panel,
     inSchelf = true,
+    downloads,
+    version,
   }: {
     id: string
     extension?: boolean
@@ -22,6 +24,8 @@
     system: System
     others?: boolean
     panel: string
+    downloads: string | null
+    version: string
   } = $props()
 
   let refined = $state<System | null>(null)
@@ -47,7 +51,7 @@
     <a href={schelfLink(id)} class="button button-lg button-primary">Open in Schelf</a>
     <p class="max-w-64 text-[13px] leading-relaxed text-ink-muted sm:text-right">Extensions are for Luft. Open this page on Luft to add it.</p>
   {:else if chosen}
-    <a href={chosen.url} download class="button button-lg button-primary">
+    <a href={downloadHref(chosen, downloads, version)} download class="button button-lg button-primary">
       <Download class="size-[18px]" strokeWidth={2.2} />
       Download for {name}
     </a>

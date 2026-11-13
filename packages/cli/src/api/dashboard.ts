@@ -4,6 +4,7 @@ import {
   type Approval,
   type AppSettings,
   type ChannelAccess,
+  type CustomDomainState,
   type DashboardApp,
   type DashboardPublisher,
   type ManualUpload,
@@ -46,6 +47,8 @@ export function dashboard(api: string, token: string) {
     updatePublisher: (id: string, body: UpdatePublisher) => patch<DashboardPublisher>(publisher(id), body),
     putLogo: (id: string, bytes: Uint8Array<ArrayBuffer>) =>
       request<DashboardPublisher>(`${base}${publisher(id)}/logo`, { method: "PUT", token, body: bytes }),
+    publisherDomain: (id: string) => get<CustomDomainState | null>(`${publisher(id)}/domain`),
+    checkPublisherDomain: (id: string) => post<CustomDomainState>(`${publisher(id)}/domain/check`),
     members: (id: string) => get<Members>(`${publisher(id)}/members`),
     revokeInvite: (id: string, invite: string) => remove<void>(`${publisher(id)}/invites/${invite}`),
     namespaces: (owner: string) => get<Namespace[]>(`${publisher(owner)}/namespaces`),

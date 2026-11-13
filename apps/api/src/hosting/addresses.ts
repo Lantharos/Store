@@ -16,21 +16,28 @@ export function pageUrl(app: Addressed, publisherSlug: string) {
   return `${env.PUBLIC_URL}${app.visibility === "listed" ? storePagePath(app) : projectPagePath(publisherSlug, app)}`
 }
 
-export function linkBase(app: Pick<AppRow, "slug">, publisherSlug: string, channel?: string) {
-  return `${env.DOWNLOAD_URL}/${publisherSlug}/${app.slug}${channel && channel !== "stable" ? `/@${channel}` : ""}`
+export function defaultRoot(app: Pick<AppRow, "slug">, publisherSlug: string) {
+  return `${env.DOWNLOAD_URL}/${publisherSlug}/${app.slug}`
+}
+
+export function linkBase(root: string, channel?: string) {
+  return `${root}${channel && channel !== STABLE ? `/@${channel}` : ""}`
 }
 
 export function projectSummary(
   app: Addressed & Pick<AppRow, "pageIndexed">,
   publisherSlug: string,
+  custom: string | null,
 ): ProjectSummary {
+  const root = custom ?? defaultRoot(app, publisherSlug)
   return {
     publisher: publisherSlug,
     slug: app.slug,
     listed: app.visibility === "listed",
     indexed: app.visibility === "listed" || app.pageIndexed,
     page: pageUrl(app, publisherSlug),
-    latest: `${linkBase(app, publisherSlug)}/latest`,
+    latest: `${root}/latest`,
+    downloads: custom,
   }
 }
 
@@ -45,8 +52,9 @@ export function projectLinks(
   app: Addressed & Pick<AppRow, "parts">,
   publisherSlug: string,
   updaters: Updater[],
+  root: string,
 ): Links {
-  const base = linkBase(app, publisherSlug)
+  const base = root
   const partFeeds = Object.entries(app.parts).flatMap(([part, settings]) => {
     const updater = partUpdater(settings)
     return updater ? [{ updater, part, url: feedUrl(app, updater, base, part) }] : []

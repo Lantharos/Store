@@ -9,6 +9,7 @@ import { and, eq, inArray, or, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { auth } from "../auth/auth.ts"
 import { db, schema } from "../db/client.ts"
+import { linkRoot } from "../domains/links.ts"
 import { linkBase, pageUrl } from "../hosting/addresses.ts"
 import { channelRoute } from "../hosting/ended.ts"
 import { latestFiles } from "../hosting/files.ts"
@@ -67,17 +68,19 @@ invitedRoutes.get("/invited", async (c) => {
       ),
     )
   return c.json(
-    rows.map(
-      ({ app, channel, publisher, name }): InvitedChannel => ({
-        app: app.id,
-        project: `${publisher}/${app.slug}`,
-        name: name ?? app.slug,
-        channel,
-        page: pageUrl(app, publisher),
-        index: fileUrl(paths.invitedApp(app.id, channel)),
-        sabine: app.updater === "sabine" ? fileUrl(paths.invitedSabine(app.id, channel)) : null,
-        latest: `${linkBase(app, publisher, channel)}/latest`,
-      }),
+    await Promise.all(
+      rows.map(
+        async ({ app, channel, publisher, name }): Promise<InvitedChannel> => ({
+          app: app.id,
+          project: `${publisher}/${app.slug}`,
+          name: name ?? app.slug,
+          channel,
+          page: pageUrl(app, publisher),
+          index: fileUrl(paths.invitedApp(app.id, channel)),
+          sabine: app.updater === "sabine" ? fileUrl(paths.invitedSabine(app.id, channel)) : null,
+          latest: `${linkBase(await linkRoot(app, publisher), channel)}/latest`,
+        }),
+      ),
     ),
     200,
     { "cache-control": "private, no-store" },
@@ -116,7 +119,11 @@ invitedRoutes.get("/invited/projects/:publisher/:project", async (c) => {
         published: newest.published,
         notes: newest.notes,
         page: pageUrl(app, c.req.param("publisher")),
-        files: latestFiles(linkBase(app, c.req.param("publisher"), channel), releases, PAGE_LINKS),
+        files: latestFiles(
+          linkBase(await linkRoot(app, c.req.param("publisher")), channel),
+          releases,
+          PAGE_LINKS,
+        ),
         expires,
       }
     }),

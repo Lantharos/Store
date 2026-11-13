@@ -92,3 +92,12 @@ export function systemsOf(platforms: Iterable<string>) {
 export function schelfLink(id: string) {
   return `schelf:app/${encodeURIComponent(id)}`
 }
+
+export function downloadHref(
+  file: { url: string; platform: Platform; kind: ArtifactKind; part?: string | null; version?: string },
+  root: string | null,
+  version: string,
+) {
+  if (!root) return file.url
+  return `${root}/v/${file.version ?? version}/${file.part ? `${file.part}/` : ""}${file.platform}/${file.kind}`
+}

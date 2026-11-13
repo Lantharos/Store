@@ -40,7 +40,11 @@ export async function checkDomain(row: DomainRow) {
     .where(eq(schema.customDomain.domain, row.domain))
     .returning()
   if (updated?.activeAt && !row.activeAt)
-    recordHistory("app", row.appId, `${row.domain} serves its download links`)
+    recordHistory(
+      row.appId ? "app" : "publisher",
+      (row.appId ?? row.publisherId)!,
+      `${row.domain} serves download links`,
+    )
   return updated!
 }
 

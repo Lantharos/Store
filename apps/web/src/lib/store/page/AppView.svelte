@@ -87,6 +87,8 @@
       <p class="text-[15px] text-ink-soft sm:text-right">{latest.version} · {date(latest.published)}</p>
     {:else if latest}
       <Download
+        downloads={project.downloads}
+        version={latest.version}
         id={app.id}
         {extension}
         {artifacts}
@@ -106,7 +108,7 @@
   </header>
 
   {#if latest && !extension}
-    <OtherSystems {artifacts} {parts} open={others || unavailable} id={panel} {note} />
+    <OtherSystems {artifacts} {parts} downloads={project.downloads} version={latest.version} open={others || unavailable} id={panel} {note} />
   {/if}
 
   {#if inviteOnly.length}

@@ -14,7 +14,7 @@ import { fail } from "../lib/http.ts"
 import { appAccess, membership } from "../publishers/access.ts"
 
 export interface Call {
-  method: "POST" | "PATCH" | "DELETE"
+  method: "POST" | "PUT" | "PATCH" | "DELETE"
   path: string
   body?: unknown
 }
@@ -92,6 +92,17 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
     }),
     describe: async ({ publisher: id, prefix }) =>
       `Claim the ${prefix} namespace for ${await publisherName(id)}`,
+  },
+  "publisher.domain": {
+    call: ({ publisher: id, domain }) => ({
+      method: "PUT",
+      path: `${publisher(id)}/domain`,
+      body: { domain },
+    }),
+    describe: async ({ publisher: id, domain }) =>
+      domain
+        ? `Serve the download links of every project of ${await publisherName(id)} on ${domain}, once its DNS records are in`
+        : `Stop serving ${await publisherName(id)}'s download links on its own domain`,
   },
   "namespace.verify": {
     call: ({ publisher: id, prefix, method }) => ({

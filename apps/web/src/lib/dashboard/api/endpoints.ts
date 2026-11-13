@@ -8,6 +8,8 @@ export const endpoints = {
   publishers: "/publishers",
   publisher,
   logo: (id: string) => `${publisher(id)}/logo`,
+  publisherDomain: (id: string) => `${publisher(id)}/domain`,
+  checkPublisherDomain: (id: string) => `${publisher(id)}/domain/check`,
   members: (id: string) => `${publisher(id)}/members`,
   member: (id: string, user: string) => `${publisher(id)}/members/${user}`,
   transfer: (id: string, user: string) => `${publisher(id)}/members/${user}/transfer`,

@@ -30,3 +30,5 @@ export interface CustomDomainState {
   waiting: string | null
   checked_at: string | null
 }
+
+export const setPublisherDomain = z.object({ domain: customDomain.nullable() })

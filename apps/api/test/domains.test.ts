@@ -1,11 +1,11 @@
 import { exports } from "cloudflare:workers"
-import { type ApplyResponse, paths } from "@schelf/protocol"
+import { type ApplyResponse, type ProjectDownloads, paths } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test, vi } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { domainState } from "../src/domains/state.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { publisherWithApp } from "./fixtures.ts"
+import { person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
 
@@ -84,5 +84,64 @@ describe("a custom domain", () => {
     await apply(first.token, first.appId, domain)
     expect((await apply(second.token, second.appId, domain)).status).toBe(409)
     expect((await exports.default.fetch(`https://${domain}/latest/windows`)).status).toBe(404)
+  })
+})
+
+describe("a publisher's domain", () => {
+  async function connected(publisherId: string, domain: string) {
+    await db.insert(schema.customDomain).values({
+      domain,
+      publisherId,
+      token: "t",
+      provenAt: new Date(),
+      activeAt: new Date(),
+    })
+  }
+
+  test("serves every project under its address, and Schelf's links use it", async () => {
+    const { appId, publisherId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    const domain = `dl-${randomId(4).toLowerCase()}.example.com`
+    await connected(publisherId, domain)
+
+    const link = await exports.default.fetch(
+      new Request(`https://${domain}/notes/latest/windows`, { redirect: "manual" }),
+    )
+    expect(link.headers.get("location")).toContain("notes.exe")
+    const latest = (await (
+      await exports.default.fetch(`https://${domain}/notes/latest.json`)
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://${domain}/notes/latest/windows-x86_64/exe`)
+  })
+
+  test("gives way to the project's own domain, and can't take one that's in use", async () => {
+    const { appId, publisherId, token, userId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    const own = `get-${randomId(4).toLowerCase()}.example.com`
+    await connected(publisherId, `dl-${randomId(4).toLowerCase()}.example.com`)
+    await apply(token, appId, own)
+    await db
+      .update(schema.customDomain)
+      .set({ activeAt: new Date() })
+      .where(eq(schema.customDomain.domain, own))
+    const latest = (await (
+      await exports.default.fetch(
+        `https://dl.schelf.store/${(await db.query.publisher.findFirst({ where: eq(schema.publisher.id, publisherId) }))!.slug}/notes/latest.json`,
+      )
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://${own}/latest/windows-x86_64/exe`)
+
+    const owner = await person("Mira", userId)
+    expect((await owner.call("PUT", `/publishers/${publisherId}/domain`, { domain: own })).status).toBe(409)
+    const cli = await person("Mira", userId, "cli")
+    expect((await cli.call("PUT", `/publishers/${publisherId}/domain`, { domain: null })).status).toBe(403)
   })
 })

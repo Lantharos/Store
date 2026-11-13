@@ -87,6 +87,8 @@ export interface ProjectSummary {
   indexed: boolean
   page: string
   latest: string
+  /** The project's or its publisher's own domain for download links, when one is connected. */
+  downloads: string | null
 }
 
 export interface ProjectFile {

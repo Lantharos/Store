@@ -181,9 +181,11 @@ export const token = sqliteTable(
 export const customDomain = sqliteTable("custom_domain", {
   domain: text("domain").primaryKey(),
   appId: text("app_id")
-    .notNull()
     .unique()
     .references(() => app.id, { onDelete: "cascade" }),
+  publisherId: text("publisher_id")
+    .unique()
+    .references(() => publisher.id, { onDelete: "cascade" }),
   token: text("token").notNull(),
   provenAt: integer("proven_at", { mode: "timestamp_ms" }),
   hostnameId: text("hostname_id"),

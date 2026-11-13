@@ -9,7 +9,7 @@ import {
 import { and, count, eq } from "drizzle-orm"
 import { githubAccount } from "../dashboard/access.ts"
 import { db, schema } from "../db/client.ts"
-import { domainOf, settleDomain } from "../domains/state.ts"
+import { domainOf, refuseTaken, settleDomain } from "../domains/state.ts"
 import { repository as githubRepository } from "../github/api.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../hosting/ended.ts"
@@ -117,18 +117,12 @@ async function domainChange(
   desired: DesiredProject,
   change: (key: string, text: string) => void,
 ) {
-  const [current, taken] = await Promise.all([
-    domainOf(app.id),
-    desired.domain
-      ? db.query.customDomain.findFirst({ where: eq(schema.customDomain.domain, desired.domain) })
-      : undefined,
-  ])
-  if (taken && taken.appId !== app.id)
-    fail(409, `${desired.file} domain: ${desired.domain} serves another project`)
+  if (desired.domain) await refuseTaken({ appId: app.id }, desired.domain)
+  const current = await domainOf(app.id)
   if ((current?.domain ?? null) !== desired.domain)
     change(
       "domain",
-      desired.domain ? `serves the links once its DNS records are in` : "stops serving the links",
+      desired.domain ? "serves the links once its DNS records are in" : "stops serving the links",
     )
 }
 
@@ -221,6 +215,6 @@ async function settleUpdater(app: AppRow, updater: Updater | null, by: string) {
 export async function writeProject(app: AppRow, desired: DesiredProject, by: string) {
   await settleChannels(app, desired, by)
   await settleUpdater(app, desired.updater, by)
-  await settleDomain(app.id, desired.domain, by)
+  await settleDomain({ appId: app.id }, desired.domain, by)
   await db.update(schema.app).set(desired.fields).where(eq(schema.app.id, app.id))
 }
