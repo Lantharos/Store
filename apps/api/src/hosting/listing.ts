@@ -14,6 +14,7 @@ import { reindexApp } from "../storefront/indexing.ts"
 export async function listingRefusal(app: AppRow) {
   if (app.visibility === "listed") return "It's listed already"
   if (app.listingRequestedAt) return "It's waiting for a reviewer already"
+  if (app.tool) return "A command-line tool has no store page; people find it on its project's page"
   if (!hasAppPart(partPlan(app)))
     return "A project of only named parts hosts releases; add platforms for the app to list it"
   const shipped = await db.$count(

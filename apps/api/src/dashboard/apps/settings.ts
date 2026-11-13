@@ -12,6 +12,7 @@ import { domainOf, domainState } from "../../domains/state.ts"
 import { projectLinks } from "../../hosting/addresses.ts"
 import { iso } from "../../lib/time.ts"
 import { type AppRow, fileUrl, installsSince, mediaUrl } from "../../signing/records.ts"
+import { projectTools } from "../../tools/registry.ts"
 import { setupFiles } from "./setup.ts"
 
 export async function appSettings(app: AppRow): Promise<AppSettings> {
@@ -94,10 +95,16 @@ export async function appSettings(app: AppRow): Promise<AppSettings> {
       latest_follows_rollout: app.latestFollowsRollout,
       platforms: app.platforms,
       parts: app.parts,
+      tool: app.tool,
       privacy: app.privacy,
       domain: domain ? domainState(domain, owner!.verifiedAt !== null) : null,
       created_at: app.createdAt.toISOString(),
     },
+    tools: await projectTools(app, {
+      id: owner!.id,
+      slug: publisherSlug,
+      verified: owner!.verifiedAt !== null,
+    }),
     links: projectLinks(
       app,
       publisherSlug,

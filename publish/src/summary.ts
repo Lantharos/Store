@@ -41,6 +41,10 @@ export async function writeSummary(
       ],
       ...completed.checks.map((check) => [check.name, check.status, check.summary]),
     ])
+  if (completed.tools.length)
+    core.summary
+      .addHeading("Installing it", 3)
+      .addCodeBlock(completed.tools.flatMap((tool) => [tool.install, tool.add]).join("\n"), "sh")
   await core.summary
     .addRaw(
       "The malware scan, inspection and source diff follow in a few minutes; the dashboard shows them as they land.",

@@ -46,6 +46,7 @@ These read the project from the nearest `schelf.toml`, looking up from the folde
 | `schelf member list`, `invite`, `role`, `remove`, `transfer`, `leave` | An organisation's members.                                                                 |
 | `schelf invite list`, `accept`, `decline`, `revoke`                   | Invitations.                                                                               |
 | `schelf namespace list`, `claim`, `verify`, `release`                 | The namespaces your app ids live under.                                                    |
+| `schelf tool list`, `name <name>`                                     | [Command-line tools](/docs/command-line-tools), and giving one its bare name.              |
 | `schelf verification status`                                          | Whether a publisher is verified.                                                           |
 | `schelf request status <id>`, `cancel <id>`                           | Something waiting for your approval.                                                       |
 | `schelf login`, `logout`, `whoami`                                    | Sign in through the browser, sign out, and who you are.                                    |

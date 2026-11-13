@@ -5,6 +5,7 @@ import { channelName } from "../releases.ts"
 import {
   addTrustedPublisher,
   claimNamespace,
+  claimToolName,
   createApp,
   createChannelToken,
   createProject,
@@ -47,6 +48,7 @@ export const approvalAction = z.discriminatedUnion("type", [
     method: verifyNamespace.shape.method,
   }),
   z.object({ type: z.literal("namespace.release"), publisher, prefix: claimNamespace.shape.prefix }),
+  z.object({ type: z.literal("tool.name"), publisher, name: claimToolName.shape.name }),
   z.object({ type: z.literal("app.create"), publisher, app: createApp }),
   z.object({ type: z.literal("project.create"), publisher, project: createProject }),
   z.object({ type: z.literal("project.rename"), app, slug: projectSlug.min(1) }),

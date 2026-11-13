@@ -20,6 +20,7 @@ import { verification } from "./commands/people/verification.ts"
 import { channel } from "./commands/project/channel.ts"
 import { project } from "./commands/project/project.ts"
 import { release } from "./commands/project/release.ts"
+import { tool } from "./commands/project/tool.ts"
 import { publish } from "./commands/publish.ts"
 import { request } from "./commands/request.ts"
 import { rollout } from "./commands/rollout.ts"
@@ -73,6 +74,11 @@ const COMMANDS: Record<
     run: channel,
     usage: "channel <list|people|invite|uninvite|token|revoke>",
     about: "Channels, and who gets an invite-only one",
+  },
+  tool: {
+    run: tool,
+    usage: "tool <list|name>",
+    about: "Command-line tools and their bare names",
   },
   listing: { run: listing, usage: "listing pull", about: "Bring the store page into listing.toml" },
   trust: { run: trust, usage: "trust <list|add|remove>", about: "Workflows trusted to publish" },

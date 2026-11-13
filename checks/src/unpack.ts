@@ -35,10 +35,13 @@ const UNPACKERS: [RegExp, (path: string, into: string) => Promise<unknown>][] = 
     /\.(rpm|zip|apk|pkg|tar\.gz|tgz|tar\.zst|tar\.xz|txz|tar\.bz2|tbz2)$/i,
     (path, into) => runChecked("bsdtar", ["-xf", path, "-C", into]),
   ],
-  [/(^|\/)[^./]+$|\.(bin|run)$/i, (path, into) => copyFile(path, join(into, basename(path)))],
 ]
 
-export async function unpack(path: string, into: string) {
+export async function unpack(path: string, into: string, asIs: boolean) {
+  if (asIs) {
+    await mkdir(into, { recursive: true })
+    return copyFile(path, join(into, basename(path)))
+  }
   const unpacker = UNPACKERS.find(([pattern]) => pattern.test(path))
   if (!unpacker) throw new Error(`Nothing unpacks ${path}`)
   await mkdir(into, { recursive: true })

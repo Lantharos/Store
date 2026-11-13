@@ -5,6 +5,7 @@ import { githubOidcToken, mapLimit, request } from "@schelf/publisher"
 import { makeDeltas } from "./deltas.ts"
 import { download } from "./download.ts"
 import { type Inspection, inspectArtifact } from "./inspect/index.ts"
+import { inspectTool, type ToolFacts } from "./inspect/tool.ts"
 import { diffResult, inspectionResult, licenceResult, malwareResult } from "./results.ts"
 import { scanForMalware } from "./scan.ts"
 import { judgeLicence } from "./source/licence.ts"
@@ -39,7 +40,11 @@ const downloads = await mapLimit(payload.files, 3, async (file) => ({
 
 const unpacked = await mapLimit(downloads, 2, async (file) => {
   try {
-    await unpack(file.path, file.unpacked)
+    await unpack(
+      file.path,
+      file.unpacked,
+      file.kind === "binary" || (file.tool !== null && file.kind === "exe"),
+    )
     return file
   } catch (error) {
     console.error(`Couldn't unpack ${file.name}:`, error)
@@ -58,6 +63,7 @@ const repository =
       )
     : undefined
 const inspections: Record<string, Inspection> = {}
+const tools: Record<string, ToolFacts> = {}
 
 const checks = await Promise.all([
   attempt("malware", async () => {
@@ -66,9 +72,12 @@ const checks = await Promise.all([
     return malwareResult(hits)
   }),
   attempt("inspection", async () => {
-    for (const file of opened)
+    for (const file of opened) {
       inspections[file.name] = await inspectArtifact(file.unpacked, payload.permissions)
+      if (file.tool) tools[file.name] = inspectTool(inspections[file.name]!, file.name)
+    }
     facts.inspection = inspections
+    if (Object.keys(tools).length) facts.tools = tools
     const unopened = downloads.filter((file) => !opened.includes(file))
     if (payload.scrutiny.strict && unopened.length)
       return {
@@ -76,7 +85,7 @@ const checks = await Promise.all([
         status: "warning",
         summary: `Couldn't look inside ${unopened.map((file) => file.name).join(", ")}, so a reviewer checks it by hand`,
       }
-    return inspectionResult(inspections)
+    return inspectionResult(inspections, tools)
   }),
   attempt("diff", async () => {
     if (!repository || !payload.commit)

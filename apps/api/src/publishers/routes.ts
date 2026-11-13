@@ -17,6 +17,7 @@ import { fail, readBody } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { resignPublisher } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
+import { removePublisherToolIndexes } from "../tools/index-files.ts"
 import { verificationRoutes } from "../verification/routes.ts"
 import { allow, asMember, type PublisherVars } from "./access.ts"
 import { memberRoutes } from "./members.ts"
@@ -88,6 +89,7 @@ scoped.patch("/", async (c) => {
     (profile.name && profile.name !== publisher.name) ||
     (profile.slug && profile.slug !== publisher.slug)
   ) {
+    if (profile.slug && profile.slug !== publisher.slug) await removePublisherToolIndexes(publisher.slug)
     const apps = await resignPublisher(publisher.id)
     await Promise.all(apps.map(reindexApp))
   }

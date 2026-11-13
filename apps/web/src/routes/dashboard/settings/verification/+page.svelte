@@ -65,7 +65,8 @@
           <ul class="mt-2 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-ink-soft">
             <li>the checkmark beside your name, on your page, your apps and in Schelf;</li>
             <li>extensions that can run inside Luft once reviewed;</li>
-            <li>download links on a domain of your own.</li>
+            <li>download links on a domain of your own;</li>
+            <li>a command-line tool that installs by its bare name, like sch add sabine.</li>
           </ul>
         </div>
         <div>

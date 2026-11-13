@@ -102,6 +102,7 @@ beforeAll(async () => {
             status: "checking",
             checks: [],
             dashboard: "",
+            tools: [],
           } satisfies CompleteResponse)
         },
       },

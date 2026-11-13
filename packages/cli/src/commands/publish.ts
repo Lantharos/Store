@@ -19,6 +19,7 @@ import { EXIT } from "../ui/exit.ts"
 import { blank, done, emit, Failure, field, line, step, title } from "../ui/output.ts"
 import { bold, link } from "../ui/style.ts"
 import { printApplied } from "./apply.ts"
+import { printTool } from "./project/tool.ts"
 import { printChecks } from "./status.ts"
 
 interface Release {
@@ -118,6 +119,8 @@ export async function publish(args: Args) {
     `${bold(`${result.release.app} ${result.release.version}`)} is ${result.completed.status.replace("-", " ")}`,
   )
   printChecks(result.completed.checks)
+  if (result.completed.tools.length) blank()
+  for (const each of result.completed.tools) printTool(each)
   blank()
   line(link(result.completed.dashboard))
   blank()

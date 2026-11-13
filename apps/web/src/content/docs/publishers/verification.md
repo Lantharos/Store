@@ -4,7 +4,7 @@ title: Verification
 description: How a publisher earns the checkmark, what you send and what Schelf checks.
 ---
 
-The checkmark next to a publisher's name tells people that Schelf checked who is behind it and that its domains are its own. It shows on the publisher's page, on each of its apps and in the Schelf app. It's separate from namespaces: proving a namespace lets you publish ids under it, while verification is about who you are. Only a verified publisher's extensions can [run inside Luft](/docs/luft-extensions#running-inside-luft), and only a verified publisher can serve its links from [its own domain](/docs/custom-domains); both stop if the checkmark is taken away.
+The checkmark next to a publisher's name tells people that Schelf checked who is behind it and that its domains are its own. It shows on the publisher's page, on each of its apps and in the Schelf app. It's separate from namespaces: proving a namespace lets you publish ids under it, while verification is about who you are. Only a verified publisher's extensions can [run inside Luft](/docs/luft-extensions#running-inside-luft), and only a verified publisher can serve its links from [its own domain](/docs/custom-domains) or give a [command-line tool](/docs/command-line-tools) its bare name; all of these stop if the checkmark is taken away.
 
 Verification is done by a person, not automatically. An owner asks for it under **Settings → Verification** in the dashboard.
 

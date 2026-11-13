@@ -3,6 +3,7 @@ import { mirrorEntry } from "../files/catalog.ts"
 import type { Permissions } from "../permissions.ts"
 import { type ArtifactKind, artifactKind, type Platform, platform } from "../platforms.ts"
 import { type CheckResult, channelName, checkResult, type ReleaseStatus, SEMVER } from "../releases.ts"
+import type { ProjectTool } from "./public.ts"
 
 export const OIDC_AUDIENCE = "schelf.store"
 export const MULTIPART_THRESHOLD = 95_000_000
@@ -100,6 +101,8 @@ export interface CompleteResponse {
   status: ReleaseStatus
   checks: CheckResult[]
   dashboard: string
+  /** The project's command-line tools and the lines that install them. */
+  tools: ProjectTool[]
 }
 
 export const checksReport = z.object({
@@ -120,7 +123,15 @@ export interface ChecksDispatch {
   commit: string | null
   previous_commit: string | null
   permissions: Permissions | null
-  files: { name: string; platform: Platform; kind: ArtifactKind; url: string; sha256: string }[]
+  files: {
+    name: string
+    platform: Platform
+    kind: ArtifactKind
+    url: string
+    sha256: string
+    /** The program a command-line tool's file installs. */
+    tool: string | null
+  }[]
   callback: string
 }
 

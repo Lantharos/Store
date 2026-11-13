@@ -54,6 +54,7 @@ keep = 10
 | `requires.extension_api`      | The Luft extension API version an extension was built for.                                                                                                                     |
 | `platforms`                   | The [systems](/docs/systems-and-parts) every release carries. A system left out stops being offered.                                                                           |
 | `parts.<name>`                | A [part](/docs/systems-and-parts#parts) shipped in every release beside the app: its `files` by name, its `platforms`, and `format`, `id` or `updater` when it updates itself. |
+| `tool`, `parts.<name>.tool`   | Makes the project or the part a [command-line tool](/docs/command-line-tools), naming the program it installs.                                                                 |
 | `privacy.telemetry`           | `none`, `opt-in` when people turn it on, or `opt-out` when it's on until they turn it off. Shown on the page.                                                                  |
 | `privacy.ads`                 | `true` if the app shows ads.                                                                                                                                                   |
 | `privacy.ai`                  | `none`, `on-device` when AI features run on the computer, or `online` when they send what people give them to a service.                                                       |

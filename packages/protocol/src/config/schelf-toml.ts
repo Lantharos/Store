@@ -6,6 +6,7 @@ import { appId, distribution, format, formatFits, kind, platform, platformsFor }
 import { privacy } from "../privacy.ts"
 import { projectPath } from "../projects.ts"
 import { channelName, FILE_UPDATERS, STABLE } from "../releases.ts"
+import { TOOL_PLATFORMS, toolName, toolsOf } from "../tools.ts"
 
 export const SCHELF_TOML = "schelf.toml"
 
@@ -92,6 +93,9 @@ export const schelfToml = z
     privacy: privacy
       .optional()
       .describe("What the app does with people's data, shown on its page: telemetry, ads and AI features"),
+    tool: toolName
+      .optional()
+      .describe("Make the whole project a command-line tool: the name of the program it installs"),
     parts: z
       .record(partName, partSettings)
       .default({})
@@ -154,6 +158,7 @@ export const schelfToml = z
             message: `A ${partFormat(part)} part isn't built for ${each}`,
           })
     }
+    toolIssues(manifest, context)
     for (const [index, each] of (manifest.platforms ?? []).entries())
       if (!platformsFor(manifest.format).includes(each))
         context.addIssue({
@@ -206,6 +211,44 @@ export const schelfToml = z
     }
   })
 export type SchelfToml = z.infer<typeof schelfToml>
+
+function toolPlatformIssues(
+  platforms: readonly string[],
+  path: (string | number)[],
+  context: z.RefinementCtx,
+) {
+  for (const [index, each] of platforms.entries())
+    if (!(TOOL_PLATFORMS as readonly string[]).includes(each))
+      context.addIssue({
+        code: "custom",
+        path: [...path, index],
+        message: `A tool is one program for Linux, macOS or Windows, not for ${each}`,
+      })
+}
+
+function toolIssues(manifest: SchelfToml, context: z.RefinementCtx) {
+  const tool = (path: (string | number)[], message: string) =>
+    context.addIssue({ code: "custom", path, message })
+  if (manifest.tool) {
+    if (manifest.format !== "files") tool(["tool"], 'A tool is format = "files"')
+    if (manifest.updater) tool(["updater"], "A tool updates through Schelf; remove updater")
+    if (manifest.listing) tool(["listing"], "A tool has no store page; remove listing")
+    if (!manifest.platforms) tool(["platforms"], "A tool names the systems every release carries it for")
+    toolPlatformIssues(manifest.platforms ?? [], ["platforms"], context)
+  }
+  for (const [name, part] of Object.entries(manifest.parts)) {
+    if (!part.tool) continue
+    if (partFormat(part) !== "files") tool(["parts", name, "tool"], "A tool is a part of files")
+    if (part.updater) tool(["parts", name, "updater"], "A tool updates through Schelf; remove updater")
+    toolPlatformIssues(part.platforms, ["parts", name, "platforms"], context)
+  }
+  const seen = new Set<string>()
+  for (const entry of toolsOf({ tool: manifest.tool ?? null, parts: manifest.parts })) {
+    if (seen.has(entry.name))
+      tool(entry.part ? ["parts", entry.part, "tool"] : ["tool"], `Two tools install ${entry.name}`)
+    seen.add(entry.name)
+  }
+}
 
 export function manifestName(manifest: Pick<SchelfToml, "id" | "project">) {
   return (manifest.id ?? manifest.project)!

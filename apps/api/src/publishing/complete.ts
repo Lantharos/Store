@@ -10,6 +10,7 @@ import { recordHistory } from "../ops/events.ts"
 import { dispatchChecks, failedChecks } from "../releases/checks.ts"
 import { routeRelease } from "../releases/review.ts"
 import type { ArtifactRow, ReleaseRow } from "../signing/records.ts"
+import { projectTools } from "../tools/registry.ts"
 import { digestsOfStream } from "./hashing.ts"
 import { acceptedLookalikes, lookalikes } from "./lookalikes.ts"
 import { quickChecks } from "./quick-checks.ts"
@@ -169,6 +170,19 @@ export async function completeRelease(releaseId: string): Promise<CompleteRespon
     )
     if (!dispatched) await routeRelease(release.id)
   }
-  const current = await db.query.release.findFirst({ where: eq(schema.release.id, release.id) })
-  return { release: release.id, status: current!.status, checks, dashboard: dashboardUrl(app.id, release.id) }
+  const [current, owner] = await Promise.all([
+    db.query.release.findFirst({ where: eq(schema.release.id, release.id) }),
+    db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
+  ])
+  return {
+    release: release.id,
+    status: current!.status,
+    checks,
+    dashboard: dashboardUrl(app.id, release.id),
+    tools: await projectTools(app, {
+      id: owner!.id,
+      slug: owner!.slug,
+      verified: owner!.verifiedAt !== null,
+    }),
+  }
 }

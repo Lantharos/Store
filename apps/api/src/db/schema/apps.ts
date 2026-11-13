@@ -61,6 +61,7 @@ export const app = sqliteTable(
     platforms: text("platforms", { mode: "json" }).$type<Platform[]>(),
     privacy: text("privacy", { mode: "json" }).$type<Privacy>(),
     parts: text("parts", { mode: "json" }).$type<PartPlan["parts"]>().notNull().default(sql`'{}'`),
+    tool: text("tool"),
     createdAt: createdAt(),
   },
   (table) => [

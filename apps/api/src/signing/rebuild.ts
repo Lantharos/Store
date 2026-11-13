@@ -7,10 +7,12 @@ import {
   paths,
   type Revocations,
   signSabineFeed,
+  toolsOf,
   type Unstamped,
 } from "@schelf/protocol"
 import { and, desc, eq, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { removeToolIndexes, writeToolIndexes } from "../tools/index-files.ts"
 import { appIndex, catalogEntry, mirrorCatalogEntry, sabineFeeds, sabineParts } from "./documents.ts"
 import { signingKey } from "./keys.ts"
 import { loadApps } from "./records.ts"
@@ -28,9 +30,11 @@ export async function rebuildApp(id: string) {
   if (app.status === "deleted") {
     await writeSigned(paths.app(id), appIndex({ ...record!, releases: [] }))
     await removeSabineFeeds(id)
+    await removeToolIndexes(app, record!.publisher.slug, toolsOf(app))
     return
   }
   await writeSigned(paths.app(id), appIndex(record!))
+  await writeToolIndexes(record!)
   const key = await signingKey()
   const written = new Set<string>()
   for (const part of [null, ...sabineParts(record!)])

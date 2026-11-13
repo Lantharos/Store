@@ -1,5 +1,6 @@
 import type { CheckResult } from "@schelf/protocol"
 import type { Inspection } from "./inspect/index.ts"
+import type { ToolFacts } from "./inspect/tool.ts"
 import type { Hit } from "./scan.ts"
 import type { DiffFacts } from "./source/digest.ts"
 import type { LicenceFacts } from "./source/licence.ts"
@@ -20,7 +21,27 @@ export function malwareResult(hits: Hit[]): CheckResult {
   }
 }
 
-export function inspectionResult(inspections: Record<string, Inspection>): CheckResult {
+function toolResult(tools: Record<string, ToolFacts>): CheckResult | null {
+  const problems = Object.values(tools).flatMap((tool) => tool.problem ?? [])
+  if (problems.length) return { name: "inspection", status: "failed", summary: problems.join("; ") }
+  const shared = Object.entries(tools).filter(([, tool]) => tool.shared.length)
+  if (!shared.length) return null
+  return {
+    name: "inspection",
+    status: "warning",
+    summary: `A tool brings everything it needs, but ${shared
+      .map(([file, tool]) => `${file} loads ${tool.shared.join(", ")}`)
+      .join("; ")}`,
+    detail: Object.fromEntries(shared.map(([file, tool]) => [file, tool.shared])),
+  }
+}
+
+export function inspectionResult(
+  inspections: Record<string, Inspection>,
+  tools: Record<string, ToolFacts>,
+): CheckResult {
+  const tool = toolResult(tools)
+  if (tool) return tool
   const undeclared = Object.entries(inspections).flatMap(([artifact, inspection]) =>
     inspection.permissions.filter((row) => !row.declared).map((row) => ({ artifact, ...row })),
   )

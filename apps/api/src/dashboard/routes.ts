@@ -7,6 +7,7 @@ import { channelAccessRoutes } from "../invited/routes.ts"
 import { handleError } from "../lib/http.ts"
 import { inviteRoutes } from "../publishers/invites.ts"
 import { publisherRoutes } from "../publishers/routes.ts"
+import { toolRoutes } from "../tools/routes.ts"
 import { accountRoutes } from "./account/account.ts"
 import { appRoutes } from "./apps/apps.ts"
 import { deletingRoutes } from "./apps/deleting.ts"
@@ -27,6 +28,7 @@ dashboardRoutes.route("/account", accountRoutes)
 dashboardRoutes.route("/invites", inviteRoutes)
 dashboardRoutes.route("/publishers", publisherRoutes)
 dashboardRoutes.route("/publishers", publisherDomainRoutes)
+dashboardRoutes.route("/publishers", toolRoutes)
 for (const routes of [
   appRoutes,
   channelAccessRoutes,

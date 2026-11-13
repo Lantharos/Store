@@ -5,6 +5,7 @@ import { renewAppSession } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
 import { bearer } from "../lib/http.ts"
 import type { AppRow } from "../signing/records.ts"
+import { findTool } from "../tools/registry.ts"
 import { signedFor } from "./links.ts"
 
 /** open: may download; anonymous: no valid sign-in or token (401); refused: valid, but not let in (403). */
@@ -76,11 +77,17 @@ export async function channelsOpenTo(
   return (await opens(asker, app, channels)) ? "open" : "refused"
 }
 
-function ownerOfKey(key: string) {
+const channelOfFile = (name: string) => name.replace(/\.json(\.sig)?$/, "")
+
+async function ownerOfKey(key: string) {
   const [, root, ...rest] = key.split("/")
   if (root === "apps") return { app: rest[0]!, channel: null }
-  if (root === "sabine") return { app: rest[0]!, channel: rest.at(-1)!.replace(/\.json(\.sig)?$/, "") }
-  if (root === "index") return { app: rest[2]!, channel: rest[3]!.replace(/\.json(\.sig)?$/, "") }
+  if (root === "sabine") return { app: rest[0]!, channel: channelOfFile(rest.at(-1)!) }
+  if (root === "index" && rest[1] === "tools") {
+    const found = await findTool(rest[2]!, rest[3]!)
+    return found && rest[4] ? { app: found.app.id, channel: channelOfFile(rest[4]) } : null
+  }
+  if (root === "index") return { app: rest[2]!, channel: channelOfFile(rest[3]!) }
   return null
 }
 
@@ -110,7 +117,7 @@ async function artifactKeyOf(key: string) {
 /** Whether an invited/ file may be served: signed for, on an open channel too, or opened by the request. */
 export async function invitedFileOpen(request: Request, key: string): Promise<Access> {
   if (await signedFor(new URL(request.url), key)) return "open"
-  const owner = ownerOfKey(key)
+  const owner = await ownerOfKey(key)
   const app = owner && (await db.query.app.findFirst({ where: eq(schema.app.id, owner.app) }))
   const artifactKey = app && !owner.channel ? await artifactKeyOf(key) : null
   const channels = artifactKey ? await channelsUsing(artifactKey) : []

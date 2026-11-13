@@ -20,6 +20,8 @@ import {
   updater,
 } from "../releases.ts"
 import { SCHELF_WORKFLOW } from "../setup.ts"
+import { toolName } from "../tools.ts"
+import type { ProjectTool } from "./public.ts"
 import { MAX_RELEASE_FILES } from "./publishing.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
@@ -41,6 +43,8 @@ export interface Namespace {
   checked_at: string | null
   instructions: { dns: string; well_known: string } | null
 }
+
+export const claimToolName = z.object({ name: toolName })
 
 export const claimNamespace = z.object({
   prefix: z
@@ -303,10 +307,12 @@ export interface AppSettings {
     latest_follows_rollout: boolean
     platforms: Platform[] | null
     parts: PartPlan["parts"]
+    tool: string | null
     privacy: Privacy | null
     domain: CustomDomainState | null
     created_at: string
   }
+  tools: ProjectTool[]
   links: Links
   channels: Channel[]
   switches: UpdaterSwitch[]

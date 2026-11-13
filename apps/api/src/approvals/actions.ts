@@ -121,6 +121,15 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
     describe: async ({ publisher: id, prefix }) =>
       `Give up ${prefix} for ${await publisherName(id)}, so anyone can claim it`,
   },
+  "tool.name": {
+    call: ({ publisher: id, name }) => ({
+      method: "POST",
+      path: `${publisher(id)}/tool-names`,
+      body: { name },
+    }),
+    describe: async ({ publisher: id, name }) =>
+      `Make ${name} on its own install ${await publisherName(id)}'s ${name} for everyone, for as long as it stays verified`,
+  },
   "app.create": {
     call: ({ publisher: id, app: input }) => ({ method: "POST", path: `${publisher(id)}/apps`, body: input }),
     describe: async ({ publisher: id, app: input }) =>

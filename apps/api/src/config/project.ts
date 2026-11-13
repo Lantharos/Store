@@ -3,6 +3,7 @@ import {
   NIGHTLY,
   NIGHTLY_KEEP,
   type SchelfToml,
+  toolsOf,
   UPDATER_NAMES,
   type Updater,
 } from "@schelf/protocol"
@@ -16,6 +17,8 @@ import { endChannel, reopenChannel } from "../hosting/ended.ts"
 import { cancelSwitch, latestSwitch, startSwitch } from "../hosting/switches.ts"
 import { fail } from "../lib/http.ts"
 import type { AppRow } from "../signing/records.ts"
+import { removeToolIndexes } from "../tools/index-files.ts"
+import { otherHolder } from "../tools/registry.ts"
 import type { Caller } from "./caller.ts"
 
 type AppFields = Pick<
@@ -28,6 +31,7 @@ type AppFields = Pick<
   | "platforms"
   | "parts"
   | "privacy"
+  | "tool"
 >
 
 export interface DesiredProject {
@@ -76,6 +80,7 @@ export async function desiredProject(
       platforms: manifest.platforms ?? null,
       parts: manifest.parts,
       privacy: manifest.privacy ?? null,
+      tool: manifest.tool ?? null,
     },
     updater: updaterOf(manifest),
     channels: manifest.channels,
@@ -91,6 +96,7 @@ const FIELD_KEYS: Record<keyof AppFields, string | null> = {
   platforms: "platforms",
   parts: null,
   privacy: null,
+  tool: "tool",
 }
 
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right)
@@ -106,6 +112,8 @@ function partChanges(app: AppRow, desired: DesiredProject, change: (key: string,
       if (!same(before.platforms, after.platforms))
         change(`parts.${name}.platforms`, after.platforms.join(", "))
       if (!same(before.files, after.files)) change(`parts.${name}.files`, after.files.join(", "))
+      if (before.tool !== after.tool)
+        change(`parts.${name}.tool`, after.tool ? `installs ${after.tool}` : "stops being a tool")
     }
   }
 }
@@ -127,9 +135,23 @@ async function domainChange(
     )
 }
 
+async function refuseTakenTools(app: AppRow, desired: DesiredProject) {
+  const before = new Set(toolsOf(app).map((entry) => entry.name))
+  for (const entry of toolsOf(desired.fields)) {
+    if (before.has(entry.name)) continue
+    const holder = await otherHolder(app, entry.name)
+    if (holder)
+      fail(
+        422,
+        `${desired.file} ${entry.part ? `parts.${entry.part}.tool` : "tool"}: ${holder.slug} installs ${entry.name} already; a publisher has one tool of each name`,
+      )
+  }
+}
+
 export async function projectChanges(app: AppRow, desired: DesiredProject): Promise<ConfigChange[]> {
   const changes: ConfigChange[] = []
   const change = (key: string, text: string) => changes.push({ file: desired.file, key, change: text })
+  await refuseTakenTools(app, desired)
   await domainChange(app, desired, change)
   for (const [field, key] of Object.entries(FIELD_KEYS) as [keyof AppFields, string | null][])
     if (key && !same(app[field], desired.fields[field]))
@@ -218,4 +240,13 @@ export async function writeProject(app: AppRow, desired: DesiredProject, by: str
   await settleUpdater(app, desired.updater, by)
   await settleDomain({ appId: app.id }, desired.domain, by)
   await db.update(schema.app).set(desired.fields).where(eq(schema.app.id, app.id))
+  await removeDroppedTools(app, desired)
+}
+
+async function removeDroppedTools(app: AppRow, desired: DesiredProject) {
+  const kept = new Set(toolsOf(desired.fields).map((entry) => entry.name))
+  const dropped = toolsOf(app).filter((entry) => !kept.has(entry.name))
+  if (!dropped.length) return
+  const owner = (await db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }))!
+  await removeToolIndexes(app, owner.slug, dropped)
 }

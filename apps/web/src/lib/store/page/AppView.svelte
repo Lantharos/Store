@@ -1,7 +1,7 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
-  import type { AppIndex, Installs, ProjectFile, ProjectSummary, System } from "@schelf/protocol"
+  import type { AppIndex, Installs, ProjectFile, ProjectSummary, ProjectTool, System } from "@schelf/protocol"
   import { date } from "../../format.ts"
   import { pickArtifact } from "../../system/artifacts.ts"
   import AppIcon from "../apps/AppIcon.svelte"
@@ -17,6 +17,7 @@
   import OtherSystems from "./OtherSystems.svelte"
   import Releases from "./Releases.svelte"
   import Screenshots from "./Screenshots.svelte"
+  import Tools from "./Tools.svelte"
 
   let {
     app,
@@ -29,12 +30,14 @@
     hasApp,
     parts,
     inviteOnly,
+    tools,
   }: {
     app: AppIndex
     project: ProjectSummary
     hasApp: boolean
     parts: ProjectFile[]
     inviteOnly: string[]
+    tools: ProjectTool[]
     installs: Installs
     description: string
     releases: { version: string; published: string; notes: string }[]
@@ -106,6 +109,10 @@
       </div>
     {/if}
   </header>
+
+  {#if latest && tools.length}
+    <Tools {tools} publisher={app.publisher} />
+  {/if}
 
   {#if latest && !extension}
     <OtherSystems {artifacts} {parts} downloads={project.downloads} version={latest.version} open={others || unavailable} id={panel} {note} />

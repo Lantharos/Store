@@ -7,6 +7,7 @@ import {
   type ChecksReport,
   type Platform,
   paths,
+  toolsOf,
 } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
@@ -48,6 +49,7 @@ export async function dispatchChecks(
     console.warn(`No GITHUB_TOKEN, so ${app.id} ${release.version} goes to review without the deeper checks`)
     return false
   }
+  const tools = new Map(toolsOf(app).map((entry) => [entry.part, entry.name]))
   const payload: ChecksDispatch = {
     release: release.id,
     app: app.id,
@@ -69,6 +71,7 @@ export async function dispatchChecks(
           ? await signedFileUrl(artifact.key, CHECKS_MINUTES)
           : fileUrl(artifact.key),
         sha256: artifact.sha256,
+        tool: tools.get(artifact.part) ?? null,
       })),
     ),
     callback: `${env.PUBLIC_URL}/api/v1/checks/${release.id}`,

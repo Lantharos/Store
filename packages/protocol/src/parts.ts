@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { appId, FILE_PLATFORMS, PLATFORMS, type Platform, platform } from "./platforms.ts"
 import { FILE_UPDATERS, type Updater } from "./releases.ts"
+import { toolName } from "./tools.ts"
 
 export const PART_FORMATS = ["files", "sabine"] as const
 
@@ -36,6 +37,9 @@ export const partSettings = z.strictObject({
     .enum(FILE_UPDATERS)
     .optional()
     .describe("The updater a part of files ships with, whose feeds Schelf serves under the part"),
+  tool: toolName
+    .optional()
+    .describe("Make this part a command-line tool: the name of the program it installs, like sabine"),
 })
 export type PartSettings = z.infer<typeof partSettings>
 

@@ -23,6 +23,14 @@ export default defineConfig({
         zone: "schelf.store",
       }),
       triggers.fetch({
+        pattern: "schelf.store/install",
+        zone: "schelf.store",
+      }),
+      triggers.fetch({
+        pattern: "schelf.store/install/*",
+        zone: "schelf.store",
+      }),
+      triggers.fetch({
         pattern: "*/*",
         zone: "schelf.store",
       }),

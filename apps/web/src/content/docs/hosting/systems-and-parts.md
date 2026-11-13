@@ -36,7 +36,7 @@ The app is what the store page, the install button and Schelf on Luft use, and i
 | `/<publisher>/<project>/latest/cli`               | The `cli` for the visitor's system |
 | `/<publisher>/<project>/v/1.4.0/cli/linux-x86_64` | One version of it                  |
 
-A part's name is short and lowercase and can't be the name of a system.
+A part's name is short and lowercase and can't be the name of a system. A part that's a program people install in their terminal can be a [command-line tool](/docs/command-line-tools).
 
 ### Updates for a part
 

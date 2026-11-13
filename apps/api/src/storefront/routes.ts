@@ -34,6 +34,7 @@ import { partPlan } from "../publishing/parts.ts"
 import { appByProject } from "../publishing/start.ts"
 import { replacementOf } from "../releases/replacing.ts"
 import { type AppRow, installsSince, mediaUrl } from "../signing/records.ts"
+import { projectTools } from "../tools/registry.ts"
 import { currentCatalog } from "./catalog.ts"
 import { mirrorEntry, mirrorHits } from "./mirror.ts"
 import { confirmReport } from "./report-mail.ts"
@@ -145,6 +146,11 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
     has_app: hasAppPart(plan),
     parts: parts.filter((file) => file.part !== null),
     invite_only: [...inviteOnly],
+    tools: await projectTools(app, {
+      id: owner!.id,
+      slug: owner!.slug,
+      verified: owner!.verifiedAt !== null,
+    }),
   }
 }
 

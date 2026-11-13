@@ -11,6 +11,7 @@ import {
   type Members,
   type Namespace,
   type ProofMethod,
+  type PublisherTool,
   type PublishResponse,
   type ReleaseDetail,
   type ReleaseSummary,
@@ -51,6 +52,7 @@ export function dashboard(api: string, token: string) {
     checkPublisherDomain: (id: string) => post<CustomDomainState>(`${publisher(id)}/domain/check`),
     members: (id: string) => get<Members>(`${publisher(id)}/members`),
     revokeInvite: (id: string, invite: string) => remove<void>(`${publisher(id)}/invites/${invite}`),
+    tools: (owner: string) => get<PublisherTool[]>(`${publisher(owner)}/tools`),
     namespaces: (owner: string) => get<Namespace[]>(`${publisher(owner)}/namespaces`),
     verifyNamespace: (owner: string, prefix: string, method: ProofMethod) =>
       post<Namespace>(`${publisher(owner)}/namespaces/${encodeURIComponent(prefix)}/verify`, { method }),

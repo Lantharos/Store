@@ -24,6 +24,7 @@ export function storePage(found: AppPage, path: string) {
     hasApp: found.has_app,
     parts: found.parts,
     inviteOnly: found.invite_only,
+    tools: found.tools,
     extensionAccess: stable[0]?.extension ? extensionGrants(stable[0].extension) : null,
     path,
     description: renderUserMarkdown(app.listing.en!.description),

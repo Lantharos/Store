@@ -3,6 +3,7 @@ import { EXIT } from "../../ui/exit.ts"
 import { blank, emit, field, note, title } from "../../ui/output.ts"
 import { link, muted } from "../../ui/style.ts"
 import { appOf, approve, needs, publisherOf, signedIn, verbs } from "../context.ts"
+import { printTool } from "./tool.ts"
 
 async function list(args: Args) {
   const context = await signedIn(args)
@@ -40,6 +41,7 @@ async function show(args: Args) {
   if (settings.app.platforms) field("Systems", settings.app.platforms.join(", "))
   for (const [name, part] of Object.entries(settings.app.parts))
     field("Part", `${name} for ${part.platforms.join(", ")} ${muted(`${settings.links.latest}/${name}`)}`)
+  for (const each of settings.tools) printTool(each)
   field("Page", link(settings.links.page))
   field("Latest", link(settings.links.latest))
   for (const feed of settings.links.feeds)

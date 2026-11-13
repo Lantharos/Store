@@ -20,6 +20,7 @@ export const endpoints = {
   apps: (id: string) => `${publisher(id)}/apps`,
   projects: (id: string) => `${publisher(id)}/apps/projects`,
   deletedProjects: (id: string) => `${publisher(id)}/apps/deleted`,
+  toolNames: (id: string) => `${publisher(id)}/tool-names`,
   namespaces: (id: string) => `${publisher(id)}/namespaces`,
   namespace: (id: string, prefix: string) => `${publisher(id)}/namespaces/${encodeURIComponent(prefix)}`,
   verifyNamespace: (id: string, prefix: string) =>

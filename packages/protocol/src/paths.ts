@@ -18,6 +18,10 @@ export const paths = {
   invitedArtifact: (id: string, version: string, platform: string, file: string) =>
     `${INVITED_PREFIX}apps/${id}/${version}/${platform}/${file}`,
   invitedApp: (id: string, channel: string) => `${INVITED_PREFIX}index/v1/apps/${id}/${channel}.json`,
+  tool: (publisher: string, name: string) => `index/v1/tools/${publisher}/${name}.json`,
+  shortTool: (name: string) => `index/v1/tools/${name}.json`,
+  invitedTool: (publisher: string, name: string, channel: string) =>
+    `${INVITED_PREFIX}index/v1/tools/${publisher}/${name}/${channel}.json`,
   invitedSabine: (id: string, channel: string) => `${INVITED_PREFIX}sabine/${id}/${channel}.json`,
   invitedSabinePart: (id: string, part: string, channel: string) =>
     `${INVITED_PREFIX}sabine/${id}/parts/${part}/${channel}.json`,

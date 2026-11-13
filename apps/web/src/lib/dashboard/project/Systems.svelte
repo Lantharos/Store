@@ -16,13 +16,13 @@
 {#if app.platforms || parts.length}
   <Group title="Systems" rows>
     <Row
-      title={app.platforms ? "The app" : "Only named parts"}
+      title={app.tool ? `The tool ${app.tool}` : app.platforms ? "The app" : "Only named parts"}
       description={app.platforms ? names(app.platforms) : "No store page or install button, just the parts' downloads."}
     >
       <span class="font-mono text-[12px] text-ink-muted">{file} · platforms</span>
     </Row>
     {#each parts as [name, part] (name)}
-      <Row title={name} description={names(part.platforms)}>
+      <Row title={part.tool ? `${name}, the tool ${part.tool}` : name} description={names(part.platforms)}>
         <span class="font-mono text-[12px] text-ink-muted">{file} · parts.{name}</span>
       </Row>
     {/each}

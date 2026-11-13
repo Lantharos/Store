@@ -22,6 +22,7 @@ import { restartStalledChecks } from "./releases/checks.ts"
 import { stepRollouts } from "./releases/rollout.ts"
 import { resignEverything, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
 import { storefrontRoutes } from "./storefront/routes.ts"
+import { installRoutes } from "./tools/install/route.ts"
 
 const HOURLY = "0 * * * *"
 const downloadHost = new URL(env.DOWNLOAD_URL).hostname
@@ -49,6 +50,7 @@ app.route(API_BASE, invitedRoutes)
 app.route(API_BASE, publishingRoutes)
 app.route(API_BASE, configRoutes)
 app.route(`${API_BASE}/dev`, dashboardRoutes)
+app.route("/", installRoutes)
 app.all("*", () => fail(404, "Not found"))
 
 export default {

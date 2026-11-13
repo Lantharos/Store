@@ -4,6 +4,7 @@
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { resource } from "#lib/dashboard/api/resource.svelte.ts"
   import { appSettings } from "#lib/dashboard/apps/context.ts"
+  import Tools from "#lib/dashboard/project/Tools.svelte"
   import { releaseDetail } from "#lib/dashboard/releases/release.svelte.ts"
   import Checksums from "#lib/dashboard/share/Checksums.svelte"
   import EmbedButton from "#lib/dashboard/share/EmbedButton.svelte"
@@ -39,6 +40,8 @@
   {/if}
 
   <MainLink link={latest} page={data.links.page} released={shipped !== undefined} />
+
+  <Tools bind:settings={() => data, (next) => settings.set(next)} />
 
   {#if detail?.data}
     <div class="space-y-3">

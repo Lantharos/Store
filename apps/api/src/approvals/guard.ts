@@ -19,6 +19,7 @@ const NEEDS_APPROVAL = [
   rule("POST", "/publishers/:id/namespaces"),
   rule("PUT", "/publishers/:id/domain"),
   rule("DELETE", "/publishers/:id/namespaces/:id"),
+  rule("POST", "/publishers/:id/tool-names"),
   rule("POST", "/publishers/:id/apps(/projects)?"),
   rule("POST", "/publishers/:id/invites"),
   rule("PATCH DELETE", "/publishers/:id/members/:id"),

@@ -53,6 +53,25 @@ export interface AppPage {
   parts: ProjectFile[]
   /** Channels only invited people can download from; who is invited is never public. */
   invite_only: string[]
+  tools: ProjectTool[]
+}
+
+/** resolves: the bare name is this tool's; paused: it's held while the publisher isn't verified. */
+export const SHORT_NAME_STATES = ["resolves", "paused", "free", "taken", "reserved"] as const
+export type ShortNameState = (typeof SHORT_NAME_STATES)[number]
+
+export interface ProjectTool {
+  name: string
+  part: string | null
+  address: string
+  short: ShortNameState
+  install: string
+  add: string
+}
+
+export interface PublisherTool extends ProjectTool {
+  project: string
+  project_name: string
 }
 
 export interface InvitedChannel {
