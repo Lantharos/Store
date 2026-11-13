@@ -3,6 +3,7 @@ import type { ConfigFiles } from "../config/apply.ts"
 import { MAX_CATEGORIES } from "../config/listing-toml.ts"
 import { repositoryName } from "../config/schelf-toml.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
+import type { PartPlan } from "../parts.ts"
 import type { Permissions } from "../permissions.ts"
 import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
 import { projectSlug, type Visibility, visibility } from "../projects.ts"
@@ -17,6 +18,7 @@ import {
   updater,
 } from "../releases.ts"
 import { SCHELF_WORKFLOW } from "../setup.ts"
+import { MAX_RELEASE_FILES } from "./publishing.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
 export const PROOF_METHODS = ["dns", "well-known", "github"] as const
@@ -173,7 +175,7 @@ export const manualUpload = z.object({
       }),
     )
     .min(1)
-    .max(20),
+    .max(MAX_RELEASE_FILES),
 })
 export type ManualUpload = z.infer<typeof manualUpload>
 
@@ -264,6 +266,8 @@ export interface AppSettings {
     distribution: z.infer<typeof distribution>
     page_indexed: boolean
     latest_follows_rollout: boolean
+    platforms: Platform[] | null
+    parts: PartPlan["parts"]
     created_at: string
   }
   links: Links
@@ -320,6 +324,7 @@ export interface ReleaseDetail extends ReleaseSummary {
   luft: string | null
   shell: ShellStatus | null
   artifacts: {
+    part: string | null
     platform: Platform
     kind: z.infer<typeof artifactKind>
     name: string

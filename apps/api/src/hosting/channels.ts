@@ -1,10 +1,18 @@
 import { env } from "cloudflare:workers"
-import { compareVersions, NIGHTLY, NIGHTLY_KEEP, paths, SHIPPED_STATUSES } from "@schelf/protocol"
+import {
+  compareVersions,
+  missingPlatforms,
+  NIGHTLY,
+  NIGHTLY_KEEP,
+  paths,
+  SHIPPED_STATUSES,
+} from "@schelf/protocol"
 import { and, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm"
 import { db, insertRows, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { recordHistory, tellOps } from "../ops/events.ts"
+import { partPlan } from "../publishing/parts.ts"
 import { routeRelease } from "../releases/review.ts"
 import { resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
@@ -96,10 +104,17 @@ export async function promote(release: ReleaseRow, channel: string, by: string, 
   if (taken) fail(409, `${release.version} was already sent to ${channel}`)
 
   const id = randomId()
-  const [artifacts, checks] = await Promise.all([
+  const [artifacts, checks, app] = await Promise.all([
     db.select().from(schema.artifact).where(eq(schema.artifact.releaseId, release.id)),
     db.select().from(schema.check).where(eq(schema.check.releaseId, release.id)),
+    db.query.app.findFirst({ where: eq(schema.app.id, release.appId) }),
   ])
+  const missing = missingPlatforms(partPlan(app!), artifacts)
+  if (missing.length)
+    fail(
+      422,
+      `${release.version} has nothing for ${missing.map((each) => each.platform).join(", ")}, which schelf.toml asks every release for`,
+    )
   await ensureChannel(release.appId, channel)
   await db.batch([
     db.insert(schema.release).values({

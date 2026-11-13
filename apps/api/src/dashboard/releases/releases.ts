@@ -158,6 +158,7 @@ async function detail(release: ReleaseRow, owner: Owner): Promise<ReleaseDetail>
     luft: release.luftMinimum,
     shell: shellStatus(release, artifacts, owner),
     artifacts: artifacts.map((artifact) => ({
+      part: artifact.part,
       platform: artifact.platform as Platform,
       kind: artifact.kind as ArtifactKind,
       name: artifact.name,

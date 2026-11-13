@@ -8,8 +8,10 @@ import {
   type LinkOptions,
   latestRelease,
   linkTarget,
+  offeredReleases,
   type ProjectDownloads,
-  type ProjectFile,
+  partNames,
+  partReleases,
   resolveLink,
   STABLE,
   tauriFeed,
@@ -17,8 +19,10 @@ import {
 } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { partPlan } from "../publishing/parts.ts"
 import { linkBase, pageUrl } from "./addresses.ts"
 import { channelRoute } from "./ended.ts"
+import { latestFiles } from "./files.ts"
 import { feedReleases, linkReleases } from "./releases.ts"
 
 const SHORT_CACHE = "public, max-age=60"
@@ -63,29 +67,6 @@ function sums(files: HostedFile[]) {
   return text(files.map((file) => `${file.sha256}  ${file.name}\n`).join(""))
 }
 
-function projectFiles(project: Project, channel: string, releases: HostedRelease[], options: LinkOptions) {
-  const platforms = [...new Set(releases.flatMap((release) => release.files.map((file) => file.platform)))]
-  const base = linkBase(project, project.publisherSlug, channel)
-  const files: ProjectFile[] = []
-  for (const platform of platforms) {
-    const resolved = resolveLink(releases, platform, undefined, options)
-    if (!resolved || resolved.file.platform !== platform) continue
-    for (const file of resolved.release.files.filter((each) => each.platform === platform))
-      files.push({
-        version: resolved.release.version,
-        name: file.name,
-        platform: file.platform,
-        kind: file.kind,
-        size: file.size,
-        sha256: file.sha256,
-        url: file.url,
-        link: `${base}/latest/${platform}/${file.kind}`,
-        attestation: file.attestation,
-      })
-  }
-  return files
-}
-
 function visitorTarget(request: Request) {
   const system = detect(
     request.headers.get("user-agent") ?? "",
@@ -93,6 +74,48 @@ function visitorTarget(request: Request) {
     request.headers.get("sec-ch-ua-arch"),
   )
   return linkTarget(system)
+}
+
+function takePart(releases: HostedRelease[], path: string[]) {
+  return path[0] && partNames(releases).has(path[0]) ? path.shift()! : null
+}
+
+function serveLatest(
+  request: Request,
+  project: Project,
+  releases: HostedRelease[],
+  path: string[],
+  options: LinkOptions,
+) {
+  const part = takePart(releases, path)
+  const scoped = partReleases(releases, part)
+  const [target, kind] = path
+  const varies = (release: HostedRelease) => options.followRollout && release.rollout < 100
+  if (target === "SHA256SUMS" && !kind) {
+    const latest = latestRelease(part ? scoped : releases, options)
+    return latest?.files.length ? sums(latest.files) : notFound()
+  }
+  const wanted = target ?? visitorTarget(request)
+  const resolved = wanted ? resolveLink(scoped, wanted, kind, options) : undefined
+  if (resolved) return redirect(resolved.file.url, varies(resolved.release))
+  return target
+    ? notFound(`Nothing for ${target} yet`)
+    : redirect(pageUrl(project, project.publisherSlug), false)
+}
+
+function serveVersion(releases: HostedRelease[], path: string[], channel: string, options: LinkOptions) {
+  const [version, ...rest] = path
+  const release = releases.find((candidate) => candidate.version === version)
+  if (!release) return notFound(`There's no ${version} on ${channel}`)
+  if (rest[0] === "SHA256SUMS" && rest.length === 1) return sums(release.files)
+  if (!rest.length) return json(release)
+  const pinned = [{ ...release, bridge: false, rollout: 100 }]
+  const part = takePart(pinned, rest)
+  const [target, kind] = rest
+  const resolved = target ? resolveLink(partReleases(pinned, part), target, kind, options) : undefined
+  return resolved
+    ? redirect(resolved.file.url, false)
+    : notFound(`${version} has nothing for ${[part, target].filter(Boolean).join(" ") || "that"}`)
 }
 
 export async function serveProject(request: Request, segments: string[]) {
@@ -114,38 +137,16 @@ export async function serveProject(request: Request, segments: string[]) {
   const route = await channelRoute(project.id, named)
   const channel = route.at(-1)!
   const releases = await linkReleases(project.id, route)
+  const plan = partPlan(project)
+  const offered = offeredReleases(releases, plan)
   const options: LinkOptions = { followRollout: project.latestFollowsRollout, draw: Math.random() }
-  const varies = (release: HostedRelease) => options.followRollout && release.rollout < 100
-  const [first, second, third, fourth] = path
+  const [first, second] = path
+  const cache = options.followRollout ? "no-store" : SHORT_CACHE
 
-  if (first === "latest" && !second) {
-    const target = visitorTarget(request)
-    const resolved = target ? resolveLink(releases, target, undefined, options) : undefined
-    return resolved
-      ? redirect(resolved.file.url, varies(resolved.release))
-      : redirect(pageUrl(project, project.publisherSlug), false)
-  }
-  if (first === "latest" && second === "SHA256SUMS") {
-    const latest = latestRelease(releases, options)
-    return latest ? sums(latest.files) : notFound()
-  }
-  if (first === "latest") {
-    const resolved = resolveLink(releases, second!, third, options)
-    return resolved
-      ? redirect(resolved.file.url, varies(resolved.release))
-      : notFound(`Nothing for ${second} yet`)
-  }
-  if (first === "v" && second) {
-    const release = releases.find((candidate) => candidate.version === second)
-    if (!release) return notFound(`There's no ${second} on ${channel}`)
-    if (third === "SHA256SUMS") return sums(release.files)
-    if (!third) return json(release)
-    const resolved = resolveLink([{ ...release, bridge: false, rollout: 100 }], third, fourth, options)
-    return resolved ? redirect(resolved.file.url, false) : notFound(`${second} has nothing for ${third}`)
-  }
+  if (first === "latest") return serveLatest(request, project, offered, path.slice(1), options)
+  if (first === "v" && second) return serveVersion(releases, path.slice(1), channel, options)
   if (first === "latest.json" && !second) {
-    const files = projectFiles(project, channel, releases, options)
-    const newest = latestRelease(releases, options)
+    const newest = latestRelease(offered, options)
     if (!newest) return notFound("Nothing is out yet")
     return json(
       {
@@ -156,17 +157,16 @@ export async function serveProject(request: Request, segments: string[]) {
         published: newest.published,
         notes: newest.notes,
         page: pageUrl(project, project.publisherSlug),
-        files,
+        files: latestFiles(linkBase(project, project.publisherSlug, channel), offered, options),
       } satisfies ProjectDownloads,
-      options.followRollout ? "no-store" : SHORT_CACHE,
+      cache,
     )
   }
+  const app = (list: HostedRelease[]) => partReleases(offeredReleases(list, plan), null)
   if (first === "tauri.json" && !second) {
-    const release = updaterRelease(await feedReleases(project.id, route), "tauri", options)
+    const release = updaterRelease(app(await feedReleases(project.id, route)), "tauri", options)
     const feed = release && tauriFeed(release)
-    return feed
-      ? json(feed, options.followRollout ? "no-store" : SHORT_CACHE)
-      : new Response(null, { status: 204 })
+    return feed ? json(feed, cache) : new Response(null, { status: 204 })
   }
   if (first && !second && electronFeedName(first)) {
     const line = electronFeedName(first)!.channel
@@ -174,7 +174,7 @@ export async function serveProject(request: Request, segments: string[]) {
       project.id,
       line === named ? route : await channelRoute(project.id, line),
     )
-    const feed = lineReleases
+    const feed = app(lineReleases)
       .filter((candidate) => candidate.updater === "electron")
       .map((release) => electronFeed(release, first))
       .find(Boolean)

@@ -47,6 +47,8 @@ keep = 10
 | `repository`                 | The GitHub repository the source is in, shown on the page and used for the source diff.                                                                               |
 | `requires.sabine`            | The oldest Sabine version the app runs on.                                                                                                                            |
 | `requires.extension_api`     | The Luft extension API version an extension was built for.                                                                                                            |
+| `platforms`                  | The [systems](/docs/systems-and-parts) every release carries. A system left out stops being offered.                                                                  |
+| `parts.<name>`               | A [part](/docs/systems-and-parts#parts) shipped in every release beside the app: its `files` by name and its `platforms`.                                             |
 | `links.follow_rollout`       | `true` lets [download links](/docs/download-links) hand out a release while it rolls out.                                                                             |
 | `channels.<name>.keep`       | Keep only the newest releases on that [channel](/docs/channels).                                                                                                      |
 | `channels.<name>.gradual`    | Roll out step by step (`true`) or to everyone at once (`false`). Stable is gradual unless you say otherwise.                                                          |

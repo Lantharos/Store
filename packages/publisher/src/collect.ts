@@ -1,11 +1,12 @@
 import { glob, readFile, stat } from "node:fs/promises"
 import { basename } from "node:path"
-import { type Format, type Platform, UPDATER_SIGNATURE } from "@schelf/protocol"
+import { type Platform, UPDATER_SIGNATURE } from "@schelf/protocol"
 import {
   ArtifactError,
   type InferredArtifact,
   ignoredFile,
   inferArtifact,
+  type Shape,
   splitPlatform,
 } from "./artifacts.ts"
 
@@ -20,7 +21,7 @@ export async function expandFiles(patterns: string[]) {
   return [...paths].sort(([left], [right]) => left.localeCompare(right))
 }
 
-export async function collectArtifacts(patterns: string[], format: Format): Promise<InferredArtifact[]> {
+export async function collectArtifacts(patterns: string[], shape: Shape): Promise<InferredArtifact[]> {
   const found = await expandFiles(patterns)
   if (!found.length) throw new ArtifactError(`No files match ${patterns.join(", ")}`)
   const signatures = new Map<string, string>()
@@ -29,7 +30,7 @@ export async function collectArtifacts(patterns: string[], format: Format): Prom
     signatures.set(basename(path).replace(UPDATER_SIGNATURE, ""), (await readFile(path, "utf8")).trim())
   const artifacts = await Promise.all(
     files.map(async ([path, platform]) => {
-      const artifact = await inferArtifact(path, format)
+      const artifact = await inferArtifact(path, shape)
       return {
         ...artifact,
         ...(platform && { platform }),

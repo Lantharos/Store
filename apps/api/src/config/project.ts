@@ -19,7 +19,7 @@ import type { Caller } from "./caller.ts"
 
 type AppFields = Pick<
   AppRow,
-  "distribution" | "licence" | "repository" | "repositoryId" | "latestFollowsRollout"
+  "distribution" | "licence" | "repository" | "repositoryId" | "latestFollowsRollout" | "platforms" | "parts"
 >
 
 export interface DesiredProject {
@@ -63,6 +63,8 @@ export async function desiredProject(
       licence: manifest.licence ?? null,
       ...(await repositoryOf(manifest, app, caller, file)),
       latestFollowsRollout: manifest.links.follow_rollout,
+      platforms: manifest.platforms ?? null,
+      parts: manifest.parts,
     },
     updater: updaterOf(manifest),
     channels: manifest.channels,
@@ -75,6 +77,25 @@ const FIELD_KEYS: Record<keyof AppFields, string | null> = {
   repository: "repository",
   repositoryId: null,
   latestFollowsRollout: "links.follow_rollout",
+  platforms: "platforms",
+  parts: null,
+}
+
+const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right)
+
+function partChanges(app: AppRow, desired: DesiredProject, change: (key: string, text: string) => void) {
+  const wanted = desired.fields.parts
+  for (const name of new Set([...Object.keys(app.parts), ...Object.keys(wanted)])) {
+    const before = app.parts[name]
+    const after = wanted[name]
+    if (!after) change(`parts.${name}`, "removed")
+    else if (!before) change(`parts.${name}`, `added for ${after.platforms.join(", ")}`)
+    else {
+      if (!same(before.platforms, after.platforms))
+        change(`parts.${name}.platforms`, after.platforms.join(", "))
+      if (!same(before.files, after.files)) change(`parts.${name}.files`, after.files.join(", "))
+    }
+  }
 }
 
 const defaultKeep = (name: string) => (name === NIGHTLY ? NIGHTLY_KEEP : null)
@@ -83,7 +104,9 @@ export async function projectChanges(app: AppRow, desired: DesiredProject): Prom
   const changes: ConfigChange[] = []
   const change = (key: string, text: string) => changes.push({ file: desired.file, key, change: text })
   for (const [field, key] of Object.entries(FIELD_KEYS) as [keyof AppFields, string | null][])
-    if (key && app[field] !== desired.fields[field]) change(key, `${desired.fields[field] ?? "cleared"}`)
+    if (key && !same(app[field], desired.fields[field]))
+      change(key, [desired.fields[field] ?? "cleared"].flat().join(", "))
+  partChanges(app, desired, change)
   if (desired.updater && desired.updater !== app.updater)
     change("updater", `moves to ${UPDATER_NAMES[desired.updater]}`)
   const rows = await db.select().from(schema.channel).where(eq(schema.channel.appId, app.id))

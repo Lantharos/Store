@@ -11,6 +11,7 @@ export const MAX_ARTIFACT_SIZE = 4 * 1024 * 1024 * 1024
 export const MAX_BLOCKMAP_BASE64 = 8 * 1024 * 1024
 export const TOKEN_PREFIX = "schelf_"
 export const UPLOAD_TOKEN_HOURS = 1
+export const MAX_RELEASE_FILES = 60
 
 export function partsFor(size: number) {
   return size > MULTIPART_THRESHOLD ? Math.ceil(size / PART_SIZE) : 1
@@ -44,7 +45,7 @@ export const publishRequest = z.object({
   notes: z.string().max(20_000).default(""),
   channel: channelName.optional(),
   bridge: z.boolean().default(false),
-  files: z.array(publishFile).min(1).max(20),
+  files: z.array(publishFile).min(1).max(MAX_RELEASE_FILES),
 })
 export type PublishRequest = z.infer<typeof publishRequest>
 

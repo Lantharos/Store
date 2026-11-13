@@ -37,6 +37,9 @@ async function show(args: Args) {
     "Format",
     `${settings.app.format}${settings.app.updater ? `, updates with ${settings.app.updater}` : ""}`,
   )
+  if (settings.app.platforms) field("Systems", settings.app.platforms.join(", "))
+  for (const [name, part] of Object.entries(settings.app.parts))
+    field("Part", `${name} for ${part.platforms.join(", ")} ${muted(`${settings.links.latest}/${name}`)}`)
   field("Page", link(settings.links.page))
   field("Latest", link(settings.links.latest))
   for (const feed of settings.links.feeds) field("Feed", link(feed.url))

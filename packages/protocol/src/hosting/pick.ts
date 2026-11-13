@@ -1,6 +1,8 @@
+import { offeredIn, type PartPlan } from "../parts.ts"
 import type { ArtifactKind, Platform } from "../platforms.ts"
 
 export interface HostedFile {
+  part: string | null
   platform: Platform
   kind: ArtifactKind
   name: string
@@ -112,4 +114,22 @@ export function resolveLink(
 
 export function latestRelease(releases: HostedRelease[], options: LinkOptions) {
   return linkedReleases(releases, options)[0]
+}
+
+export function offeredReleases(releases: HostedRelease[], plan: PartPlan) {
+  return releases.map((release) => ({
+    ...release,
+    files: release.files.filter((file) => offeredIn(plan, file)),
+  }))
+}
+
+export function partReleases(releases: HostedRelease[], part: string | null) {
+  return releases.map((release) => ({
+    ...release,
+    files: release.files.filter((file) => file.part === part),
+  }))
+}
+
+export function partNames(releases: HostedRelease[]) {
+  return new Set(releases.flatMap((release) => release.files.flatMap((file) => file.part ?? [])))
 }

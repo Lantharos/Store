@@ -7,6 +7,7 @@ import {
   type Format,
   type IndexedRelease,
   type MirrorEntry,
+  offeredIn,
   type Platform,
   type PlatformRelease,
   parseSabineVersion,
@@ -16,6 +17,7 @@ import {
   type Unstamped,
 } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
+import { partPlan } from "../publishing/parts.ts"
 import { runsInShell } from "../releases/shell-files.ts"
 import {
   type AppRecord,
@@ -35,7 +37,15 @@ function updatedAt(record: AppRecord) {
   return (record.releases[0]?.release.approvedAt ?? record.app.createdAt).toISOString()
 }
 
-const indexable = (record: AppRecord) => record.releases.filter(({ release }) => !release.bridge)
+function appFiles(record: AppRecord, artifacts: IndexedArtifact[]) {
+  const plan = partPlan(record.app)
+  return artifacts.filter((artifact) => artifact.part === null && offeredIn(plan, artifact))
+}
+
+const appReleases = (record: AppRecord) =>
+  record.releases.map(({ release, artifacts }) => ({ release, artifacts: appFiles(record, artifacts) }))
+
+const indexable = (record: AppRecord) => appReleases(record).filter(({ release }) => !release.bridge)
 const stable = (record: AppRecord) => indexable(record).filter(({ release }) => release.channel === STABLE)
 
 export function catalogEntry(record: AppRecord): CatalogEntry {
@@ -174,7 +184,7 @@ function endedFeeds(record: AppRecord, feeds: Map<string, SabineFeed>) {
 
 export function sabineFeeds(record: AppRecord): Map<string, SabineFeed> {
   const feeds = new Map<string, SabineFeed>()
-  for (const { release, artifacts } of record.releases) {
+  for (const { release, artifacts } of appReleases(record)) {
     if (release.updater !== "sabine" || feeds.has(release.channel)) continue
     feeds.set(release.channel, {
       schema: 1,

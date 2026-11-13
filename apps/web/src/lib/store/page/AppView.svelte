@@ -1,7 +1,8 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
-  import type { AppIndex, Installs, ProjectSummary, System } from "@schelf/protocol"
+  import type { AppIndex, Installs, ProjectFile, ProjectSummary, System } from "@schelf/protocol"
+  import { date } from "../../format.ts"
   import { pickArtifact } from "../../system/artifacts.ts"
   import AppIcon from "../apps/AppIcon.svelte"
   import ExtensionArt from "../apps/ExtensionArt.svelte"
@@ -23,9 +24,13 @@
     system,
     extensionAccess,
     project,
+    hasApp,
+    parts,
   }: {
     app: AppIndex
     project: ProjectSummary
+    hasApp: boolean
+    parts: ProjectFile[]
     installs: Installs
     description: string
     releases: { version: string; published: string; notes: string }[]
@@ -46,7 +51,9 @@
   const extension = $derived(app.kind === "extension")
   const primary = $derived(primaryCategory(app.categories))
   const artifacts = $derived(latest?.artifacts ?? [])
-  const unavailable = $derived(!extension && system.os !== "luft" && !pickArtifact(artifacts, system))
+  const unavailable = $derived(
+    !hasApp || (!extension && system.os !== "luft" && !pickArtifact(artifacts, system)),
+  )
   let others = $state(false)
 </script>
 
@@ -72,7 +79,9 @@
         </p>
       </div>
     </div>
-    {#if latest}
+    {#if latest && !hasApp}
+      <p class="text-[15px] text-ink-soft sm:text-right">{latest.version} · {date(latest.published)}</p>
+    {:else if latest}
       <Download
         id={app.id}
         {extension}
@@ -93,7 +102,7 @@
   </header>
 
   {#if latest && !extension}
-    <OtherSystems {artifacts} open={others || unavailable} id={panel} {note} />
+    <OtherSystems {artifacts} {parts} open={others || unavailable} id={panel} {note} />
   {/if}
 
   {#if app.screenshots.length}

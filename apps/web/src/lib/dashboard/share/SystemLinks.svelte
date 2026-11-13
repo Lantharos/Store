@@ -8,12 +8,14 @@
   const json = $derived(latest.replace(/\/latest$/, "/latest.json"))
   const rows = $derived(
     release.artifacts.map((file) => {
-      const twins = release.artifacts.filter((other) => other.platform === file.platform).length
+      const twins = release.artifacts.filter(
+        (other) => other.part === file.part && other.platform === file.platform,
+      ).length
       return {
         key: file.name,
-        title: PLATFORM_NAMES[file.platform],
+        title: `${file.part ? `${file.part} for ` : ""}${PLATFORM_NAMES[file.platform]}`,
         detail: KIND_NAMES[file.kind],
-        url: `${latest}/${file.platform}${twins > 1 ? `/${file.kind}` : ""}`,
+        url: `${latest}/${file.part ? `${file.part}/` : ""}${file.platform}${twins > 1 ? `/${file.kind}` : ""}`,
       }
     }),
   )

@@ -21,7 +21,7 @@
       {#each release.artifacts as file (file.name)}
         <li class="py-3 text-[15px]">
           <p class="flex items-center justify-between gap-3">
-            <span>{PLATFORM_NAMES[file.platform]}<span class="text-ink-muted">{" · "}{KIND_NAMES[file.kind]}</span></span>
+            <span>{file.part ? `${file.part} for ` : ""}{PLATFORM_NAMES[file.platform]}<span class="text-ink-muted">{" · "}{KIND_NAMES[file.kind]}</span></span>
             <span class="text-[13px] text-ink-muted tabular">{bytes(file.size)}</span>
           </p>
           <p class="mt-0.5 truncate font-mono text-[12px] text-ink-muted" title={file.name}>{file.name}</p>

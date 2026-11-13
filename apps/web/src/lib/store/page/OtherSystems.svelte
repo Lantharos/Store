@@ -1,19 +1,24 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
-  import type { Artifact } from "@schelf/protocol"
+  import type { Artifact, ProjectFile } from "@schelf/protocol"
   import CopyButton from "../../code/CopyButton.svelte"
   import { bytes } from "../../format.ts"
   import { groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
 
-  let { artifacts, open, id, note }: { artifacts: Artifact[]; open: boolean; id: string; note: string } =
-    $props()
-  const groups = $derived(groupByPlatform(artifacts))
+  let {
+    artifacts,
+    parts,
+    open,
+    id,
+    note,
+  }: { artifacts: Artifact[]; parts: ProjectFile[]; open: boolean; id: string; note: string } = $props()
+  const groups = $derived([...groupByPlatform(artifacts), ...groupByPlatform(parts)])
 </script>
 
 <div {id} class="disclosure grid {open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}" inert={!open}>
   <div class="min-h-0 overflow-hidden">
     <div class="mt-8 grid gap-x-8 gap-y-5 rounded-tile bg-well p-5 sm:grid-cols-2 sm:p-7 lg:grid-cols-3">
-      {#each groups as group (group.platform)}
+      {#each groups as group (group.key)}
         <div>
           <p class="font-medium">{group.name}</p>
           <ul class="mt-1.5 space-y-0.5">

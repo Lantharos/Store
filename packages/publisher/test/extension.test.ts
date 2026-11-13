@@ -119,9 +119,7 @@ test("an extension is published with its manifest as the permission declaration"
   expect(context.manifest).toMatchObject({ kind: "extension", permissions: EXTENSION_MANIFEST })
   expect(context.permissionsToml).toBe(RAIN_MANIFEST)
 
-  const artifacts = await hashArtifacts(
-    await collectArtifacts([join(root, "*.tar.zst")], context.manifest.format),
-  )
+  const artifacts = await hashArtifacts(await collectArtifacts([join(root, "*.tar.zst")], context.manifest))
   await publishRelease({
     api: store.url.origin,
     token: "oidc",

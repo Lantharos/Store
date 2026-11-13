@@ -1,6 +1,7 @@
 import { parse } from "smol-toml"
 import { z } from "zod"
-import { appId, distribution, format, formatFits, kind } from "../platforms.ts"
+import { partName, partSettings } from "../parts.ts"
+import { appId, distribution, format, formatFits, kind, platform, platformsFor } from "../platforms.ts"
 import { projectPath } from "../projects.ts"
 import { channelName, STABLE } from "../releases.ts"
 
@@ -76,6 +77,15 @@ export const schelfToml = z
       })
       .default({ follow_rollout: false }),
     channels: z.record(channelName, channelSettings).default({}),
+    platforms: z
+      .array(platform)
+      .min(1)
+      .optional()
+      .describe("The systems every release carries the app for; a system left out stops being offered"),
+    parts: z
+      .record(partName, partSettings)
+      .default({})
+      .describe("Named groups of files inside each release, like a cli or a runtime, beside the app itself"),
   })
   .superRefine((manifest, context) => {
     if (!manifest.id === !manifest.project)
@@ -112,6 +122,23 @@ export const schelfToml = z
         code: "custom",
         path: ["licence"],
         message: 'A licence is for open source; remove it or set distribution = "open"',
+      })
+    for (const [index, each] of (manifest.platforms ?? []).entries())
+      if (!platformsFor(manifest.format).includes(each))
+        context.addIssue({
+          code: "custom",
+          path: ["platforms", index],
+          message: `A ${manifest.format} app isn't built for ${each}`,
+        })
+    const parts = Object.keys(manifest.parts)
+    if (parts.length && manifest.kind === "extension")
+      context.addIssue({ code: "custom", path: ["parts"], message: "An extension is one part" })
+    if (parts.length && !manifest.platforms && manifest.listing)
+      context.addIssue({
+        code: "custom",
+        path: ["listing"],
+        message:
+          "A project of only named parts has no store page; add platforms for the app or remove listing",
       })
     for (const [name, settings] of Object.entries(manifest.channels)) {
       if (name === STABLE && (settings.ended_into || settings.keep))

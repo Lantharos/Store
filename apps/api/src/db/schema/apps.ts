@@ -1,4 +1,12 @@
-import { APP_STATUSES, type ConfigFiles, FORMATS, UPDATERS, VISIBILITIES } from "@schelf/protocol"
+import {
+  APP_STATUSES,
+  type ConfigFiles,
+  FORMATS,
+  type PartPlan,
+  type Platform,
+  UPDATERS,
+  VISIBILITIES,
+} from "@schelf/protocol"
 import { sql } from "drizzle-orm"
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { createdAt } from "./columns.ts"
@@ -49,6 +57,8 @@ export const app = sqliteTable(
     replacedBy: text("replaced_by"),
     replacedNote: text("replaced_note"),
     configFiles: text("config_files", { mode: "json" }).$type<ConfigFiles>(),
+    platforms: text("platforms", { mode: "json" }).$type<Platform[]>(),
+    parts: text("parts", { mode: "json" }).$type<PartPlan["parts"]>().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
   },
   (table) => [

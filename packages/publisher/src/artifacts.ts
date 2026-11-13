@@ -3,18 +3,21 @@ import { basename, dirname, join } from "node:path"
 import { inflateRawSync } from "node:zlib"
 import {
   type ArtifactKind,
-  type Format,
   GENERATED_FEEDS,
   inferFile,
   MAX_BLOCKMAP_BASE64,
+  PartMismatch,
   type Platform,
+  partOf,
   platform as platformSchema,
+  type SchelfToml,
   UnknownFile,
 } from "@schelf/protocol"
 
 export interface InferredArtifact {
   path: string
   name: string
+  part: string | null
   platform: Platform
   kind: ArtifactKind
   executable?: string
@@ -63,7 +66,7 @@ async function sabineArtifact(path: string, name: string): Promise<InferredArtif
     throw new ArtifactError(`${name} has no package kind after its platform`)
   }
   const updateTarget = target ? `${platform}-${target.toLowerCase()}` : platform
-  return { path, name, platform, kind, executable: await readExecutable(path, updateTarget) }
+  return { path, name, part: null, platform, kind, executable: await readExecutable(path, updateTarget) }
 }
 
 export async function elfArchitecture(path: string) {
@@ -88,13 +91,19 @@ async function appImageArtifact(path: string, name: string): Promise<InferredArt
   if (!/\.appimage$/i.test(name)) throw new ArtifactError(`${name} isn't an AppImage`)
   const arch = await elfArchitecture(path)
   if (!arch) throw new ArtifactError(`${name} isn't an x86_64 or aarch64 AppImage`)
-  return { path, name, platform: `linux-${arch}` as Platform, kind: "appimage" }
+  return { path, name, part: null, platform: `linux-${arch}` as Platform, kind: "appimage" }
 }
 
 function extensionArtifact(path: string, name: string): InferredArtifact {
   if (!/\.tar\.zst$/i.test(name)) throw new ArtifactError(`${name} isn't a .tar.zst of the extension folder`)
   const arch = architectureInName(name.replace(/\.tar\.zst$/i, ""))
-  return { path, name, platform: arch ? (`luft-${arch}` as Platform) : "luft", kind: "extension" }
+  return {
+    path,
+    name,
+    part: null,
+    platform: arch ? (`luft-${arch}` as Platform) : "luft",
+    kind: "extension",
+  }
 }
 
 async function readBlockmap(path: string) {
@@ -129,7 +138,7 @@ async function embeddedBlockmapSize(path: string) {
   }
 }
 
-async function generalArtifact(path: string, name: string): Promise<InferredArtifact> {
+async function generalArtifact(path: string, name: string, part: string | null): Promise<InferredArtifact> {
   try {
     const inferred = inferFile(name)
     const linux = inferred.kind === "appimage" || inferred.kind === "binary"
@@ -137,6 +146,7 @@ async function generalArtifact(path: string, name: string): Promise<InferredArti
     return {
       path,
       name,
+      part,
       kind: inferred.kind,
       platform: arch ? (`linux-${arch}` as Platform) : inferred.platform,
       blockmap: await readBlockmap(path),
@@ -148,11 +158,23 @@ async function generalArtifact(path: string, name: string): Promise<InferredArti
   }
 }
 
-export function inferArtifact(path: string, format: Format): Promise<InferredArtifact> {
+export type Shape = Pick<SchelfToml, "format" | "parts">
+
+function partNamed(name: string, shape: Shape) {
+  try {
+    return partOf(name, shape)
+  } catch (error) {
+    if (error instanceof PartMismatch) throw new ArtifactError(error.message)
+    throw error
+  }
+}
+
+export function inferArtifact(path: string, shape: Shape): Promise<InferredArtifact> {
   const name = basename(path)
-  if (format === "sabine") return sabineArtifact(path, name)
-  if (format === "appimage") return appImageArtifact(path, name)
-  if (format === "files") return generalArtifact(path, name)
+  const part = partNamed(name, shape)
+  if (part || shape.format === "files") return generalArtifact(path, name, part)
+  if (shape.format === "sabine") return sabineArtifact(path, name)
+  if (shape.format === "appimage") return appImageArtifact(path, name)
   return Promise.resolve(extensionArtifact(path, name))
 }
 

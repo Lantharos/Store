@@ -15,6 +15,7 @@ Every project gets stable links on `dl.schelf.store`. They redirect to the relea
 | `/<publisher>/<project>/v/1.4.0/windows`      | One version                                                                 |
 | `/<publisher>/<project>/latest/SHA256SUMS`    | Checksums of the newest release, in the format `sha256sum -c` reads         |
 | `/<publisher>/<project>/latest.json`          | The newest version, its notes and every file, as JSON                       |
+| `/<publisher>/<project>/latest/cli/linux`     | A [part](/docs/systems-and-parts#parts) of the release, like a CLI          |
 
 Links follow the stable channel. Put `@beta` or `@nightly` after the project for another, like `/lantharos/raffi/@beta/latest/windows`.
 
@@ -39,6 +40,7 @@ A new release [rolls out](/docs/rollouts) over a few days. Until it reaches ever
   "page": "https://schelf.store/lantharos/raffi",
   "files": [
     {
+      "part": null,
       "version": "1.4.0",
       "name": "Raffi-Setup-1.4.0.exe",
       "platform": "windows-x86_64",
@@ -53,7 +55,7 @@ A new release [rolls out](/docs/rollouts) over a few days. Until it reaches ever
 }
 ```
 
-It's served with CORS, so your site can read it from the browser.
+`part` names the [part](/docs/systems-and-parts#parts) a file belongs to, and is `null` for the app itself. It's served with CORS, so your site can read it from the browser.
 
 ## A download button for your site
 

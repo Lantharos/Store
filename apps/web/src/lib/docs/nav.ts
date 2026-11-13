@@ -10,6 +10,7 @@ export const DOC_SECTIONS = [
     pages: [
       "host-your-releases",
       "download-links",
+      "systems-and-parts",
       "update-feeds",
       "channels",
       "manual-uploads",

@@ -20,6 +20,7 @@ function file(
   extra: Partial<HostedFile> = {},
 ): HostedFile {
   return {
+    part: null,
     name,
     platform,
     kind,

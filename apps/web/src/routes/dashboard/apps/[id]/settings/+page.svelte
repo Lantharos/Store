@@ -4,6 +4,7 @@
   import Address from "#lib/dashboard/project/Address.svelte"
   import DeleteProject from "#lib/dashboard/project/DeleteProject.svelte"
   import Publishers from "#lib/dashboard/project/Publishers.svelte"
+  import Systems from "#lib/dashboard/project/Systems.svelte"
   import Tokens from "#lib/dashboard/project/Tokens.svelte"
   import Visibility from "#lib/dashboard/project/Visibility.svelte"
 
@@ -16,6 +17,7 @@
 <div class="max-w-3xl space-y-12">
   <Visibility bind:settings={() => data, (next) => settings.set(next)} />
   <Address bind:settings={() => data, (next) => settings.set(next)} />
+  <Systems settings={data} />
   <Publishers appId={data.app.id} bind:publishers={data.trusted_publishers} />
   <Tokens appId={data.app.id} bind:tokens={data.tokens} />
   {#if session.can("apps")}<DeleteProject settings={data} />{/if}

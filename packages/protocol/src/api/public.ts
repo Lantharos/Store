@@ -48,6 +48,9 @@ export interface AppPage {
   installs: Installs
   project: ProjectSummary
   replacement: Replacement | null
+  /** Whether the project has the app itself, or only named parts. */
+  has_app: boolean
+  parts: ProjectFile[]
 }
 
 export interface Replacement {
@@ -67,6 +70,7 @@ export interface ProjectSummary {
 }
 
 export interface ProjectFile {
+  part: string | null
   version: string
   name: string
   platform: Platform

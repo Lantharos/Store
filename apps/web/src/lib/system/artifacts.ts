@@ -61,11 +61,19 @@ export function fileName(artifact: Artifact) {
   return decodeURIComponent(artifact.url.slice(artifact.url.lastIndexOf("/") + 1))
 }
 
-export function groupByPlatform(artifacts: Artifact[]) {
-  const groups = new Map<Platform, Artifact[]>()
-  for (const artifact of artifacts)
-    groups.set(artifact.platform, [...(groups.get(artifact.platform) ?? []), artifact])
-  return [...groups].map(([platform, files]) => ({ platform, name: PLATFORM_NAMES[platform], files }))
+export function groupByPlatform<File extends { platform: Platform; part?: string | null }>(files: File[]) {
+  const groups = new Map<string, File[]>()
+  for (const file of files) {
+    const key = `${file.part ?? ""}/${file.platform}`
+    groups.set(key, [...(groups.get(key) ?? []), file])
+  }
+  return [...groups.values()].map((group) => ({
+    key: `${group[0]!.part ?? ""}/${group[0]!.platform}`,
+    name: group[0]!.part
+      ? `${group[0]!.part} for ${PLATFORM_NAMES[group[0]!.platform]}`
+      : PLATFORM_NAMES[group[0]!.platform],
+    files: group,
+  }))
 }
 
 export function systemsOf(platforms: Iterable<string>) {

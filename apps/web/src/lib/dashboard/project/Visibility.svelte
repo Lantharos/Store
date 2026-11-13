@@ -13,6 +13,7 @@
   let { settings = $bindable() }: { settings: AppSettings } = $props()
   const app = $derived(settings.app)
   const file = $derived(listingFile(settings))
+  const onlyParts = $derived(!app.platforms && Object.keys(app.parts).length > 0)
   let asking = $state(false)
 
   async function askToList() {
@@ -27,11 +28,13 @@
       ? "In the store, in search and in Schelf on Luft. A person reviews every release."
       : app.listing_requested
         ? "A reviewer is looking at the project and its latest release. You'll get an email when they decide."
-        : "Only people with the link find it. Releases from GitHub go out once Schelf's checks pass."}
+        : onlyParts
+          ? "It hosts the downloads of its parts and isn't listed. Releases from GitHub go out once Schelf's checks pass."
+          : "Only people with the link find it. Releases from GitHub go out once Schelf's checks pass."}
   >
     {#if file}
       <span class="font-mono text-[12px] text-ink-muted">{file} · listed</span>
-    {:else if app.visibility === "unlisted" && !app.listing_requested && session.can("apps")}
+    {:else if app.visibility === "unlisted" && !app.listing_requested && !onlyParts && session.can("apps")}
       <button type="button" class="button button-sm button-quiet" onclick={() => (asking = true)}>Ask to be listed</button>
     {/if}
   </Row>

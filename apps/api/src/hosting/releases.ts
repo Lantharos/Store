@@ -51,6 +51,7 @@ async function loadReleases(appId: string, channel: string): Promise<HostedRelea
     files: artifacts
       .filter((artifact) => artifact.releaseId === release.id)
       .map((artifact) => ({
+        part: artifact.part,
         platform: artifact.platform as Platform,
         kind: artifact.kind as ArtifactKind,
         name: artifact.name,
@@ -66,7 +67,7 @@ async function loadReleases(appId: string, channel: string): Promise<HostedRelea
 }
 
 export async function hostedReleases(appId: string, channel: string) {
-  const key = new Request(`https://hosting.schelf.internal/${encodeURIComponent(appId)}/${channel}`)
+  const key = new Request(`https://hosting.schelf.internal/releases/${encodeURIComponent(appId)}/${channel}`)
   const cached = await caches.default.match(key)
   if (cached) return cached.json<HostedRelease[]>()
   const releases = await loadReleases(appId, channel)

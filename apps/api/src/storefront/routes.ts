@@ -6,23 +6,29 @@ import {
   type FeaturedResponse,
   type FeaturedSection,
   featuredQuery,
+  hasAppPart,
   type MirrorEntry,
+  offeredReleases,
   type PublisherPage,
   paths,
   type ReportResponse,
   reportRequest,
   type SearchHit,
   type SearchResponse,
+  STABLE,
   searchQuery,
 } from "@schelf/protocol"
 import { eq, sum } from "drizzle-orm"
 import { Hono } from "hono"
 import { avatarUrl } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
-import { projectSummary } from "../hosting/addresses.ts"
+import { linkBase, projectSummary } from "../hosting/addresses.ts"
+import { latestFiles } from "../hosting/files.ts"
+import { linkReleases } from "../hosting/releases.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
+import { partPlan } from "../publishing/parts.ts"
 import { appByProject } from "../publishing/start.ts"
 import { replacementOf } from "../releases/replacing.ts"
 import { type AppRow, installsSince, mediaUrl } from "../signing/records.ts"
@@ -34,6 +40,7 @@ import { searchKeys } from "./search-index.ts"
 const SECTION_SIZE = 12
 const SEARCH_WINDOW = 90
 const PUBLIC_CACHE = "public, max-age=60"
+const PAGE_LINKS = { followRollout: false, draw: 0 }
 
 export const storefrontRoutes = new Hono()
 
@@ -107,7 +114,7 @@ storefrontRoutes.get("/featured", async (c) => {
 async function appPage(app: AppRow | undefined): Promise<AppPage> {
   if (!app || (app.status !== "published" && app.status !== "delisted" && app.status !== "pulled"))
     fail(404, "There's no app with that id")
-  const [object, owner, last30, [total], replacement] = await Promise.all([
+  const [object, owner, last30, [total], replacement, releases] = await Promise.all([
     env.BUCKET.get(paths.app(app.id)),
     db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
     installsSince([app.id], 30),
@@ -116,14 +123,19 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
       .from(schema.countDaily)
       .where(eq(schema.countDaily.appId, app.id)),
     replacementOf(app),
+    linkReleases(app.id, [STABLE]),
   ])
   if (!object) fail(404, "There's no app with that id")
+  const plan = partPlan(app)
+  const parts = latestFiles(linkBase(app, owner!.slug), offeredReleases(releases, plan), PAGE_LINKS)
   return {
     app: await object.json<AppIndex>(),
     status: app.status,
     installs: { last_30_days: last30.get(app.id) ?? 0, total: Number(total?.installs ?? 0) },
     project: projectSummary(app, owner!.slug),
     replacement,
+    has_app: hasAppPart(plan),
+    parts: parts.filter((file) => file.part !== null),
   }
 }
 

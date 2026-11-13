@@ -21,6 +21,8 @@ export function storePage(found: AppPage, path: string) {
     app,
     installs: found.installs,
     project: found.project,
+    hasApp: found.has_app,
+    parts: found.parts,
     extensionAccess: stable[0]?.extension ? extensionGrants(stable[0].extension) : null,
     path,
     description: renderUserMarkdown(app.listing.en!.description),

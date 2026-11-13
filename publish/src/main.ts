@@ -57,8 +57,9 @@ async function run() {
     patterns.push(...(await downloadReleaseAssets(context.tag, assetPatterns, githubToken)))
   }
 
-  const artifacts = await hashArtifacts(await collectArtifacts(patterns, context.manifest.format))
-  for (const artifact of artifacts) core.info(`${artifact.platform.padEnd(16)} ${artifact.name}`)
+  const artifacts = await hashArtifacts(await collectArtifacts(patterns, context.manifest))
+  for (const artifact of artifacts)
+    core.info(`${[artifact.part, artifact.platform].filter(Boolean).join(" ").padEnd(24)} ${artifact.name}`)
 
   await core.group("Recording build provenance", () => attest(artifacts, githubToken))
   const token = await githubOidcToken()

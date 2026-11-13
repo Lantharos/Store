@@ -19,10 +19,16 @@ export async function writeSummary(
   core.summary.addHeading(`${release.app} ${release.version} ${status}`, 2).addTable([
     [
       { data: "File", header: true },
+      { data: "Part", header: true },
       { data: "Platform", header: true },
       { data: "Size", header: true },
     ],
-    ...artifacts.map((artifact) => [artifact.name, artifact.platform, megabytes(artifact.size)]),
+    ...artifacts.map((artifact) => [
+      artifact.name,
+      artifact.part ?? "The app",
+      artifact.platform,
+      megabytes(artifact.size),
+    ]),
   ])
   if (completed.checks.length && completed.checks.every((check) => check.status === "passed"))
     core.summary.addRaw(`All ${completed.checks.length} checks passed.`).addBreak()

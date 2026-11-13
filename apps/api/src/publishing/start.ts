@@ -31,6 +31,7 @@ import { fail, failConfig } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { acceptingSubmissions } from "../ops/events.ts"
 import type { AppRow } from "../signing/records.ts"
+import { sortIntoParts } from "./parts.ts"
 import { identifyPublisher, type Publisher } from "./publisher.ts"
 import { issueUploadToken } from "./upload-token.ts"
 
@@ -133,6 +134,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
   const { app, publisher, version } = input
   const names = new Set(input.files.map((file) => file.name))
   if (names.size !== input.files.length) fail(422, "Two files have the same name")
+  const files = sortIntoParts(app, input.files)
   const line = await releaseLine(app, input.format, input.bridge)
   const channel = input.channel ?? channelFromVersion(version)
   await refuseEnded(app.id, channel)
@@ -142,7 +144,7 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
 
   const releaseId = randomId()
   const artifacts = await Promise.all(
-    input.files.map(async (file) => {
+    files.map(async (file) => {
       const key = paths.artifact(app.id, version, file.platform, file.name)
       const parts = partsFor(file.size)
       const uploadId = parts > 1 ? (await env.BUCKET.createMultipartUpload(key)).uploadId : null
@@ -151,8 +153,9 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
         id: randomId(),
         releaseId,
         name: file.name,
+        part: file.part,
         platform: file.platform,
-        format: input.format,
+        format: file.part ? ("files" as const) : input.format,
         kind: file.kind,
         key,
         size: file.size,

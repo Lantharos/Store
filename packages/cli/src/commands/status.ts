@@ -44,6 +44,13 @@ function printRelease(context: Context, id: string, release: ReleaseDetail) {
   blank()
   printChecks(release.checks)
   blank()
+  for (const file of release.artifacts)
+    field(
+      [file.part, file.platform].filter(Boolean).join(" "),
+      `${file.name} ${muted(file.sha256.slice(0, 16))}`,
+      24,
+    )
+  blank()
   if (release.next) field("Next", release.next)
   if (release.run_url) field("Build", link(release.run_url))
   field("Dashboard", link(`${context.api}/dashboard/apps/${id}/releases/${release.id}`))

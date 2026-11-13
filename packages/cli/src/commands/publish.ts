@@ -80,8 +80,9 @@ export async function publish(args: Args) {
 
   const id = manifestName(context.manifest)
   title(`Publishing ${id} ${version}`)
-  const artifacts = await hashArtifacts(await collectArtifacts(args.positionals, context.manifest.format))
-  for (const artifact of artifacts) field(artifact.platform, artifact.name, 18)
+  const artifacts = await hashArtifacts(await collectArtifacts(args.positionals, context.manifest))
+  for (const artifact of artifacts)
+    field([artifact.part, artifact.platform].filter(Boolean).join(" "), artifact.name, 24)
   blank()
 
   const signed = await credential(args)

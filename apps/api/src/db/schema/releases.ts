@@ -79,6 +79,7 @@ export const artifact = sqliteTable(
       .notNull()
       .references(() => release.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    part: text("part"),
     platform: text("platform").notNull(),
     format: text("format").notNull(),
     kind: text("kind").notNull(),

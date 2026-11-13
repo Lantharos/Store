@@ -1,11 +1,12 @@
 import { waitUntil } from "cloudflare:workers"
-import { DEFAULT_LOCALE, SHIPPED_STATUSES } from "@schelf/protocol"
+import { DEFAULT_LOCALE, hasAppPart, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, eq, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { sendNotice } from "../mail/notices/send.ts"
 import { listingMail } from "../mail/notices/templates/listing.ts"
 import { recordHistory, tellOps } from "../ops/events.ts"
+import { partPlan } from "../publishing/parts.ts"
 import { resignApp } from "../signing/queue.ts"
 import type { AppRow } from "../signing/records.ts"
 import { reindexApp } from "../storefront/indexing.ts"
@@ -13,6 +14,8 @@ import { reindexApp } from "../storefront/indexing.ts"
 export async function listingRefusal(app: AppRow) {
   if (app.visibility === "listed") return "It's listed already"
   if (app.listingRequestedAt) return "It's waiting for a reviewer already"
+  if (!hasAppPart(partPlan(app)))
+    return "A project of only named parts hosts releases; add platforms for the app to list it"
   const shipped = await db.$count(
     schema.release,
     and(eq(schema.release.appId, app.id), inArray(schema.release.status, [...SHIPPED_STATUSES])),

@@ -81,23 +81,24 @@ function extensionPlatforms(platforms: string[], helper: boolean) {
 function platformCheck({ app, release, artifacts }: QuickCheckInput) {
   const format = release.format
   if (!formatFits(app.kind, format)) return failed("platforms", `A ${app.kind} can't be a ${format}`)
-  const allowed = platformsFor(format)
-  const kinds = kindsFor(format)
   for (const artifact of artifacts) {
-    if (!allowed.includes(artifact.platform as never))
-      return failed("platforms", `${artifact.name} is for ${artifact.platform}, which ${format} can't target`)
-    if (!kinds.includes(artifact.kind as never))
-      return failed("platforms", `${artifact.name} is a ${artifact.kind}, which ${format} doesn't ship`)
-    if (format === "appimage" && !artifact.platform.startsWith("linux-"))
+    const shape = artifact.part ? "files" : format
+    if (!platformsFor(shape).includes(artifact.platform as never))
+      return failed("platforms", `${artifact.name} is for ${artifact.platform}, which ${shape} can't target`)
+    if (!kindsFor(shape).includes(artifact.kind as never))
+      return failed("platforms", `${artifact.name} is a ${artifact.kind}, which ${shape} doesn't ship`)
+    if (shape === "appimage" && !artifact.platform.startsWith("linux-"))
       return failed("platforms", `${artifact.name}: AppImages are for Linux`)
-    if (format === "sabine" && artifact.kind === "archive" && !artifact.executable)
+    if (shape === "sabine" && artifact.kind === "archive" && !artifact.executable)
       return failed("platforms", `${artifact.name} is an archive; say which program inside it starts the app`)
   }
-  const platforms = [...new Set(artifacts.map((artifact) => artifact.platform))]
+  const platforms = [...new Set(artifacts.filter((each) => !each.part).map((artifact) => artifact.platform))]
   const extensionProblem =
     app.kind === "extension" && extensionPlatforms(platforms, release.extensionAccess?.helper ?? false)
   if (extensionProblem) return failed("platforms", extensionProblem)
-  return passed("platforms", `Built for ${platforms.join(", ")}`)
+  const parts = [...new Set(artifacts.flatMap((artifact) => artifact.part ?? []))]
+  const built = platforms.length ? `Built for ${platforms.join(", ")}` : "Only named parts"
+  return passed("platforms", parts.length ? `${built}; parts: ${parts.join(", ")}` : built)
 }
 
 function attestationCheck({ release, artifacts, attestations }: QuickCheckInput) {
