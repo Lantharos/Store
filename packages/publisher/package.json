@@ -7,12 +7,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check": "tsc -p .",
-    "test": "bun test"
+    "check": "tsc -p ."
   },
   "dependencies": {
-    "@schelf/protocol": "workspace:*",
-    "smol-toml": "1.9.1"
+    "@schelf/protocol": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "1.4.4"

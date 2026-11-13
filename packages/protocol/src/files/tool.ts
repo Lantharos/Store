@@ -37,3 +37,9 @@ export const toolIndex = stamp.extend({
   releases: z.array(toolRelease),
 })
 export type ToolIndex = z.infer<typeof toolIndex>
+
+export function toolReleaseOn(index: ToolIndex, channel: string) {
+  const now = index.ended_channels?.[channel] ?? channel
+  const releases = index.releases.filter((release) => release.channel === now)
+  return releases.find((release) => release.rollout.percent === 100) ?? releases[0]
+}

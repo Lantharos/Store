@@ -1,7 +1,7 @@
 {
   "name": "schelf",
-  "version": "0.4.0",
-  "description": "Publish apps and Luft extensions on schelf.store",
+  "version": "0.5.0",
+  "description": "Install apps and command-line tools, and publish your own on schelf.store",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -9,7 +9,7 @@
     "url": "git+https://github.com/Lantharos/Store.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://schelf.store/docs",
+  "homepage": "https://schelf.store/docs/cli",
   "bin": {
     "schelf": "dist/schelf.js"
   },
@@ -22,15 +22,10 @@
   "scripts": {
     "build": "bun build src/main.ts --target=node --format=esm --minify --outfile=dist/schelf.js",
     "check": "tsc -p .",
-    "test": "bun test",
     "prepublishOnly": "bun run build"
   },
   "devDependencies": {
-    "@schelf/appstream": "workspace:*",
-    "@schelf/protocol": "workspace:*",
-    "@schelf/publisher": "workspace:*",
-    "@types/bun": "1.4.4",
-    "smol-toml": "1.9.1",
-    "zod": "4.6.7"
+    "@schelf/program": "workspace:*",
+    "@types/bun": "1.4.4"
   }
 }

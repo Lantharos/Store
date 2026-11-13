@@ -91,17 +91,23 @@
     },
     "packages/cli": {
       "name": "schelf",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "bin": {
         "schelf": "dist/schelf.js",
       },
       "devDependencies": {
-        "@schelf/appstream": "workspace:*",
-        "@schelf/protocol": "workspace:*",
-        "@schelf/publisher": "workspace:*",
+        "@schelf/program": "workspace:*",
         "@types/bun": "1.4.4",
-        "smol-toml": "1.9.1",
-        "zod": "4.6.7",
+      },
+    },
+    "packages/program": {
+      "name": "@schelf/program",
+      "version": "0.0.0",
+      "dependencies": {
+        "@schelf/protocol": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.4",
       },
     },
     "packages/protocol": {
@@ -121,7 +127,6 @@
       "version": "0.0.0",
       "dependencies": {
         "@schelf/protocol": "workspace:*",
-        "smol-toml": "1.9.1",
       },
       "devDependencies": {
         "@types/bun": "1.4.4",
@@ -132,8 +137,8 @@
       "devDependencies": {
         "@actions/attest": "3.2.0",
         "@actions/core": "3.0.1",
+        "@schelf/program": "workspace:*",
         "@schelf/protocol": "workspace:*",
-        "@schelf/publisher": "workspace:*",
         "@types/bun": "1.4.4",
       },
     },
@@ -476,6 +481,8 @@
     "@schelf/checks": ["@schelf/checks@workspace:checks"],
 
     "@schelf/mirror": ["@schelf/mirror@workspace:mirror"],
+
+    "@schelf/program": ["@schelf/program@workspace:packages/program"],
 
     "@schelf/protocol": ["@schelf/protocol@workspace:packages/protocol"],
 

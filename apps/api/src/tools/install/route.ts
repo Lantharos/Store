@@ -8,6 +8,7 @@ import {
   splitToolAddress,
   type ToolIndex,
   toolName,
+  toolReleaseOn,
 } from "@schelf/protocol"
 import { Hono } from "hono"
 import { type Bootstrap, installScript, POSIX_TARGETS } from "./script.ts"
@@ -27,12 +28,6 @@ function indexKeyOf(handle: string) {
   return toolName.safeParse(handle).success ? paths.shortTool(handle) : null
 }
 
-function releaseOn(index: ToolIndex, channel: string) {
-  const now = index.ended_channels?.[channel] ?? channel
-  const releases = index.releases.filter((release) => release.channel === now)
-  return releases.find((release) => release.rollout.percent === 100) ?? releases[0]
-}
-
 function filesOf(release: ToolIndex["releases"][number]) {
   return Object.fromEntries(
     POSIX_TARGETS.flatMap((target) => {
@@ -47,7 +42,7 @@ const refuse = (status: 404 | 503, message: string) =>
 
 async function serve(handle: string | null, channel: string) {
   const schelf = await readIndex(paths.tool(STORE_TOOL.publisher, STORE_TOOL.name))
-  const release = schelf && releaseOn(schelf, channel)
+  const release = schelf && toolReleaseOn(schelf, channel)
   if (!release) return refuse(503, `schelf isn't published on ${channel} yet`)
   let then: Bootstrap["then"] = null
   if (handle) {

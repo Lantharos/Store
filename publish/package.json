@@ -9,8 +9,8 @@
   "devDependencies": {
     "@actions/attest": "3.2.0",
     "@actions/core": "3.0.1",
+    "@schelf/program": "workspace:*",
     "@schelf/protocol": "workspace:*",
-    "@schelf/publisher": "workspace:*",
     "@types/bun": "1.4.4"
   }
 }

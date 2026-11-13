@@ -1,4 +1,4 @@
-import { mkdir, open } from "node:fs/promises"
+import { mkdir, open, readFile } from "node:fs/promises"
 import { join, matchesGlob } from "node:path"
 import * as core from "@actions/core"
 
@@ -12,6 +12,15 @@ const POLL_SECONDS = 15
 const WAIT_MINUTES = 30
 
 const api = process.env.GITHUB_API_URL ?? "https://api.github.com"
+
+export async function releaseTag(): Promise<string | undefined> {
+  const event = process.env.GITHUB_EVENT_PATH
+  const release = event
+    ? (JSON.parse(await readFile(event, "utf8")) as { release?: { tag_name?: string } }).release
+    : undefined
+  const ref = process.env.GITHUB_REF ?? ""
+  return release?.tag_name ?? (ref.startsWith("refs/tags/") ? ref.slice("refs/tags/".length) : undefined)
+}
 
 async function github<T>(path: string, token: string): Promise<T> {
   const response = await fetch(`${api}${path}`, {

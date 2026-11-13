@@ -1,8 +1,5 @@
 import { OIDC_AUDIENCE } from "@schelf/protocol"
 
-export const oidcAvailable = () =>
-  Boolean(process.env.ACTIONS_ID_TOKEN_REQUEST_URL && process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
-
 export async function githubOidcToken(audience = OIDC_AUDIENCE) {
   const url = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL!)
   url.searchParams.set("audience", audience)
