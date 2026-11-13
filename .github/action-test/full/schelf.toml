@@ -1,0 +1,14 @@
+project = "kristof-imeri/action-test"
+format = "sabine"
+distribution = "proprietary"
+platforms = ["linux-x86_64"]
+
+[parts.helper]
+files = ["action-test-helper-*"]
+platforms = ["linux-x86_64"]
+format = "sabine"
+id = "io.github.kristofimeri.ActionTestHelper"
+
+[parts.cli]
+files = ["action-test-cli-*"]
+platforms = ["linux-x86_64"]
