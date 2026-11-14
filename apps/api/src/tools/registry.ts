@@ -23,14 +23,14 @@ export async function shortNames(names: string[]) {
 
 export function shortState(
   name: string,
-  owner: { id: string; verified: boolean },
+  owner: { id: string; slug: string; verified: boolean },
   row: ShortNameRow | undefined,
 ): ShortNameState {
   if (row) {
     if (row.publisherId !== owner.id) return "taken"
     return owner.verified ? "resolves" : "paused"
   }
-  return isReservedToolName(name) ? "reserved" : "free"
+  return isReservedToolName(name, owner.slug) ? "reserved" : "free"
 }
 
 export function projectTool(entry: ToolEntry, publisherSlug: string, short: ShortNameState): ProjectTool {

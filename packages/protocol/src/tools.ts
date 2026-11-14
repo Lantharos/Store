@@ -220,7 +220,9 @@ export const RESERVED_TOOL_NAMES: ReadonlySet<string> = new Set([
   ...WELL_KNOWN,
 ])
 
-export const isReservedToolName = (name: string) => RESERVED_TOOL_NAMES.has(name.toLowerCase())
+export const isReservedToolName = (name: string, publisher: string) =>
+  RESERVED_TOOL_NAMES.has(name.toLowerCase()) &&
+  !(publisher === STORE_TOOL.publisher && name === STORE_TOOL.name)
 
 export const toolAddress = (publisher: string, name: string) => `${publisher}/${name}`
 

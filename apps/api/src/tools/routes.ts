@@ -29,7 +29,7 @@ async function publisherTools(publisher: PublisherRow): Promise<PublisherTool[]>
         )
     : []
   const rows = await shortNames(owned.map(({ entry }) => entry.name))
-  const owner = { id: publisher.id, verified: publisher.verifiedAt !== null }
+  const owner = { id: publisher.id, slug: publisher.slug, verified: publisher.verifiedAt !== null }
   return owned.map(({ app, entry }) => ({
     ...projectTool(entry, publisher.slug, shortState(entry.name, owner, rows.get(entry.name))),
     project: `${publisher.slug}/${app.slug}`,
@@ -47,7 +47,8 @@ toolRoutes.post("/:id/tool-names", async (c) => {
   allow(role, "apps")
   const { name } = await readBody(c, claimToolName)
   if (!publisher.verifiedAt) fail(403, "Short names are for verified publishers")
-  if (isReservedToolName(name)) fail(409, `${name} is kept for the system and well-known tools`)
+  if (isReservedToolName(name, publisher.slug))
+    fail(409, `${name} is kept for the system and well-known tools`)
   const found = await findTool(publisher.slug, name)
   if (!found) fail(404, `None of ${publisher.name}'s projects installs ${name}; add tool = "${name}" first`)
   const [claimed] = await db

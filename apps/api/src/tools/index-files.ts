@@ -87,7 +87,11 @@ const signedPair = (key: string) => [key, paths.signature(key)]
 
 export async function writeToolIndexes(record: AppRecord) {
   const entries = toolsOf(record.app)
-  const owner = { id: record.app.publisherId, verified: record.publisher.verified }
+  const owner = {
+    id: record.app.publisherId,
+    slug: record.publisher.slug,
+    verified: record.publisher.verified,
+  }
   const rows = await shortNames(entries.map((entry) => entry.name))
   for (const entry of entries) {
     const row = rows.get(entry.name)
