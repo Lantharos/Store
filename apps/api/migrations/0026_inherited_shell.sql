@@ -1,0 +1,1 @@
+ALTER TABLE `release` ADD `shell_inherited_from` text;

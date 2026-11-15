@@ -83,7 +83,7 @@ export const release = resource("release", {
     allowInShell: action({
       label: "Let it run inside Luft",
       description:
-        "Approves these exact files to run inside Luft's desktop and signs the app's index again. A new release needs its own approval.",
+        "Approves these exact files to run inside Luft's desktop and signs the app's index again. Later releases from the same publisher and workflow that ask for no more are let in on this approval.",
       danger: "confirm",
       when: shellApprovable,
       moves: "runs inside Luft",
@@ -92,7 +92,7 @@ export const release = resource("release", {
     refuseInShell: action({
       label: "Refuse to run inside Luft",
       description:
-        "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable.",
+        "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable. On a release that runs inside Luft it withdraws the extension's approval, so every release goes back to the sandbox and the next one has to ask again.",
       input: z.object({ reason: z.string().trim().min(1).max(2000).describe("The developer sees it") }),
       danger: "confirm",
       when: (release) => extension(release) && release.shellReview !== "refused",

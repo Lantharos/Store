@@ -21,8 +21,8 @@ const API = "https://schelf.store/api/v1"
 const schelfToml = (appId: string) =>
   `id = "${appId}"\nkind = "extension"\nformat = "luft-extension"\npermissions = "extension.toml"\n\n[requires]\nextension_api = 1\n`
 
-const manifest = (appId: string, luft?: string) =>
-  `id = "${appId}"\nname = "Rain"\napi = 1\npermissions = ["wallpaper"]\n${luft ? `\n[luft]\n${luft}\n` : ""}`
+const manifest = (appId: string, luft?: string, permissions = ["wallpaper"]) =>
+  `id = "${appId}"\nname = "Rain"\napi = 1\npermissions = ${JSON.stringify(permissions)}\n${luft ? `\n[luft]\n${luft}\n` : ""}`
 
 const minimum = (version: string, inside = false) =>
   `minimum = "${version}"${inside ? "\ninside = true" : ""}`
@@ -40,7 +40,14 @@ async function extension() {
   return owner
 }
 
-function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, version: string, luft?: string) {
+function start(
+  token: string,
+  appId: string,
+  file: Uint8Array<ArrayBuffer>,
+  version: string,
+  luft?: string,
+  permissions?: string[],
+) {
   return sha256Hex(file).then((sha256) =>
     exports.default.fetch(
       new Request(`${API}/publish`, {
@@ -49,7 +56,7 @@ function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, vers
         body: JSON.stringify({
           version,
           schelf_toml: schelfToml(appId),
-          permissions_toml: manifest(appId, luft),
+          permissions_toml: manifest(appId, luft, permissions),
           files: [{ name: "rain.tar.zst", platform: "luft", kind: "extension", size: file.length, sha256 }],
         }),
       }),
@@ -57,9 +64,17 @@ function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, vers
   )
 }
 
-async function shipped(token: string, appId: string, version: string, luft = minimum("1.0")) {
+async function shipped(
+  token: string,
+  appId: string,
+  version: string,
+  luft = minimum("1.0"),
+  permissions?: string[],
+) {
   const file = bytesOf(`rain ${version}`)
-  const started = (await (await start(token, appId, file, version, luft)).json()) as PublishResponse
+  const started = (await (
+    await start(token, appId, file, version, luft, permissions)
+  ).json()) as PublishResponse
   await exports.default.fetch(
     new Request(started.files[0]!.url, {
       method: "PUT",
@@ -83,10 +98,10 @@ async function index(appId: string) {
   return env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
 }
 
-const shellReview = (releaseId: string) =>
-  db.query.release
-    .findFirst({ where: eq(schema.release.id, releaseId) })
-    .then((release) => release!.shellReview)
+const shellOf = (releaseId: string) =>
+  db.query.release.findFirst({ where: eq(schema.release.id, releaseId) }).then((release) => release!)
+
+const shellReview = (releaseId: string) => shellOf(releaseId).then((release) => release.shellReview)
 
 const verify = (publisherId: string, verifiedAt: Date | null) =>
   db.update(schema.publisher).set({ verifiedAt }).where(eq(schema.publisher.id, publisherId))
@@ -177,5 +192,49 @@ describe("running inside Luft", () => {
     expect(await shellReview(asked)).toBe("waiting")
     expect(await shellReview(unasked)).toBeNull()
     expect((await index(appId)).releases.some((release) => release.runs_in_shell)).toBe(false)
+  })
+
+  test("once the extension is approved, a later release that asks for no more gets in on that approval without a request", async () => {
+    const { appId, publisherId, token } = await extension()
+    await verify(publisherId, new Date())
+    const first = await shipped(token, appId, "1.0.0", minimum("1.0", true))
+    await allowInShell(first, "Owner")
+    const second = await shipped(token, appId, "1.1.0", minimum("1.0", true))
+    const third = await shipped(token, appId, "1.2.0", minimum("1.0", true))
+
+    expect(await shellOf(third)).toMatchObject({
+      shellReview: "approved",
+      shellDecidedBy: "Owner",
+      shellInheritedFrom: first,
+      shellItem: null,
+    })
+    expect((await shellOf(second)).shellInheritedFrom).toBe(first)
+    const { releases } = await index(appId)
+    expect(releases.every((release) => release.runs_in_shell)).toBe(true)
+  })
+
+  test("a release that asks for more than the approved one, or comes after the publisher was verified again, files a request", async () => {
+    const { appId, publisherId, token } = await extension()
+    await verify(publisherId, new Date())
+    await allowInShell(await shipped(token, appId, "1.0.0", minimum("1.0", true)), "Owner")
+
+    const wider = await shipped(token, appId, "1.1.0", minimum("1.0", true), ["wallpaper", "notifications"])
+    expect(await shellReview(wider)).toBe("waiting")
+
+    await verify(publisherId, new Date(Date.now() + 1000))
+    const reverified = await shipped(token, appId, "1.2.0", minimum("1.0", true))
+    expect(await shellReview(reverified)).toBe("waiting")
+  })
+
+  test("refusing a release that runs inside Luft withdraws the extension's approval, and the next release asks again", async () => {
+    const { appId, publisherId, token } = await extension()
+    await verify(publisherId, new Date())
+    await allowInShell(await shipped(token, appId, "1.0.0", minimum("1.0", true)), "Owner")
+    const inherited = await shipped(token, appId, "1.1.0", minimum("1.0", true))
+
+    await refuseShell(inherited, "Owner", "Reads the clipboard in the background")
+    expect((await index(appId)).releases.some((release) => release.runs_in_shell)).toBe(false)
+    const next = await shipped(token, appId, "1.2.0", minimum("1.0", true))
+    expect(await shellReview(next)).toBe("waiting")
   })
 })

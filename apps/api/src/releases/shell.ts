@@ -7,6 +7,7 @@ import { resignApp, resignPublisher } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
 import { notifyPublisher } from "./notify.ts"
 import { filesOf, REVIEWABLE, shellRequestable } from "./shell-files.ts"
+import { standingApproval } from "./standing.ts"
 
 async function extensionRelease(releaseId: string) {
   const [row] = await db
@@ -17,37 +18,51 @@ async function extensionRelease(releaseId: string) {
     .where(eq(schema.release.id, releaseId))
   if (!row) fail(404, "That release doesn't exist")
   if (row.kind !== "extension") fail(422, "Only extensions run inside Luft")
-  return { release: row.release, verified: row.verifiedAt !== null }
+  return { release: row.release, verifiedAt: row.verifiedAt }
 }
 
 async function approvable(releaseId: string) {
-  const { release, verified } = await extensionRelease(releaseId)
-  if (!verified) fail(403, "Only extensions from a verified publisher run inside Luft")
+  const { release, verifiedAt } = await extensionRelease(releaseId)
+  if (!verifiedAt) fail(403, "Only extensions from a verified publisher run inside Luft")
   if (!REVIEWABLE.includes(release.status))
     fail(409, `This release is ${release.status}, so it can't run inside Luft`)
-  return release
+  return { release, verifiedAt }
 }
 
-async function fileShellRequest(release: ReleaseRow, text: string, by?: string) {
+async function askForShell(release: ReleaseRow, verifiedAt: Date, text: string, by?: string) {
+  const standing = await standingApproval(release, verifiedAt)
+  if (standing) return inherit(release, standing)
   await db.update(schema.release).set({ shellReview: "waiting" }).where(eq(schema.release.id, release.id))
   tellOps({ type: "shell", release: release.id })
   recordHistory("release", release.id, text, by)
 }
 
+async function inherit(release: ReleaseRow, standing: ReleaseRow) {
+  const original = standing.shellInheritedFrom ?? standing.id
+  const approved = await db.query.release.findFirst({ where: eq(schema.release.id, original) })
+  await approve(release, standing.shellDecidedBy!, new Date(), original)
+  recordHistory(
+    "release",
+    release.id,
+    `Runs inside Luft on ${standing.shellDecidedBy}'s approval of ${approved!.version}, as it asks for no more`,
+  )
+  await resignApp(release.appId)
+}
+
 export async function requestShell(releaseId: string, by: string) {
-  const release = await approvable(releaseId)
+  const { release, verifiedAt } = await approvable(releaseId)
   if (release.shellReview !== null) fail(409, "Running inside Luft was already asked for")
-  await fileShellRequest(release, "Asked to run inside Luft", by)
+  await askForShell(release, verifiedAt, "Asked to run inside Luft", by)
 }
 
 /** Asks for a release whose extension.toml wants it to run inside Luft, where that may be asked for. */
 export async function requestWantedShell(releaseId: string) {
-  const { release, verified } = await extensionRelease(releaseId)
-  if (shellRequestable(release, verified))
-    await fileShellRequest(release, "Asked to run inside Luft, as its extension.toml says")
+  const { release, verifiedAt } = await extensionRelease(releaseId)
+  if (verifiedAt && shellRequestable(release, true))
+    await askForShell(release, verifiedAt, "Asked to run inside Luft, as its extension.toml says")
 }
 
-async function approve(release: ReleaseRow, by: string, at: Date) {
+async function approve(release: ReleaseRow, by: string, at: Date, inheritedFrom: string | null = null) {
   const artifacts = await db
     .select({ sha256: schema.artifact.sha256 })
     .from(schema.artifact)
@@ -60,12 +75,13 @@ async function approve(release: ReleaseRow, by: string, at: Date) {
       shellReason: null,
       shellDecidedBy: by,
       shellDecidedAt: at,
+      shellInheritedFrom: inheritedFrom,
     })
     .where(eq(schema.release.id, release.id))
 }
 
 export async function allowInShell(releaseId: string, by: string) {
-  const release = await approvable(releaseId)
+  const { release } = await approvable(releaseId)
   if (release.shellReview === "approved") fail(409, "This release already runs inside Luft")
   await approve(release, by, new Date())
   recordHistory("release", release.id, "Approved to run inside Luft", by)
@@ -77,7 +93,8 @@ export async function allowInShell(releaseId: string, by: string) {
 export async function refuseShell(releaseId: string, by: string, reason: string) {
   const { release } = await extensionRelease(releaseId)
   if (release.shellReview === "refused") fail(409, "This release was already refused")
-  await db
+  const withdrawn = release.shellReview === "approved"
+  const refused = await db
     .update(schema.release)
     .set({
       shellReview: "refused",
@@ -85,12 +102,28 @@ export async function refuseShell(releaseId: string, by: string, reason: string)
       shellReason: reason,
       shellDecidedBy: by,
       shellDecidedAt: new Date(),
+      shellInheritedFrom: null,
     })
-    .where(eq(schema.release.id, release.id))
-  recordHistory("release", release.id, `Refused to run inside Luft: ${reason}`, by)
-  if (release.shellReview === "approved") await resignApp(release.appId)
+    .where(
+      withdrawn
+        ? and(eq(schema.release.appId, release.appId), eq(schema.release.shellReview, "approved"))
+        : eq(schema.release.id, release.id),
+    )
+    .returning({ id: schema.release.id })
+  for (const { id } of refused)
+    recordHistory(
+      "release",
+      id,
+      withdrawn
+        ? `Taken out of Luft with the extension's approval: ${reason}`
+        : `Refused to run inside Luft: ${reason}`,
+      by,
+    )
+  if (withdrawn) await resignApp(release.appId)
   notifyPublisher(release.id, "not-inside-luft", reason)
-  return `${release.appId} ${release.version} won't run inside Luft`
+  return withdrawn
+    ? `${release.appId} no longer runs inside Luft; its next release has to ask again`
+    : `${release.appId} ${release.version} won't run inside Luft`
 }
 
 export async function allowPublisherInShell(publisherId: string, by: string) {

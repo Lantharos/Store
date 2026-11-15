@@ -45,6 +45,10 @@ function extensionFields(release: ReleaseView) {
   return {
     "needs Luft": release.luftMinimum ? `${luftVersionLabel(release.luftMinimum)} or newer` : "Any",
     "inside Luft": release.shellReview ? SHELL_REVIEW[release.shellReview] : "Not asked for",
+    "approved by": release.shellReview === "approved" ? (release.shellDecidedBy ?? undefined) : undefined,
+    "on the approval of": release.shellInheritedFrom
+      ? b.ref("release", release.shellInheritedFrom)
+      : undefined,
     "refused because": release.shellReview === "refused" ? (release.shellReason ?? undefined) : undefined,
     "can do": release.extensionAccess
       ? extensionLabels(release.extensionAccess).join(", ") || "Nothing beyond the basics"

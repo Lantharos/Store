@@ -63,6 +63,7 @@ export const release = sqliteTable(
     shellReason: text("shell_reason"),
     shellDecidedBy: text("shell_decided_by"),
     shellDecidedAt: integer("shell_decided_at", { mode: "timestamp_ms" }),
+    shellInheritedFrom: text("shell_inherited_from"),
     shellItem: text("shell_item"),
     createdAt: createdAt(),
   },

@@ -51,4 +51,4 @@ Narrowing what you ask for needs nothing. Widening it, like adding a folder, the
 
 ## Extensions
 
-Luft extensions don't use this format. They list what they use from the extension API in `extension.toml`, and the store page shows that list in the same plain words. Inside Luft's desktop those permissions describe the API rather than wall the extension off, which is why an extension only runs there once Luft has reviewed the release ([running inside Luft](/docs/luft-extensions#running-inside-luft)).
+Luft extensions don't use this format. They list what they use from the extension API in `extension.toml`, and the store page shows that list in the same plain words. Inside Luft's desktop those permissions describe the API rather than wall the extension off, which is why an extension only runs there once Luft has reviewed it, and again whenever a release asks for more ([running inside Luft](/docs/luft-extensions#running-inside-luft)).

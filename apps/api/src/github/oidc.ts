@@ -64,3 +64,7 @@ export function allowsRef(rule: TrustedPublisherRule, ref: string) {
 export function runUrl(claims: WorkflowClaims) {
   return `https://github.com/${claims.repository}/actions/runs/${claims.run_id}/attempts/${claims.run_attempt}`
 }
+
+export function runRepository(url: string) {
+  return url.slice("https://github.com/".length).split("/actions/runs/")[0]!
+}

@@ -96,7 +96,7 @@ export const publisher = resource("publisher", {
     allowExtensionsInShell: action({
       label: "Let its extensions run inside Luft",
       description:
-        "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases each need their own approval.",
+        "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases that ask for no more are let in on the same approval.",
       danger: "reauth",
       when: (publisher) => publisher.verifiedAt !== null,
       run: ({ record, actor }) => allowPublisherInShell(record.id, actor.name),
