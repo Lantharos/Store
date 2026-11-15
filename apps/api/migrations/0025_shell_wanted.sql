@@ -1,0 +1,1 @@
+ALTER TABLE `release` ADD `shell_wanted` integer DEFAULT false NOT NULL;

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import type { ZodError } from "zod"
-import { appIndex, luftVersionLabel, readLuftMinimum } from "../src/index.ts"
+import { appIndex, luftVersionLabel, readLuft } from "../src/index.ts"
 
 const CLOCK = 'id = "io.github.alice.Clock"\napi = 1\npermissions = ["wallpaper"]\n'
 
 function refusal(manifest: string) {
   try {
-    readLuftMinimum(manifest)
+    readLuft(manifest)
   } catch (error) {
     return (error as ZodError).issues[0]?.message
   }
@@ -14,8 +14,8 @@ function refusal(manifest: string) {
 
 describe("the Luft an extension needs", () => {
   test("is read from [luft] in its manifest, released or nightly", () => {
-    expect(readLuftMinimum(`${CLOCK}\n[luft]\nminimum = "1.2"\n`)).toBe("1.2")
-    expect(readLuftMinimum(`${CLOCK}\n[luft]\nminimum = "1.0-nightly.27"\n`)).toBe("1.0-nightly.27")
+    expect(readLuft(`${CLOCK}\n[luft]\nminimum = "1.2"\n`).minimum).toBe("1.2")
+    expect(readLuft(`${CLOCK}\n[luft]\nminimum = "1.0-nightly.27"\n`).minimum).toBe("1.0-nightly.27")
   })
 
   test("is asked for in words when it's missing", () => {
@@ -30,6 +30,14 @@ describe("the Luft an extension needs", () => {
       expect(refusal(`${CLOCK}\n[luft]\nminimum = "${minimum}"\n`)).toBe(
         "A Luft version looks like 1.2 or 1.2-nightly.21",
       )
+  })
+
+  test("asks to run inside Luft only when inside is true", () => {
+    expect(readLuft(`${CLOCK}\n[luft]\nminimum = "1.2"\n`).inside).toBe(false)
+    expect(readLuft(`${CLOCK}\n[luft]\nminimum = "1.2"\ninside = true\n`).inside).toBe(true)
+    expect(refusal(`${CLOCK}\n[luft]\nminimum = "1.2"\ninside = "yes"\n`)).toBe(
+      "luft.inside is true to ask for each release to run inside Luft, or false",
+    )
   })
 
   test("reads the way Luft names its versions", () => {

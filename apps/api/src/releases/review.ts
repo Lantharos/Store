@@ -10,6 +10,7 @@ import { resignApp } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 import { channelIsGradual } from "./gradual.ts"
 import { notifyPublisher } from "./notify.ts"
+import { requestWantedShell } from "./shell.ts"
 
 export type Decision = "approved" | "changes-requested" | "rejected"
 const FIRST_STEP = ROLLOUT_STEPS[0]
@@ -32,10 +33,13 @@ export async function routeRelease(releaseId: string) {
     channel: release.channel,
     checks,
   })
-  if (route.route === "review") return sendToReview(release.id, route.because)
-  await db.update(schema.release).set({ status: "in-review" }).where(eq(schema.release.id, release.id))
-  recordHistory("release", release.id, "Passed every check, so it went out without a person's review")
-  await approve(release.id, AUTOMATIC_REVIEWER)
+  if (route.route === "review") await sendToReview(release.id, route.because)
+  else {
+    await db.update(schema.release).set({ status: "in-review" }).where(eq(schema.release.id, release.id))
+    recordHistory("release", release.id, "Passed every check, so it went out without a person's review")
+    await approve(release.id, AUTOMATIC_REVIEWER)
+  }
+  if (release.shellWanted) await requestWantedShell(release.id)
 }
 
 async function sendToReview(releaseId: string, because: string) {

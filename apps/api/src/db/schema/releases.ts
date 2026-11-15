@@ -57,6 +57,7 @@ export const release = sqliteTable(
     rolloutSteppedAt: integer("rollout_stepped_at", { mode: "timestamp_ms" }),
     approvedBy: text("approved_by"),
     approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
+    shellWanted: integer("shell_wanted", { mode: "boolean" }).notNull().default(false),
     shellReview: text("shell_review", { enum: SHELL_REVIEWS }),
     shellFiles: text("shell_files", { mode: "json" }).$type<string[]>(),
     shellReason: text("shell_reason"),

@@ -22,7 +22,10 @@ const schelfToml = (appId: string) =>
   `id = "${appId}"\nkind = "extension"\nformat = "luft-extension"\npermissions = "extension.toml"\n\n[requires]\nextension_api = 1\n`
 
 const manifest = (appId: string, luft?: string) =>
-  `id = "${appId}"\nname = "Rain"\napi = 1\npermissions = ["wallpaper"]\n${luft ? `\n[luft]\nminimum = "${luft}"\n` : ""}`
+  `id = "${appId}"\nname = "Rain"\napi = 1\npermissions = ["wallpaper"]\n${luft ? `\n[luft]\n${luft}\n` : ""}`
+
+const minimum = (version: string, inside = false) =>
+  `minimum = "${version}"${inside ? "\ninside = true" : ""}`
 
 async function extension() {
   const owner = await publisherWithApp("luft-extension")
@@ -54,7 +57,7 @@ function start(token: string, appId: string, file: Uint8Array<ArrayBuffer>, vers
   )
 }
 
-async function shipped(token: string, appId: string, version: string, luft: string) {
+async function shipped(token: string, appId: string, version: string, luft = minimum("1.0")) {
   const file = bytesOf(`rain ${version}`)
   const started = (await (await start(token, appId, file, version, luft)).json()) as PublishResponse
   await exports.default.fetch(
@@ -80,6 +83,11 @@ async function index(appId: string) {
   return env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
 }
 
+const shellReview = (releaseId: string) =>
+  db.query.release
+    .findFirst({ where: eq(schema.release.id, releaseId) })
+    .then((release) => release!.shellReview)
+
 const verify = (publisherId: string, verifiedAt: Date | null) =>
   db.update(schema.publisher).set({ verifiedAt }).where(eq(schema.publisher.id, publisherId))
 
@@ -93,8 +101,8 @@ describe("the Luft an extension needs", () => {
 
   test("goes into the signed index, and an older Luft keeps a release it can run", async () => {
     const { appId, token } = await extension()
-    await shipped(token, appId, "1.0.0", "1.0-nightly.27")
-    for (const patch of [1, 2, 3, 4, 5]) await shipped(token, appId, `1.1.${patch}`, "1.2")
+    await shipped(token, appId, "1.0.0", minimum("1.0-nightly.27"))
+    for (const patch of [1, 2, 3, 4, 5]) await shipped(token, appId, `1.1.${patch}`, minimum("1.2"))
 
     const { releases } = await index(appId)
     expect(releases.find((release) => release.version === "1.0.0")).toMatchObject({
@@ -108,7 +116,7 @@ describe("the Luft an extension needs", () => {
 describe("running inside Luft", () => {
   test("only a verified publisher can ask, and the owner's approval of those files is what the index says", async () => {
     const { appId, publisherId, userId, token } = await extension()
-    const releaseId = await shipped(token, appId, "1.0.0", "1.0")
+    const releaseId = await shipped(token, appId, "1.0.0")
     const mira = await person("Mira", userId)
     const ask = () => mira.call("POST", `/apps/${appId}/releases/${releaseId}/inside-luft`)
 
@@ -128,7 +136,7 @@ describe("running inside Luft", () => {
   test("a refusal keeps the release installable and tells the developer why", async () => {
     const { appId, publisherId, userId, token } = await extension()
     await verify(publisherId, new Date())
-    const releaseId = await shipped(token, appId, "1.0.0", "1.0")
+    const releaseId = await shipped(token, appId, "1.0.0")
     await allowInShell(releaseId, "Owner")
     await refuseShell(releaseId, "Owner", "The helper reads every file in your home folder")
 
@@ -146,9 +154,9 @@ describe("running inside Luft", () => {
   test("the owner can approve a publisher's shipped releases in one step, leaving refused ones", async () => {
     const { appId, publisherId, token } = await extension()
     await verify(publisherId, new Date())
-    const refused = await shipped(token, appId, "1.0.0", "1.0")
+    const refused = await shipped(token, appId, "1.0.0")
     await refuseShell(refused, "Owner", "Not this one")
-    await shipped(token, appId, "1.1.0", "1.0")
+    await shipped(token, appId, "1.1.0")
 
     expect(await allowPublisherInShell(publisherId, "Owner")).toContain("1 release ")
     const { releases } = await index(appId)
@@ -156,5 +164,18 @@ describe("running inside Luft", () => {
       "1.1.0": true,
       "1.0.0": false,
     })
+  })
+
+  test("a release whose extension.toml says inside = true asks by itself once it's checked, from a verified publisher only", async () => {
+    const { appId, publisherId, token } = await extension()
+    const unverified = await shipped(token, appId, "1.0.0", minimum("1.0", true))
+    expect(await shellReview(unverified)).toBeNull()
+
+    await verify(publisherId, new Date())
+    const asked = await shipped(token, appId, "1.1.0", minimum("1.0", true))
+    const unasked = await shipped(token, appId, "1.2.0")
+    expect(await shellReview(asked)).toBe("waiting")
+    expect(await shellReview(unasked)).toBeNull()
+    expect((await index(appId)).releases.some((release) => release.runs_in_shell)).toBe(false)
   })
 })

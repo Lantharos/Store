@@ -55,11 +55,21 @@ Schelf offers each Luft the newest release whose extension API it supports and w
 
 ## Running inside Luft
 
-Luft runs an extension inside its desktop, drawing in the same scene as everything else, only when Luft has reviewed that exact release. Until then it runs in a sandbox, without the parts of the extension API that only work inside the desktop, and one that needs them waits for the review. To ask for it, open the release in the dashboard and choose **Ask to run inside Luft** under Inside Luft. Only a [verified publisher](/docs/verification) can ask.
+Luft runs an extension inside its desktop, drawing in the same scene as everything else, only when Luft has reviewed that exact release. Until then it runs in a sandbox, without the parts of the extension API that only work inside the desktop, and one that needs them waits for the review. Only a [verified publisher](/docs/verification) can ask for it.
+
+To ask for every release, say so in `extension.toml`. Each release then asks by itself once it passes its checks, and shows up for review without you doing anything:
+
+```toml
+[luft]
+minimum = "1.2"
+inside = true
+```
+
+To ask for one release, open it in the dashboard and choose **Ask to run inside Luft** under Inside Luft, or run `schelf release inside-luft <version>`.
 
 Luft reviews the release's files, its source changes, what its manifest asks for and its helper, and then either approves it or refuses it with a reason, which you see on the release page and by email. A refused release stays on Schelf and installs the same way, just not inside the desktop; publish a new release with the change and ask again.
 
-An approval is for those files only: every new release is reviewed again, and a promotion to another channel keeps the approval because its files are the same. If your publisher stops being verified, none of your releases run inside Luft until it's verified again.
+An approval is for those files only: every new release is reviewed again, and a promotion to another channel keeps the approval because its files are the same. If your publisher stops being verified, none of your releases run inside Luft until it's verified again. Computers that already have a release move it inside the desktop once it's approved and their owner agrees in Schelf, and back into a sandbox if the approval goes.
 
 ## Extra checks
 

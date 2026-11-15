@@ -21,7 +21,7 @@ import { cancelSwitch, latestSwitch, startSwitch } from "../../hosting/switches.
 import { fail, readBody } from "../../lib/http.ts"
 import { recordHistory } from "../../ops/events.ts"
 import { appAccess, releaseAccess } from "../../publishers/access.ts"
-import { createRelease, publishable } from "../../publishing/start.ts"
+import { createRelease, NOTHING_DECLARED, publishable } from "../../publishing/start.ts"
 import { resignApp } from "../../signing/queue.ts"
 import { appSettings } from "./settings.ts"
 
@@ -137,7 +137,7 @@ hostingRoutes.post("/:id/uploads", async (c) => {
         format,
       }),
       format,
-      declared: { permissions: null, extensionAccess: null, luftMinimum: null },
+      declared: NOTHING_DECLARED,
       requires: {},
       channel: input.channel,
       bridge: input.bridge,

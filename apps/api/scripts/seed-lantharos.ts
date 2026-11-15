@@ -4,7 +4,7 @@ import {
   listingToml,
   paths,
   rasterIcon,
-  readLuftMinimum,
+  readLuft,
   screenshotFile,
   sha256Hex,
   slugFromId,
@@ -69,7 +69,7 @@ function readManifest(folder: string) {
     format: extension ? "luft-extension" : "sabine",
     icon: `${folder}/${extension ? "icon.svg" : field("icon")}`,
     keywords: listFrom(text, "keywords"),
-    luft: extension ? readLuftMinimum(text) : null,
+    luft: extension ? readLuft(text).minimum : null,
   }
 }
 

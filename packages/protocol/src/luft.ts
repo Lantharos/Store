@@ -11,10 +11,21 @@ export const luftVersion = z
   .string({ error: MISSING_MINIMUM })
   .regex(LUFT_VERSION, "A Luft version looks like 1.2 or 1.2-nightly.21")
 
-const manifestLuft = z.object({ luft: z.object({ minimum: luftVersion }, { error: MISSING_MINIMUM }) })
+const manifestLuft = z.object({
+  luft: z.object(
+    {
+      minimum: luftVersion,
+      inside: z
+        .boolean({ error: "luft.inside is true to ask for each release to run inside Luft, or false" })
+        .default(false),
+    },
+    { error: MISSING_MINIMUM },
+  ),
+})
 
-export function readLuftMinimum(manifest: string) {
-  return manifestLuft.parse(parse(manifest)).luft.minimum
+/** What an extension's manifest says about Luft: the oldest it runs on, and whether its releases ask to run inside it. */
+export function readLuft(manifest: string) {
+  return manifestLuft.parse(parse(manifest)).luft
 }
 
 export function luftVersionLabel(version: string) {

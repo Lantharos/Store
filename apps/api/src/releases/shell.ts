@@ -6,7 +6,7 @@ import { recordHistory, tellOps } from "../ops/events.ts"
 import { resignApp, resignPublisher } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
 import { notifyPublisher } from "./notify.ts"
-import { filesOf, REVIEWABLE } from "./shell-files.ts"
+import { filesOf, REVIEWABLE, shellRequestable } from "./shell-files.ts"
 
 async function extensionRelease(releaseId: string) {
   const [row] = await db
@@ -28,12 +28,23 @@ async function approvable(releaseId: string) {
   return release
 }
 
+async function fileShellRequest(release: ReleaseRow, text: string, by?: string) {
+  await db.update(schema.release).set({ shellReview: "waiting" }).where(eq(schema.release.id, release.id))
+  tellOps({ type: "shell", release: release.id })
+  recordHistory("release", release.id, text, by)
+}
+
 export async function requestShell(releaseId: string, by: string) {
   const release = await approvable(releaseId)
   if (release.shellReview !== null) fail(409, "Running inside Luft was already asked for")
-  await db.update(schema.release).set({ shellReview: "waiting" }).where(eq(schema.release.id, release.id))
-  tellOps({ type: "shell", release: release.id })
-  recordHistory("release", release.id, "Asked to run inside Luft", by)
+  await fileShellRequest(release, "Asked to run inside Luft", by)
+}
+
+/** Asks for a release whose extension.toml wants it to run inside Luft, where that may be asked for. */
+export async function requestWantedShell(releaseId: string) {
+  const { release, verified } = await extensionRelease(releaseId)
+  if (shellRequestable(release, verified))
+    await fileShellRequest(release, "Asked to run inside Luft, as its extension.toml says")
 }
 
 async function approve(release: ReleaseRow, by: string, at: Date) {
