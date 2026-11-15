@@ -1,4 +1,5 @@
 {
+  "format": 1,
   "project": "schelf",
   "environments": [
     "dev",
@@ -937,7 +938,7 @@
   },
   "inboxes": {
     "inside-luft": {
-      "source": "src/ops/define/inboxes.ts:128",
+      "source": "src/ops/define/inboxes.ts:123",
       "label": "Inside Luft",
       "icon": "shield",
       "resource": "release",
@@ -980,6 +981,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": null,
       "reply": false,
       "hooks": {
@@ -990,7 +992,7 @@
       }
     },
     "listings": {
-      "source": "src/ops/define/inboxes.ts:143",
+      "source": "src/ops/define/inboxes.ts:138",
       "label": "Listings",
       "icon": "list",
       "resource": "app",
@@ -1029,6 +1031,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": null,
       "reply": false,
       "hooks": {
@@ -1109,6 +1112,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": {
         "instructions": "Each item is an email sent to one of schelf.store's addresses, such as legal, privacy, security or support. schelf.store is an app store for Linux, Windows and macOS. Legal notices, takedown requests and security reports matter even when they're badly written; only close what is plainly unsolicited advertising, phishing or spam.",
         "questions": {
@@ -1139,7 +1143,7 @@
       }
     },
     "reports": {
-      "source": "src/ops/define/inboxes.ts:162",
+      "source": "src/ops/define/inboxes.ts:157",
       "label": "Reports",
       "icon": "flag",
       "resource": "app",
@@ -1209,6 +1213,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": null,
       "reply": true,
       "hooks": {
@@ -1219,7 +1224,7 @@
       }
     },
     "submissions": {
-      "source": "src/ops/define/inboxes.ts:80",
+      "source": "src/ops/define/inboxes.ts:78",
       "label": "Submissions",
       "icon": "inbox",
       "resource": "release",
@@ -1264,6 +1269,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": {
         "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
         "questions": {
@@ -1349,7 +1355,7 @@
       }
     },
     "updates": {
-      "source": "src/ops/define/inboxes.ts:92",
+      "source": "src/ops/define/inboxes.ts:90",
       "label": "Updates",
       "icon": "refresh",
       "resource": "release",
@@ -1394,6 +1400,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": {
         "instructions": "Each item is a release of a desktop app submitted to schelf.store, an app store for Linux, Windows and macOS. It shows the store's checks, the files, the declared permissions, the listing and, for updates, a digest of the source changes. Judge the submission itself; a person makes every decision that isn't obvious junk.",
         "questions": {
@@ -1547,6 +1554,7 @@
         "lastSeen"
       ],
       "intake": null,
+      "clients": null,
       "triage": null,
       "reply": true,
       "hooks": {
@@ -1817,5 +1825,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "5d7c91f71e44"
+  "version": "8c333d707ac5"
 }

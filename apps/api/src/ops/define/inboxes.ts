@@ -1,4 +1,4 @@
-import { b, choice, inbox, noul, run, score, tag, triage } from "@lantharos/pult"
+import { b, choice, inbox, probability, run, score, tag, triage } from "@lantharos/pult"
 import { REPORT_KINDS } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
@@ -30,20 +30,18 @@ const INCOMPLETE_MESSAGE =
   "at least two screenshots per system and a category. The release page shows what's missing."
 
 const firstLook = {
-  junk: noul("Is this an empty, broken, placeholder or spam submission?"),
-  kind: choice(
-    {
-      genuine: "A real app doing what its listing says",
-      copycat: "A copy of another app, or passing itself off as one",
-      malware: "Looks built to harm or deceive the people who install it",
-      incomplete: "A real app whose listing isn't finished",
-    },
-    "What is this submission?",
-  ),
-  quality: score(
-    ["low", "fair", "good"],
-    "How finished does the listing look: name, summary, description, icon, screenshots?",
-  ),
+  junk: probability("Is this an empty, broken, placeholder or spam submission?"),
+  kind: choice("What is this submission?", {
+    genuine: "A real app doing what its listing says",
+    copycat: "A copy of another app, or passing itself off as one",
+    malware: "Looks built to harm or deceive the people who install it",
+    incomplete: "A real app whose listing isn't finished",
+  }),
+  quality: score("How finished does the listing look: name, summary, description, icon, screenshots?", [
+    "low",
+    "fair",
+    "good",
+  ]),
 }
 
 const firstLookRules = [
@@ -101,17 +99,14 @@ export const updates = inbox("updates", {
     instructions: INSTRUCTIONS,
     questions: {
       ...firstLook,
-      risky: noul(
+      risky: probability(
         "Does the update add network endpoints, obfuscated or binary blobs, new install or build scripts, or code unrelated to the app's purpose?",
       ),
-      scope: choice(
-        {
-          routine: "Fixes and small changes",
-          feature: "New features",
-          rewrite: "Large parts rewritten or replaced",
-        },
-        "How big is this update?",
-      ),
+      scope: choice("How big is this update?", {
+        routine: "Fixes and small changes",
+        feature: "New features",
+        rewrite: "Large parts rewritten or replaced",
+      }),
     },
     rules: [
       ...firstLookRules,

@@ -14,7 +14,7 @@
       "dependencies": {
         "@better-auth/passkey": "1.7.18",
         "@cf-wasm/resvg": "0.4.0",
-        "@lantharos/pult": "0.12.0",
+        "@lantharos/pult": "0.15.0",
         "@schelf/protocol": "workspace:*",
         "better-auth": "1.7.18",
         "drizzle-orm": "0.45.4",
@@ -362,7 +362,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lantharos/pult": ["@lantharos/pult@0.12.0", "", { "dependencies": { "@standard-schema/spec": "1.1.0", "croner": "10.0.1", "jiti": "2.7.0" }, "bin": { "pult": "cli.mjs" } }, "sha512-FUAZ3/7kCWM+8FUG8NjiCviRPgBZCC7zfUq5VS2KvDYES0EUDWfir0ChL0NCdB5baRdFTdU14/XFpskPDiPY+A=="],
+    "@lantharos/pult": ["@lantharos/pult@0.15.0", "", { "dependencies": { "@standard-schema/spec": "1.1.0", "jiti": "2.7.0" }, "bin": { "pult": "cli.mjs" } }, "sha512-Z6O7S7J4WYgZbck+PqG4yeSJi42ZmSmOBqB6lecCWrk60vyLnpF2QLuMe+9tlxoiZbxirwoTnc7VudHh9w+/WA=="],
 
     "@levischuck/tiny-cbor": ["@levischuck/tiny-cbor@0.2.11", "", {}, "sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow=="],
 
@@ -701,8 +701,6 @@
     "content-type": ["content-type@3.1.1", "", {}, "sha512-GW4qUsfFo59d0HbUibDlWv5wPz+vAAcaTWbKIuKCf0JkC7wWkSyf8f13IpXn5JkeMlB2P8iTSSIjwXljorg2vA=="],
 
     "cookie": ["cookie@2.0.1", "", {}, "sha512-yuToqVvRrj6pfDXREyQAAv8SkAEk/8GS3jQRTiUMm66TVtBYmqQeoEjL2Lmq8Rpo6271vH76InTChTitEAm65w=="],
-
-    "croner": ["croner@10.0.1", "", {}, "sha512-ixNtAJndqh173VQ4KodSdJEI6nuioBWI0V1ITNKhZZsO0pEMoDxz539T4FTTbSZ/xIOSuDnzxLVRqBVSvPNE2g=="],
 
     "cross-spawn": ["cross-spawn@7.0.6", "", { "dependencies": { "path-key": "^3.1.0", "shebang-command": "^2.0.0", "which": "^2.0.1" } }, "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA=="],
 

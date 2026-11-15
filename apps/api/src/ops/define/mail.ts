@@ -1,4 +1,4 @@
-import { b, inbox, noul, setState, triage } from "@lantharos/pult"
+import { b, inbox, probability, setState, triage } from "@lantharos/pult"
 import { z } from "zod"
 import { addressOf, MAILBOXES } from "../../mail/addresses.ts"
 import { sendMail } from "../../mail/send.ts"
@@ -26,7 +26,7 @@ export const mail = inbox("mail", {
   title: (data) => data.subject || `No subject, from ${data.name ?? "someone"}`,
   triage: triage({
     instructions: INSTRUCTIONS,
-    questions: { spam: noul("Is this unsolicited advertising, phishing or spam?") },
+    questions: { spam: probability("Is this unsolicited advertising, phishing or spam?") },
     rules: [{ name: "Close spam", when: (answers) => answers.spam > 0.95, then: setState("spam") }],
   }),
   reply: {
