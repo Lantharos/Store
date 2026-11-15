@@ -54,13 +54,13 @@ export const release = resource("release", {
       moves: "approved",
       run: ({ record, actor }) => approve(record.id, actor.name),
     }),
-    approveSecurityFix: action({
-      label: "Approve as a security fix",
+    approveForEveryone: action({
+      label: "Approve for everyone",
       description: "Approves the release and sends it to everyone at once.",
       danger: "confirm",
       when: waiting,
       moves: "approved",
-      run: ({ record, actor }) => approve(record.id, actor.name, { security: true }),
+      run: ({ record, actor }) => approve(record.id, actor.name, { everyone: true }),
     }),
     requestChanges: action({
       label: "Ask for changes",

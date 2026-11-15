@@ -40,7 +40,7 @@ Actions, all running in the store. Each one only shows while it applies: Pause o
 
 | Action                                                    | On                                                          | Guardrail                                                                                                   |
 | --------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Approve, Approve as a security fix                        | release in review                                           | confirm                                                                                                     |
+| Approve, Approve for everyone                             | release in review                                           | confirm; Approve for everyone skips the gradual rollout                                                     |
 | Ask for changes (message to the developer)                | release in review                                           | none                                                                                                        |
 | Reject (reason, sent as statement of reasons)             | release in review                                           | confirm                                                                                                     |
 | Pause, resume, send to everyone, set rollout, roll back   | release rolling out or live                                 | confirm (resume: none)                                                                                      |

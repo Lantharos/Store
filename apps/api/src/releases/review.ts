@@ -75,11 +75,11 @@ async function recordDecision(releaseId: string, decision: Decision, by: string,
     .where(and(eq(schema.review.releaseId, releaseId), isNull(schema.review.decision)))
 }
 
-export async function approve(releaseId: string, by: string, { security = false } = {}) {
+export async function approve(releaseId: string, by: string, { everyone = false } = {}) {
   const release = await releaseOrFail(releaseId)
   if (release.status !== "in-review") fail(409, `This release is ${release.status}, not waiting for review`)
   const now = new Date()
-  const percent = security || !(await channelIsGradual(release.appId, release.channel)) ? 100 : FIRST_STEP
+  const percent = everyone || !(await channelIsGradual(release.appId, release.channel)) ? 100 : FIRST_STEP
   await db.batch([
     db
       .update(schema.release)

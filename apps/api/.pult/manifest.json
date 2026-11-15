@@ -435,7 +435,7 @@
         "allowExtensionsInShell": {
           "source": "src/ops/define/publisher.ts:96",
           "label": "Let its extensions run inside Luft",
-          "description": "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases each need their own approval.",
+          "description": "Approves the exact files of every extension release of this publisher that's out and wasn't refused to run inside Luft's desktop, one record per release, and signs their indexes again. Later releases that ask for no more are let in on the same approval.",
           "danger": "reauth",
           "input": null,
           "preview": false,
@@ -588,9 +588,9 @@
           "choices": [],
           "schedule": null
         },
-        "approveSecurityFix": {
+        "approveForEveryone": {
           "source": "src/ops/define/release.ts:57",
-          "label": "Approve as a security fix",
+          "label": "Approve for everyone",
           "description": "Approves the release and sends it to everyone at once.",
           "danger": "confirm",
           "input": null,
@@ -663,7 +663,7 @@
         "allowInShell": {
           "source": "src/ops/define/release.ts:83",
           "label": "Let it run inside Luft",
-          "description": "Approves these exact files to run inside Luft's desktop and signs the app's index again. A new release needs its own approval.",
+          "description": "Approves these exact files to run inside Luft's desktop and signs the app's index again. Later releases from the same publisher and workflow that ask for no more are let in on this approval.",
           "danger": "confirm",
           "input": null,
           "preview": false,
@@ -679,7 +679,7 @@
         "refuseInShell": {
           "source": "src/ops/define/release.ts:92",
           "label": "Refuse to run inside Luft",
-          "description": "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable.",
+          "description": "Keeps the release out of Luft's desktop and sends the developer the reason. It stays published and installable. On a release that runs inside Luft it withdraws the extension's approval, so every release goes back to the sandbox and the next one has to ask again.",
           "danger": "confirm",
           "input": {
             "type": "object",
@@ -1817,5 +1817,5 @@
   "spaces": [],
   "notify": {},
   "status": null,
-  "version": "71f668ac8776"
+  "version": "5d7c91f71e44"
 }
