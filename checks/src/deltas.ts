@@ -29,6 +29,13 @@ async function publishedIndex(app: string): Promise<AppIndex | undefined> {
   return appIndex.parse(await response.json())
 }
 
+export function previousReleases<Release extends { version: string }>(releases: Release[], version: string) {
+  return releases
+    .filter((release) => compareVersions(release.version, version) < 0)
+    .sort((left, right) => compareVersions(right.version, left.version))
+    .slice(0, PREVIOUS_RELEASES)
+}
+
 export async function makeDeltas(options: {
   app: string
   version: string
@@ -40,10 +47,7 @@ export async function makeDeltas(options: {
   if (!index) return []
   const kind = DELTA_KINDS[index.format]
   if (!kind) return []
-  const previous = index.releases
-    .filter((release) => compareVersions(release.version, options.version) < 0)
-    .sort((left, right) => compareVersions(right.version, left.version))
-    .slice(0, PREVIOUS_RELEASES)
+  const previous = previousReleases(index.releases, options.version)
   const reports: DeltaReport[] = []
   for (const target of options.targets.filter((candidate) => candidate.kind === kind)) {
     const size = (await stat(target.path)).size

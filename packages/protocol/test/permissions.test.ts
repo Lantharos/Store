@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { readPermissions, readSchelfToml, SANDBOXED_DEFAULT, widens } from "../src/index.ts"
+import { busCovers, readPermissions, readSchelfToml, SANDBOXED_DEFAULT, widens } from "../src/index.ts"
 
 describe("permission declarations", () => {
   test("read what an app asks for the way Luft's sandbox does", () => {
@@ -59,6 +59,14 @@ describe("permission declarations", () => {
       true,
     )
     expect(widens(SANDBOXED_DEFAULT, { ...SANDBOXED_DEFAULT, pipewire: true })).toBe(true)
+  })
+
+  test("cover talk names the way the bus proxy matches them", () => {
+    expect(busCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2")).toBe(true)
+    expect(busCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2.notes")).toBe(true)
+    expect(busCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2Extra")).toBe(false)
+    expect(busCovers(["org.mpris.MediaPlayer2"], "org.mpris.MediaPlayer2.notes")).toBe(false)
+    expect(busCovers(["com.example.Shell"], "com.example.Shell@/com/example/Shell/Appearance")).toBe(true)
   })
 
   test("notice an update that asks for more", () => {

@@ -28,16 +28,18 @@ export async function storeKeys(store: Store) {
   return trustedStoreKeys(store.rootKey, body, envelope)
 }
 
-export async function readSigned<T extends { path: string; expires: string }>(
+export async function readSigned<T extends { path: string; serial: number; expires: string }>(
   store: Store,
   keys: Map<string, string>,
   key: string,
   schema: { parse: (value: unknown) => T },
+  lastSerial = 0,
 ) {
   const { body, envelope } = await sealed(store, key)
   if (!(await verifyDocument(keys, body, envelope))) throw new Error(`${key} isn't signed by schelf.store`)
   const document = schema.parse(JSON.parse(body))
   if (document.path !== key) throw new Error(`${key} was signed for ${document.path}`)
   if (new Date(document.expires) <= new Date()) throw new Error(`${key} expired on ${document.expires}`)
+  if (document.serial < lastSerial) throw new Error(`schelf.store sent an older ${key} than it did before`)
   return document
 }

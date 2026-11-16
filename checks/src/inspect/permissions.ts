@@ -1,4 +1,4 @@
-import { type Permissions, talkTarget } from "@schelf/protocol"
+import { busCovers, type Permissions, talkTarget } from "@schelf/protocol"
 import type { Evidence, StringFacts } from "./strings.ts"
 import type { TreeFile } from "./tree.ts"
 
@@ -31,15 +31,10 @@ function libraryEvidence(detection: Detection, pattern: RegExp) {
   return undefined
 }
 
-const covers = (granted: string[], name: string) =>
-  granted
-    .map((held) => talkTarget(held).name)
-    .some(
-      (held) =>
-        held === name ||
-        name.startsWith(`${held}.`) ||
-        (held.endsWith(".*") && name.startsWith(held.slice(0, -1))),
-    )
+function reaches(talk: string[], name: string) {
+  const services = talk.map((entry) => talkTarget(entry).name)
+  return busCovers(services, name) || services.some((service) => name.startsWith(`${service}.`))
+}
 
 export function comparePermissions(declared: Permissions | null, detection: Detection): PermissionRow[] {
   const granted = (check: (permissions: Permissions) => boolean) =>
@@ -69,7 +64,7 @@ export function comparePermissions(declared: Permissions | null, detection: Dete
   for (const name of strings.busNames.filter((entry) => !ALWAYS_REACHABLE.test(entry.value)))
     rows.push({
       permission: `talk: ${name.value}`,
-      declared: granted((held) => covers(held.talk, name.value) || covers(held.own, name.value)),
+      declared: granted((held) => reaches([...held.talk, ...held.own], name.value)),
       evidence: describe(name),
     })
 

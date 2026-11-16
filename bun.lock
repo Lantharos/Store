@@ -62,7 +62,7 @@
       "dependencies": {
         "@schelf/appstream": "workspace:*",
         "@schelf/protocol": "workspace:*",
-        "@schelf/publisher": "workspace:*",
+        "@schelf/runner": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "1.4.4",
@@ -73,7 +73,7 @@
       "dependencies": {
         "@schelf/appstream": "workspace:*",
         "@schelf/protocol": "workspace:*",
-        "@schelf/publisher": "workspace:*",
+        "@schelf/runner": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "1.4.4",
@@ -122,8 +122,8 @@
         "yaml": "2.9.1",
       },
     },
-    "packages/publisher": {
-      "name": "@schelf/publisher",
+    "packages/runner": {
+      "name": "@schelf/runner",
       "version": "0.0.0",
       "dependencies": {
         "@schelf/protocol": "workspace:*",
@@ -496,7 +496,7 @@
 
     "@schelf/publish-action": ["@schelf/publish-action@workspace:publish"],
 
-    "@schelf/publisher": ["@schelf/publisher@workspace:packages/publisher"],
+    "@schelf/runner": ["@schelf/runner@workspace:packages/runner"],
 
     "@schelf/web": ["@schelf/web@workspace:apps/web"],
 

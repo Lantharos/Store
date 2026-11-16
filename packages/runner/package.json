@@ -1,5 +1,5 @@
 {
-  "name": "@schelf/publisher",
+  "name": "@schelf/runner",
   "version": "0.0.0",
   "private": true,
   "type": "module",

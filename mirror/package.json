@@ -9,7 +9,7 @@
   "dependencies": {
     "@schelf/appstream": "workspace:*",
     "@schelf/protocol": "workspace:*",
-    "@schelf/publisher": "workspace:*"
+    "@schelf/runner": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "1.4.4"

@@ -11,11 +11,11 @@ import {
   paths,
   STORE_ORIGIN,
 } from "@schelf/protocol"
-import { ApiFailure, githubOidcToken, request } from "@schelf/publisher"
+import { ApiFailure, githubOidcToken, request } from "@schelf/runner"
 import { fedoraCandidates, fedoraEntry, fedoraUrls, flathubIndex, hostOf, onFlathub } from "./fedora.ts"
 import { flathubCandidates, flathubEntry } from "./flathub.ts"
 import { hostIcons } from "./icons.ts"
-import { type Candidate, exclusion } from "./rules.ts"
+import { type Candidate, exclusion, remoteIcon } from "./rules.ts"
 
 const api = process.env.SCHELF_API ?? STORE_ORIGIN
 const fedoraRelease = process.env.FEDORA_RELEASE!
@@ -79,7 +79,7 @@ const icons = await hostIcons({
   api,
   directory: iconDirectory,
   icons: keptFedora
-    .filter(({ candidate }) => candidate.icon && !candidate.icon.startsWith("http"))
+    .filter(({ candidate }) => candidate.icon && !remoteIcon(candidate.icon))
     .map(({ candidate }) => ({ id: candidate.id, file: candidate.icon! })),
   known: new Set(previousFedora.map((entry) => entry.icon).filter((icon) => icon !== null)),
 })
@@ -87,7 +87,7 @@ const icons = await hostIcons({
 const body: MirrorRequest = {
   flathub: keptFlathub.map(({ candidate }) => flathubEntry(candidate, now)),
   fedora: keptFedora.map(({ candidate, component }) =>
-    fedoraEntry(candidate, component, icons.get(candidate.id) ?? candidate.icon, now),
+    fedoraEntry(candidate, component, icons.get(candidate.id) ?? remoteIcon(candidate.icon), now),
   ),
 }
 if (sameApps(body.flathub, previousFlathub) && sameApps(body.fedora, previousFedora)) {

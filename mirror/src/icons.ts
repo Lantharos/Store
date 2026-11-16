@@ -1,8 +1,7 @@
-import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
-import { join } from "node:path"
-import { API_BASE, downloadUrl, paths } from "@schelf/protocol"
-import { githubOidcToken, mapLimit, request } from "@schelf/publisher"
+import { resolve, sep } from "node:path"
+import { API_BASE, downloadUrl, paths, sha256Hex } from "@schelf/protocol"
+import { githubOidcToken, mapLimit, request } from "@schelf/runner"
 
 export interface Icon {
   id: string
@@ -11,6 +10,12 @@ export interface Icon {
 
 const HASH_LENGTH = 16
 
+export function iconPath(directory: string, file: string) {
+  const root = resolve(directory)
+  const path = resolve(root, file)
+  return path.startsWith(`${root}${sep}`) ? path : undefined
+}
+
 export async function hostIcons(options: {
   api: string
   directory: string
@@ -18,18 +23,19 @@ export async function hostIcons(options: {
   known: Set<string>
 }): Promise<Map<string, string>> {
   const hosted = new Map<string, string>()
-  let token: string | undefined
+  let token: Promise<string> | undefined
   let uploaded = 0
   await mapLimit(options.icons, 8, async (icon) => {
-    const bytes = await readFile(join(options.directory, icon.file)).catch(() => undefined)
+    const path = iconPath(options.directory, icon.file)
+    const bytes = path && (await readFile(path).catch(() => undefined))
     if (!bytes) return
-    const hash = createHash("sha256").update(bytes).digest("hex").slice(0, HASH_LENGTH)
+    const hash = (await sha256Hex(bytes)).slice(0, HASH_LENGTH)
     const key = paths.media(icon.id, hash, "png")
     if (!options.known.has(downloadUrl(key))) {
-      token ??= await githubOidcToken()
+      token ??= githubOidcToken()
       await request(`${options.api}${API_BASE}/mirror/media/${encodeURIComponent(icon.id)}/${hash}.png`, {
         method: "PUT",
-        token,
+        token: await token,
         body: bytes,
         headers: { "content-type": "image/png" },
       })

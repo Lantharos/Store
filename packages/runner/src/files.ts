@@ -1,11 +1,10 @@
 import { createHash } from "node:crypto"
 import { createReadStream } from "node:fs"
-import { stat } from "node:fs/promises"
 
-export async function digest(path: string) {
+export async function sha256File(path: string) {
   const hash = createHash("sha256")
   for await (const chunk of createReadStream(path, { highWaterMark: 1024 * 1024 })) hash.update(chunk)
-  return { sha256: hash.digest("hex"), size: (await stat(path)).size }
+  return hash.digest("hex")
 }
 
 export async function mapLimit<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {

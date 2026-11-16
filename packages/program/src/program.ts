@@ -7,6 +7,7 @@ import {
   blockFor,
   paths,
   pickFile,
+  REVOCATIONS_MAX_AGE_DAYS,
   revocations,
   STABLE,
   STORE_TOOL,
@@ -17,12 +18,14 @@ import {
 import { Offline, readSigned, type Store, storeKeys } from "./signed.ts"
 
 const FRESH_MS = 60 * 60_000
+const DAY_MS = 86_400_000
 const STATE = "state.json"
 const PROGRAM = "schelf"
 
 interface State {
   checked: number
   serial: number
+  revocationsSerial: number
   version: string
 }
 
@@ -90,11 +93,11 @@ async function keepOnly(folder: string, version: string) {
 async function refresh({ store, folder, target }: Place, last: State | null): Promise<State> {
   const keys = await storeKeys(store)
   const [index, revoked] = await Promise.all([
-    readSigned(store, keys, paths.tool(STORE_TOOL.publisher, STORE_TOOL.name), toolIndex),
-    readSigned(store, keys, paths.revocations, revocations),
+    readSigned(store, keys, paths.tool(STORE_TOOL.publisher, STORE_TOOL.name), toolIndex, last?.serial),
+    readSigned(store, keys, paths.revocations, revocations, last?.revocationsSerial),
   ])
-  if (last && index.serial < last.serial)
-    throw new Error("schelf.store sent an older list of schelf's versions than it did before")
+  if (Date.now() - Date.parse(revoked.issued) > REVOCATIONS_MAX_AGE_DAYS * DAY_MS)
+    throw new Error(`schelf.store's list of pulled releases is from ${revoked.issued}, too old to trust`)
   const release = toolReleaseOn(index, STABLE)
   if (!release) throw new Error(`schelf isn't published on ${STABLE} yet`)
   const block = blockFor(revoked, index.project.id, release.version)
@@ -107,7 +110,12 @@ async function refresh({ store, folder, target }: Place, last: State | null): Pr
     await download(file, program)
     await keepOnly(folder, release.version)
   }
-  const state = { checked: Date.now(), serial: index.serial, version: release.version }
+  const state = {
+    checked: Date.now(),
+    serial: index.serial,
+    revocationsSerial: revoked.serial,
+    version: release.version,
+  }
   await writeFile(join(folder, STATE), JSON.stringify(state))
   return state
 }

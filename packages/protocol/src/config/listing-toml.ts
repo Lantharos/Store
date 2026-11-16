@@ -1,4 +1,3 @@
-import { parse } from "smol-toml"
 import { z } from "zod"
 import { platform } from "../platforms.ts"
 
@@ -85,10 +84,6 @@ export type ListingToml = z.infer<typeof listingToml>
 
 export function screenshotFile(entry: ScreenshotEntry) {
   return typeof entry === "string" ? { file: entry } : entry
-}
-
-export function readListingToml(text: string): ListingToml {
-  return listingToml.parse(parse(text))
 }
 
 export function joinConfigPath(...parts: string[]) {

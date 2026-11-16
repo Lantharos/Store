@@ -1,5 +1,4 @@
 import { stringify } from "smol-toml"
-import { LISTING_TOML, type ListingToml } from "./config/listing-toml.ts"
 import { SCHELF_TOML, type SchelfToml } from "./config/schelf-toml.ts"
 import { schemaDirective } from "./config/schemas.ts"
 import { EXTENSION_MANIFEST } from "./extensions.ts"
@@ -53,15 +52,6 @@ export function schelfTomlFor(input: SetupInput) {
     ...(input.channels && Object.keys(input.channels).length > 0 && { channels: input.channels }),
   })
   return `${schemaDirective(SCHELF_TOML)}${toml}\n`
-}
-
-export function listingTomlFor(listing: ListingToml) {
-  const { translations, ...page } = listing
-  const toml = stringify({
-    ...page,
-    ...(translations && Object.keys(translations).length > 0 && { translations }),
-  })
-  return `${schemaDirective(LISTING_TOML)}${toml}\n`
 }
 
 const RELEASE_TRIGGER = `on:

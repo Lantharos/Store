@@ -1,16 +1,25 @@
 import { openAsBlob } from "node:fs"
 import { join } from "node:path"
 import type { CheckResult, ChecksDispatch, ChecksReport, ChecksResponse, DeltaReport } from "@schelf/protocol"
-import { githubOidcToken, mapLimit, request } from "@schelf/publisher"
+import { githubOidcToken, mapLimit, request } from "@schelf/runner"
 import { makeDeltas } from "./deltas.ts"
 import { download } from "./download.ts"
 import { type Inspection, inspectArtifact } from "./inspect/index.ts"
 import { inspectTool, type ToolFacts } from "./inspect/tool.ts"
-import { diffResult, inspectionResult, licenceResult, malwareResult } from "./results.ts"
+import {
+  diffResult,
+  inspectionResult,
+  licenceResult,
+  malwareResult,
+  type Unopened,
+  withUnopened,
+} from "./results.ts"
 import { scanForMalware } from "./scan.ts"
 import { judgeLicence } from "./source/licence.ts"
 import { Repository } from "./source/repository.ts"
-import { unpack } from "./unpack.ts"
+import { TooBig, unpackWithin } from "./unpack/index.ts"
+
+const UNPACKED_LIMIT_BYTES = 8 * 1024 ** 3
 
 const payload = JSON.parse(process.env.PAYLOAD!) as ChecksDispatch
 const work = join(process.env.RUNNER_TEMP ?? "/tmp", "schelf-checks")
@@ -38,21 +47,20 @@ const downloads = await mapLimit(payload.files, 3, async (file) => ({
   unpacked: join(work, "unpacked", file.platform, file.name),
 }))
 
-const unpacked = await mapLimit(downloads, 2, async (file) => {
+const unpack = unpackWithin(UNPACKED_LIMIT_BYTES)
+const opened: ((typeof downloads)[number] & { setuid: string[] })[] = []
+const unopened: Unopened[] = []
+await mapLimit(downloads, 2, async (file) => {
   try {
-    await unpack(
-      file.path,
-      file.unpacked,
-      file.kind === "binary" || (file.tool !== null && file.kind === "exe"),
-    )
-    return file
+    const asIs = file.kind === "binary" || (file.tool !== null && file.kind === "exe")
+    opened.push({ ...file, setuid: await unpack(file.path, file.unpacked, asIs) })
   } catch (error) {
     console.error(`Couldn't unpack ${file.name}:`, error)
     facts[`unpack:${file.name}`] = (error as Error).message
-    return undefined
+    const reason = error instanceof TooBig ? error.message : "it didn't unpack"
+    unopened.push({ name: file.name, tool: file.tool !== null, reason })
   }
 })
-const opened = unpacked.filter((file) => file !== undefined)
 
 const repository =
   payload.repository && payload.commit
@@ -73,19 +81,12 @@ const checks = await Promise.all([
   }),
   attempt("inspection", async () => {
     for (const file of opened) {
-      inspections[file.name] = await inspectArtifact(file.unpacked, payload.permissions)
+      inspections[file.name] = await inspectArtifact(file.unpacked, payload.permissions, file.setuid)
       if (file.tool) tools[file.name] = inspectTool(inspections[file.name]!, file.name)
     }
     facts.inspection = inspections
     if (Object.keys(tools).length) facts.tools = tools
-    const unopened = downloads.filter((file) => !opened.includes(file))
-    if (payload.scrutiny.strict && unopened.length)
-      return {
-        name: "inspection",
-        status: "warning",
-        summary: `Couldn't look inside ${unopened.map((file) => file.name).join(", ")}, so a reviewer checks it by hand`,
-      }
-    return inspectionResult(inspections, tools)
+    return withUnopened(inspectionResult(inspections, tools), unopened)
   }),
   attempt("diff", async () => {
     if (!repository || !payload.commit)

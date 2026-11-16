@@ -21,7 +21,6 @@ export const toolRelease = z.object({
   rollout: z.object({ percent: z.number().int().min(0).max(100), paused: z.boolean() }),
   files: z.array(toolFile),
 })
-export type ToolRelease = z.infer<typeof toolRelease>
 
 export const toolIndex = stamp.extend({
   version: z.literal(1),

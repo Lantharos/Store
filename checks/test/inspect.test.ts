@@ -70,7 +70,7 @@ test("a GSettings schema the app ships isn't taken for a bus name it talks to", 
     join(root, "share/glib-2.0/schemas/com.example.Notes.gschema.xml"),
     '<schemalist><schema id="com.example.Notes.window" path="/com/example/Notes/window/"/></schemalist>',
   )
-  const inspection = await inspectArtifact(root, null)
+  const inspection = await inspectArtifact(root, null, [])
   await rm(root, { recursive: true })
   expect(inspection.strings.busNames.map((entry) => entry.value)).toEqual(["org.freedesktop.Notifications"])
 })

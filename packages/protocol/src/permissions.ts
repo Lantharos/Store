@@ -160,12 +160,17 @@ function folderGrants(places: string[]) {
   return grants
 }
 
-function busCovers(granted: string[], entry: string) {
+function nameCovers(held: string, wanted: string) {
+  if (!held.endsWith(".*")) return held === wanted
+  const prefix = held.slice(0, -2)
+  return wanted === prefix || wanted.startsWith(`${prefix}.`)
+}
+
+export function busCovers(granted: string[], entry: string) {
   const wanted = talkTarget(entry)
   return granted.some((held) => {
     const { name, object } = talkTarget(held)
-    if (object !== null && object !== wanted.object) return false
-    return name === wanted.name || (name.endsWith(".*") && wanted.name.startsWith(name.slice(0, -1)))
+    return (object === null || object === wanted.object) && nameCovers(name, wanted.name)
   })
 }
 

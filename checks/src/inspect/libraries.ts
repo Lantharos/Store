@@ -1,4 +1,4 @@
-import { mapLimit } from "@schelf/publisher"
+import { mapLimit } from "@schelf/runner"
 import { run } from "../run.ts"
 import type { TreeFile } from "./tree.ts"
 

@@ -36,10 +36,11 @@ async function matchingAssets(tag: string, patterns: string[], token: string) {
     `/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`,
     token,
   )
-  return release.assets.filter((asset) =>
-    patterns.some((pattern) => matchesGlob(asset.name.replace(/\.blockmap$/i, ""), pattern)),
-  )
+  return release.assets.filter((asset) => wanted(asset.name, patterns))
 }
+
+export const wanted = (name: string, patterns: string[]) =>
+  patterns.some((pattern) => matchesGlob(name.replace(/\.blockmap$/i, ""), pattern))
 
 async function settledAssets(tag: string, patterns: string[], token: string) {
   const deadline = Date.now() + WAIT_MINUTES * 60_000
