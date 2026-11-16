@@ -6,7 +6,7 @@ import { mirrorDocument } from "./mirror.ts"
 import { REINDEX_REQUEST } from "./reindex-request.ts"
 import { indexStatements, type SearchDocument, storeKey, unindexStatements } from "./search-index.ts"
 
-const STATEMENTS_PER_BATCH = 400
+const DOCUMENTS_PER_BATCH = 130
 
 async function listedDocuments(only?: SQL): Promise<SearchDocument[]> {
   const rows = await db
@@ -34,13 +34,11 @@ export async function reindexApp(id: string) {
 
 /** Indexes every listed app and mirror entry again, when a migration or a seed asks for it. */
 export async function reindexIfRequested() {
-  const [request] = await db
-    .delete(schema.storeState)
-    .where(eq(schema.storeState.key, REINDEX_REQUEST))
-    .returning()
-  if (!request) return
+  const requested = await db.query.storeState.findFirst({ where: eq(schema.storeState.key, REINDEX_REQUEST) })
+  if (!requested) return
   const [apps, mirrored] = await Promise.all([listedDocuments(), db.select().from(schema.mirrorApp)])
-  const statements = indexStatements([...apps, ...mirrored.map(mirrorDocument)])
-  for (let start = 0; start < statements.length; start += STATEMENTS_PER_BATCH)
-    await env.DB.batch(statements.slice(start, start + STATEMENTS_PER_BATCH))
+  const documents = [...apps, ...mirrored.map(mirrorDocument)]
+  for (let start = 0; start < documents.length; start += DOCUMENTS_PER_BATCH)
+    await env.DB.batch(indexStatements(documents.slice(start, start + DOCUMENTS_PER_BATCH)))
+  await db.delete(schema.storeState).where(eq(schema.storeState.key, REINDEX_REQUEST))
 }

@@ -27,11 +27,7 @@ export function statusOf(row: ApprovalRow, now = new Date()): ApprovalStatus {
   return row.status
 }
 
-export async function openApproval(
-  viewer: Viewer,
-  actions: ApprovalAction[],
-  from: { host?: string; place: string | null },
-) {
+export async function approvalRoom(viewer: Viewer) {
   if (!(await env.REQUEST_LIMIT.limit({ key: viewer.id })).success)
     fail(429, "Too many requests for approval; wait a minute")
   const [pending] = await db
@@ -46,6 +42,22 @@ export async function openApproval(
     )
   if ((pending?.count ?? 0) >= MAX_PENDING)
     fail(429, `${MAX_PENDING} requests are already waiting; approve or cancel some first`)
+}
+
+export async function openApproval(
+  viewer: Viewer,
+  actions: ApprovalAction[],
+  from: { host?: string; place: string | null },
+) {
+  await approvalRoom(viewer)
+  return createApproval(viewer, actions, from)
+}
+
+export async function createApproval(
+  viewer: Viewer,
+  actions: ApprovalAction[],
+  from: { host?: string; place: string | null },
+) {
   const now = new Date()
   const row: ApprovalRow = {
     id: randomId(20),

@@ -106,8 +106,8 @@ function redirect(url: string, varies: boolean) {
 
 const notFound = (message = "Not found") => text(message, 404)
 
-function sums(files: HostedFile[]) {
-  return text(files.map((file) => `${file.sha256}  ${file.name}\n`).join(""))
+function sums(files: HostedFile[], cache = SHORT_CACHE) {
+  return text(files.map((file) => `${file.sha256}  ${file.name}\n`).join(""), 200, undefined, cache)
 }
 
 function visitorTarget(request: Request) {
@@ -133,14 +133,15 @@ function serveLatest(
   const part = takePart(releases, path)
   const scoped = partReleases(releases, part)
   const [target, kind] = path
-  const varies = (release: HostedRelease) => options.followRollout && release.rollout < 100
+  const offered = part ? scoped : releases
+  const varies = options.followRollout && offered.some((release) => release.rollout < 100)
   if (target === "SHA256SUMS" && !kind) {
-    const latest = latestRelease(part ? scoped : releases, options)
-    return latest?.files.length ? sums(latest.files) : notFound()
+    const latest = latestRelease(offered, options)
+    return latest?.files.length ? sums(latest.files, varies ? "no-store" : SHORT_CACHE) : notFound()
   }
   const wanted = target ?? visitorTarget(request)
   const resolved = wanted ? resolveLink(scoped, wanted, kind, options) : undefined
-  if (resolved) return redirect(resolved.file.url, varies(resolved.release))
+  if (resolved) return redirect(resolved.file.url, varies)
   return target
     ? notFound(`Nothing for ${target} yet`)
     : redirect(pageUrl(project, project.publisherSlug), false)

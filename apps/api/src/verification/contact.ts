@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
 import { sha256Hex } from "@schelf/protocol"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, gt, lt, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { queueNotice } from "../mail/notices/send.ts"
@@ -35,29 +35,29 @@ export async function sendContactCode(publisher: PublisherRow, verification: Ver
   queueNotice(email, contactCode({ email, publisher: publisher.name, otp: code, minutes: CODE_MINUTES }))
 }
 
-function countWrongGuess(verification: VerificationRow) {
-  const { contactCodeGuesses: guesses, contactCodeHash: hash } = schema.publisherVerification
-  return db
-    .update(schema.publisherVerification)
-    .set({
-      contactCodeGuesses: sql`${guesses} + 1`,
-      contactCodeHash: sql`iif(${guesses} + 1 >= ${CODE_GUESSES}, null, ${hash})`,
-    })
-    .where(eq(schema.publisherVerification.id, verification.id))
-}
-
 export async function confirmContactCode(verification: VerificationRow, code: string) {
   if (!(await env.AUTH_LIMIT.limit({ key: `confirm:${verification.id}` })).success)
     fail(429, "Too many tries, wait a minute")
-  const expired = !verification.contactCodeExpiresAt || verification.contactCodeExpiresAt < new Date()
-  if (expired || verification.contactCodeHash !== (await hashOf(verification, code))) {
-    await countWrongGuess(verification)
+  const table = schema.publisherVerification
+  const confirmed = { contactConfirmedAt: new Date(), contactCodeHash: null, contactCodeExpiresAt: null }
+  const [matched] = await db
+    .update(table)
+    .set(confirmed)
+    .where(
+      and(
+        eq(table.id, verification.id),
+        eq(table.contactCodeHash, await hashOf(verification, code)),
+        gt(table.contactCodeExpiresAt, new Date()),
+        lt(table.contactCodeGuesses, CODE_GUESSES),
+      ),
+    )
+    .returning({ id: table.id })
+  if (!matched) {
+    await db
+      .update(table)
+      .set({ contactCodeGuesses: sql`${table.contactCodeGuesses} + 1` })
+      .where(eq(table.id, verification.id))
     fail(422, "That code didn't work; send a new one if it's more than 15 minutes old")
   }
-  const confirmed = { contactConfirmedAt: new Date(), contactCodeHash: null, contactCodeExpiresAt: null }
-  await db
-    .update(schema.publisherVerification)
-    .set(confirmed)
-    .where(eq(schema.publisherVerification.id, verification.id))
   return { ...verification, ...confirmed }
 }

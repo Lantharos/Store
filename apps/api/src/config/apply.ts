@@ -16,7 +16,7 @@ import {
 } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import type { z } from "zod"
-import { approvalUrl, openApproval } from "../approvals/store.ts"
+import { approvalRoom, approvalUrl, createApproval } from "../approvals/store.ts"
 import { listingChanged } from "../dashboard/apps/listing.ts"
 import { db, schema } from "../db/client.ts"
 import { listingRefusal, requestListing } from "../hosting/listing.ts"
@@ -119,6 +119,8 @@ export async function applyFiles(request: Request, body: Body): Promise<ApplyRes
       ? "apps"
       : "releases",
   )
+  const domainChanged = fromProject.some((change) => change.key === "domain")
+  if (caller.kind === "person" && (domainChanged || desired?.listed)) await approvalRoom(caller.viewer)
   await writeProject(app, project, caller.by)
   const files: ConfigFiles = {
     schelf_toml: body.schelf_toml_path,
@@ -141,13 +143,13 @@ export async function applyFiles(request: Request, body: Body): Promise<ApplyRes
       `Applied ${changes.length} change${changes.length === 1 ? "" : "s"} from its files`,
       caller.by,
     )
-  const asks: ApprovalAction[] = fromProject.some((change) => change.key === "domain")
+  const asks: ApprovalAction[] = domainChanged
     ? [{ type: "project.domain", app: app.id, domain: project.domain }]
     : []
   const result: ApplyResponse = { ...response, applied: true }
   if (desired) await askToBeListed(current, desired, caller, result, asks)
   if (asks.length && caller.kind === "person") {
-    const row = await openApproval(caller.viewer, asks, { host: body.host, place: null })
+    const row = await createApproval(caller.viewer, asks, { host: body.host, place: null })
     result.request = { id: row.id, url: approvalUrl(row.id), expires_at: row.expiresAt.toISOString() }
   }
   return result
