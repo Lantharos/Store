@@ -2,7 +2,7 @@
   import ChevronLeft from "@lucide/svelte/icons/chevron-left"
   import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import type { Screenshot } from "@schelf/protocol"
-  import { thumbnail, thumbnailSet } from "../apps/thumbnail.ts"
+  import { thumbnail, thumbnailSet } from "../../apps/thumbnail.ts"
   import Lightbox from "./Lightbox.svelte"
 
   let { screenshots, name }: { screenshots: Screenshot[]; name: string } = $props()

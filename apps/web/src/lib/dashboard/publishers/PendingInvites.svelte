@@ -1,6 +1,7 @@
 <script lang="ts">
   import { type DashboardPublisher, ROLE_NAMES } from "@schelf/protocol"
   import { goto } from "$app/navigation"
+  import { attempt } from "../../ui/overlay/task.svelte.ts"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
@@ -12,7 +13,7 @@
 
   async function answer(id: string, accept: boolean) {
     busy = id
-    try {
+    await attempt(async () => {
       if (accept) {
         const joined = await api.post<DashboardPublisher>(endpoints.acceptInvite(id))
         await session.refreshAccount()
@@ -23,11 +24,8 @@
         await api.post(endpoints.declineInvite(id))
         await session.refreshAccount()
       }
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = null
-    }
+    })
+    busy = null
   }
 </script>
 

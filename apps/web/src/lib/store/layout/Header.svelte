@@ -2,6 +2,7 @@
   import Menu from "@lucide/svelte/icons/menu"
   import Search from "@lucide/svelte/icons/search"
   import X from "@lucide/svelte/icons/x"
+  import { afterNavigate } from "$app/navigation"
   import { page } from "$app/state"
   import Logo from "../../Logo.svelte"
   import SearchBox from "../search/SearchBox.svelte"
@@ -16,8 +17,7 @@
   let sheet = $state<"menu" | "search" | null>(null)
   const path = $derived(page.url.pathname)
 
-  $effect(() => {
-    void path
+  afterNavigate(() => {
     sheet = null
   })
 </script>

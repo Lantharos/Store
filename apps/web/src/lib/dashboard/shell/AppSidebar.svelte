@@ -7,7 +7,7 @@
   import AppIcon from "../../store/apps/AppIcon.svelte"
   import Kbd from "../../ui/Kbd.svelte"
   import { session } from "../api/session.svelte.ts"
-  import { projectGroups } from "../project/groups.ts"
+  import { projectGroups } from "../project/list/groups.ts"
   import PublisherSwitcher from "../publishers/PublisherSwitcher.svelte"
   import { RELEASE_STATUS, TONE_DOT } from "../releases/status.ts"
   import NavLink from "./NavLink.svelte"

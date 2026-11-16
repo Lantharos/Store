@@ -28,6 +28,7 @@
     class?: string
   } = $props()
 
+  const id = $props.id()
   let active = $state(0)
 
   $effect(() => {
@@ -57,14 +58,14 @@
   <div
     role="menu"
     tabindex="-1"
-    aria-activedescendant="menu-item-{active}"
+    aria-activedescendant="{id}-{active}"
     class="outline-none"
     onkeydown={keydown}
     {@attach focusOnMount}
   >
     {#each items as item, index (item.label)}
       <button
-        id="menu-item-{index}"
+        id="{id}-{index}"
         type="button"
         role="menuitem"
         tabindex="-1"

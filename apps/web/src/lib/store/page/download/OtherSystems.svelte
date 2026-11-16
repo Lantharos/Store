@@ -1,9 +1,9 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
   import type { Artifact, ProjectFile } from "@schelf/protocol"
-  import CopyButton from "../../code/CopyButton.svelte"
-  import { bytes } from "../../format.ts"
-  import { downloadHref, groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
+  import CopyButton from "../../../code/CopyButton.svelte"
+  import { bytes } from "../../../format.ts"
+  import { downloadHref, groupByPlatform, KIND_NAMES } from "../../../system/artifacts.ts"
 
   let {
     artifacts,

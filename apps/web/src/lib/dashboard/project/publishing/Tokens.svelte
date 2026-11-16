@@ -2,15 +2,16 @@
   import KeyRound from "@lucide/svelte/icons/key-round"
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert"
   import type { CreatedToken, DashboardToken } from "@schelf/protocol"
-  import CopyButton from "../../code/CopyButton.svelte"
-  import { ago, date } from "../../format.ts"
-  import Field from "../../ui/fields/Field.svelte"
-  import Confirm from "../../ui/overlay/Confirm.svelte"
-  import Dialog from "../../ui/overlay/Dialog.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
-  import { api } from "../api/client.ts"
-  import { endpoints } from "../api/endpoints.ts"
-  import { session } from "../api/session.svelte.ts"
+  import CopyButton from "../../../code/CopyButton.svelte"
+  import { ago, date } from "../../../format.ts"
+  import Field from "../../../ui/fields/Field.svelte"
+  import Confirm from "../../../ui/overlay/Confirm.svelte"
+  import Dialog from "../../../ui/overlay/Dialog.svelte"
+  import { Task } from "../../../ui/overlay/task.svelte.ts"
+  import { toasts } from "../../../ui/overlay/toasts.svelte.ts"
+  import { api } from "../../api/client.ts"
+  import { endpoints } from "../../api/endpoints.ts"
+  import { session } from "../../api/session.svelte.ts"
 
   let { appId, tokens = $bindable() }: { appId: string; tokens: DashboardToken[] } = $props()
 
@@ -19,21 +20,16 @@
   let created = $state<CreatedToken | null>(null)
   let revoking = $state<DashboardToken | null>(null)
   let revokeOpen = $state(false)
-  let busy = $state(false)
+  const making = new Task()
   const active = $derived(tokens.filter((token) => !token.revoked_at))
 
   async function create(event: SubmitEvent) {
     event.preventDefault()
-    busy = true
-    try {
+    await making.run(async () => {
       created = await api.post<CreatedToken>(endpoints.tokens(appId), { name: name.trim() })
       const { token: _secret, ...stored } = created
       tokens = [...tokens, stored]
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
+    })
   }
 
   async function revoke() {
@@ -94,7 +90,7 @@
       <p class="text-[13px] text-ink-muted">It can publish releases of this app only, and expires in a year.</p>
       <div class="flex justify-end gap-2">
         <button type="button" class="button button-quiet" onclick={() => (creating = false)}>Cancel</button>
-        <button class="button button-primary" disabled={busy || !name.trim()}>Create</button>
+        <button class="button button-primary" disabled={making.busy || !name.trim()}>Create</button>
       </div>
     </form>
   {/if}

@@ -6,7 +6,7 @@
   import CopyButton from "../../code/CopyButton.svelte"
   import { ago } from "../../format.ts"
   import Dialog from "../../ui/overlay/Dialog.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
 
@@ -16,28 +16,23 @@
   let email = $state("")
   let tokenName = $state("")
   let created = $state<CreatedChannelToken | null>(null)
-  let busy = $state(false)
+  const task = new Task()
   const tokens = $derived(access?.tokens.filter((token) => !token.revoked_at) ?? [])
 
   $effect(() => {
-    if (open)
-      api.get<ChannelAccess>(endpoints.channelAccess(appId, channel)).then((found) => (access = found))
-  })
-
-  async function run<T>(task: () => Promise<T>) {
-    busy = true
-    try {
-      return await task()
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
+    if (!open) return
+    let current = true
+    api.get<ChannelAccess>(endpoints.channelAccess(appId, channel)).then((found) => {
+      if (current) access = found
+    })
+    return () => {
+      current = false
     }
-  }
+  })
 
   async function invite(event: SubmitEvent) {
     event.preventDefault()
-    const next = await run(() =>
+    const next = await task.run(() =>
       api.post<ChannelAccess>(endpoints.channelInvites(appId, channel), { email: email.trim() }),
     )
     if (!next) return
@@ -47,7 +42,7 @@
 
   async function makeToken(event: SubmitEvent) {
     event.preventDefault()
-    const made = await run(() =>
+    const made = await task.run(() =>
       api.post<CreatedChannelToken>(endpoints.channelTokens(appId, channel), { name: tokenName.trim() }),
     )
     if (!made) return
@@ -57,7 +52,7 @@
   }
 
   async function remove(path: string) {
-    const next = await run(() => api.delete<ChannelAccess>(path))
+    const next = await task.run(() => api.delete<ChannelAccess>(path))
     if (next) access = next
   }
 </script>
@@ -71,7 +66,7 @@
 
     <form class="flex gap-2" onsubmit={invite}>
       <input class="field min-w-0 flex-1" type="email" placeholder="name@example.com" aria-label="Email address to invite" bind:value={email} required />
-      <button class="button button-primary" disabled={busy || !email.trim()}>Invite</button>
+      <button class="button button-primary" disabled={task.busy || !email.trim()}>Invite</button>
     </form>
 
     <ul class="divide-y divide-hairline">
@@ -79,7 +74,7 @@
         <li class="flex items-center gap-3 py-2.5">
           <Mail class="size-[18px] shrink-0 text-ink-muted" />
           <span class="min-w-0 flex-1 truncate text-[15px]">{entry.email}</span>
-          <button type="button" class="button button-sm button-quiet" disabled={busy} onclick={() => remove(endpoints.channelInvite(appId, channel, entry.id))}>Remove</button>
+          <button type="button" class="button button-sm button-quiet" disabled={task.busy} onclick={() => remove(endpoints.channelInvite(appId, channel, entry.id))}>Remove</button>
         </li>
       {:else}
         <li class="py-2.5 text-[15px] text-ink-muted">{access ? "Nobody yet." : "Loading…"}</li>
@@ -101,7 +96,7 @@
 
     <form class="flex gap-2" onsubmit={makeToken}>
       <input class="field min-w-0 flex-1" placeholder="Token name, like Test lab" aria-label="Download token name" bind:value={tokenName} required maxlength="80" />
-      <button class="button button-quiet" disabled={busy || !tokenName.trim()}>Make a token</button>
+      <button class="button button-quiet" disabled={task.busy || !tokenName.trim()}>Make a token</button>
     </form>
 
     {#if tokens.length}
@@ -113,7 +108,7 @@
               <span class="block text-[15px]">{token.name}</span>
               <span class="block text-[13px] text-ink-muted">{token.last_used_at ? `Used ${ago(token.last_used_at)}` : "Never used"}</span>
             </span>
-            <button type="button" class="button button-sm button-danger" disabled={busy} onclick={() => remove(endpoints.channelToken(appId, channel, token.id))}>Revoke</button>
+            <button type="button" class="button button-sm button-danger" disabled={task.busy} onclick={() => remove(endpoints.channelToken(appId, channel, token.id))}>Revoke</button>
           </li>
         {/each}
       </ul>

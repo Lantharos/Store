@@ -10,7 +10,7 @@
   import ReleaseHeader from "#lib/dashboard/releases/ReleaseHeader.svelte"
   import ReleaseList from "#lib/dashboard/releases/ReleaseList.svelte"
   import { previousShipped, releaseDetail } from "#lib/dashboard/releases/release.svelte.ts"
-  import Timeline from "#lib/dashboard/releases/Timeline.svelte"
+  import Timeline from "#lib/dashboard/releases/timeline/Timeline.svelte"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import { page } from "$app/state"

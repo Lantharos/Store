@@ -7,21 +7,19 @@
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Group from "#lib/ui/group/Group.svelte"
   import Row from "#lib/ui/group/Row.svelte"
+  import { attempt } from "#lib/ui/overlay/task.svelte.ts"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
   const current = $derived(session.account!.agreement)
   const publishers = $derived(session.account!.publishers)
 
-  async function accept(publisher: DashboardPublisher) {
-    try {
+  const accept = (publisher: DashboardPublisher) =>
+    attempt(async () => {
       session.updatePublisher(
         await api.patch<DashboardPublisher>(endpoints.publisher(publisher.id), { agreement: current }),
       )
       toasts.show(`${publisher.name} is on the current agreement`)
-    } catch (error) {
-      toasts.error(error)
-    }
-  }
+    })
 </script>
 
 <PageHeader title="Developer agreement" text="Each publisher you belong to accepts the agreement once, and again when it changes in substance. Owners accept it on an organisation's behalf." />

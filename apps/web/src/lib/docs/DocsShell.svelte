@@ -2,7 +2,7 @@
   import ArrowLeft from "@lucide/svelte/icons/arrow-left"
   import ArrowRight from "@lucide/svelte/icons/arrow-right"
   import ChevronDown from "@lucide/svelte/icons/chevron-down"
-  import { page as current } from "$app/state"
+  import { afterNavigate } from "$app/navigation"
   import type { Page } from "../content/page.ts"
   import DocsSearch from "./DocsSearch.svelte"
   import { DOC_SECTIONS, docHref } from "./nav.ts"
@@ -19,8 +19,7 @@
 
   let menu = $state(false)
 
-  $effect(() => {
-    void current.url.pathname
+  afterNavigate(() => {
     menu = false
   })
 

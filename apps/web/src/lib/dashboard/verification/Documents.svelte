@@ -4,6 +4,7 @@
   import X from "@lucide/svelte/icons/x"
   import { MAX_DOCUMENT_BYTES, MAX_DOCUMENTS, type Verification } from "@schelf/protocol"
   import { bytes } from "../../format.ts"
+  import FilePicker from "../../ui/fields/FilePicker.svelte"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import type { VerificationFlow } from "./verification.svelte.ts"
 
@@ -12,14 +13,11 @@
     verification,
     editable,
   }: { flow: VerificationFlow; verification: Verification; editable: boolean } = $props()
-  let picker = $state<HTMLInputElement>()
-
-  async function attach(files: FileList | null) {
-    for (const file of files ?? []) {
+  async function attach(files: File[]) {
+    for (const file of files) {
       if (file.size > MAX_DOCUMENT_BYTES) toasts.show(`${file.name} is over 10 MB`, "danger")
       else await flow.attach(file)
     }
-    if (picker) picker.value = ""
   }
 </script>
 
@@ -39,9 +37,8 @@
     </ul>
   {/if}
   {#if editable && verification.documents.length < MAX_DOCUMENTS}
-    <button type="button" class="button button-sm button-quiet" disabled={flow.busy !== null} onclick={() => picker?.click()}>
+    <FilePicker class="button button-sm button-quiet" accept="application/pdf,image/png,image/jpeg" multiple disabled={flow.busy !== null} onpick={attach}>
       {#if flow.busy === "attach"}<LoaderCircle class="size-3.5 animate-spin" />Attaching{:else}Attach a document{/if}
-    </button>
-    <input bind:this={picker} type="file" accept="application/pdf,image/png,image/jpeg" multiple hidden onchange={(event) => attach(event.currentTarget.files)} />
+    </FilePicker>
   {/if}
 </div>

@@ -8,13 +8,13 @@
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import InviteForm from "#lib/dashboard/publishers/InviteForm.svelte"
   import MemberRow from "#lib/dashboard/publishers/MemberRow.svelte"
-  import { settingsHref } from "#lib/dashboard/settings/sections.ts"
   import Failed from "#lib/dashboard/shell/Failed.svelte"
   import Loading from "#lib/dashboard/shell/Loading.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { ago } from "#lib/format.ts"
   import Group from "#lib/ui/group/Group.svelte"
   import Confirm from "#lib/ui/overlay/Confirm.svelte"
+  import { attempt } from "#lib/ui/overlay/task.svelte.ts"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
   import { goto } from "$app/navigation"
 
@@ -26,19 +26,13 @@
   let transferOpen = $state(false)
   const leaving = $derived(removing?.user_id === session.account?.user.id)
 
-  $effect(() => {
-    if (publisher.kind === "person") void goto(settingsHref("profile"))
-  })
-
   async function changeRole(member: Member, role: Role) {
-    try {
+    await attempt(async () => {
       await api.patch(endpoints.member(publisher.id, member.user_id), { role })
       toasts.show(
         `${member.name} is now ${role === "admin" || role === "owner" ? "an" : "a"} ${ROLE_NAMES[role].label.toLowerCase()}`,
       )
-    } catch (error) {
-      toasts.error(error)
-    }
+    })
     await members.refresh()
   }
 
@@ -63,14 +57,11 @@
     toasts.show(`${member.name} owns ${publisher.name} now`)
   }
 
-  async function revoke(id: string) {
-    try {
+  const revoke = (id: string) =>
+    attempt(async () => {
       await api.delete(endpoints.invite(publisher.id, id))
       await members.refresh()
-    } catch (error) {
-      toasts.error(error)
-    }
-  }
+    })
 </script>
 
 <PageHeader title="Members" text="Everyone who works on {publisher.name}'s apps, and what each of them can do." />

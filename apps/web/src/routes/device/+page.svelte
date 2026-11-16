@@ -18,7 +18,13 @@
 
   $effect(() => {
     if (code.length !== CODE_LENGTH) return
-    auth.device({ query: { user_code: code } }).then((found) => (client = found.data?.client_id ?? null))
+    let current = true
+    auth.device({ query: { user_code: code } }).then((found) => {
+      if (current) client = found.data?.client_id ?? null
+    })
+    return () => {
+      current = false
+    }
   })
 
   function formatted(value: string) {

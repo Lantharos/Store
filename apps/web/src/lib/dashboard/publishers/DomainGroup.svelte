@@ -5,6 +5,7 @@
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
   import Confirm from "../../ui/overlay/Confirm.svelte"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
@@ -18,7 +19,7 @@
 
   let domain = $state<CustomDomainState | null>(null)
   let wanted = $state("")
-  let busy = $state(false)
+  const task = new Task()
   let removing = $state(false)
   const STATUS = {
     proving: "Waiting for its DNS records",
@@ -28,32 +29,32 @@
   }
 
   $effect(() => {
-    api.get<CustomDomainState | null>(endpoints.publisherDomain(publisher)).then((found) => (domain = found))
+    let current = true
+    api.get<CustomDomainState | null>(endpoints.publisherDomain(publisher)).then((found) => {
+      if (current) domain = found
+    })
+    return () => {
+      current = false
+    }
   })
 
-  async function run(task: () => Promise<CustomDomainState | null>) {
-    busy = true
-    try {
-      domain = await task()
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
-  }
+  const change = (request: () => Promise<CustomDomainState | null>) =>
+    task.run(async () => {
+      domain = await request()
+    })
 
   function connect(event: SubmitEvent) {
     event.preventDefault()
     const parsed = customDomain.safeParse(wanted)
     if (!parsed.success) return toasts.show(parsed.error.issues[0]!.message, "danger")
-    run(() => api.put(endpoints.publisherDomain(publisher), { domain: parsed.data }))
+    change(() => api.put(endpoints.publisherDomain(publisher), { domain: parsed.data }))
   }
 </script>
 
 <Group title="Download domain" description="A domain of yours that serves the download links of all your projects, like dl.example.com/<project>/latest." rows>
   {#if domain}
     <Row title={domain.domain} description={domain.waiting ?? STATUS[domain.status]}>
-      {#if editable}<button type="button" class="button button-sm button-quiet" disabled={busy} onclick={() => (removing = true)}>Remove</button>{/if}
+      {#if editable}<button type="button" class="button button-sm button-quiet" disabled={task.busy} onclick={() => (removing = true)}>Remove</button>{/if}
     </Row>
     {#if domain.status === "proving" || domain.status === "connecting"}
       {#each domain.records as record (record.type)}
@@ -64,7 +65,7 @@
       {/each}
       {#if editable}
         <Row title="Checked {domain.checked_at ? ago(domain.checked_at) : 'never'}" description="Schelf looks again every hour.">
-          <button type="button" class="button button-sm button-quiet" disabled={busy} onclick={() => run(() => api.post(endpoints.checkPublisherDomain(publisher)))}>Check now</button>
+          <button type="button" class="button button-sm button-quiet" disabled={task.busy} onclick={() => change(() => api.post(endpoints.checkPublisherDomain(publisher)))}>Check now</button>
         </Row>
       {/if}
     {/if}
@@ -75,13 +76,13 @@
   {:else if editable}
     <form class="flex gap-2 px-5 py-3.5" onsubmit={connect}>
       <input class="field min-w-0 flex-1" placeholder="dl.example.com" aria-label="Domain" bind:value={wanted} spellcheck="false" />
-      <button class="button button-primary" disabled={busy || !wanted.trim()}>Connect</button>
+      <button class="button button-primary" disabled={task.busy || !wanted.trim()}>Connect</button>
     </form>
   {:else}
     <Row title="None" description="Owners and admins can connect one." />
   {/if}
 </Group>
 
-<Confirm bind:open={removing} title="Stop serving links on {domain?.domain}?" confirm="Remove" danger onconfirm={() => run(() => api.put(endpoints.publisherDomain(publisher), { domain: null }))}>
+<Confirm bind:open={removing} title="Stop serving links on {domain?.domain}?" confirm="Remove" danger onconfirm={() => change(() => api.put(endpoints.publisherDomain(publisher), { domain: null }))}>
   <p>Links on it stop working at once. Links on dl.schelf.store/{slug} keep working.</p>
 </Confirm>

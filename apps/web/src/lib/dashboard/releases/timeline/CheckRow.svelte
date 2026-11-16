@@ -3,8 +3,8 @@
   import CircleX from "@lucide/svelte/icons/circle-x"
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert"
   import { CHECK_TITLES, type CheckResult } from "@schelf/protocol"
-  import CodeBlock from "../../code/CodeBlock.svelte"
-  import Dialog from "../../ui/overlay/Dialog.svelte"
+  import CodeBlock from "../../../code/CodeBlock.svelte"
+  import Dialog from "../../../ui/overlay/Dialog.svelte"
   import { CHECK_FIXES } from "./checks.ts"
 
   let {

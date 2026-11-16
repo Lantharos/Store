@@ -6,18 +6,16 @@
   import Agreement from "#lib/dashboard/publishers/Agreement.svelte"
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
   import { goto } from "$app/navigation"
 
   let name = $state("")
   let agreed = $state(false)
-  let busy = $state(false)
-  let error = $state<string | null>(null)
+  const save = new Task({ inline: true })
 
   async function submit(event: SubmitEvent) {
     event.preventDefault()
-    busy = true
-    error = null
-    try {
+    await save.run(async () => {
       const created = await api.post<DashboardPublisher>(endpoints.publishers, {
         kind: "organisation",
         name,
@@ -26,11 +24,7 @@
       await session.refreshAccount()
       await session.use(created.id)
       await goto("/dashboard/settings/members")
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 </script>
 
@@ -41,6 +35,6 @@
     <input bind:value={name} class="field" required maxlength="80" autocomplete="organization" />
   </Field>
   <Agreement bind:agreed on={name.trim() || "the organisation"} />
-  {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
-  <button class="button button-primary" disabled={!agreed || !name.trim() || busy}>Create organisation</button>
+  {#if save.error}<p class="text-[15px] text-danger" role="alert">{save.error}</p>{/if}
+  <button class="button button-primary" disabled={!agreed || !name.trim() || save.busy}>Create organisation</button>
 </form>

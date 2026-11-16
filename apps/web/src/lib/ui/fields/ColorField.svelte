@@ -4,11 +4,7 @@
   let { value = $bindable(null), label }: { value?: string | null; label: string } = $props()
 
   const SWATCHES = ["#e7e1d4", "#33405f", "#3e5d4a", "#7a3b2e", "#1d2a35", "#5b4a7a", "#b5852b", "#2f6f73"]
-  let draft = $state(value ?? "")
-
-  $effect(() => {
-    draft = value ?? ""
-  })
+  let draft = $derived(value ?? "")
 
   function commit() {
     const hex = draft.trim().replace(/^#?/, "#").toLowerCase()

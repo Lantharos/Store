@@ -11,14 +11,14 @@
   import type { ExtensionGrant } from "./access/extension.ts"
   import Permissions from "./access/Permissions.svelte"
   import Privacy from "./access/Privacy.svelte"
-  import Download from "./Download.svelte"
+  import Download from "./download/Download.svelte"
+  import InvitedChannels from "./download/InvitedChannels.svelte"
+  import OtherSystems from "./download/OtherSystems.svelte"
+  import Tools from "./download/Tools.svelte"
   import Facts from "./Facts.svelte"
-  import InvitedChannels from "./InvitedChannels.svelte"
   import type { ShownApp } from "./load.ts"
-  import OtherSystems from "./OtherSystems.svelte"
+  import Screenshots from "./media/Screenshots.svelte"
   import Releases from "./Releases.svelte"
-  import Screenshots from "./Screenshots.svelte"
-  import Tools from "./Tools.svelte"
 
   let {
     app,

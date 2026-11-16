@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { RestorableProject } from "@schelf/protocol"
-  import { date } from "../../format.ts"
-  import Group from "../../ui/group/Group.svelte"
-  import Row from "../../ui/group/Row.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
-  import { api } from "../api/client.ts"
-  import { endpoints } from "../api/endpoints.ts"
-  import { resource } from "../api/resource.svelte.ts"
-  import { session } from "../api/session.svelte.ts"
+  import { date } from "../../../format.ts"
+  import Group from "../../../ui/group/Group.svelte"
+  import Row from "../../../ui/group/Row.svelte"
+  import { attempt } from "../../../ui/overlay/task.svelte.ts"
+  import { toasts } from "../../../ui/overlay/toasts.svelte.ts"
+  import { api } from "../../api/client.ts"
+  import { endpoints } from "../../api/endpoints.ts"
+  import { resource } from "../../api/resource.svelte.ts"
+  import { session } from "../../api/session.svelte.ts"
 
   let { publisherId }: { publisherId: string } = $props()
   const deleted = $derived(resource<RestorableProject[]>(endpoints.deletedProjects(publisherId)))
@@ -15,16 +16,13 @@
 
   async function restore(project: RestorableProject) {
     restoring = project.id
-    try {
+    await attempt(async () => {
       await api.post(endpoints.restore(project.id))
       deleted.set(deleted.data!.filter((entry) => entry.id !== project.id))
       await session.refreshApps()
       toasts.show(`${project.name} is back`)
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      restoring = null
-    }
+    })
+    restoring = null
   }
 </script>
 

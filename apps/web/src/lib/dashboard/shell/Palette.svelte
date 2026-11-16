@@ -8,7 +8,7 @@
   import Dialog from "../../ui/overlay/Dialog.svelte"
   import { session } from "../api/session.svelte.ts"
   import { projectTabs } from "../apps/tabs.ts"
-  import { projectGroups } from "../project/groups.ts"
+  import { projectGroups } from "../project/list/groups.ts"
   import {
     accountSections,
     publisherSections,

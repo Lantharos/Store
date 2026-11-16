@@ -1,7 +1,6 @@
 <script lang="ts">
   import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right"
   import { type DashboardPublisher, updatePublisher } from "@schelf/protocol"
-  import { untrack } from "svelte"
   import { api } from "#lib/dashboard/api/client.ts"
   import { endpoints } from "#lib/dashboard/api/endpoints.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
@@ -10,18 +9,16 @@
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
   import Group from "#lib/ui/group/Group.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
   const publisher = $derived(session.publisher!)
   const editable = $derived(session.can("profile"))
 
-  let form = $state(untrack(() => draftOf(session.publisher!)))
-  let busy = $state(false)
-  let error = $state<string | null>(null)
-
-  $effect(() => {
-    void publisher.id
-    form = untrack(() => draftOf(publisher))
+  const save = new Task({ inline: true })
+  const form = $derived.by(() => {
+    const draft = $state(draftOf(publisher))
+    return draft
   })
 
   function draftOf(source: DashboardPublisher) {
@@ -35,25 +32,19 @@
 
   const changed = $derived(JSON.stringify(form) !== JSON.stringify(draftOf(publisher)))
 
-  async function save(event: SubmitEvent) {
+  async function submit(event: SubmitEvent) {
     event.preventDefault()
     const parsed = updatePublisher.safeParse({ ...form, website: form.website.trim() || null })
     if (!parsed.success) {
-      error = parsed.error.issues[0]!.message
+      save.error = parsed.error.issues[0]!.message
       return
     }
-    busy = true
-    error = null
-    try {
+    await save.run(async () => {
       session.updatePublisher(
         await api.patch<DashboardPublisher>(endpoints.publisher(publisher.id), parsed.data),
       )
       toasts.show("Saved. The store shows it within a minute.")
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 </script>
 
@@ -63,7 +54,7 @@
   {/snippet}
 </PageHeader>
 
-<form class="mt-8" onsubmit={save}>
+<form class="mt-8" onsubmit={submit}>
   <Group>
     <LogoField {publisher} {editable} />
     <fieldset class="space-y-6" disabled={!editable}>
@@ -83,9 +74,9 @@
         <input bind:value={form.website} class="field" type="url" placeholder="https://example.com" autocomplete="url" />
       </Field>
     </fieldset>
-    {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
+    {#if save.error}<p class="text-[15px] text-danger" role="alert">{save.error}</p>{/if}
   </Group>
-  {#if editable}<button class="button button-primary mt-5" disabled={!changed || busy}>Save</button>{/if}
+  {#if editable}<button class="button button-primary mt-5" disabled={!changed || save.busy}>Save</button>{/if}
 </form>
 
 {#key publisher.id}

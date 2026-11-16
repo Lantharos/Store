@@ -8,19 +8,17 @@
   import PendingInvites from "#lib/dashboard/publishers/PendingInvites.svelte"
   import Logo from "#lib/Logo.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
   import { goto } from "$app/navigation"
 
   let name = $state(session.account?.user.name ?? "")
   let agreed = $state(false)
-  let busy = $state(false)
-  let error = $state<string | null>(null)
+  const save = new Task({ inline: true })
   const invited = $derived((session.account?.invites.length ?? 0) > 0)
 
   async function submit(event: SubmitEvent) {
     event.preventDefault()
-    busy = true
-    error = null
-    try {
+    await save.run(async () => {
       const created = await api.post<DashboardPublisher>(endpoints.publishers, {
         kind: "person",
         name,
@@ -29,11 +27,7 @@
       await session.refreshAccount()
       await session.use(created.id)
       await goto("/dashboard/projects/new")
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 </script>
 
@@ -57,8 +51,8 @@
         <input bind:value={name} class="field" required maxlength="80" autocomplete="name" />
       </Field>
       <Agreement bind:agreed />
-      {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
-      <button class="button button-primary w-full" disabled={!agreed || !name.trim() || busy}>Continue</button>
+      {#if save.error}<p class="text-[15px] text-danger" role="alert">{save.error}</p>{/if}
+      <button class="button button-primary w-full" disabled={!agreed || !name.trim() || save.busy}>Continue</button>
     </form>
     <AgentPath class="mt-4 text-center" />
     <button type="button" class="mt-3 w-full text-[15px] text-ink-muted hover:text-ink" onclick={() => session.signOut().then(() => goto("/"))}>Sign out</button>

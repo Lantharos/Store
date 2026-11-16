@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ProjectTool, PublisherSummary } from "@schelf/protocol"
-  import CopyButton from "../../code/CopyButton.svelte"
+  import CopyButton from "../../../code/CopyButton.svelte"
 
   let { tools, publisher }: { tools: ProjectTool[]; publisher: PublisherSummary } = $props()
 </script>

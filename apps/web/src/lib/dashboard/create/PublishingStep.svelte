@@ -15,26 +15,28 @@
 </script>
 
 <div class="space-y-6">
-  <div role="radiogroup" aria-label="How releases arrive" class="space-y-3">
-    <Choice
-      title="From GitHub Actions"
-      text={listed
-        ? "Publish a GitHub release and your workflow builds it and sends it to Schelf, with proof of where it was built."
-        : "Publish a GitHub release and your workflow sends it to Schelf. It goes out as soon as the checks pass."}
-      icon={GitHubMark}
-      chosen={fields.publishing === "github"}
-      onclick={() => (fields.publishing = "github")}
-    />
-    <Choice
-      title={kind.uploads ? "Upload it yourself" : "From your computer"}
-      text={kind.uploads
-        ? "Built somewhere else? Upload the files here, or send them with schelf publish. A person reviews every upload."
-        : "Send each release with schelf publish and a token. A person reviews every release sent this way."}
-      icon={kind.uploads ? Upload : Terminal}
-      chosen={fields.publishing === "hand"}
-      onclick={() => (fields.publishing = "hand")}
-    />
-  </div>
+  <Choice
+    label="How releases arrive"
+    bind:value={fields.publishing}
+    options={[
+      {
+        value: "github",
+        title: "From GitHub Actions",
+        text: listed
+          ? "Publish a GitHub release and your workflow builds it and sends it to Schelf, with proof of where it was built."
+          : "Publish a GitHub release and your workflow sends it to Schelf. It goes out as soon as the checks pass.",
+        icon: GitHubMark,
+      },
+      {
+        value: "hand",
+        title: kind.uploads ? "Upload it yourself" : "From your computer",
+        text: kind.uploads
+          ? "Built somewhere else? Upload the files here, or send them with schelf publish. A person reviews every upload."
+          : "Send each release with schelf publish and a token. A person reviews every release sent this way.",
+        icon: kind.uploads ? Upload : Terminal,
+      },
+    ]}
+  />
 
   {#if fields.publishing === "github"}
     <Field label="GitHub repository" hint="owner/name. Private repositories work too.">

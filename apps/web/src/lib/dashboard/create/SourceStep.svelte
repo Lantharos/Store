@@ -10,22 +10,24 @@
 </script>
 
 <div class="space-y-6">
-  <div role="radiogroup" aria-label="Source" class="space-y-3">
-    <Choice
-      title="Open source"
-      text="Its page links to the code, and Schelf checks each release against the source and its licence."
-      icon={Code}
-      chosen={fields.distribution === "open"}
-      onclick={() => (fields.distribution = "open")}
-    />
-    <Choice
-      title="Closed source"
-      text="Its page says so, and each release is checked as a build, without looking at the code."
-      icon={Lock}
-      chosen={fields.distribution === "proprietary"}
-      onclick={() => (fields.distribution = "proprietary")}
-    />
-  </div>
+  <Choice
+    label="Source"
+    bind:value={fields.distribution}
+    options={[
+      {
+        value: "open",
+        title: "Open source",
+        text: "Its page links to the code, and Schelf checks each release against the source and its licence.",
+        icon: Code,
+      },
+      {
+        value: "proprietary",
+        title: "Closed source",
+        text: "Its page says so, and each release is checked as a build, without looking at the code.",
+        icon: Lock,
+      },
+    ]}
+  />
   {#if fields.distribution === "open"}
     <Field label="Licence" note="Optional" hint="As an SPDX id, like MIT or GPL-3.0-or-later.">
       <input class="field" bind:value={fields.licence} placeholder="MIT" spellcheck="false" autocomplete="off" />

@@ -1,13 +1,13 @@
 <script lang="ts">
   import Check from "@lucide/svelte/icons/check"
   import type { AppSettings, UpdaterSwitch } from "@schelf/protocol"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { bridgeAdvice, frameworkName } from "./framework.ts"
 
   let { settings = $bindable(), move }: { settings: AppSettings; move: UpdaterSwitch } = $props()
-  let busy = $state(false)
+  const staying = new Task()
   const from = $derived(frameworkName(move.from))
   const to = $derived(frameworkName(move.to))
   const steps = $derived([
@@ -23,16 +23,10 @@
     },
   ])
 
-  async function stay() {
-    busy = true
-    try {
+  const stay = () =>
+    staying.run(async () => {
       settings = await api.delete<AppSettings>(endpoints.switchUpdater(settings.app.id))
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
-  }
+    })
 </script>
 
 <section>
@@ -53,6 +47,6 @@
   </ol>
   <p class="mt-3 px-1 text-[13px] leading-relaxed text-ink-muted">From then on, {from}'s feed only ever offers the bridge, and download links skip it.</p>
   {#if !move.first_release && !move.bridge_release}
-    <button type="button" class="button button-sm button-quiet mt-4" disabled={busy} onclick={stay}>Stay with {from}</button>
+    <button type="button" class="button button-sm button-quiet mt-4" disabled={staying.busy} onclick={stay}>Stay with {from}</button>
   {/if}
 </section>

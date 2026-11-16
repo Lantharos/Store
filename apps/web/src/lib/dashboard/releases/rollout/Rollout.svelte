@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { ReleaseDetail, RolloutRequest } from "@schelf/protocol"
-  import Slider from "../../ui/fields/Slider.svelte"
-  import Confirm from "../../ui/overlay/Confirm.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
-  import { api } from "../api/client.ts"
-  import { endpoints } from "../api/endpoints.ts"
+  import Slider from "../../../ui/fields/Slider.svelte"
+  import Confirm from "../../../ui/overlay/Confirm.svelte"
+  import { attempt } from "../../../ui/overlay/task.svelte.ts"
+  import { toasts } from "../../../ui/overlay/toasts.svelte.ts"
+  import { api } from "../../api/client.ts"
+  import { endpoints } from "../../api/endpoints.ts"
   import { dayName, everyoneBy } from "./rollout.ts"
 
   let {
@@ -37,19 +38,17 @@
     }
   }
 
+  const pause = (paused: boolean) => send({ action: paused ? "pause" : "resume" }, { rollout_paused: paused })
+
   function togglePause() {
     const paused = !release.rollout_paused
-    send({ action: paused ? "pause" : "resume" }, { rollout_paused: paused }).then(
-      () =>
-        toasts.show(paused ? `Paused at ${release.rollout_percent}%` : "Rollout resumed", "neutral", {
-          label: "Undo",
-          run: () =>
-            send({ action: paused ? "resume" : "pause" }, { rollout_paused: !paused }).catch((error) =>
-              toasts.error(error),
-            ),
-        }),
-      (error) => toasts.error(error),
-    )
+    void attempt(async () => {
+      await pause(paused)
+      toasts.show(paused ? `Paused at ${release.rollout_percent}%` : "Rollout resumed", "neutral", {
+        label: "Undo",
+        run: () => attempt(() => pause(!paused)),
+      })
+    })
   }
 </script>
 
