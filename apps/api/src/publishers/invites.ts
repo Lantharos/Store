@@ -3,29 +3,36 @@ import { and, eq, gt, or, type SQL } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars, Viewer } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
-import { loginOf } from "../github/api.ts"
 import { fail } from "../lib/http.ts"
 import { mediaUrl } from "../signing/records.ts"
 import { publisherView } from "./views.ts"
 
 export const inviteRoutes = new Hono<SignedInVars>()
 
-function addressedTo(viewer: Viewer, github: string | null) {
-  const byEmail = eq(schema.invite.email, viewer.email.toLowerCase())
-  return github ? or(byEmail, eq(schema.invite.githubLogin, github.toLowerCase())) : byEmail
+async function githubIdOf(userId: string) {
+  const account = await db.query.account.findFirst({
+    columns: { accountId: true },
+    where: and(eq(schema.account.userId, userId), eq(schema.account.providerId, "github")),
+  })
+  return account?.accountId ?? null
 }
 
-function invitesFor(viewer: Viewer, github: string | null, only?: SQL) {
+function addressedTo(viewer: Viewer, githubId: string | null) {
+  const byEmail = eq(schema.invite.email, viewer.email.toLowerCase())
+  return githubId ? or(byEmail, eq(schema.invite.githubId, githubId)) : byEmail
+}
+
+function invitesFor(viewer: Viewer, githubId: string | null, only?: SQL) {
   return db
     .select({ invite: schema.invite, publisher: schema.publisher, by: schema.user.name })
     .from(schema.invite)
     .innerJoin(schema.publisher, eq(schema.publisher.id, schema.invite.publisherId))
     .leftJoin(schema.user, eq(schema.user.id, schema.invite.invitedBy))
-    .where(and(addressedTo(viewer, github), gt(schema.invite.expiresAt, new Date()), only))
+    .where(and(addressedTo(viewer, githubId), gt(schema.invite.expiresAt, new Date()), only))
 }
 
-export async function pendingInvites(viewer: Viewer, github: string | null): Promise<PendingInvite[]> {
-  const rows = await invitesFor(viewer, github)
+export async function pendingInvites(viewer: Viewer): Promise<PendingInvite[]> {
+  const rows = await invitesFor(viewer, await githubIdOf(viewer.id))
   return rows.map(({ invite, publisher, by }) => ({
     id: invite.id,
     publisher: { name: publisher.name, slug: publisher.slug, logo: mediaUrl(publisher.logoKey) },
@@ -35,17 +42,8 @@ export async function pendingInvites(viewer: Viewer, github: string | null): Pro
   }))
 }
 
-export async function currentGithubLogin(user: typeof schema.user.$inferSelect) {
-  if (!user.githubId) return null
-  const login = await loginOf(user.githubId)
-  if (login !== user.githubLogin?.toLowerCase())
-    await db.update(schema.user).set({ githubLogin: login }).where(eq(schema.user.id, user.id))
-  return login
-}
-
 async function viewersInvite(viewer: Viewer, id: string) {
-  const user = (await db.query.user.findFirst({ where: eq(schema.user.id, viewer.id) }))!
-  const [row] = await invitesFor(viewer, await currentGithubLogin(user), eq(schema.invite.id, id))
+  const [row] = await invitesFor(viewer, await githubIdOf(viewer.id), eq(schema.invite.id, id))
   if (!row) fail(404, "That invitation isn't for you, or it expired")
   return row
 }

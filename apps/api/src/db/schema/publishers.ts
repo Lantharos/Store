@@ -58,6 +58,7 @@ export const invite = sqliteTable(
       .references(() => publisher.id, { onDelete: "cascade" }),
     email: text("email"),
     githubLogin: text("github_login"),
+    githubId: text("github_id"),
     role: text("role", { enum: ROLES }).notNull(),
     invitedBy: text("invited_by").references(() => user.id, { onDelete: "set null" }),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
@@ -66,7 +67,7 @@ export const invite = sqliteTable(
   (table) => [
     index("invite_publisher").on(table.publisherId),
     index("invite_email").on(table.email),
-    index("invite_github").on(table.githubLogin),
+    index("invite_github").on(table.githubId),
     index("invite_invited_by").on(table.invitedBy),
   ],
 )

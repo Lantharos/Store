@@ -42,6 +42,6 @@ accountRoutes.get("/", async (c) => {
     passkeys,
     agreement: AGREEMENT_VERSION,
     publishers: memberships.map(({ publisher, role }) => publisherView(publisher, role)),
-    invites: await pendingInvites(viewer, user.githubLogin),
+    invites: await pendingInvites(viewer),
   } satisfies Account)
 })

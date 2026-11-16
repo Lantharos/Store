@@ -5,10 +5,11 @@ import {
   type Members,
   type SentInvite,
 } from "@schelf/protocol"
-import { and, asc, eq, gt, sql } from "drizzle-orm"
+import { and, asc, eq, gt } from "drizzle-orm"
 import { Hono } from "hono"
 import { avatarUrl, githubAvatar } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
+import { githubUser } from "../github/api.ts"
 import { fail, readBody } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { DAY_MS } from "../lib/time.ts"
@@ -61,16 +62,32 @@ function inviteView(invite: typeof schema.invite.$inferSelect, by: string | null
   }
 }
 
-async function alreadyMember(publisherId: string, to: { email?: string; github?: string }) {
-  const match = to.email
-    ? eq(schema.user.email, to.email)
-    : sql`lower(${schema.user.githubLogin}) = ${to.github!.toLowerCase()}`
-  const [row] = await db
+type Invitee = { email: string } | { githubLogin: string; githubId: string }
+
+async function invitee(input: { email: string } | { github: string }): Promise<Invitee> {
+  if ("email" in input) return { email: input.email }
+  const account = await githubUser(input.github)
+  if (!account) fail(422, `GitHub has no account ${input.github}`)
+  return { githubLogin: account.login.toLowerCase(), githubId: String(account.id) }
+}
+
+async function alreadyMember(publisherId: string, to: Invitee) {
+  const query = db
     .select({ id: schema.user.id })
     .from(schema.member)
     .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
-    .where(and(eq(schema.member.publisherId, publisherId), match))
-    .limit(1)
+  const [row] = await ("email" in to
+    ? query.where(and(eq(schema.member.publisherId, publisherId), eq(schema.user.email, to.email)))
+    : query
+        .innerJoin(schema.account, eq(schema.account.userId, schema.user.id))
+        .where(
+          and(
+            eq(schema.member.publisherId, publisherId),
+            eq(schema.account.providerId, "github"),
+            eq(schema.account.accountId, to.githubId),
+          ),
+        )
+  ).limit(1)
   return row !== undefined
 }
 
@@ -80,21 +97,22 @@ memberRoutes.post("/invites", async (c) => {
   allow(c.var.role, "members")
   const input = await readBody(c, inviteMember)
   if (input.role === "owner") allow(c.var.role, "owners")
-  const to = "email" in input ? { email: input.email } : { github: input.github.toLowerCase() }
+  const to = await invitee(input)
   if (await alreadyMember(publisher.id, to)) fail(409, "They're already a member")
   await limitInvites(c.var.viewer)
   const now = new Date()
   const row = {
     id: randomId(),
     publisherId: publisher.id,
-    email: to.email ?? null,
-    githubLogin: to.github ?? null,
+    email: "email" in to ? to.email : null,
+    githubLogin: "githubId" in to ? to.githubLogin : null,
+    githubId: "githubId" in to ? to.githubId : null,
     role: input.role,
     invitedBy: c.var.viewer.id,
     expiresAt: new Date(now.getTime() + INVITE_DAYS * DAY_MS),
     createdAt: now,
   }
-  const same = to.email ? eq(schema.invite.email, to.email) : eq(schema.invite.githubLogin, to.github!)
+  const same = "email" in to ? eq(schema.invite.email, to.email) : eq(schema.invite.githubId, to.githubId)
   await db.batch([
     db.delete(schema.invite).where(and(eq(schema.invite.publisherId, publisher.id), same)),
     db.insert(schema.invite).values(row),

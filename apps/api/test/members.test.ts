@@ -1,6 +1,6 @@
 import { type Account, AGREEMENT_VERSION, type DashboardPublisher, type Members } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { releaseOwnerships } from "../src/publishers/ownership.ts"
 import { json, type Person, person, publisherWithApp } from "./fixtures.ts"
@@ -56,9 +56,13 @@ describe("organisation roles", () => {
 
   test("admins manage people but can't touch owners", async () => {
     const { alice, carol, bob, org } = await team()
+    const github = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => Response.json({ id: 41, login: "Dee" }))
     expect(
       (await carol.call("POST", `/publishers/${org}/invites`, { github: "dee", role: "developer" })).status,
     ).toBe(201)
+    github.mockRestore()
     expect(
       (await carol.call("POST", `/publishers/${org}/invites`, { github: "eve", role: "owner" })).status,
     ).toBe(403)

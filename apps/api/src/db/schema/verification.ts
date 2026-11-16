@@ -25,6 +25,7 @@ export const publisherVerification = sqliteTable(
     contactEmail: text("contact_email"),
     contactCodeHash: text("contact_code_hash"),
     contactCodeExpiresAt: integer("contact_code_expires_at", { mode: "timestamp_ms" }),
+    contactCodeGuesses: integer("contact_code_guesses").notNull().default(0),
     contactConfirmedAt: integer("contact_confirmed_at", { mode: "timestamp_ms" }),
     githubOrg: text("github_org"),
     githubOrgProvenAt: integer("github_org_proven_at", { mode: "timestamp_ms" }),

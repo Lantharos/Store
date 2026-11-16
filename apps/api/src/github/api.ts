@@ -45,8 +45,8 @@ export function repository(fullName: string, token?: string | null) {
   return maybeGithub<Repository>(`/repos/${fullName}`, { token })
 }
 
-export async function loginOf(accountId: string) {
-  return (await maybeGithub<{ login: string }>(`/user/${accountId}`))?.login.toLowerCase() ?? null
+export function githubUser(login: string) {
+  return maybeGithub<{ id: number; login: string }>(`/users/${encodeURIComponent(login)}`)
 }
 
 export async function visibleRepository(fullName: string, personal: string | undefined) {
