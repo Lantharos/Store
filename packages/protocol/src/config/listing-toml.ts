@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { platform } from "../platforms.ts"
+import { platform } from "../project/platforms.ts"
 
 export const LISTING_TOML = "listing.toml"
 export const MAX_CATEGORIES = 4

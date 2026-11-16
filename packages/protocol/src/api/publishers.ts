@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { RESERVED_SLUGS } from "../projects.ts"
+import { RESERVED_SLUGS } from "../project/projects.ts"
 
 export const AGREEMENT_VERSION = "2026-11"
 export const PUBLISHER_KINDS = ["person", "organisation"] as const

@@ -25,10 +25,10 @@ import {
 } from "@schelf/protocol"
 import { and, eq, sql } from "drizzle-orm"
 import { db, insertRows, schema } from "../db/client.ts"
-import { ensureChannel } from "../hosting/channels.ts"
-import { refuseEnded } from "../hosting/ended.ts"
+import { ensureChannel } from "../hosting/channels/channels.ts"
+import { refuseEnded } from "../hosting/channels/ended.ts"
+import { releaseLine } from "../hosting/channels/switches.ts"
 import { limitDailyReleases, limitManualUploads } from "../hosting/limits.ts"
-import { releaseLine } from "../hosting/switches.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
 import { fail, failConfig } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
@@ -36,7 +36,7 @@ import { acceptingSubmissions } from "../ops/events.ts"
 import type { AppRow } from "../signing/records.ts"
 import { sortIntoParts } from "./parts.ts"
 import { identifyPublisher, type Publisher } from "./publisher.ts"
-import { issueUploadToken } from "./upload-token.ts"
+import { issueUploadToken } from "./upload/token.ts"
 
 const RETRYABLE = new Set(["uploading", "failed"])
 const GIB = 1024 * 1024 * 1024

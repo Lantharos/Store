@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { utf8 } from "../encoding.ts"
 import { paths } from "../paths.ts"
-import { keyIdOf, type SignatureEnvelope, verifySignature } from "../signing.ts"
+import { utf8 } from "../signing/encoding.ts"
+import { keyIdOf, type SignatureEnvelope, verifySignature } from "../signing/signing.ts"
 import { stamp } from "./stamp.ts"
 
 export const storeKey = z.object({

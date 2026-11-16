@@ -1,5 +1,5 @@
-import type { ArtifactKind, Platform } from "../platforms.ts"
-import { STABLE } from "../releases.ts"
+import type { ArtifactKind, Platform } from "../project/platforms.ts"
+import { STABLE } from "../project/releases.ts"
 import { type HostedFile, type HostedRelease, type LinkOptions, pickFile } from "./pick.ts"
 
 export interface TauriFeed {

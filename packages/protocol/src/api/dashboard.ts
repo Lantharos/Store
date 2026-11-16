@@ -2,13 +2,20 @@ import { z } from "zod"
 import type { ConfigFiles } from "../config/apply.ts"
 import { MAX_CATEGORIES, webLink } from "../config/listing-toml.ts"
 import { repositoryName } from "../config/schelf-toml.ts"
-import { type CustomDomainState, customDomain } from "../domains.ts"
+import { SCHELF_WORKFLOW } from "../config/setup.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
-import type { PartPlan, ProjectGroup } from "../parts.ts"
-import type { Permissions } from "../permissions.ts"
-import { appId, artifactKind, distribution, format, kind, type Platform, platform } from "../platforms.ts"
-import type { Privacy } from "../privacy.ts"
-import { projectSlug, type Visibility, visibility } from "../projects.ts"
+import { type CustomDomainState, customDomain } from "../project/domains.ts"
+import type { PartPlan, ProjectGroup } from "../project/parts.ts"
+import {
+  appId,
+  artifactKind,
+  distribution,
+  format,
+  kind,
+  type Platform,
+  platform,
+} from "../project/platforms.ts"
+import { projectSlug, type Visibility, visibility } from "../project/projects.ts"
 import {
   type AppStatus,
   type CheckResult,
@@ -18,9 +25,10 @@ import {
   type ShellReview,
   type Updater,
   updater,
-} from "../releases.ts"
-import { SCHELF_WORKFLOW } from "../setup.ts"
-import { toolName } from "../tools.ts"
+} from "../project/releases.ts"
+import { toolName } from "../project/tools.ts"
+import type { Permissions } from "../sandbox/permissions.ts"
+import type { Privacy } from "../sandbox/privacy.ts"
 import type { ProjectTool } from "./public.ts"
 import { MAX_ARTIFACT_SIZE, MAX_RELEASE_FILES } from "./publishing.ts"
 

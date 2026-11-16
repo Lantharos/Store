@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { utf8 } from "../encoding.ts"
-import { SABINE_ARTIFACT_KINDS } from "../platforms.ts"
-import { type SigningKey, verifySignature } from "../signing.ts"
+import { SABINE_ARTIFACT_KINDS } from "../project/platforms.ts"
+import { utf8 } from "../signing/encoding.ts"
+import { type SigningKey, verifySignature } from "../signing/signing.ts"
 
 export const sabineVersion = z.object({ major: z.number().int(), build: z.number().int() })
 export type SabineVersion = z.infer<typeof sabineVersion>

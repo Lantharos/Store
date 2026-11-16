@@ -1,6 +1,6 @@
 import { and, eq, isNotNull, or } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { defaultRoot } from "../hosting/addresses.ts"
+import { defaultRoot } from "../hosting/serving/addresses.ts"
 import { edgeValue } from "../lib/edge-cache.ts"
 import type { AppRow } from "../signing/records.ts"
 

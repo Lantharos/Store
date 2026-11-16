@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { access, format, kind, platform } from "../platforms.ts"
+import { access, format, kind, platform } from "../project/platforms.ts"
 import { stamp } from "./stamp.ts"
 
 export const publisherSummary = z.object({

@@ -1,8 +1,8 @@
 import { AUTOMATIC_REVIEWER, ROLLOUT_STEPS, SHIPPED_STATUSES } from "@schelf/protocol"
 import { and, eq, inArray, isNull } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { noteShipped } from "../hosting/channels/switches.ts"
 import { reviewRoute } from "../hosting/scrutiny.ts"
-import { noteShipped } from "../hosting/switches.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { recordHistory, tellOps } from "../ops/events.ts"
@@ -10,7 +10,7 @@ import { resignApp } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 import { channelIsGradual } from "./gradual.ts"
 import { notifyPublisher } from "./notify.ts"
-import { requestWantedShell } from "./shell.ts"
+import { requestWantedShell } from "./shell/shell.ts"
 
 export type Decision = "approved" | "changes-requested" | "rejected"
 const FIRST_STEP = ROLLOUT_STEPS[0]

@@ -1,12 +1,20 @@
 import { parse } from "smol-toml"
 import { z } from "zod"
-import { customDomain } from "../domains.ts"
-import { partFormat, partName, partSettings } from "../parts.ts"
-import { appId, distribution, format, formatFits, kind, platform, platformsFor } from "../platforms.ts"
-import { privacy } from "../privacy.ts"
-import { projectPath } from "../projects.ts"
-import { channelName, FILE_UPDATERS, STABLE } from "../releases.ts"
-import { TOOL_PLATFORMS, toolName, toolsOf } from "../tools.ts"
+import { customDomain } from "../project/domains.ts"
+import { partFormat, partName, partSettings } from "../project/parts.ts"
+import {
+  appId,
+  distribution,
+  format,
+  formatFits,
+  kind,
+  platform,
+  platformsFor,
+} from "../project/platforms.ts"
+import { projectPath } from "../project/projects.ts"
+import { channelName, FILE_UPDATERS, STABLE } from "../project/releases.ts"
+import { TOOL_PLATFORMS, toolName, toolsOf } from "../project/tools.ts"
+import { privacy } from "../sandbox/privacy.ts"
 
 export const SCHELF_TOML = "schelf.toml"
 

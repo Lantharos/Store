@@ -19,8 +19,8 @@ import { iso } from "../../lib/time.ts"
 import { recordHistory } from "../../ops/events.ts"
 import { appAccess, releaseAccess } from "../../publishers/access.ts"
 import { controlRollout } from "../../releases/rollout.ts"
-import { requestShell } from "../../releases/shell.ts"
-import { runsInShell, shellRequestable } from "../../releases/shell-files.ts"
+import { runsInShell, shellRequestable } from "../../releases/shell/files.ts"
+import { requestShell } from "../../releases/shell/shell.ts"
 import type { AppRow, ArtifactRow, ReleaseRow } from "../../signing/records.ts"
 
 export const releaseRoutes = new Hono<SignedInVars>()

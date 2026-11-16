@@ -12,7 +12,7 @@ import { db, schema } from "../db/client.ts"
 import { isInvitedKey } from "../invited/links.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
-import { storeHashed } from "../publishing/hashing.ts"
+import { storeHashed } from "../publishing/upload/hashing.ts"
 import { fileUrl } from "../signing/records.ts"
 
 export async function receiveDelta(

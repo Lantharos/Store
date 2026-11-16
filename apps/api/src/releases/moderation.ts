@@ -4,7 +4,7 @@ import { randomId } from "../lib/ids.ts"
 import { resign } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 import { notifyPublisher } from "./notify.ts"
-import { withdrawShell } from "./shell.ts"
+import { withdrawShell } from "./shell/shell.ts"
 
 async function resignEverything(appId: string) {
   await Promise.all([

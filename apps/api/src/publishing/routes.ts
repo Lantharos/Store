@@ -14,8 +14,8 @@ import { completeRelease } from "./complete.ts"
 import { workflowClaims } from "./publisher.ts"
 import { promoteForPublisher, publishedReleases } from "./releases.ts"
 import { startRelease } from "./start.ts"
-import { receiveFile } from "./upload.ts"
-import { checkUploadToken } from "./upload-token.ts"
+import { checkUploadToken } from "./upload/token.ts"
+import { receiveFile } from "./upload/upload.ts"
 
 export const publishingRoutes = new Hono()
 

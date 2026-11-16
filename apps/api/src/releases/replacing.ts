@@ -1,7 +1,7 @@
 import { DEFAULT_LOCALE, type Replacement } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { pageUrl } from "../hosting/addresses.ts"
+import { pageUrl } from "../hosting/serving/addresses.ts"
 import { delist } from "./moderation.ts"
 
 async function listedApp(id: string) {

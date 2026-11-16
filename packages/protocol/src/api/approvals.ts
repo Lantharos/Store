@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { customDomain } from "../domains.ts"
-import { projectSlug } from "../projects.ts"
-import { channelName } from "../releases.ts"
+import { customDomain } from "../project/domains.ts"
+import { projectSlug } from "../project/projects.ts"
+import { channelName } from "../project/releases.ts"
 import {
   addTrustedPublisher,
   claimNamespace,

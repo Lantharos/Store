@@ -6,7 +6,7 @@ import {
 } from "@schelf/protocol"
 import { and, desc, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { promote } from "../hosting/channels.ts"
+import { promote } from "../hosting/channels/channels.ts"
 import { fail } from "../lib/http.ts"
 import type { ReleaseRow } from "../signing/records.ts"
 import { identifyPublisher, type Publisher } from "./publisher.ts"

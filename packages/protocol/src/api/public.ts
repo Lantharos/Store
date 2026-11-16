@@ -2,8 +2,8 @@ import { z } from "zod"
 import type { ConfigIssue } from "../config/issues.ts"
 import { type AppIndex, DEFAULT_LOCALE } from "../files/app.ts"
 import type { CatalogEntry, MirrorEntry } from "../files/catalog.ts"
-import { type ArtifactKind, kind, type Platform, platform } from "../platforms.ts"
-import type { AppStatus } from "../releases.ts"
+import { type ArtifactKind, kind, type Platform, platform } from "../project/platforms.ts"
+import type { AppStatus } from "../project/releases.ts"
 
 export const API_BASE = "/api/v1"
 

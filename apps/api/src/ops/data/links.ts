@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers"
 import { b } from "@lantharos/pult"
-import { pageUrl } from "../../hosting/addresses.ts"
+import { pageUrl } from "../../hosting/serving/addresses.ts"
 import type { AppRow } from "../../signing/records.ts"
 
 export function appPage(

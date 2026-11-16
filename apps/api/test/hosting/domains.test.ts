@@ -1,0 +1,195 @@
+import { exports } from "cloudflare:workers"
+import { type ApplyResponse, type Approval, type ProjectDownloads, paths } from "@schelf/protocol"
+import { eq } from "drizzle-orm"
+import { describe, expect, test, vi } from "vitest"
+import { db, schema } from "../../src/db/client.ts"
+import { domainState } from "../../src/domains/state.ts"
+import { randomId } from "../../src/lib/ids.ts"
+import { json, person, publisherWithApp } from "../fixtures.ts"
+
+const API = "https://schelf.store/api/v1"
+
+async function verified(appId: string) {
+  const app = (await db.query.app.findFirst({ where: eq(schema.app.id, appId) }))!
+  await db
+    .update(schema.publisher)
+    .set({ verifiedAt: new Date() })
+    .where(eq(schema.publisher.id, app.publisherId))
+}
+
+async function apply(token: string, appId: string, domain: string) {
+  const dns = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}))
+  const response = await exports.default.fetch(
+    new Request(`${API}/apply`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ schelf_toml: `id = "${appId}"\nformat = "files"\ndomain = "${domain}"\n` }),
+    }),
+  )
+  dns.mockRestore()
+  return response
+}
+
+async function connect(userId: string, appId: string, domain: string) {
+  const command = await person("Mira", userId, "cli")
+  const { request } = await json<ApplyResponse>(await apply(command.token, appId, domain))
+  const browser = await person("Mira", userId)
+  const dns = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}))
+  const approved = await json<Approval>(await browser.call("POST", `/requests/${request!.id}/approve`))
+  dns.mockRestore()
+  return approved
+}
+
+async function shipped(appId: string) {
+  const id = randomId()
+  await db.insert(schema.release).values({
+    id,
+    appId,
+    version: "1.0.0",
+    origin: "oidc",
+    format: "files",
+    manifest: "",
+    requires: {},
+    status: "live",
+    rolloutPercent: 100,
+    approvedAt: new Date(),
+  })
+  await db.insert(schema.artifact).values({
+    id: randomId(),
+    releaseId: id,
+    name: "notes.exe",
+    platform: "windows-x86_64",
+    format: "files",
+    kind: "exe",
+    key: paths.artifact(appId, "1.0.0", "windows-x86_64", "notes.exe"),
+    size: 10,
+    sha256: "b".repeat(64),
+  })
+}
+
+describe("a custom domain", () => {
+  test("waits for its DNS proof, then serves the project's links", async () => {
+    const { appId, token, userId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    await verified(appId)
+    const domain = `downloads-${randomId(4).toLowerCase()}.example.com`
+    expect((await apply(token, appId, domain)).status).toBe(403)
+    expect((await connect(userId, appId, domain)).status).toBe("done")
+
+    const row = (await db.query.customDomain.findFirst({ where: eq(schema.customDomain.appId, appId) }))!
+    const state = domainState(row, true)
+    expect(state.status).toBe("proving")
+    expect(state.records.map((record) => record.name)).toEqual([`_schelf.${domain}`, domain])
+
+    await db
+      .update(schema.customDomain)
+      .set({ provenAt: new Date(), activeAt: new Date() })
+      .where(eq(schema.customDomain.domain, domain))
+    const link = await exports.default.fetch(
+      new Request(`https://${domain}/latest/windows`, { redirect: "manual" }),
+    )
+    expect(link.status).toBe(302)
+    expect(link.headers.get("location")).toContain("notes.exe")
+  })
+
+  test("serves one project only, and nothing before it's connected", async () => {
+    const first = await publisherWithApp("files")
+    const second = await publisherWithApp("files")
+    await verified(first.appId)
+    await verified(second.appId)
+    const domain = `shared-${randomId(4).toLowerCase()}.example.com`
+    await connect(first.userId, first.appId, domain)
+    const command = await person("Mira", second.userId, "cli")
+    expect((await apply(command.token, second.appId, domain)).status).toBe(409)
+    expect((await exports.default.fetch(`https://${domain}/latest/windows`)).status).toBe(404)
+  })
+})
+
+describe("a publisher's domain", () => {
+  async function connected(publisherId: string, domain: string) {
+    await db.insert(schema.customDomain).values({
+      domain,
+      publisherId,
+      token: "t",
+      provenAt: new Date(),
+      activeAt: new Date(),
+    })
+  }
+
+  test("serves every project under its address, and Schelf's links use it", async () => {
+    const { appId, publisherId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    await verified(appId)
+    const domain = `dl-${randomId(4).toLowerCase()}.example.com`
+    await connected(publisherId, domain)
+
+    const link = await exports.default.fetch(
+      new Request(`https://${domain}/notes/latest/windows`, { redirect: "manual" }),
+    )
+    expect(link.headers.get("location")).toContain("notes.exe")
+    const latest = (await (
+      await exports.default.fetch(`https://${domain}/notes/latest.json`)
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://${domain}/notes/latest/windows-x86_64/exe`)
+  })
+
+  test("gives way to the project's own domain, and can't take one that's in use", async () => {
+    const { appId, publisherId, userId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    await verified(appId)
+    const own = `get-${randomId(4).toLowerCase()}.example.com`
+    await connected(publisherId, `dl-${randomId(4).toLowerCase()}.example.com`)
+    await connect(userId, appId, own)
+    await db
+      .update(schema.customDomain)
+      .set({ activeAt: new Date() })
+      .where(eq(schema.customDomain.domain, own))
+    const latest = (await (
+      await exports.default.fetch(
+        `https://dl.schelf.store/${(await db.query.publisher.findFirst({ where: eq(schema.publisher.id, publisherId) }))!.slug}/notes/latest.json`,
+      )
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://${own}/latest/windows-x86_64/exe`)
+
+    const owner = await person("Mira", userId)
+    expect((await owner.call("PUT", `/publishers/${publisherId}/domain`, { domain: own })).status).toBe(409)
+    const cli = await person("Mira", userId, "cli")
+    expect((await cli.call("PUT", `/publishers/${publisherId}/domain`, { domain: null })).status).toBe(403)
+  })
+
+  test("comes with verification, and stops serving while the publisher isn't verified", async () => {
+    const { appId, publisherId, userId } = await publisherWithApp("files")
+    await db
+      .update(schema.app)
+      .set({ status: "published", visibility: "unlisted" })
+      .where(eq(schema.app.id, appId))
+    await shipped(appId)
+    const command = await person("Mira", userId, "cli")
+    const refused = await apply(command.token, appId, `get-${randomId(4).toLowerCase()}.example.com`)
+    expect(refused.status).toBe(403)
+    expect(((await refused.json()) as { error: string }).error).toContain("verified publisher")
+    const owner = await person("Mira", userId)
+    const domain = `dl-${randomId(4).toLowerCase()}.example.com`
+    expect((await owner.call("PUT", `/publishers/${publisherId}/domain`, { domain })).status).toBe(403)
+
+    await connected(publisherId, domain)
+    expect((await exports.default.fetch(`https://${domain}/notes/latest/windows`)).status).toBe(404)
+    const slug = (await db.query.publisher.findFirst({ where: eq(schema.publisher.id, publisherId) }))!.slug
+    const latest = (await (
+      await exports.default.fetch(`https://dl.schelf.store/${slug}/notes/latest.json`)
+    ).json()) as ProjectDownloads
+    expect(latest.files[0]?.link).toBe(`https://dl.schelf.store/${slug}/notes/latest/windows-x86_64/exe`)
+  })
+})

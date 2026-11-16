@@ -1,5 +1,5 @@
-import { offeredIn, type PartPlan } from "../parts.ts"
-import type { ArtifactKind, Platform } from "../platforms.ts"
+import { offeredIn, type PartPlan } from "../project/parts.ts"
+import type { ArtifactKind, Platform } from "../project/platforms.ts"
 
 export interface HostedFile {
   part: string | null

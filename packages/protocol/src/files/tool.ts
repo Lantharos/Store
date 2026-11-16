@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { distribution, platform } from "../platforms.ts"
-import { TOOL_KINDS } from "../tools.ts"
+import { distribution, platform } from "../project/platforms.ts"
+import { TOOL_KINDS } from "../project/tools.ts"
 import { publisherSummary } from "./catalog.ts"
 import { stamp } from "./stamp.ts"
 

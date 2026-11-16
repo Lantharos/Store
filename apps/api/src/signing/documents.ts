@@ -18,7 +18,7 @@ import {
 } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
 import { partPlan } from "../publishing/parts.ts"
-import { runsInShell } from "../releases/shell-files.ts"
+import { runsInShell } from "../releases/shell/files.ts"
 import type { CatalogRecord, CatalogRelease } from "./catalog-records.ts"
 import {
   type AppRecord,

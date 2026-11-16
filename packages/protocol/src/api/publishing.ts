@@ -1,8 +1,14 @@
 import { z } from "zod"
 import { mirrorEntry } from "../files/catalog.ts"
-import type { Permissions } from "../permissions.ts"
-import { type ArtifactKind, artifactKind, type Platform, platform } from "../platforms.ts"
-import { type CheckResult, channelName, checkResult, type ReleaseStatus, SEMVER } from "../releases.ts"
+import { type ArtifactKind, artifactKind, type Platform, platform } from "../project/platforms.ts"
+import {
+  type CheckResult,
+  channelName,
+  checkResult,
+  type ReleaseStatus,
+  SEMVER,
+} from "../project/releases.ts"
+import type { Permissions } from "../sandbox/permissions.ts"
 import type { ProjectTool } from "./public.ts"
 
 export const OIDC_AUDIENCE = "schelf.store"

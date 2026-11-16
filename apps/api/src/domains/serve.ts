@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers"
 import { eq, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
-import { serveProject } from "../hosting/serve.ts"
+import { serveProject } from "../hosting/serving/serve.ts"
 import { edgeValue } from "../lib/edge-cache.ts"
 
 interface Mapped {

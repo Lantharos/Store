@@ -1,4 +1,4 @@
-import type { ArtifactKind, Platform } from "../platforms.ts"
+import type { ArtifactKind, Platform } from "../project/platforms.ts"
 
 type FileKind = Extract<
   ArtifactKind,
