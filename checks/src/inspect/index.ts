@@ -5,10 +5,13 @@ import { INSTALL_SCRIPTS } from "../unpack/index.ts"
 import { linkedLibraries } from "./libraries.ts"
 import { comparePermissions } from "./permissions.ts"
 import { settingsSchemas } from "./schemas.ts"
-import { scanStrings } from "./strings.ts"
+import { NO_FRAMEWORK, scanStrings } from "./strings.ts"
 import { walkTree } from "./tree.ts"
 
 const BUNDLED_METAINFO = /(^|\/)share\/(metainfo|appdata)\/[^/]+\.xml$/
+const SABINE_MANIFEST = /(^|\/)lib\/sabine\/[^/]+\/resources\/Sabine\.toml$/
+/** Sabine looks up the releases of its service before it confines the app, so the lookup isn't the app going online. */
+const SABINE_SETUP = new Set(["https://api.github.com/repos/"])
 
 async function bundledLicence(files: { path: string; absolute: string }[]) {
   const file = files.find((candidate) => BUNDLED_METAINFO.test(candidate.path))
@@ -22,9 +25,10 @@ async function bundledLicence(files: { path: string; absolute: string }[]) {
 
 export async function inspectArtifact(root: string, declared: Permissions | null, setuid: string[]) {
   const files = await walkTree(root, new Set(setuid))
+  const framework = files.some((file) => SABINE_MANIFEST.test(file.path)) ? SABINE_SETUP : NO_FRAMEWORK
   const [libraries, found, schemas] = await Promise.all([
     linkedLibraries(files),
-    scanStrings(files),
+    scanStrings(files, framework),
     settingsSchemas(files),
   ])
   const strings = { ...found, busNames: found.busNames.filter((name) => !schemas.has(name.value)) }

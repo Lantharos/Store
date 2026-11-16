@@ -17,6 +17,8 @@ export interface StringFacts {
   programs: Evidence[]
 }
 
+export const NO_FRAMEWORK: ReadonlySet<string> = new Set()
+
 const MAX_FILE_BYTES = 300 * 1024 * 1024
 const DESCRIPTIVE =
   /(^|\/)share\/(metainfo|appdata|applications|doc|licenses|man|icons|locale|mime)\/|(^|\/)(licen[cs]e|copying|notice|credits|authors|third[_-]?party)[^/]*$|\.(md|txt|desktop|xml|svg|png|jpe?g|webp|ico|mo|po|ttf|otf|ttc|woff2?)$/i
@@ -75,11 +77,12 @@ const isPublicAddress = (address: string) => {
   )
 }
 
-export function scanText(text: string, file: string, into: StringFacts) {
+export function scanText(text: string, file: string, into: StringFacts, framework = NO_FRAMEWORK) {
   const add = (list: Evidence[], value: string) => {
     if (list.length < MAX_PER_KIND && !list.some((entry) => entry.value === value)) list.push({ value, file })
   }
-  for (const [, host, path] of text.matchAll(URL)) {
+  for (const [url, host, path] of text.matchAll(URL)) {
+    if (framework.has(url)) continue
     const name = host!.toLowerCase()
     if (/^\d/.test(name)) {
       if (isPublicAddress(name)) add(into.addresses, name)
@@ -103,12 +106,13 @@ export const emptyFacts = (): StringFacts => ({
   programs: [],
 })
 
-export async function scanStrings(files: TreeFile[]) {
+/** Scans `files` for what they reach, leaving out the `framework` URLs the app's framework reaches for itself. */
+export async function scanStrings(files: TreeFile[], framework: ReadonlySet<string>) {
   const facts = emptyFacts()
   const scanned = files.filter((file) => file.size <= MAX_FILE_BYTES && !DESCRIPTIVE.test(file.path))
   await mapLimit(scanned, 8, async (file) => {
     const { stdout } = await run("strings", ["-a", "-n", "6", file.absolute])
-    scanText(stdout, file.path, facts)
+    scanText(stdout, file.path, facts, framework)
   })
   for (const list of Object.values(facts) as Evidence[][])
     list.sort((left, right) => left.value.localeCompare(right.value))

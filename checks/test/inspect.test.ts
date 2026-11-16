@@ -74,3 +74,17 @@ test("a GSettings schema the app ships isn't taken for a bus name it talks to", 
   await rm(root, { recursive: true })
   expect(inspection.strings.busNames.map((entry) => entry.value)).toEqual(["org.freedesktop.Notifications"])
 })
+
+test("Sabine's lookup of its own service isn't a Sabine app going online", async () => {
+  const root = await mkdtemp(join(tmpdir(), "schelf-inspect-"))
+  const app = join(root, "usr/lib/sabine/com.example.Notes")
+  await mkdir(join(app, "resources"), { recursive: true })
+  await writeFile(join(app, "notes"), "https://api.github.com/repos/\nhttps://api.notes.app/v1/sync\n")
+  const hosts = async () => (await inspectArtifact(root, null, [])).strings.hosts.map((entry) => entry.value)
+  const unbundled = await hosts()
+  await writeFile(join(app, "resources/Sabine.toml"), '[app]\nid = "com.example.Notes"\n')
+  const bundled = await hosts()
+  await rm(root, { recursive: true })
+  expect(unbundled).toEqual(["api.github.com", "api.notes.app"])
+  expect(bundled).toEqual(["api.notes.app"])
+})
