@@ -1,6 +1,5 @@
-import { type Ability, TOKEN_PREFIX } from "@schelf/protocol"
-import { auth } from "../auth/auth.ts"
-import type { Viewer } from "../auth/session.ts"
+import { type Ability, type ConfigChange, TOKEN_PREFIX } from "@schelf/protocol"
+import { type Viewer, viewerOf } from "../auth/session.ts"
 import { bearer, fail } from "../lib/http.ts"
 import { appAccess } from "../publishers/access.ts"
 import { identifyPublisher } from "../publishing/publisher.ts"
@@ -12,6 +11,8 @@ export type Caller =
   | { kind: "person"; by: string; viewer: Viewer }
 
 const isWorkflowToken = (credential: string) => credential.split(".").length === 3
+
+const PEOPLE_ONLY = /^(domain|repository|updater|channels\.[a-z0-9-]+\.invite_only)$/
 
 export async function callerOf(request: Request, app: AppRow): Promise<Caller> {
   const credential = bearer(request)
@@ -26,13 +27,22 @@ export async function callerOf(request: Request, app: AppRow): Promise<Caller> {
       }
     return { kind: "token", by: "an upload token" }
   }
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session) fail(401, "That sign-in has expired; run schelf login")
-  const viewer = { ...session.user, image: session.user.image ?? null }
-  await appAccess(viewer, app.id)
-  return { kind: "person", by: viewer.name, viewer }
+  const found = await viewerOf(request.headers)
+  if (!found) fail(401, "That sign-in has expired; run schelf login")
+  await appAccess(found.viewer, app.id)
+  return { kind: "person", by: found.viewer.name, viewer: found.viewer }
 }
 
 export async function allowCaller(caller: Caller, app: AppRow, ability: Ability) {
   if (caller.kind === "person") await appAccess(caller.viewer, app.id, ability)
+}
+
+export function refusePeopleOnly(caller: Caller, changes: ConfigChange[], repositoryId: string | null) {
+  if (caller.kind === "person") return
+  const ownRepository = caller.kind === "workflow" && caller.repository.id === repositoryId
+  const change = changes.find(
+    (entry) => PEOPLE_ONLY.test(entry.key) && !(entry.key === "repository" && ownRepository),
+  )
+  if (change)
+    fail(403, `${change.file} ${change.key}: a person changes this, with schelf apply while signed in`)
 }

@@ -120,6 +120,14 @@ describe("screening mail", () => {
     expect(verdictOf(headers(forged))).toBe("unverified")
   })
 
+  test("reads each method's own result, never what a sender put in an address or a comment", () => {
+    const sneaky = headers([
+      "authentication-results",
+      'mx.cloudflare.net; spf=none smtp.mailfrom="x;dmarc=pass"@example.org (dkim=pass; dmarc=pass); dkim=none header.d=dmarc=pass; dmarc=none policy.dmarc=reject',
+    ])
+    expect(verdictOf(sneaky)).toBe("unverified")
+  })
+
   test("recognises bulk and machine mail", () => {
     expect(isAutomated(headers(["auto-submitted", "auto-replied"]), "mira@example.org")).toBe(true)
     expect(isAutomated(headers(["auto-submitted", "no"]), "mira@example.org")).toBe(false)
@@ -187,6 +195,15 @@ describe("receiving mail", () => {
       ).message,
     )
     expect(await stored(byAddress)).toMatchObject({ thread: item })
+
+    const guessed = `${randomId()}@example.org`
+    await receiveMail(
+      incoming(
+        `support+${randomId()}@schelf.store`,
+        raw([]).replace(/Message-ID: <[^>]+>/, `Message-ID: <${guessed}>`),
+      ).message,
+    )
+    expect(await stored(guessed)).toMatchObject({ thread: null })
   })
 
   test("an answer to a report confirmation lands on the report", async () => {

@@ -4,6 +4,7 @@ import { randomId } from "../lib/ids.ts"
 import { resign } from "../signing/queue.ts"
 import { reindexApp } from "../storefront/indexing.ts"
 import { notifyPublisher } from "./notify.ts"
+import { withdrawShell } from "./shell.ts"
 
 async function resignEverything(appId: string) {
   await Promise.all([
@@ -40,6 +41,7 @@ export async function pull(target: { app: string; release?: string }, reason: st
   if (target.release)
     await db.update(schema.release).set({ status: "pulled" }).where(eq(schema.release.id, target.release))
   else await db.update(schema.app).set({ status: "pulled" }).where(eq(schema.app.id, target.app))
+  await withdrawShell(target.app, reason)
   await resignEverything(target.app)
   const [latest] = await db
     .select({ id: schema.release.id })

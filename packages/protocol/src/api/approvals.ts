@@ -11,6 +11,7 @@ import {
   createProject,
   createToken,
   inviteToChannel,
+  setProjectDomain,
   verifyNamespace,
 } from "./dashboard.ts"
 import { githubLogin, PUBLISHER_KINDS, role, slug } from "./publishers.ts"
@@ -19,13 +20,14 @@ export const NEW_PUBLISHER = "@new"
 export const APPROVAL_MINUTES = 30
 export const PASSKEY_MINUTES = 5
 
+const ID = /^[A-Za-z0-9_-]+$/
+const APP = /^[A-Za-z0-9_-]+([./][A-Za-z0-9_-]+)*$/
+
+const id = z.string().max(64).regex(ID)
 const publisher = z
-  .string()
-  .min(1)
-  .max(64)
+  .union([z.literal(NEW_PUBLISHER), id])
   .describe(`A publisher id, or ${NEW_PUBLISHER} for one made earlier in the request`)
-const app = z.string().min(1).max(255)
-const id = z.string().min(1).max(64)
+const app = z.string().max(255).regex(APP)
 
 export const approvalAction = z.discriminatedUnion("type", [
   z.object({
@@ -52,6 +54,7 @@ export const approvalAction = z.discriminatedUnion("type", [
   z.object({ type: z.literal("app.create"), publisher, app: createApp }),
   z.object({ type: z.literal("project.create"), publisher, project: createProject }),
   z.object({ type: z.literal("project.rename"), app, slug: projectSlug.min(1) }),
+  z.object({ type: z.literal("project.domain"), app, domain: setProjectDomain.shape.domain }),
   z.object({ type: z.literal("project.delete"), app }),
   z.object({ type: z.literal("project.restore"), app }),
   z.object({ type: z.literal("listing.request"), app, note: z.string().trim().max(1000).default("") }),
@@ -99,7 +102,6 @@ export const createApproval = z.object({
   actions: z.array(approvalAction).min(1).max(10),
   host: z.string().trim().max(100).optional(),
 })
-export type CreateApproval = z.input<typeof createApproval>
 
 export const APPROVAL_STATUSES = ["pending", "done", "failed", "cancelled", "expired"] as const
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number]

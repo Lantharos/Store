@@ -27,7 +27,6 @@ export const applyRequest = z.object({
   dry_run: z.boolean().default(false),
   host: z.string().trim().max(100).optional(),
 })
-export type ApplyRequest = z.input<typeof applyRequest>
 
 export interface ConfigChange {
   file: string

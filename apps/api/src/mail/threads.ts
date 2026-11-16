@@ -19,7 +19,13 @@ export async function threadOfToken(token: string) {
     columns: { pultItem: true },
     where: eq(schema.report.id, token),
   })
-  return report ? report.pultItem : token
+  if (report) return report.pultItem
+  const [answered] = await db
+    .select({ item: schema.mail.pultItem })
+    .from(schema.mail)
+    .where(and(eq(schema.mail.pultItem, token), eq(schema.mail.direction, "out")))
+    .limit(1)
+  return answered?.item ?? null
 }
 
 export async function threadingHeaders(item: string): Promise<Record<string, string>> {

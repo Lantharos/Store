@@ -3,6 +3,7 @@ import { and, eq, gt, or, type SQL } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars, Viewer } from "../auth/session.ts"
 import { db, schema } from "../db/client.ts"
+import { loginOf } from "../github/api.ts"
 import { fail } from "../lib/http.ts"
 import { mediaUrl } from "../signing/records.ts"
 import { publisherView } from "./views.ts"
@@ -34,9 +35,17 @@ export async function pendingInvites(viewer: Viewer, github: string | null): Pro
   }))
 }
 
+export async function currentGithubLogin(user: typeof schema.user.$inferSelect) {
+  if (!user.githubId) return null
+  const login = await loginOf(user.githubId)
+  if (login !== user.githubLogin?.toLowerCase())
+    await db.update(schema.user).set({ githubLogin: login }).where(eq(schema.user.id, user.id))
+  return login
+}
+
 async function viewersInvite(viewer: Viewer, id: string) {
-  const user = await db.query.user.findFirst({ where: eq(schema.user.id, viewer.id) })
-  const [row] = await invitesFor(viewer, user?.githubLogin ?? null, eq(schema.invite.id, id))
+  const user = (await db.query.user.findFirst({ where: eq(schema.user.id, viewer.id) }))!
+  const [row] = await invitesFor(viewer, await currentGithubLogin(user), eq(schema.invite.id, id))
   if (!row) fail(404, "That invitation isn't for you, or it expired")
   return row
 }

@@ -10,7 +10,7 @@ import { and, eq, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
-import { repository } from "../../github/api.ts"
+import { visibleRepository } from "../../github/api.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
 import { DAY_MS } from "../../lib/time.ts"
@@ -27,7 +27,7 @@ publishingRoutes.post("/:id/trusted-publishers", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   const input = await readBody(c, addTrustedPublisher)
   const account = await githubAccount(c.var.viewer.id)
-  const repo = await repository(input.repository, account?.token)
+  const repo = await visibleRepository(input.repository, account?.token)
   if (!repo) fail(422, `GitHub has no repository ${input.repository} that you can see`)
   const row = {
     id: randomId(),

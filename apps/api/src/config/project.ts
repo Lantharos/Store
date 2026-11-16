@@ -10,8 +10,8 @@ import {
 import { and, count, eq } from "drizzle-orm"
 import { githubAccount } from "../dashboard/access.ts"
 import { db, schema } from "../db/client.ts"
-import { domainOf, refuseDomainClaim, settleDomain } from "../domains/state.ts"
-import { repository as githubRepository } from "../github/api.ts"
+import { domainOf, refuseDomainClaim } from "../domains/state.ts"
+import { visibleRepository } from "../github/api.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../hosting/ended.ts"
 import { cancelSwitch, latestSwitch, startSwitch } from "../hosting/switches.ts"
@@ -57,7 +57,7 @@ async function repositoryOf(manifest: SchelfToml, app: AppRow, caller: Caller, f
   )
     return { repository: caller.repository.name, repositoryId: caller.repository.id }
   const token = caller.kind === "person" ? (await githubAccount(caller.viewer.id))?.token : undefined
-  const found = await githubRepository(manifest.repository, token)
+  const found = await visibleRepository(manifest.repository, token)
   if (!found)
     fail(422, `${file} repository: GitHub has no repository ${manifest.repository} that Schelf can see`)
   return { repository: found.full_name, repositoryId: String(found.id) }
@@ -194,6 +194,11 @@ export async function projectChanges(app: AppRow, desired: DesiredProject): Prom
         )
       change(`channels.${name}.invite_only`, wanted.invite_only ? "only invited people" : "open to everyone")
     }
+    if (wanted.ended_into && desired.channels[wanted.ended_into]?.invite_only && !wanted.invite_only)
+      fail(
+        422,
+        `${desired.file} channels.${name}.ended_into: ${wanted.ended_into} is invite-only, so the people on ${name} couldn't follow; choose an open channel`,
+      )
     if ((row?.endedInto ?? null) !== (wanted.ended_into ?? null))
       change(`channels.${name}.ended_into`, wanted.ended_into ? `ends into ${wanted.ended_into}` : "reopens")
   }
@@ -205,27 +210,26 @@ async function settleChannels(app: AppRow, desired: DesiredProject, by: string) 
   for (const row of rows)
     if (row.endedInto && row.endedInto !== desired.channels[row.name]?.ended_into)
       await reopenChannel(app, row.name, by)
-  for (const [name, settings] of Object.entries(desired.channels)) {
-    await ensureChannel(app.id, name)
+  for (const name of Object.keys(desired.channels)) await ensureChannel(app.id, name)
+  const names = [...new Set([...rows.map((row) => row.name), ...Object.keys(desired.channels)])]
+  if (names.length)
+    await db.batch(
+      names.map((name) =>
+        db
+          .update(schema.channel)
+          .set({
+            keep: desired.channels[name]?.keep ?? defaultKeep(name),
+            gradual: desired.channels[name]?.gradual ?? null,
+            inviteOnly: desired.channels[name]?.invite_only ?? false,
+          })
+          .where(and(eq(schema.channel.appId, app.id), eq(schema.channel.name, name))),
+      ) as never,
+    )
+  for (const [name, settings] of Object.entries(desired.channels))
     if (settings.ended_into && rows.find((row) => row.name === name)?.endedInto !== settings.ended_into) {
       await ensureChannel(app.id, settings.ended_into)
       await endChannel(app, name, settings.ended_into, by)
     }
-  }
-  const names = [...new Set([...rows.map((row) => row.name), ...Object.keys(desired.channels)])]
-  if (!names.length) return
-  await db.batch(
-    names.map((name) =>
-      db
-        .update(schema.channel)
-        .set({
-          keep: desired.channels[name]?.keep ?? defaultKeep(name),
-          gradual: desired.channels[name]?.gradual ?? null,
-          inviteOnly: desired.channels[name]?.invite_only ?? false,
-        })
-        .where(and(eq(schema.channel.appId, app.id), eq(schema.channel.name, name))),
-    ) as never,
-  )
 }
 
 async function settleUpdater(app: AppRow, updater: Updater | null, by: string) {
@@ -238,7 +242,6 @@ async function settleUpdater(app: AppRow, updater: Updater | null, by: string) {
 export async function writeProject(app: AppRow, desired: DesiredProject, by: string) {
   await settleChannels(app, desired, by)
   await settleUpdater(app, desired.updater, by)
-  await settleDomain({ appId: app.id }, desired.domain, by)
   await db.update(schema.app).set(desired.fields).where(eq(schema.app.id, app.id))
   await removeDroppedTools(app, desired)
 }

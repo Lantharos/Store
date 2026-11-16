@@ -14,7 +14,6 @@ export const searchQuery = z.object({
   kind: kind.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(24),
 })
-export type SearchQuery = z.infer<typeof searchQuery>
 
 export type SearchHit = ({ origin: "schelf" } & CatalogEntry) | MirrorEntry
 export interface SearchResponse {
@@ -25,7 +24,6 @@ export const featuredQuery = z.object({
   locale: z.string().default(DEFAULT_LOCALE),
   platform: platform.optional(),
 })
-export type FeaturedQuery = z.infer<typeof featuredQuery>
 
 export interface FeaturedSection {
   id: "popular" | "updated" | "coming-soon"

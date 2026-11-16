@@ -64,12 +64,12 @@ Once a release is out, set `listed = true` in `store/listing.toml` and run `sche
 
 ## What needs the person
 
-| Step                                                                                              | How                                                          |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Signing in                                                                                        | Confirms the code on the page `schelf login` opens.          |
-| Registering a project, claiming ids, asking to be listed, inviting people, rolling a release back | Presses **Approve** on the page the command opens.           |
-| Deleting a project, changing who may publish, making tokens, changing roles or ownership          | Approves with a passkey, adding one first if they have none. |
-| Proving a domain                                                                                  | Adds the DNS record or file `init` prints.                   |
-| Verification, account settings                                                                    | In the dashboard.                                            |
+| Step                                                                                                                   | How                                                          |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Signing in                                                                                                             | Confirms the code on the page `schelf login` opens.          |
+| Registering a project, claiming ids, asking to be listed, connecting a domain, inviting people, rolling a release back | Presses **Approve** on the page the command opens.           |
+| Deleting a project, changing who may publish, making tokens, changing roles or ownership                               | Approves with a passkey, adding one first if they have none. |
+| Proving a domain                                                                                                       | Adds the DNS record or file `init` prints.                   |
+| Verification, account settings                                                                                         | In the dashboard.                                            |
 
 Without `--wait` a command that needs approval prints the link and exits 4; `schelf request status <id> --wait` waits for it later. Requests expire after 30 minutes. Every command takes `--json` for output a program can read, and never asks a question when it isn't in a terminal or `--yes` is given. The [command reference](/docs/cli) lists them all.

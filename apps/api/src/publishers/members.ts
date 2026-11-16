@@ -13,7 +13,7 @@ import { fail, readBody } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { DAY_MS } from "../lib/time.ts"
 import { allow, type PublisherVars } from "./access.ts"
-import { sendInvite } from "./mail.ts"
+import { limitInvites, sendInvite } from "./mail.ts"
 import { changeRole, removeMember, transferOwnership } from "./ownership.ts"
 
 export const memberRoutes = new Hono<PublisherVars>()
@@ -82,6 +82,7 @@ memberRoutes.post("/invites", async (c) => {
   if (input.role === "owner") allow(c.var.role, "owners")
   const to = "email" in input ? { email: input.email } : { github: input.github.toLowerCase() }
   if (await alreadyMember(publisher.id, to)) fail(409, "They're already a member")
+  await limitInvites(c.var.viewer)
   const now = new Date()
   const row = {
     id: randomId(),

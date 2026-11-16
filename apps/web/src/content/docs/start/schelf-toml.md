@@ -64,6 +64,8 @@ keep = 10
 | `channels.<name>.ended_into`  | End that channel and move its people to another one. Remove the key to reopen it.                                                                                              |
 | `channels.<name>.invite_only` | `true` lets only [invited people and download tokens](/docs/channels#invite-only-channels) get that channel's releases.                                                        |
 
+Only you can change `domain`, `repository`, `updater` and `invite_only`, by running `schelf apply` signed in. A workflow or an upload token that would change them is refused.
+
 A project Schelf only hosts files for needs very little:
 
 ```toml
