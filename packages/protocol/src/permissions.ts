@@ -12,8 +12,17 @@ export const FILESYSTEMS = [
   "xdg-videos",
 ] as const
 export const DEVICES = ["usb", "serial", "all"] as const
-const SWITCHES = ["x11", "microphone", "camera"] as const
+const SWITCHES = ["pipewire", "x11", "microphone", "camera"] as const
 const READ_ONLY = ":ro"
+const DESKTOP_NAMESPACES = [
+  "org.freedesktop",
+  "org.gnome",
+  "org.kde",
+  "com.canonical",
+  "org.ayatana",
+  "org.a11y",
+]
+const PLAYERS = "org.mpris.MediaPlayer2"
 const REFUSED_NAMES = [
   "org.freedesktop.impl.portal",
   "org.freedesktop.portal.Flatpak",
@@ -40,6 +49,15 @@ function callableName(name: string) {
   )
 }
 
+export function ownable(name: string) {
+  if (name.includes("@") || !callableName(name)) return false
+  const bare = name.endsWith(".*") ? name.slice(0, -2) : name
+  const overlaps = (namespace: string) =>
+    bare === namespace || bare.startsWith(`${namespace}.`) || namespace.startsWith(`${bare}.`)
+  const everyPlayer = name.endsWith(".*") && (bare === PLAYERS || PLAYERS.startsWith(`${bare}.`))
+  return !DESKTOP_NAMESPACES.some(overlaps) && !everyPlayer
+}
+
 export function callable(entry: string) {
   const { name, object } = talkTarget(entry)
   if (!callableName(name)) return false
@@ -57,6 +75,9 @@ const device = z.enum(DEVICES, {
 const busName = z.string().refine(callable, {
   error: (issue) => `${String(issue.input)} isn't a name an app can be given.`,
 })
+const ownedName = z.string().refine(ownable, {
+  error: (issue) => `${String(issue.input)} isn't a name an app can own.`,
+})
 
 export const sandboxTable = z
   .strictObject({
@@ -64,6 +85,8 @@ export const sandboxTable = z
     filesystems: z.array(folder).default([]),
     devices: z.array(device).default([]),
     talk: z.array(busName).default([]),
+    own: z.array(ownedName).default([]),
+    pipewire: z.boolean().default(false),
     x11: z.boolean().default(false),
     microphone: z.boolean().default(false),
     camera: z.boolean().default(false),
@@ -83,6 +106,8 @@ export const permissions = z.object({
   filesystems: z.array(z.string()),
   devices: z.array(z.enum(DEVICES)),
   talk: z.array(z.string()),
+  own: z.array(z.string()).default([]),
+  pipewire: z.boolean().default(false),
   x11: z.boolean().default(false),
   microphone: z.boolean().default(false),
   camera: z.boolean().default(false),
@@ -95,6 +120,8 @@ export const SANDBOXED_DEFAULT: Permissions = {
   filesystems: [],
   devices: [],
   talk: [],
+  own: [],
+  pipewire: false,
   x11: false,
   microphone: false,
   camera: false,
@@ -111,6 +138,8 @@ export function readPermissions(toml: string): Permissions {
     filesystems: table.filesystems,
     devices: table.devices,
     talk: table.talk,
+    own: table.own,
+    pipewire: table.pipewire,
     x11: table.x11,
     microphone: table.microphone,
     camera: table.camera,
@@ -153,5 +182,8 @@ export function widens(before: Permissions | null, after: Permissions | null) {
   }
   if (!before.devices.includes("all") && after.devices.some((name) => !before.devices.includes(name)))
     return true
-  return after.talk.some((name) => !busCovers(before.talk, name))
+  return (
+    after.talk.some((name) => !busCovers(before.talk, name)) ||
+    after.own.some((name) => !busCovers(before.own, name))
+  )
 }

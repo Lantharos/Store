@@ -69,7 +69,7 @@ export function comparePermissions(declared: Permissions | null, detection: Dete
   for (const name of strings.busNames.filter((entry) => !ALWAYS_REACHABLE.test(entry.value)))
     rows.push({
       permission: `talk: ${name.value}`,
-      declared: granted((held) => covers(held.talk, name.value)),
+      declared: granted((held) => covers(held.talk, name.value) || covers(held.own, name.value)),
       evidence: describe(name),
     })
 

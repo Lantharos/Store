@@ -12,6 +12,8 @@ describe("permission declarations", () => {
       filesystems: ["xdg-documents", "xdg-download:ro"],
       devices: ["usb"],
       talk: ["org.mpris.MediaPlayer2.notes"],
+      own: [],
+      pipewire: false,
       x11: false,
       microphone: true,
       camera: false,
@@ -40,6 +42,23 @@ describe("permission declarations", () => {
     expect(widens(scoped, { ...scoped, talk: ["com.example.Shell"] })).toBe(true)
     expect(widens(scoped, { ...scoped, talk: ["com.example.Shell@/com/example/Shell/Share"] })).toBe(true)
     expect(widens({ ...scoped, talk: ["com.example.Shell"] }, scoped)).toBe(false)
+  })
+
+  test("take the names an app owns and its own PipeWire", () => {
+    const player = readPermissions('[sandbox]\nown = ["org.mpris.MediaPlayer2.attacca"]\npipewire = true\n')
+    expect(player.own).toEqual(["org.mpris.MediaPlayer2.attacca"])
+    expect(player.pipewire).toBe(true)
+    for (const name of [
+      "org.freedesktop.Notifications",
+      "org.kde.StatusNotifierWatcher",
+      "org.mpris.MediaPlayer2.*",
+      "org.*",
+    ])
+      expect(() => readPermissions(`[sandbox]\nown = ["${name}"]\n`)).toThrow()
+    expect(widens(SANDBOXED_DEFAULT, { ...SANDBOXED_DEFAULT, own: ["org.mpris.MediaPlayer2.attacca"] })).toBe(
+      true,
+    )
+    expect(widens(SANDBOXED_DEFAULT, { ...SANDBOXED_DEFAULT, pipewire: true })).toBe(true)
   })
 
   test("notice an update that asks for more", () => {

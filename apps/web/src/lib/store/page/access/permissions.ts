@@ -74,6 +74,12 @@ export function describePermissions(permissions: Permissions | null): {
   for (const device of permissions.devices) lines.push({ icon: "device", text: DEVICES[device] ?? device })
   if (permissions.microphone)
     lines.push({ icon: "microphone", text: "The microphone", detail: "And the sound this computer plays." })
+  if (permissions.pipewire)
+    lines.push({
+      icon: "microphone",
+      text: "The sound server itself",
+      detail: "It can also record sound and see every audio device and what other apps play.",
+    })
   if (permissions.camera) lines.push({ icon: "camera", text: "The camera" })
   if (permissions.x11)
     lines.push({
@@ -97,6 +103,15 @@ export function describePermissions(permissions: Permissions | null): {
         .join(", "),
     })
   }
+  if (permissions.own.length)
+    lines.push({
+      icon: "talk",
+      text:
+        permissions.own.length === 1
+          ? "Answer as one service"
+          : `Answer as ${permissions.own.length} services`,
+      detail: permissions.own.join(", "),
+    })
   lines.push(
     permissions.network
       ? { icon: "network", text: "The internet" }

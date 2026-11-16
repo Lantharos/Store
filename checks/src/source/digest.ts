@@ -28,7 +28,8 @@ const BUILD =
 const ASSETS = /\.(png|jpe?g|gif|webp|svg|ico|icns|bmp|ttf|otf|woff2?|mp3|ogg|wav|flac|mp4|webm|po|mo|pdf)$/i
 const URL_HOST = /\b(?:https?|wss?):\/\/([A-Za-z0-9.-]+\.[A-Za-z]{2,}|\d{1,3}(?:\.\d{1,3}){3})/g
 const INSTALL_HOOK = /"(pre|post)?install"\s*:/
-const SANDBOX_TABLE = /^\+\s*\[sandbox\]|^[+-]\s*(network|filesystems|devices|talk|unsandboxed)\s*=/m
+const SANDBOX_TABLE =
+  /^\+\s*\[sandbox\]|^[+-]\s*(network|filesystems|devices|talk|own|pipewire|microphone|camera|x11|unsandboxed)\s*=/m
 const MINIFIED_LINE = 400
 const ENTROPY_FLOOR_BYTES = 4096
 const HIGH_ENTROPY = 5.2
