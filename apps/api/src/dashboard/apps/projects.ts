@@ -12,7 +12,7 @@ import { and, eq, like, sql } from "drizzle-orm"
 import type { Context } from "hono"
 import type { z } from "zod"
 import { db, schema } from "../../db/client.ts"
-import { repository } from "../../github/api.ts"
+import { visibleRepository } from "../../github/api.ts"
 import { reclaimPurged } from "../../hosting/deletion.ts"
 import { fail, readBody } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
@@ -44,7 +44,7 @@ export async function freeAppSlug(publisherId: string, base: string) {
 
 async function insertProject(c: Context<PublisherVars>, input: NewProject, values: AppValues) {
   const repo = input.repository
-    ? await repository(input.repository, (await githubAccount(c.var.viewer.id))?.token)
+    ? await visibleRepository(input.repository, (await githubAccount(c.var.viewer.id))?.token)
     : null
   if (input.repository && !repo) fail(422, `GitHub has no repository ${input.repository} that you can see`)
   const now = new Date()
