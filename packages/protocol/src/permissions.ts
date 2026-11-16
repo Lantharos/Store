@@ -22,7 +22,12 @@ const REFUSED_NAMES = [
   "org.freedesktop.DBus",
 ]
 
-export function callable(name: string) {
+export function talkTarget(entry: string) {
+  const at = entry.indexOf("@")
+  return at < 0 ? { name: entry, object: null } : { name: entry.slice(0, at), object: entry.slice(at + 1) }
+}
+
+function callableName(name: string) {
   const bare = name.endsWith(".*") ? name.slice(0, -2) : name
   const elements = bare.split(".")
   const valid =
@@ -33,6 +38,12 @@ export function callable(name: string) {
       (refused) => bare === refused || bare.startsWith(`${refused}.`) || refused.startsWith(`${bare}.`),
     )
   )
+}
+
+export function callable(entry: string) {
+  const { name, object } = talkTarget(entry)
+  if (!callableName(name)) return false
+  return object === null || (!name.endsWith(".*") && /^(\/|(\/[A-Za-z0-9_]+)+)$/.test(object))
 }
 
 const folder = z
@@ -120,8 +131,13 @@ function folderGrants(places: string[]) {
   return grants
 }
 
-function busCovers(granted: string[], name: string) {
-  return granted.some((held) => held === name || (held.endsWith(".*") && name.startsWith(held.slice(0, -1))))
+function busCovers(granted: string[], entry: string) {
+  const wanted = talkTarget(entry)
+  return granted.some((held) => {
+    const { name, object } = talkTarget(held)
+    if (object !== null && object !== wanted.object) return false
+    return name === wanted.name || (name.endsWith(".*") && wanted.name.startsWith(name.slice(0, -1)))
+  })
 }
 
 export function widens(before: Permissions | null, after: Permissions | null) {

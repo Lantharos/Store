@@ -1,4 +1,4 @@
-import type { Permissions } from "@schelf/protocol"
+import { type Permissions, talkTarget } from "@schelf/protocol"
 
 export type PermissionIcon =
   | "full"
@@ -82,13 +82,19 @@ export function describePermissions(permissions: Permissions | null): {
       detail: "Apps that use X11 can see each other’s windows and what you type in them.",
     })
   if (permissions.talk.length) {
+    const services = new Map<string, string[]>()
+    for (const entry of permissions.talk) {
+      const { name, object } = talkTarget(entry)
+      const objects = services.get(name) ?? []
+      if (object !== null) objects.push(object)
+      services.set(name, objects)
+    }
     lines.push({
       icon: "talk",
-      text:
-        permissions.talk.length === 1
-          ? "Talk to one other service"
-          : `Talk to ${permissions.talk.length} other services`,
-      detail: permissions.talk.join(", "),
+      text: services.size === 1 ? "Talk to one other service" : `Talk to ${services.size} other services`,
+      detail: [...services]
+        .map(([name, objects]) => (objects.length ? `${name} (only ${objects.join(", ")})` : name))
+        .join(", "),
     })
   }
   lines.push(

@@ -30,6 +30,18 @@ describe("permission declarations", () => {
     ])
   })
 
+  test("take talk scoped to one object", () => {
+    const appearance = "com.example.Shell@/com/example/Shell/Appearance"
+    expect(readPermissions(`[sandbox]\ntalk = ["${appearance}"]\n`).talk).toEqual([appearance])
+    expect(() => readPermissions('[sandbox]\ntalk = ["com.example.Shell@com/example"]\n')).toThrow()
+    expect(() => readPermissions('[sandbox]\ntalk = ["com.example.*@/com/example"]\n')).toThrow()
+    expect(() => readPermissions('[sandbox]\ntalk = ["org.freedesktop.systemd1@/org"]\n')).toThrow()
+    const scoped = { ...SANDBOXED_DEFAULT, talk: [appearance] }
+    expect(widens(scoped, { ...scoped, talk: ["com.example.Shell"] })).toBe(true)
+    expect(widens(scoped, { ...scoped, talk: ["com.example.Shell@/com/example/Shell/Share"] })).toBe(true)
+    expect(widens({ ...scoped, talk: ["com.example.Shell"] }, scoped)).toBe(false)
+  })
+
   test("notice an update that asks for more", () => {
     const documents = { ...SANDBOXED_DEFAULT, filesystems: ["xdg-documents:ro"] }
     expect(widens(documents, { ...documents, filesystems: ["xdg-documents"] })).toBe(true)

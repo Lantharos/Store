@@ -1,4 +1,4 @@
-import type { Permissions } from "@schelf/protocol"
+import { type Permissions, talkTarget } from "@schelf/protocol"
 import type { Evidence, StringFacts } from "./strings.ts"
 import type { TreeFile } from "./tree.ts"
 
@@ -32,12 +32,14 @@ function libraryEvidence(detection: Detection, pattern: RegExp) {
 }
 
 const covers = (granted: string[], name: string) =>
-  granted.some(
-    (held) =>
-      held === name ||
-      name.startsWith(`${held}.`) ||
-      (held.endsWith(".*") && name.startsWith(held.slice(0, -1))),
-  )
+  granted
+    .map((held) => talkTarget(held).name)
+    .some(
+      (held) =>
+        held === name ||
+        name.startsWith(`${held}.`) ||
+        (held.endsWith(".*") && name.startsWith(held.slice(0, -1))),
+    )
 
 export function comparePermissions(declared: Permissions | null, detection: Detection): PermissionRow[] {
   const granted = (check: (permissions: Permissions) => boolean) =>
