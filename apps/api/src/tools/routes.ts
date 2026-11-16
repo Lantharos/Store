@@ -2,11 +2,11 @@ import { claimToolName, isReservedToolName, type PublisherTool, toolsOf } from "
 import { and, eq, ne } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../auth/session.ts"
-import { db, schema } from "../db/client.ts"
+import { among, db, schema } from "../db/client.ts"
 import { fail, readBody } from "../lib/http.ts"
 import { allow, membership, type PublisherRow } from "../publishers/access.ts"
 import { resignApp } from "../signing/queue.ts"
-import { englishListing, within } from "../signing/records.ts"
+import { englishListing } from "../signing/records.ts"
 import { findTool, projectTool, shortNames, shortState } from "./registry.ts"
 
 export const toolRoutes = new Hono<SignedInVars>()
@@ -22,7 +22,7 @@ async function publisherTools(publisher: PublisherRow): Promise<PublisherTool[]>
         .select()
         .from(schema.listing)
         .where(
-          within(
+          among(
             schema.listing.appId,
             owned.map(({ app }) => app.id),
           ),

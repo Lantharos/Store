@@ -156,7 +156,10 @@ export const trustedPublisher = sqliteTable(
     ref: text("ref"),
     createdAt: createdAt(),
   },
-  (table) => [index("trusted_publisher_repository").on(table.repositoryId)],
+  (table) => [
+    index("trusted_publisher_repository").on(table.repositoryId),
+    index("trusted_publisher_app").on(table.appId),
+  ],
 )
 
 export const token = sqliteTable(
@@ -176,7 +179,7 @@ export const token = sqliteTable(
     revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
   },
-  (table) => [index("token_app").on(table.appId)],
+  (table) => [index("token_app").on(table.appId), index("token_publisher").on(table.publisherId)],
 )
 
 export const customDomain = sqliteTable("custom_domain", {

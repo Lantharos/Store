@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { bytesOf, json, person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -136,10 +136,17 @@ describe("an invite-only channel", () => {
     expect(downloads[0]?.files[0]?.url).toContain("access=")
   })
 
+  test("isn't reached through an open channel that ends in it", async () => {
+    const { appId, publisherSlug } = await project()
+    await shipOnBeta(appId)
+    await db.insert(schema.channel).values({ appId, name: "rc", endedInto: "beta" })
+    expect((await exports.default.fetch(`${DL}/${publisherSlug}/notes/@rc/latest/windows`)).status).toBe(401)
+  })
+
   test("stays out of the public index, and gets a signed index of its own", async () => {
     const { appId } = await project()
     await shipOnBeta(appId)
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     const index = (await (await env.BUCKET.get(paths.app(appId)))!.json()) as { releases: unknown[] }
     expect(index.releases).toEqual([])
     const invited = (await (await env.BUCKET.get(paths.invitedApp(appId, "beta")))!.json()) as {

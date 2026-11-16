@@ -12,6 +12,7 @@ import {
 } from "@schelf/protocol"
 import { iconPng } from "../src/dashboard/apps/icon-png.ts"
 import { RESIGN_REQUEST } from "../src/signing/resign-request.ts"
+import { REINDEX_REQUEST } from "../src/storefront/reindex-request.ts"
 
 const LUFT = process.env.LUFT ?? join(import.meta.dirname, "../../../../luft")
 const D1_DATABASE = "a461f2c7-c13f-40bb-a9f7-23b32fb81181"
@@ -139,8 +140,6 @@ for (const folder of folders) {
         ]
       : []),
     `DELETE FROM screenshot WHERE app_id = ${sql(manifest.id)};`,
-    `DELETE FROM search WHERE key = ${sql(`schelf:${manifest.id}`)};`,
-    `INSERT INTO search (key, name, summary, keywords, developer) VALUES (${sql(`schelf:${manifest.id}`)}, ${sql(manifest.name)}, ${sql(listing.summary)}, ${sql(keywords.join(" "))}, ${sql(PUBLISHER.name)});`,
   )
   for (const [position, file] of listing.screenshots.entries()) {
     const shot = await media(manifest.id, file, uploads)
@@ -151,7 +150,10 @@ for (const folder of folders) {
 }
 
 statements.push(
-  `INSERT INTO store_state (key, value) VALUES (${sql(RESIGN_REQUEST)}, ${sql(String(now))}) ON CONFLICT (key) DO UPDATE SET value = excluded.value;`,
+  ...[RESIGN_REQUEST, REINDEX_REQUEST].map(
+    (request) =>
+      `INSERT INTO store_state (key, value) VALUES (${sql(request)}, ${sql(String(now))}) ON CONFLICT (key) DO UPDATE SET value = excluded.value;`,
+  ),
 )
 
 const batchFile = join(WORK, "seed-lantharos.json")

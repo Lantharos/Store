@@ -13,13 +13,13 @@ import {
   parseSabineVersion,
   partFormat,
   type SabineFeed,
-  STABLE,
   sabineTarget,
   type Unstamped,
 } from "@schelf/protocol"
 import type { schema } from "../db/client.ts"
 import { partPlan } from "../publishing/parts.ts"
 import { runsInShell } from "../releases/shell-files.ts"
+import type { CatalogRecord, CatalogRelease } from "./catalog-records.ts"
 import {
   type AppRecord,
   englishListing,
@@ -29,13 +29,9 @@ import {
   type ReleaseRow,
 } from "./records.ts"
 
-function accessFor(record: AppRecord, release: ReleaseRow | undefined) {
+function accessFor(record: Pick<AppRecord, "app">, release: CatalogRelease | undefined) {
   if ((release?.format ?? record.app.format) === "sabine") return "full"
   return accessOf(release ? release.permissions : null)
-}
-
-function updatedAt(record: AppRecord) {
-  return (record.releases[0]?.release.approvedAt ?? record.app.createdAt).toISOString()
 }
 
 function partFiles(record: AppRecord, artifacts: IndexedArtifact[], part: string | null) {
@@ -56,13 +52,13 @@ const indexable = (record: AppRecord, invitedTo?: string) =>
     ({ release }) =>
       !release.bridge && (!record.inviteOnly.has(release.channel) || release.channel === invitedTo),
   )
-const stable = (record: AppRecord) => indexable(record).filter(({ release }) => release.channel === STABLE)
 
-export function catalogEntry(record: AppRecord): CatalogEntry {
+export function catalogEntry(record: CatalogRecord): CatalogEntry {
   const english = englishListing(record)
+  const plan = partPlan(record.app)
   const platforms: Partial<Record<Platform, PlatformRelease>> = {}
-  for (const { release, artifacts } of stable(record)) {
-    for (const artifact of artifacts) {
+  for (const { release, artifacts } of record.stable) {
+    for (const artifact of artifacts.filter((file) => offeredIn(plan, file))) {
       const target = artifact.platform as Platform
       platforms[target] ??= {
         version: release.version,
@@ -78,12 +74,12 @@ export function catalogEntry(record: AppRecord): CatalogEntry {
     name: english.name,
     summary: english.summary,
     icon: mediaUrl(record.meta?.iconKey),
-    art: record.app.kind === "extension" ? mediaUrl(record.screenshots[0]?.key) : null,
+    art: mediaUrl(record.art),
     categories: record.meta?.categories ?? [],
     publisher: record.publisher,
     platforms,
-    access: accessFor(record, stable(record)[0]?.release),
-    updated: updatedAt(record),
+    access: accessFor(record, record.stable[0]?.release),
+    updated: record.updated.toISOString(),
     installs_30d: record.installs30d,
   }
 }

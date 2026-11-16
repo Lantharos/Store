@@ -102,18 +102,26 @@ export const artifact = sqliteTable(
   ],
 )
 
-export const delta = sqliteTable("delta", {
-  id: text("id").primaryKey(),
-  artifactId: text("artifact_id")
-    .notNull()
-    .references(() => artifact.id, { onDelete: "cascade" }),
-  fromReleaseId: text("from_release_id")
-    .notNull()
-    .references(() => release.id, { onDelete: "cascade" }),
-  key: text("key").notNull(),
-  size: integer("size").notNull(),
-  sha256: text("sha256").notNull(),
-})
+export const delta = sqliteTable(
+  "delta",
+  {
+    id: text("id").primaryKey(),
+    artifactId: text("artifact_id")
+      .notNull()
+      .references(() => artifact.id, { onDelete: "cascade" }),
+    fromReleaseId: text("from_release_id")
+      .notNull()
+      .references(() => release.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    size: integer("size").notNull(),
+    sha256: text("sha256").notNull(),
+  },
+  (table) => [
+    index("delta_artifact").on(table.artifactId, table.fromReleaseId),
+    index("delta_from").on(table.fromReleaseId),
+    index("delta_key").on(table.key),
+  ],
+)
 
 export const check = sqliteTable(
   "check",
@@ -143,8 +151,14 @@ export const countDaily = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.appId, table.version, table.platform, table.day] }),
     index("count_daily_day").on(table.day),
+    index("count_daily_app_day").on(table.appId, table.day),
   ],
 )
+
+export const countTotal = sqliteTable("count_total", {
+  appId: text("app_id").primaryKey(),
+  installs: integer("installs").notNull(),
+})
 
 export const uploadPart = sqliteTable(
   "upload_part",

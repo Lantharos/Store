@@ -130,9 +130,18 @@ const fetchDl = (path: string, headers: Record<string, string> = {}) =>
 
 describe("stable download links", () => {
   test("point at the newest release that reached everyone, and follow the rollout when asked", async () => {
-    const { appId, publisherSlug } = await project()
-    await shipped(appId, "1.0.0", 100, "2026-10-01T00:00:00Z", [["notes-1.0.0.exe", "windows-x86_64", "exe"]])
-    await shipped(appId, "1.1.0", 25, "2026-11-01T00:00:00Z", [["notes-1.1.0.exe", "windows-x86_64", "exe"]])
+    const rollingOut = async (latestFollowsRollout: boolean) => {
+      const created = await project()
+      await db.update(schema.app).set({ latestFollowsRollout }).where(eq(schema.app.id, created.appId))
+      await shipped(created.appId, "1.0.0", 100, "2026-10-01T00:00:00Z", [
+        ["notes-1.0.0.exe", "windows-x86_64", "exe"],
+      ])
+      await shipped(created.appId, "1.1.0", 25, "2026-11-01T00:00:00Z", [
+        ["notes-1.1.0.exe", "windows-x86_64", "exe"],
+      ])
+      return created
+    }
+    const { appId, publisherSlug } = await rollingOut(false)
 
     const windows = await fetchDl(`${publisherSlug}/notes/latest/windows`)
     expect(windows.status).toBe(302)
@@ -145,9 +154,9 @@ describe("stable download links", () => {
     })
     expect(visitor.headers.get("location")).toContain("notes-1.0.0.exe")
 
-    await db.update(schema.app).set({ latestFollowsRollout: true }).where(eq(schema.app.id, appId))
+    const following = await rollingOut(true)
     const draw = vi.spyOn(Math, "random").mockReturnValue(0.1)
-    const early = await fetchDl(`${publisherSlug}/notes/latest/windows`)
+    const early = await fetchDl(`${following.publisherSlug}/notes/latest/windows`)
     draw.mockRestore()
     expect(early.headers.get("location")).toContain("notes-1.1.0.exe")
     expect(early.headers.get("cache-control")).toBe("no-store")

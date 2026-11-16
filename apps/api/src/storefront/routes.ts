@@ -18,7 +18,7 @@ import {
   STABLE,
   searchQuery,
 } from "@schelf/protocol"
-import { eq, sum } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { avatarUrl } from "../avatars/urls.ts"
 import { db, schema } from "../db/client.ts"
@@ -27,6 +27,7 @@ import { defaultRoot, linkBase, projectSummary } from "../hosting/addresses.ts"
 import { latestFiles } from "../hosting/files.ts"
 import { linkReleases } from "../hosting/releases.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
+import { edgeResponse } from "../lib/edge-cache.ts"
 import { fail, readBody, readQuery } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { tellOps } from "../ops/events.ts"
@@ -35,7 +36,7 @@ import { appByProject } from "../publishing/start.ts"
 import { replacementOf } from "../releases/replacing.ts"
 import { type AppRow, installsSince, mediaUrl } from "../signing/records.ts"
 import { projectTools } from "../tools/registry.ts"
-import { currentCatalog } from "./catalog.ts"
+import { catalogVersion, currentCatalog } from "./catalog.ts"
 import { mirrorEntry, mirrorHits } from "./mirror.ts"
 import { confirmReport } from "./report-mail.ts"
 import { searchKeys } from "./search-index.ts"
@@ -46,6 +47,16 @@ const PUBLIC_CACHE = "public, max-age=60"
 const PAGE_LINKS = { followRollout: false, draw: 0 }
 
 export const storefrontRoutes = new Hono()
+
+const publicJson = (body: unknown) => Response.json(body, { headers: { "cache-control": PUBLIC_CACHE } })
+
+/** A page shared from the edge until the catalog changes, as it does whenever anything on the page might have. */
+async function storePage(url: string, page: (version: string) => Promise<unknown>) {
+  const version = await catalogVersion()
+  const key = new URL(url)
+  key.searchParams.set("store", version)
+  return edgeResponse(key.href, async () => publicJson(await page(version)))
+}
 
 function visible(entry: CatalogEntry, platform: string | undefined, kind: string | undefined) {
   if (kind ? entry.kind !== kind : entry.kind !== "app") return false
@@ -117,14 +128,11 @@ storefrontRoutes.get("/featured", async (c) => {
 async function appPage(app: AppRow | undefined): Promise<AppPage> {
   if (!app || (app.status !== "published" && app.status !== "delisted" && app.status !== "pulled"))
     fail(404, "There's no app with that id")
-  const [object, owner, last30, [total], replacement, releases, inviteOnly, custom] = await Promise.all([
+  const [object, owner, last30, total, replacement, releases, inviteOnly, custom] = await Promise.all([
     env.BUCKET.get(paths.app(app.id)),
     db.query.publisher.findFirst({ where: eq(schema.publisher.id, app.publisherId) }),
     installsSince([app.id], 30),
-    db
-      .select({ installs: sum(schema.countDaily.installs) })
-      .from(schema.countDaily)
-      .where(eq(schema.countDaily.appId, app.id)),
+    db.query.countTotal.findFirst({ where: eq(schema.countTotal.appId, app.id) }),
     replacementOf(app),
     linkReleases(app.id, [STABLE]),
     inviteOnlyChannels(app.id),
@@ -140,7 +148,7 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
   return {
     app: await object.json<AppIndex>(),
     status: app.status,
-    installs: { last_30_days: last30.get(app.id) ?? 0, total: Number(total?.installs ?? 0) },
+    installs: { last_30_days: last30.get(app.id) ?? 0, total: total?.installs ?? 0 },
     project: projectSummary(app, owner!.slug, custom),
     replacement,
     has_app: hasAppPart(plan),
@@ -154,36 +162,40 @@ async function appPage(app: AppRow | undefined): Promise<AppPage> {
   }
 }
 
-storefrontRoutes.get("/apps/:id", async (c) => {
-  const page = await appPage(await db.query.app.findFirst({ where: eq(schema.app.id, c.req.param("id")) }))
-  c.header("cache-control", PUBLIC_CACHE)
-  return c.json(page satisfies AppPage)
-})
+storefrontRoutes.get("/apps/:id", (c) =>
+  storePage(c.req.url, async () =>
+    appPage(await db.query.app.findFirst({ where: eq(schema.app.id, c.req.param("id")) })),
+  ),
+)
 
-storefrontRoutes.get("/projects/:publisher/:project", async (c) => {
-  const page = await appPage(await appByProject(c.req.param("publisher"), c.req.param("project")))
-  c.header("cache-control", PUBLIC_CACHE)
-  return c.json(page satisfies AppPage)
-})
+storefrontRoutes.get("/projects/:publisher/:project", (c) =>
+  storePage(c.req.url, async () =>
+    appPage(await appByProject(c.req.param("publisher"), c.req.param("project"))),
+  ),
+)
 
-storefrontRoutes.get("/mirror/:id", async (c) => {
-  const entry = await mirrorEntry(c.req.param("id"), c.req.query("origin"))
-  if (!entry) fail(404, "There's no app with that id")
-  c.header("cache-control", PUBLIC_CACHE)
-  return c.json(entry satisfies MirrorEntry)
-})
+storefrontRoutes.get("/mirror/:id", (c) =>
+  edgeResponse(c.req.url, async () => {
+    const entry = await mirrorEntry(c.req.param("id"), c.req.query("origin"))
+    if (!entry) fail(404, "There's no app with that id")
+    return publicJson(entry satisfies MirrorEntry)
+  }),
+)
 
-storefrontRoutes.get("/publishers/:slug", async (c) => {
+storefrontRoutes.get("/publishers/:slug", (c) =>
+  storePage(c.req.url, (version) => publisherPage(c.req.param("slug"), version)),
+)
+
+async function publisherPage(slug: string, version: string): Promise<PublisherPage> {
   const [row] = await db
     .select({ publisher: schema.publisher, owner: schema.user })
     .from(schema.publisher)
     .innerJoin(schema.user, eq(schema.user.id, schema.publisher.ownerId))
-    .where(eq(schema.publisher.slug, c.req.param("slug")))
+    .where(eq(schema.publisher.slug, slug))
   if (!row) fail(404, "There's no publisher by that name")
   const { publisher, owner } = row
-  const { catalog } = await currentCatalog()
-  c.header("cache-control", PUBLIC_CACHE)
-  return c.json({
+  const { catalog } = await currentCatalog(version)
+  return {
     name: publisher.name,
     slug: publisher.slug,
     kind: publisher.kind,
@@ -192,8 +204,8 @@ storefrontRoutes.get("/publishers/:slug", async (c) => {
     logo: mediaUrl(publisher.logoKey) ?? (publisher.kind === "person" ? avatarUrl(owner) : null),
     verified: publisher.verifiedAt !== null,
     apps: catalog.apps.filter((entry) => entry.publisher.slug === publisher.slug),
-  } satisfies PublisherPage)
-})
+  }
+}
 
 storefrontRoutes.post("/reports", async (c) => {
   const ip = c.req.header("cf-connecting-ip") ?? "local"

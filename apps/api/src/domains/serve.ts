@@ -2,8 +2,7 @@ import { env } from "cloudflare:workers"
 import { eq, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { serveProject } from "../hosting/serve.ts"
-
-const CACHE_SECONDS = 60
+import { edgeValue } from "../lib/edge-cache.ts"
 
 interface Mapped {
   publisher: string
@@ -28,17 +27,8 @@ async function lookUp(domain: string): Promise<Mapped | null> {
   return row?.active && row.verified ? { publisher: row.publisher, project: row.project } : null
 }
 
-async function mapped(domain: string) {
-  const key = new Request(`https://domains.schelf.internal/${domain}`)
-  const cached = await caches.default.match(key)
-  if (cached) return cached.json<Mapped | null>()
-  const found = await lookUp(domain)
-  await caches.default.put(
-    key,
-    Response.json(found, { headers: { "cache-control": `max-age=${CACHE_SECONDS}` } }),
-  )
-  return found
-}
+const mapped = (domain: string) =>
+  edgeValue(`https://domains.schelf.internal/${domain}`, () => lookUp(domain))
 
 export async function serveDomain(request: Request) {
   const url = new URL(request.url)

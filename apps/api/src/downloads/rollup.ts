@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers"
-import { db, schema } from "../db/client.ts"
+import { sql } from "drizzle-orm"
+import { among, db, schema } from "../db/client.ts"
 import { DAY_MS, dayOf } from "../lib/time.ts"
 import { resign } from "../signing/queue.ts"
 
@@ -65,8 +66,26 @@ export async function countDay(day: string) {
         set: { installs: entry.installs, updates: entry.updates },
       }),
   )
-  if (statements.length) await db.batch(statements as never)
+  if (statements.length)
+    await db.batch([...statements, totalsOf([...totals.values()].map((entry) => entry.appId))] as never)
   return statements.length
+}
+
+function totalsOf(appIds: string[]) {
+  const { countDaily, countTotal } = schema
+  return db
+    .insert(countTotal)
+    .select(
+      db
+        .select({
+          appId: countDaily.appId,
+          installs: sql<number>`sum(${countDaily.installs})`.as("installs"),
+        })
+        .from(countDaily)
+        .where(among(countDaily.appId, [...new Set(appIds)]))
+        .groupBy(countDaily.appId),
+    )
+    .onConflictDoUpdate({ target: countTotal.appId, set: { installs: sql`excluded.installs` } })
 }
 
 export async function rollUpDownloads(now = new Date()) {

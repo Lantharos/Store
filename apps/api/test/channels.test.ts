@@ -11,10 +11,10 @@ import {
 import { and, eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
-import { ensureChannel, pruneChannel } from "../src/hosting/channels.ts"
+import { ensureChannel, pruneChannels } from "../src/hosting/channels.ts"
 import { deleteProject } from "../src/hosting/deletion.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { json, person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -81,7 +81,7 @@ async function project(updater: Updater = "electron") {
 }
 
 const signedIndex = async (appId: string) => {
-  await rebuildApp(appId)
+  await rebuildApps([appId])
   return (await env.BUCKET.get(paths.app(appId)))!.json<AppIndex>()
 }
 
@@ -221,7 +221,7 @@ describe("signed documents", () => {
     await ship(appId, "1.0.0", "stable", "sabine")
     await ship(appId, "2.0.0-beta.1", "beta", "sabine")
     await json(await end("beta", "stable"))
-    await rebuildApp(appId)
+    await rebuildApps([appId])
 
     const feed = await sabineFeed(appId, "beta")
     const key = await importSigningKey(env.STORE_SIGNING_KEY)
@@ -233,7 +233,7 @@ describe("signed documents", () => {
     const { appId, end } = await project("sabine")
     await ship(appId, "2.0.0-beta.1", "beta", "sabine")
     await json(await end("beta", "stable"))
-    await rebuildApp(appId)
+    await rebuildApps([appId])
 
     expect((await sabineFeed(appId, "beta")).version).toBe("2.0.0-beta.1")
   })
@@ -373,7 +373,11 @@ describe("the rest of a project's life", () => {
     await ship(appId, "2.0.0-beta.3", "beta")
     await json(await end("beta", "stable"))
 
-    await pruneChannel(appId, "beta", 2)
+    await db
+      .update(schema.channel)
+      .set({ keep: 2 })
+      .where(and(eq(schema.channel.appId, appId), eq(schema.channel.name, "beta")))
+    await pruneChannels()
 
     const left = await db
       .select({ version: schema.release.version })
@@ -387,7 +391,7 @@ describe("the rest of a project's life", () => {
     await ship(appId, "1.0.0", "stable", "sabine")
     await ship(appId, "2.0.0-beta.1", "beta", "sabine")
     await json(await end("beta", "stable"))
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     const app = (await db.query.app.findFirst({ where: eq(schema.app.id, appId) }))!
 
     await deleteProject(app, owner.id)

@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest"
 
 const BEFORE_ORGANISATIONS = 5
 const BEFORE_HOSTING = 9
+const BEFORE_FOLDED_SEARCH = 28
 
 async function rows<T>(query: string, db = env.MIGRATION_DB) {
   return (await db.prepare(query).all<T>()).results
@@ -94,5 +95,30 @@ describe("the hosting migration", () => {
     expect(await rows("SELECT origin, format, updater, channel FROM release", db)).toEqual([
       { origin: "manual", format: "sabine", updater: "sabine", channel: "stable" },
     ])
+  })
+})
+
+describe("the search migration", () => {
+  test("keeps every entry, and asks for the whole index to be folded again", async () => {
+    const db = env.SEARCH_MIGRATION_DB
+    await applyD1Migrations(db, env.TEST_MIGRATIONS.slice(0, BEFORE_FOLDED_SEARCH))
+    await db.batch([
+      db.prepare(
+        "INSERT INTO search (key, name, summary, keywords, developer) VALUES ('schelf:com.example.Notes', 'Notes', 'Write things DOWN', 'office', 'Mira'), ('flathub:org.example.Cafe', 'Café', '', '', 'Someone')",
+      ),
+      db.prepare("DELETE FROM store_state"),
+    ])
+    await applyD1Migrations(db, env.TEST_MIGRATIONS)
+
+    expect(
+      await rows("SELECT key, title, name, summary FROM search_text WHERE search_text MATCH 'down'", db),
+    ).toEqual([
+      { key: "schelf:com.example.Notes", title: "Notes", name: "notes", summary: "write things down" },
+    ])
+    expect(await rows("SELECT key FROM search_key ORDER BY key", db)).toEqual([
+      { key: "flathub:org.example.Cafe" },
+      { key: "schelf:com.example.Notes" },
+    ])
+    expect(await rows("SELECT key FROM store_state", db)).toEqual([{ key: "reindex.requested" }])
   })
 })

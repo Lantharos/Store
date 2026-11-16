@@ -1,8 +1,10 @@
 import {
+  channelPath,
   DEFAULT_LOCALE,
   detect,
   electronFeed,
   electronFeedName,
+  endedChannelsOf,
   type HostedFile,
   type HostedRelease,
   type LinkOptions,
@@ -22,30 +24,66 @@ import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { linkRoot } from "../domains/links.ts"
 import { channelsOpenTo, shutOut } from "../invited/access.ts"
-import { inviteOnlyChannels } from "../invited/channels.ts"
 import { signReleases } from "../invited/links.ts"
+import { edgeResponse, edgeValue } from "../lib/edge-cache.ts"
 import { partPlan } from "../publishing/parts.ts"
 import { linkBase, pageUrl } from "./addresses.ts"
-import { channelRoute } from "./ended.ts"
 import { latestFiles } from "./files.ts"
 import { feedReleases, linkReleases } from "./releases.ts"
 
 const SHORT_CACHE = "public, max-age=60"
 const CHANNEL = /^@([a-z][a-z0-9-]{0,19})$/
 
-type Project = NonNullable<Awaited<ReturnType<typeof findProject>>>
+type Project = NonNullable<Awaited<ReturnType<typeof loadProject>>>
+type Signer = (releases: HostedRelease[]) => Promise<HostedRelease[]>
 
-async function findProject(publisherSlug: string, slug: string) {
-  const [row] = await db
-    .select({ app: schema.app, name: schema.listing.name })
-    .from(schema.app)
-    .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
-    .leftJoin(
-      schema.listing,
-      and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
-    )
-    .where(and(eq(schema.publisher.slug, publisherSlug), eq(schema.app.slug, slug)))
-  return row && { ...row.app, name: row.name ?? row.app.slug, publisherSlug }
+const unsigned: Signer = async (releases) => releases
+
+async function loadProject(publisherSlug: string, slug: string) {
+  const owned = and(eq(schema.publisher.slug, publisherSlug), eq(schema.app.slug, slug))
+  const [[row], channels] = await db.batch([
+    db
+      .select({
+        id: schema.app.id,
+        publisherId: schema.app.publisherId,
+        slug: schema.app.slug,
+        kind: schema.app.kind,
+        visibility: schema.app.visibility,
+        status: schema.app.status,
+        platforms: schema.app.platforms,
+        parts: schema.app.parts,
+        latestFollowsRollout: schema.app.latestFollowsRollout,
+        name: schema.listing.name,
+      })
+      .from(schema.app)
+      .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
+      .leftJoin(
+        schema.listing,
+        and(eq(schema.listing.appId, schema.app.id), eq(schema.listing.locale, DEFAULT_LOCALE)),
+      )
+      .where(owned),
+    db
+      .select({
+        name: schema.channel.name,
+        endedInto: schema.channel.endedInto,
+        inviteOnly: schema.channel.inviteOnly,
+      })
+      .from(schema.channel)
+      .innerJoin(schema.app, eq(schema.app.id, schema.channel.appId))
+      .innerJoin(schema.publisher, eq(schema.publisher.id, schema.app.publisherId))
+      .where(owned),
+  ])
+  return row ? { ...row, name: row.name ?? row.slug, publisherSlug, channels } : null
+}
+
+const findProject = (publisherSlug: string, slug: string) =>
+  edgeValue(
+    `https://hosting.schelf.internal/projects/${encodeURIComponent(publisherSlug)}/${encodeURIComponent(slug)}`,
+    () => loadProject(publisherSlug, slug),
+  )
+
+function routeOf(project: Project, channel: string) {
+  return channel === STABLE ? [STABLE] : channelPath(channel, endedChannelsOf(project.channels))
 }
 
 function text(body: string, status = 200, type = "text/plain; charset=utf-8", cache = SHORT_CACHE) {
@@ -130,7 +168,7 @@ interface Asked {
   route: string[]
   path: string[]
   invited: Set<string>
-  sign: (releases: HostedRelease[]) => Promise<HostedRelease[]>
+  sign: Signer
 }
 
 async function answer(asked: Asked) {
@@ -179,34 +217,37 @@ async function serveFeed(asked: Asked, file: string, part: string | null, option
   const { request, project, named, route, invited, sign } = asked
   const plan = partPlan(project)
   const updater = part ? partUpdater(plan.parts[part]!) : null
-  const scoped = async (list: HostedRelease[]) => {
-    const releases = partReleases(offeredReleases(await sign(list), plan), part)
+  const scoped = async (list: HostedRelease[], signer: Signer) => {
+    const releases = partReleases(offeredReleases(await signer(list), plan), part)
     return part
       ? releases.filter((release) => release.files.length).map((release) => ({ ...release, updater }))
       : releases
   }
   const cache = options.followRollout ? "no-store" : SHORT_CACHE
   if (file === "tauri.json") {
-    const release = updaterRelease(await scoped(await feedReleases(project.id, route)), "tauri", options)
+    const release = updaterRelease(
+      await scoped(await feedReleases(project.id, route), sign),
+      "tauri",
+      options,
+    )
     const feed = release && tauriFeed(release, part)
     return feed ? json(feed, cache) : new Response(null, { status: 204 })
   }
   const line = electronFeedName(file)!.channel
-  const lineAccess =
-    line !== named && invited.has(line) ? await channelsOpenTo(request, project, [line]) : "open"
+  const lineRoute = line === named ? route : routeOf(project, line)
+  const lineGuard = line === named ? [] : lineRoute.filter((channel) => invited.has(channel))
+  const lineAccess = lineGuard.length ? await channelsOpenTo(request, project, lineGuard) : "open"
   if (lineAccess !== "open") return shutOut(lineAccess)
-  const lineReleases = await feedReleases(
-    project.id,
-    line === named ? route : await channelRoute(project.id, line),
-  )
-  const feed = (await scoped(lineReleases))
+  const lineReleases = await feedReleases(project.id, lineRoute)
+  const feed = (await scoped(lineReleases, lineGuard.length ? signReleases : sign))
     .filter((candidate) => candidate.updater === "electron")
     .map((release) => electronFeed(release, file, part))
     .find(Boolean)
-  return feed ? text(feed, 200, "text/yaml; charset=utf-8") : notFound(`There's no ${file} here`)
+  if (!feed) return notFound(`There's no ${file} here`)
+  return text(feed, 200, "text/yaml; charset=utf-8", lineGuard.length ? "no-store" : SHORT_CACHE)
 }
 
-export async function serveProject(request: Request, segments: string[]) {
+async function projectResponse(request: Request, segments: string[]) {
   const [publisherSlug, slug, ...path] = segments
   const project = await findProject(publisherSlug!, slug!)
   if (
@@ -222,12 +263,10 @@ export async function serveProject(request: Request, segments: string[]) {
   const named = channelMatch ? channelMatch[1]! : STABLE
   if (channelMatch) path.shift()
 
-  const [route, invited] = await Promise.all([
-    channelRoute(project.id, named),
-    inviteOnlyChannels(project.id),
-  ])
-  const guarded = invited.has(named)
-  const access = guarded ? await channelsOpenTo(request, project, [named]) : "open"
+  const invited = new Set(project.channels.flatMap((channel) => (channel.inviteOnly ? [channel.name] : [])))
+  const route = routeOf(project, named)
+  const guarding = route.filter((channel) => invited.has(channel))
+  const access = guarding.length ? await channelsOpenTo(request, project, guarding) : "open"
   if (access !== "open") return shutOut(access)
   const response = await answer({
     request,
@@ -236,12 +275,20 @@ export async function serveProject(request: Request, segments: string[]) {
     route,
     path,
     invited,
-    sign: (releases) => (invited.size ? signReleases(releases) : Promise.resolve(releases)),
+    sign: guarding.length ? signReleases : unsigned,
   })
-  if (!guarded) return response
+  if (!guarding.length) return response
   const headers = new Headers(response.headers)
   headers.set("cache-control", "no-store")
   return new Response(response.body, { status: response.status, headers })
+}
+
+/** Answers for a project's links and feeds; open channels' answers are shared from the edge, keyed on the visitor's platform. */
+export function serveProject(request: Request, segments: string[]) {
+  if (request.method !== "GET") return projectResponse(request, segments)
+  const url = new URL(request.url)
+  const key = `${url.origin}${url.pathname}?for=${visitorTarget(request) ?? ""}`
+  return edgeResponse(key, () => projectResponse(request, segments))
 }
 
 export const DOWNLOAD_ROOTS = new Set(["apps", "index", "trust", "sabine", "media", "private", "invited"])

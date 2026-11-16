@@ -21,6 +21,7 @@ import { publishingRoutes } from "./publishing/routes.ts"
 import { restartStalledChecks } from "./releases/checks.ts"
 import { stepRollouts } from "./releases/rollout.ts"
 import { resignEverything, resignIfRequested, type SigningJob, signQueued } from "./signing/queue.ts"
+import { reindexIfRequested } from "./storefront/indexing.ts"
 import { storefrontRoutes } from "./storefront/routes.ts"
 import { installRoutes } from "./tools/install/route.ts"
 
@@ -70,6 +71,7 @@ export default {
         checkDomains(),
         pruneChannels(),
         resignIfRequested(),
+        reindexIfRequested(),
         publishDefinitions(),
         office && deliverPending(office.pult),
       ])

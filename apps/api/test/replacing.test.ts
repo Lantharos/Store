@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { relist } from "../src/releases/moderation.ts"
 import { replaceApp } from "../src/releases/replacing.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps, rebuildCatalog } from "../src/signing/rebuild.ts"
 import { json, publisherWithApp } from "./fixtures.ts"
 
 async function published() {
@@ -15,7 +15,7 @@ async function published() {
 }
 
 async function signedIndex(appId: string) {
-  await rebuildApp(appId)
+  await Promise.all([rebuildApps([appId]), rebuildCatalog()])
   return (await env.BUCKET.get(paths.app(appId)))!.json<AppIndex>()
 }
 

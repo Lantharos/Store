@@ -8,8 +8,16 @@ type Listed = Unstamped<Catalog>
 let cached: { etag: string; checkedAt: number; catalog: Listed; byId: Map<string, CatalogEntry> } | undefined
 const EMPTY: Listed = { version: 1, generated: new Date(0).toISOString(), apps: [] }
 
-export async function currentCatalog() {
-  if (cached && Date.now() - cached.checkedAt < FRESH_MS) return cached
+/** The catalog's etag as of now, which changes whenever anything the store shows does. */
+export async function catalogVersion() {
+  return (await env.BUCKET.head(paths.catalog))?.etag ?? ""
+}
+
+/** The catalog, checked again after half a minute, or right away unless it's the `version` asked for. */
+export async function currentCatalog(version?: string) {
+  const fresh =
+    version === undefined ? Date.now() - (cached?.checkedAt ?? 0) < FRESH_MS : cached?.etag === version
+  if (cached && fresh) return cached
   const object = await env.BUCKET.get(
     paths.catalog,
     cached ? { onlyIf: { etagDoesNotMatch: cached.etag } } : {},

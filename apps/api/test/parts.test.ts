@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { bytesOf, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -159,7 +159,7 @@ describe("update feeds of parts", () => {
     expect(yml).toContain("notes-cli-1.0.0.exe")
     expect(yml).not.toContain("notes.exe")
 
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     const feed = (await (await env.BUCKET.get(paths.sabinePart(appId, "helper", "stable")))!.json()) as {
       app_id: string
       artifacts: Record<string, { url: string }>

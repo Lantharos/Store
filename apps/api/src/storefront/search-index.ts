@@ -15,9 +15,15 @@ export function storeKey(id: string) {
   return `schelf:${id}`
 }
 
+export const fold = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{Mn}/gu, "")
+    .toLowerCase()
+
 function trigrams(query: string) {
   const grams = new Set<string>()
-  for (const word of query.toLowerCase().split(/\s+/)) {
+  for (const word of query.split(/\s+/)) {
     const clean = word.replace(/"/g, "")
     if (clean.length < TRIGRAM) continue
     for (let index = 0; index + TRIGRAM <= clean.length; index++)
@@ -26,37 +32,60 @@ function trigrams(query: string) {
   return [...grams].slice(0, MAX_TRIGRAMS)
 }
 
-export function matchExpression(query: string) {
+function matchExpression(query: string) {
   const grams = trigrams(query)
   return grams.length ? grams.map((gram) => `"${gram}"`).join(" OR ") : null
 }
 
-const REMOVE = "DELETE FROM search WHERE lower(key) = lower(?)"
+const DROP_TEXT = "DELETE FROM search_text WHERE rowid = (SELECT id FROM search_key WHERE key = ?1)"
+const UPSERT_KEY =
+  "INSERT INTO search_key (key) VALUES (?1) ON CONFLICT (key) DO UPDATE SET key = excluded.key"
+const ADD_KEY = "INSERT INTO search_key (key) VALUES (?1)"
+const ADD_TEXT = `INSERT INTO search_text (rowid, key, title, name, summary, keywords, developer)
+  VALUES ((SELECT id FROM search_key WHERE key = ?1), ?1, ?2, ?3, ?4, ?5, ?6)`
 
-export function indexStatements(documents: SearchDocument[]) {
-  const remove = env.DB.prepare(REMOVE)
-  const insert = env.DB.prepare(
-    "INSERT INTO search (key, name, summary, keywords, developer) VALUES (?, ?, ?, ?, ?)",
+function addText(statement: D1PreparedStatement, document: SearchDocument) {
+  return statement.bind(
+    document.key,
+    document.name,
+    fold(document.name),
+    fold(document.summary),
+    fold(document.keywords.join(" ")),
+    fold(document.publisher),
   )
-  return documents.flatMap((document) => [
-    remove.bind(document.key),
-    insert.bind(
-      document.key,
-      document.name,
-      document.summary,
-      document.keywords.join(" "),
-      document.publisher,
-    ),
-  ])
 }
 
 /** App ids are compared without case, so an entry left under an id's old spelling goes too. */
-export function unindexStatement(key: string) {
-  return env.DB.prepare(REMOVE).bind(key)
+export function indexStatements(documents: SearchDocument[]) {
+  const [drop, upsert, add] = [DROP_TEXT, UPSERT_KEY, ADD_TEXT].map((query) => env.DB.prepare(query))
+  return documents.flatMap((document) => [
+    drop!.bind(document.key),
+    upsert!.bind(document.key),
+    addText(add!, document),
+  ])
 }
 
-export function clearOriginStatement(origin: string) {
-  return env.DB.prepare("DELETE FROM search WHERE key >= ? AND key < ?").bind(`${origin}:`, `${origin};`)
+/** Entries that aren't in the index under any spelling of their key, such as an origin's once it's cleared. */
+export function addStatements(documents: SearchDocument[]) {
+  const [key, add] = [ADD_KEY, ADD_TEXT].map((query) => env.DB.prepare(query))
+  return documents.flatMap((document) => [key!.bind(document.key), addText(add!, document)])
+}
+
+export function unindexStatements(key: string) {
+  return [
+    env.DB.prepare(DROP_TEXT).bind(key),
+    env.DB.prepare("DELETE FROM search_key WHERE key = ?1").bind(key),
+  ]
+}
+
+export function clearOriginStatements(origin: string) {
+  const bounds = [`${origin}:`, `${origin};`]
+  return [
+    env.DB.prepare(
+      "DELETE FROM search_text WHERE rowid IN (SELECT id FROM search_key WHERE key >= ?1 AND key < ?2)",
+    ).bind(...bounds),
+    env.DB.prepare("DELETE FROM search_key WHERE key >= ?1 AND key < ?2").bind(...bounds),
+  ]
 }
 
 interface Hit {
@@ -65,17 +94,12 @@ interface Hit {
 }
 
 interface Document extends Hit {
-  summary: string
-  keywords: string
+  text: string
 }
 
 const SCHELF_FIRST = "(key >= 'schelf:' AND key < 'schelf;') DESC"
 
-const words = (text: string) =>
-  text
-    .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter(Boolean)
+const words = (text: string) => text.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
 
 function distance(left: string, right: string) {
   let previous = Array.from({ length: right.length + 1 }, (_, index) => index)
@@ -92,7 +116,7 @@ function distance(left: string, right: string) {
 
 /** Whether every word searched for starts a word of the app's, or is that word with a typo or two. */
 function close(query: string, document: Document) {
-  const own = words(`${document.name} ${document.keywords} ${document.summary}`)
+  const own = words(document.text)
   return words(query)
     .filter((word) => word.length >= TRIGRAM)
     .every((word) => {
@@ -110,8 +134,9 @@ function scoped(prefix: string | undefined) {
 async function prefixHits(query: string, limit: number, prefix: string | undefined) {
   const { clause, bounds } = scoped(prefix)
   const { results } = await env.DB.prepare(
-    `SELECT key, name FROM search WHERE (name LIKE ?1 || '%' OR name LIKE '% ' || ?1 || '%') ${clause}
-     ORDER BY lower(name) = lower(?1) DESC, name LIKE ?1 || '%' DESC, ${SCHELF_FIRST}, length(name) LIMIT ?2`,
+    `SELECT key, title AS name FROM search_text
+     WHERE name LIKE '%' || ?1 || '%' AND (name LIKE ?1 || '%' OR name LIKE '% ' || ?1 || '%') ${clause}
+     ORDER BY name = ?1 DESC, name LIKE ?1 || '%' DESC, ${SCHELF_FIRST}, length(name) LIMIT ?2`,
   )
     .bind(query.replace(/[%_]/g, ""), limit, ...bounds)
     .all<Hit>()
@@ -123,7 +148,8 @@ async function fuzzyHits(query: string, limit: number, prefix: string | undefine
   if (!expression) return []
   const { clause, bounds } = scoped(prefix)
   const { results } = await env.DB.prepare(
-    `SELECT key, name, summary, keywords FROM search WHERE search MATCH ?1 ${clause} ORDER BY bm25(search, 0, 10, 3, 4, 1) LIMIT ?2`,
+    `SELECT key, title AS name, name || ' ' || keywords || ' ' || summary AS text FROM search_text
+     WHERE search_text MATCH ?1 ${clause} ORDER BY bm25(search_text, 0, 0, 10, 3, 4, 1) LIMIT ?2`,
   )
     .bind(expression, limit, ...bounds)
     .all<Document>()
@@ -135,9 +161,10 @@ async function fuzzyHits(query: string, limit: number, prefix: string | undefine
  * with schelf.store's own apps first among equals, and then apps whose words match despite a typo.
  */
 export async function searchKeys(query: string, limit: number, prefix?: string) {
+  const wanted = fold(query.trim())
   const [starts, similar] = await Promise.all([
-    prefixHits(query.trim(), limit, prefix),
-    fuzzyHits(query, limit, prefix),
+    prefixHits(wanted, limit, prefix),
+    fuzzyHits(wanted, limit, prefix),
   ])
   const seen = new Set<string>()
   return [...starts, ...similar].filter((hit) => !seen.has(hit.key) && seen.add(hit.key)).slice(0, limit)
