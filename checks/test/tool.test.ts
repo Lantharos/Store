@@ -13,7 +13,7 @@ async function toolOf(files: Record<string, string | Buffer>) {
     await mkdir(join(root, path, ".."), { recursive: true })
     await writeFile(join(root, path), body)
   }
-  const facts = inspectTool(await inspectArtifact(root, null), "sabine.tar.gz")
+  const facts = inspectTool(await inspectArtifact(root, null, []), "sabine.tar.gz")
   await rm(root, { recursive: true })
   return facts
 }

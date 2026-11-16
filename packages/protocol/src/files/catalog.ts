@@ -33,10 +33,6 @@ export const catalogEntry = z.object({
 })
 export type CatalogEntry = z.infer<typeof catalogEntry>
 
-export function comingSoon(entry: Pick<CatalogEntry, "platforms">) {
-  return Object.keys(entry.platforms).length === 0
-}
-
 export const catalog = stamp.extend({
   version: z.literal(1),
   generated: z.iso.datetime(),
@@ -48,12 +44,14 @@ export const MIRROR_ORIGINS = ["flathub", "fedora"] as const
 export const mirrorOrigin = z.enum(MIRROR_ORIGINS)
 export type MirrorOrigin = z.infer<typeof mirrorOrigin>
 
+export const mirrorIcon = z.url({ protocol: /^https$/ })
+
 const mirrorBase = z.object({
   id: z.string(),
   kind: z.literal("app"),
   name: z.string(),
   summary: z.string(),
-  icon: z.string().nullable(),
+  icon: mirrorIcon.nullable(),
   categories: z.array(z.string()),
   publisher: z.object({ name: z.string(), verified: z.boolean() }),
   updated: z.iso.datetime(),

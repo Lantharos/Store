@@ -11,7 +11,6 @@ export default defineConfig({
     cloudflareTest(async () => ({
       config: true,
       miniflare: {
-        d1Databases: ["MIGRATION_DB", "HOSTING_MIGRATION_DB"],
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, "migrations")),
           BETTER_AUTH_SECRET: "test-auth-secret-that-is-long-enough-for-better-auth",

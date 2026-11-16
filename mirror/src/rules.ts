@@ -1,3 +1,5 @@
+import { mirrorIcon } from "@schelf/protocol"
+
 export interface Candidate {
   id: string
   type: string
@@ -21,6 +23,9 @@ export interface Candidate {
 const APP_TYPES = new Set(["desktop-application", "desktop", "console-application"])
 const MONTH = 30 * 24 * 3600 * 1000
 const MIN_INSTALLS = 50
+
+export const remoteIcon = (icon: string | null | undefined) =>
+  icon && mirrorIcon.safeParse(icon).success ? icon : null
 
 const olderThan = (date: Date | null, months: number, now: Date) =>
   date === null || now.getTime() - date.getTime() > months * MONTH

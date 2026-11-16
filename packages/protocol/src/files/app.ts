@@ -98,11 +98,3 @@ export const appIndex = stamp.extend({
   releases: z.array(indexedRelease),
 })
 export type AppIndex = z.infer<typeof appIndex>
-
-export function releaseFor(index: Pick<AppIndex, "releases">, target: string, deviceDraw: number) {
-  return index.releases.find(
-    (release) =>
-      release.rollout.percent > deviceDraw * 100 &&
-      release.artifacts.some((candidate) => candidate.platform === target),
-  )
-}

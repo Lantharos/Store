@@ -157,6 +157,20 @@ test("refuses a version schelf.store pulled", async () => {
   await expect(schelfProgram(place())).rejects.toThrow("pulled schelf 0.4.1")
 })
 
+test("refuses a list of pulled releases that's stale or older than the last one", async () => {
+  await publish("0.4.1", PROGRAM)
+  const pulled = (serial: number, age: number) =>
+    fixture.sign(paths.revocations, { serial, issued: new Date(Date.now() - age).toISOString(), blocked: [] })
+  await pulled(1, 8 * DAY_MS)
+  await expect(schelfProgram(place())).rejects.toThrow("too old to trust")
+  await pulled(2, 0)
+  await schelfProgram(place())
+  const state = join(folder, "state.json")
+  await Bun.write(state, JSON.stringify({ ...JSON.parse(await readFile(state, "utf8")), checked: 0 }))
+  await pulled(1, 0)
+  await expect(schelfProgram(place())).rejects.toThrow(`older ${paths.revocations}`)
+})
+
 test("keeps using the last program when schelf.store can't be reached", async () => {
   await publish("0.4.1", PROGRAM)
   const program = await schelfProgram(place())

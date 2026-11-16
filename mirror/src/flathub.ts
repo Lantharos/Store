@@ -1,7 +1,7 @@
 import { parseCollection } from "@schelf/appstream"
 import type { MirrorEntry } from "@schelf/protocol"
 import { gunzipText, json } from "./fetch.ts"
-import { type Candidate, latest, rank } from "./rules.ts"
+import { type Candidate, latest, rank, remoteIcon } from "./rules.ts"
 
 const API = "https://flathub.org/api/v2"
 const APPSTREAM = "https://dl.flathub.org/repo/appstream/x86_64/appstream.xml.gz"
@@ -36,7 +36,9 @@ async function searchAll() {
       body: JSON.stringify({ query: "", hits_per_page: PAGE_SIZE, page: number }),
     })
   const first = await page(1)
-  const rest = await Promise.all(Array.from({ length: first.totalPages - 1 }, (_, index) => page(index + 2)))
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(first.totalPages - 1, 0) }, (_, index) => page(index + 2)),
+  )
   return [first, ...rest].flatMap((result) => result.hits)
 }
 
@@ -84,7 +86,7 @@ export async function flathubCandidates() {
       type: hit.type,
       name: hit.name,
       summary: hit.summary,
-      icon: hit.icon,
+      icon: remoteIcon(hit.icon),
       categories: component?.categories.length
         ? component.categories
         : [hit.main_categories, hit.sub_categories].flat(),

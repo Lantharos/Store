@@ -1,7 +1,7 @@
 import { type Component, parseCollection } from "@schelf/appstream"
 import type { MirrorEntry } from "@schelf/protocol"
 import { gunzipText } from "./fetch.ts"
-import { type Candidate, latest, rank } from "./rules.ts"
+import { type Candidate, latest, rank, remoteIcon } from "./rules.ts"
 
 const BASE = "https://dl.fedoraproject.org/pub/alt/screenshots"
 const LIBRARY_PACKAGE = /^lib|-(libs?|devel|common|data)$/
@@ -19,7 +19,7 @@ export function cachedIcon(component: Component) {
     const icon = component.icons.find((candidate) => candidate.kind === "cached" && candidate.width === size)
     if (icon) return `${size}x${size}/${icon.value}`
   }
-  return component.icons.find((candidate) => candidate.kind === "remote")?.value ?? null
+  return remoteIcon(component.icons.find((candidate) => candidate.kind === "remote")?.value)
 }
 
 export async function fedoraCandidates(release: string) {

@@ -9,12 +9,7 @@ export interface TreeFile {
   size: number
   kind: FileKind
   setuid: boolean
-  executable: boolean
 }
-
-const SETUID = 0o4000
-const SETGID = 0o2000
-const ANY_EXECUTE = 0o111
 
 function kindOf(magic: Buffer): FileKind {
   if (magic.readUInt32BE(0) === 0x7f454c46) return "elf"
@@ -37,21 +32,15 @@ async function magicOf(path: string, size: number) {
   }
 }
 
-export async function walkTree(root: string): Promise<TreeFile[]> {
+export async function walkTree(root: string, setuid: Set<string>): Promise<TreeFile[]> {
   const entries = await readdir(root, { recursive: true, withFileTypes: true })
   const files = entries.filter((entry) => entry.isFile())
   return Promise.all(
     files.map(async (entry) => {
       const absolute = join(entry.parentPath, entry.name)
-      const stats = await lstat(absolute)
-      return {
-        path: relative(root, absolute),
-        absolute,
-        size: stats.size,
-        kind: await magicOf(absolute, stats.size),
-        setuid: (stats.mode & (SETUID | SETGID)) !== 0,
-        executable: (stats.mode & ANY_EXECUTE) !== 0,
-      }
+      const path = relative(root, absolute)
+      const { size } = await lstat(absolute)
+      return { path, absolute, size, kind: await magicOf(absolute, size), setuid: setuid.has(path) }
     }),
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { readPermissions, readSchelfToml, SANDBOXED_DEFAULT, widens } from "../src/index.ts"
+import { readPermissions, readSchelfToml, SANDBOXED_DEFAULT, talkCovers, widens } from "../src/index.ts"
 
 describe("permission declarations", () => {
   test("read what an app asks for the way Luft's sandbox does", () => {
@@ -40,6 +40,14 @@ describe("permission declarations", () => {
     expect(widens(scoped, { ...scoped, talk: ["com.example.Shell"] })).toBe(true)
     expect(widens(scoped, { ...scoped, talk: ["com.example.Shell@/com/example/Shell/Share"] })).toBe(true)
     expect(widens({ ...scoped, talk: ["com.example.Shell"] }, scoped)).toBe(false)
+  })
+
+  test("cover talk names the way the bus proxy matches them", () => {
+    expect(talkCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2")).toBe(true)
+    expect(talkCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2.notes")).toBe(true)
+    expect(talkCovers(["org.mpris.MediaPlayer2.*"], "org.mpris.MediaPlayer2Extra")).toBe(false)
+    expect(talkCovers(["org.mpris.MediaPlayer2"], "org.mpris.MediaPlayer2.notes")).toBe(false)
+    expect(talkCovers(["com.example.Shell"], "com.example.Shell@/com/example/Shell/Appearance")).toBe(true)
   })
 
   test("notice an update that asks for more", () => {

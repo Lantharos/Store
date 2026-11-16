@@ -70,6 +70,33 @@ export function inspectionResult(
   }
 }
 
+export interface Unopened {
+  name: string
+  tool: boolean
+  reason: string
+}
+
+export function withUnopened(result: CheckResult, unopened: Unopened[]): CheckResult {
+  if (!unopened.length) return result
+  const tool = unopened.some((file) => file.tool)
+  const files = unopened.map((file) => `${file.name} (${file.reason})`).join(", ")
+  const consequence = tool
+    ? "a tool among them can't be shown to be one program"
+    : "a reviewer checks it by hand"
+  return {
+    name: "inspection",
+    status: tool || result.status === "failed" ? "failed" : "warning",
+    summary: [
+      `Couldn't look inside ${files}, so ${consequence}`,
+      result.status === "passed" ? "" : result.summary,
+    ]
+      .filter(Boolean)
+      .join("; ")
+      .slice(0, 500),
+    detail: result.detail,
+  }
+}
+
 export function licenceResult(licence: LicenceFacts): CheckResult {
   const name = licence.declared ?? licence.detected[0]?.licence
   if (!name)

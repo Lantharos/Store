@@ -77,10 +77,6 @@ const APP_ID = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+){2,}$/
 
 export const appId = z.string().max(255).regex(APP_ID, "An app id is reverse DNS, like io.github.alice.Notes")
 
-export function sameAppId(left: string, right: string) {
-  return left.toLowerCase() === right.toLowerCase()
-}
-
 export function namespaceCovers(prefix: string, id: string) {
   return id.toLowerCase().startsWith(`${prefix.toLowerCase()}.`)
 }

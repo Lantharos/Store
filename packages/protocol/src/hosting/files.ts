@@ -81,4 +81,3 @@ export function inferFile(name: string): { kind: FileKind; platform: Platform } 
 }
 
 export const UPDATER_SIGNATURE = /\.sig$/i
-export const GENERATED_FEEDS = [/\.blockmap$/i, /^latest(-[a-z0-9]+)*\.yml$/i]
