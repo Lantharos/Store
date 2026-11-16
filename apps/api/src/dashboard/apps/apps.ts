@@ -1,5 +1,5 @@
 import { type AppSettings, type DashboardApp, DEFAULT_LOCALE, projectGroup } from "@schelf/protocol"
-import { and, desc, eq, inArray, ne } from "drizzle-orm"
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
@@ -10,6 +10,27 @@ import { addApp, addProject } from "./projects.ts"
 import { appSettings } from "./settings.ts"
 
 export const publisherAppRoutes = new Hono<PublisherVars>()
+
+function latestReleases(publisherId: string) {
+  const ranked = db
+    .select({
+      appId: schema.release.appId,
+      version: schema.release.version,
+      status: schema.release.status,
+      place:
+        sql<number>`row_number() over (partition by ${schema.release.appId} order by ${schema.release.createdAt} desc)`.as(
+          "place",
+        ),
+    })
+    .from(schema.release)
+    .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
+    .where(eq(schema.app.publisherId, publisherId))
+    .as("ranked")
+  return db
+    .select({ appId: ranked.appId, version: ranked.version, status: ranked.status })
+    .from(ranked)
+    .where(eq(ranked.place, 1))
+}
 export const appRoutes = new Hono<SignedInVars>()
 
 publisherAppRoutes.get("/", async (c) => {
@@ -29,12 +50,7 @@ publisherAppRoutes.get("/", async (c) => {
   const ids = apps.map((row) => row.app.id)
   const extensions = apps.filter((row) => row.app.kind === "extension").map((row) => row.app.id)
   const [releases, installs, shots] = await Promise.all([
-    db
-      .select({ appId: schema.release.appId, version: schema.release.version, status: schema.release.status })
-      .from(schema.release)
-      .innerJoin(schema.app, eq(schema.app.id, schema.release.appId))
-      .where(eq(schema.app.publisherId, c.var.publisher.id))
-      .orderBy(desc(schema.release.createdAt)),
+    latestReleases(c.var.publisher.id),
     installsSince(ids, 7),
     extensions.length
       ? db
@@ -45,8 +61,7 @@ publisherAppRoutes.get("/", async (c) => {
       : [],
   ])
   const artByApp = new Map(shots.map((shot) => [shot.appId, shot.key]))
-  const latestByApp = new Map<string, (typeof releases)[number]>()
-  for (const release of releases) if (!latestByApp.has(release.appId)) latestByApp.set(release.appId, release)
+  const latestByApp = new Map(releases.map((release) => [release.appId, release]))
   return c.json(
     apps.map(({ app, name, iconKey }) => ({
       id: app.id,

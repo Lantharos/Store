@@ -11,47 +11,68 @@ import {
   type Unstamped,
 } from "@schelf/protocol"
 import { and, desc, eq, isNull } from "drizzle-orm"
-import { db, schema } from "../db/client.ts"
+import { among, db, schema } from "../db/client.ts"
+import { inParallel } from "../lib/parallel.ts"
 import { removeToolIndexes, writeToolIndexes } from "../tools/index-files.ts"
+import { loadCatalogApps } from "./catalog-records.ts"
 import { appIndex, catalogEntry, mirrorCatalogEntry, sabineFeeds, sabineParts } from "./documents.ts"
 import { signingKey } from "./keys.ts"
-import { loadApps } from "./records.ts"
+import { type AppRecord, loadApps } from "./records.ts"
 import { writeFeed, writeSigned } from "./write.ts"
 
 const INDEXED_APP_STATUSES = new Set(["published", "delisted", "pulled", "deleted"])
+const APPS_AT_ONCE = 8
 
-export async function rebuildApp(id: string) {
-  const app = await db.query.app.findFirst({ where: eq(schema.app.id, id) })
-  if (!app || !INDEXED_APP_STATUSES.has(app.status)) {
-    await env.BUCKET.delete([paths.app(id), paths.signature(paths.app(id))])
-    return
-  }
-  const [record] = await loadApps([app])
+/** Signs the index, feeds and tool files of each app again, or removes the index of an app that's gone. */
+export async function rebuildApps(ids: string[]) {
+  const apps = await db.select().from(schema.app).where(among(schema.app.id, ids))
+  const indexed = apps.filter((app) => INDEXED_APP_STATUSES.has(app.status))
+  const kept = new Set(indexed.map((app) => app.id))
+  const gone = ids
+    .filter((id) => !kept.has(id))
+    .flatMap((id) => [paths.app(id), paths.signature(paths.app(id))])
+  await Promise.all([
+    gone.length && env.BUCKET.delete(gone),
+    inParallel(await loadApps(indexed), APPS_AT_ONCE, rebuildRecord),
+  ])
+}
+
+async function rebuildRecord(record: AppRecord) {
+  const { app } = record
   if (app.status === "deleted") {
-    await writeSigned(paths.app(id), appIndex({ ...record!, releases: [] }))
-    await removeSabineFeeds(id)
-    await removeToolIndexes(app, record!.publisher.slug, toolsOf(app))
+    await Promise.all([
+      writeSigned({ key: paths.app(app.id), document: appIndex({ ...record, releases: [] }) }),
+      removeSabineFeeds(app.id),
+      removeToolIndexes(app, record.publisher.slug, toolsOf(app)),
+    ])
     return
   }
-  await writeSigned(paths.app(id), appIndex(record!))
-  await writeToolIndexes(record!)
+  const invited = [...record.inviteOnly].map((channel) => ({
+    key: paths.invitedApp(app.id, channel),
+    document: appIndex(record, channel),
+  }))
+  const [feeds] = await Promise.all([
+    writeFeeds(record),
+    writeSigned({ key: paths.app(app.id), document: appIndex(record) }, ...invited),
+    writeToolIndexes(record),
+  ])
+  await removeStale(app.id, new Set([...feeds, ...invited.flatMap(({ key }) => [key, paths.signature(key)])]))
+}
+
+async function writeFeeds(record: AppRecord) {
   const key = await signingKey()
-  const written = new Set<string>()
-  for (const part of [null, ...sabineParts(record!)])
-    for (const [channel, feed] of sabineFeeds(record!, part)) {
-      const invited = record!.inviteOnly.has(channel)
+  const { id } = record.app
+  const feeds = [null, ...sabineParts(record)].flatMap((part) =>
+    [...sabineFeeds(record, part)].map(([channel, feed]) => {
+      const invited = record.inviteOnly.has(channel)
       const path = part
         ? (invited ? paths.invitedSabinePart : paths.sabinePart)(id, part, channel)
         : (invited ? paths.invitedSabine : paths.sabine)(id, channel)
-      await writeFeed(path, await signSabineFeed(key, feed))
-      written.add(path)
-    }
-  for (const channel of record!.inviteOnly) {
-    const path = paths.invitedApp(id, channel)
-    await writeSigned(path, appIndex(record!, channel))
-    written.add(path).add(paths.signature(path))
-  }
-  await removeStale(id, written)
+      return { path, feed }
+    }),
+  )
+  await Promise.all(feeds.map(async ({ path, feed }) => writeFeed(path, await signSabineFeed(key, feed))))
+  return feeds.map(({ path }) => path)
 }
 
 async function removeStale(id: string, kept: Set<string>) {
@@ -77,13 +98,13 @@ export async function rebuildCatalog() {
     .select()
     .from(schema.app)
     .where(and(eq(schema.app.status, "published"), eq(schema.app.visibility, "listed")))
-  const records = await loadApps(listed)
+  const records = await loadCatalogApps(listed)
   const catalog: Unstamped<Catalog> = {
     version: 1,
     generated: new Date().toISOString(),
     apps: records.map(catalogEntry).sort((left, right) => right.installs_30d - left.installs_30d),
   }
-  await writeSigned(paths.catalog, catalog)
+  await writeSigned({ key: paths.catalog, document: catalog })
 }
 
 export async function rebuildMirror(origin: MirrorOrigin) {
@@ -92,12 +113,15 @@ export async function rebuildMirror(origin: MirrorOrigin) {
     .from(schema.mirrorApp)
     .where(and(eq(schema.mirrorApp.origin, origin), isNull(schema.mirrorApp.hiddenReason)))
     .orderBy(desc(schema.mirrorApp.rank), schema.mirrorApp.id)
-  await writeSigned(paths.mirror(origin), {
-    version: 1,
-    generated: new Date().toISOString(),
-    origin,
-    apps: rows.map(mirrorCatalogEntry),
-  } satisfies Unstamped<MirrorCatalog>)
+  await writeSigned({
+    key: paths.mirror(origin),
+    document: {
+      version: 1,
+      generated: new Date().toISOString(),
+      origin,
+      apps: rows.map(mirrorCatalogEntry),
+    } satisfies Unstamped<MirrorCatalog>,
+  })
 }
 
 export async function rebuildRevocations() {
@@ -128,8 +152,11 @@ export async function rebuildRevocations() {
     else if (existing.versions !== "*")
       existing.versions = versions === "*" ? "*" : [...existing.versions, ...versions]
   }
-  await writeSigned(paths.revocations, {
-    issued: new Date().toISOString(),
-    blocked: [...merged.values()],
-  } satisfies Unstamped<Revocations>)
+  await writeSigned({
+    key: paths.revocations,
+    document: {
+      issued: new Date().toISOString(),
+      blocked: [...merged.values()],
+    } satisfies Unstamped<Revocations>,
+  })
 }

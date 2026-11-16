@@ -1,5 +1,8 @@
 import { env } from "cloudflare:workers"
 import { describe, expect, test } from "vitest"
+import { db, schema } from "../src/db/client.ts"
+import { reindexIfRequested } from "../src/storefront/indexing.ts"
+import { REINDEX_REQUEST } from "../src/storefront/reindex-request.ts"
 import { indexStatements, searchKeys } from "../src/storefront/search-index.ts"
 
 const apps = [
@@ -43,6 +46,52 @@ describe("search", () => {
     expect(await keys("reminders")).not.toContain("flathub:io.github.Bollos00.LibreMines")
     expect(await keys("remimders")).toContain("schelf:com.lantharos.Reminders")
     expect(await keys("draft")).not.toContain("flathub:com.mojang.Minecraft")
+  })
+
+  test("matches names with or without their accents", async () => {
+    await env.DB.batch(
+      indexStatements([
+        {
+          key: "schelf:com.example.Cafe",
+          name: "Café Noir",
+          summary: "",
+          keywords: [],
+          publisher: "Someone",
+        },
+        {
+          key: "flathub:org.example.Creme",
+          name: "Creme",
+          summary: "Desserts",
+          keywords: [],
+          publisher: "Someone",
+        },
+      ]),
+    )
+    const keys = async (query: string) => (await searchKeys(query, 10)).map((hit) => hit.key)
+    expect(await keys("cafe")).toContain("schelf:com.example.Cafe")
+    expect(await keys("crème")).toContain("flathub:org.example.Creme")
+    expect((await searchKeys("noir", 10)).find((hit) => hit.key === "schelf:com.example.Cafe")?.name).toBe(
+      "Café Noir",
+    )
+  })
+
+  test("indexes the mirror again when asked, as after a migration", async () => {
+    await db.insert(schema.mirrorApp).values({
+      id: "org.example.Pokedex",
+      origin: "flathub",
+      ref: "app/org.example.Pokedex/x86_64/stable",
+      name: "Pokédex Viewer",
+      summary: "Look things up",
+      categories: [],
+      publisher: "Someone",
+      verified: false,
+      installs30d: 0,
+      updatedAt: new Date(),
+      rank: 0,
+    })
+    await db.insert(schema.storeState).values({ key: REINDEX_REQUEST, value: "0" }).onConflictDoNothing()
+    await reindexIfRequested()
+    expect((await searchKeys("pokedex", 10)).map((hit) => hit.key)).toContain("flathub:org.example.Pokedex")
   })
 
   test("an app indexed again takes the place of an entry under its id's old case", async () => {

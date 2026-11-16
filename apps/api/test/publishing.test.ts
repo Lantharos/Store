@@ -13,7 +13,7 @@ import {
 } from "@schelf/protocol"
 import { describe, expect, test } from "vitest"
 import { approve } from "../src/releases/review.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { bytesOf, publisherWithApp, schelfToml } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -93,7 +93,7 @@ describe("publishing with a dashboard token", () => {
     expect(result.status).toBe("in-review")
 
     await approve(started.release, "Reviewer")
-    await rebuildApp(appId)
+    await rebuildApps([appId])
 
     const key = await importSigningKey(env.STORE_SIGNING_KEY)
     const [index, signature] = await Promise.all([
@@ -137,7 +137,7 @@ describe("publishing with a dashboard token", () => {
     expect((await uploadAndComplete(started, file)).status).toBe("in-review")
 
     await approve(started.release, "Reviewer")
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     const document = await env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
     expect(document.releases[0]!.artifacts).toHaveLength(16)
   })

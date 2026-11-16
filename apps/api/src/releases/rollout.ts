@@ -5,7 +5,7 @@ import { fail } from "../lib/http.ts"
 import { recordHistory, rolloutsAreFrozen } from "../ops/events.ts"
 import { resign, resignApp } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
-import { channelIsGradual } from "./gradual.ts"
+import { gradualChannels } from "./gradual.ts"
 import { notifyPublisher } from "./notify.ts"
 
 const CONTROLLABLE = new Set(["rolling-out", "live"])
@@ -61,10 +61,19 @@ export async function stepRollouts(now = new Date()) {
   const due = rolling.filter((release) =>
     rolloutDue(release.rolloutPercent, release.rolloutSteppedAt ?? release.approvedAt ?? now, now),
   )
-  for (const release of due) {
-    const gradual = await channelIsGradual(release.appId, release.channel)
-    const percent = gradual ? nextRolloutStep(release.rolloutPercent) : 100
-    await db.update(schema.release).set(percentUpdate(percent, now)).where(eq(schema.release.id, release.id))
+  if (!due.length) return due
+  const apps = [...new Set(due.map((release) => release.appId))]
+  const gradual = await gradualChannels(apps)
+  const steps = due.map((release) => ({
+    release,
+    percent: gradual(release.appId, release.channel) ? nextRolloutStep(release.rolloutPercent) : 100,
+  }))
+  await db.batch(
+    steps.map(({ release, percent }) =>
+      db.update(schema.release).set(percentUpdate(percent, now)).where(eq(schema.release.id, release.id)),
+    ) as never,
+  )
+  for (const { release, percent } of steps) {
     if (percent === 100) notifyPublisher(release.id, "live")
     recordHistory(
       "release",
@@ -72,7 +81,6 @@ export async function stepRollouts(now = new Date()) {
       percent === 100 ? "Rolled out to everyone" : `Rolled out to ${percent}%`,
     )
   }
-  const apps = [...new Set(due.map((release) => release.appId))]
-  if (apps.length) await resign(...apps.map((id) => ({ type: "app" as const, id })), { type: "catalog" })
+  await resign(...apps.map((id) => ({ type: "app" as const, id })), { type: "catalog" })
   return due
 }

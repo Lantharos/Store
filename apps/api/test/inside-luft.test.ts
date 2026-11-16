@@ -14,7 +14,7 @@ import { db, schema } from "../src/db/client.ts"
 import { pull } from "../src/releases/moderation.ts"
 import { approve } from "../src/releases/review.ts"
 import { allowInShell, allowPublisherInShell, refuseShell } from "../src/releases/shell.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { bytesOf, json, person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
@@ -95,7 +95,7 @@ async function shipped(
 }
 
 async function index(appId: string) {
-  await rebuildApp(appId)
+  await rebuildApps([appId])
   return env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
 }
 

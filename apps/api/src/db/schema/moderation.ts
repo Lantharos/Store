@@ -35,7 +35,7 @@ export const block = sqliteTable(
     createdAt: createdAt(),
     liftedAt: integer("lifted_at", { mode: "timestamp_ms" }),
   },
-  (table) => [index("block_app").on(table.appId)],
+  (table) => [index("block_app").on(table.appId), index("block_release").on(table.releaseId)],
 )
 
 export const report = sqliteTable("report", {

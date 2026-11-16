@@ -9,7 +9,7 @@ import {
   type ShellStatus,
   type TimelineStep,
 } from "@schelf/protocol"
-import { desc, eq } from "drizzle-orm"
+import { desc, eq, inArray } from "drizzle-orm"
 import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { db, schema } from "../../db/client.ts"
@@ -24,6 +24,8 @@ import { runsInShell, shellRequestable } from "../../releases/shell-files.ts"
 import type { AppRow, ArtifactRow, ReleaseRow } from "../../signing/records.ts"
 
 export const releaseRoutes = new Hono<SignedInVars>()
+
+const LISTED_RELEASES = 50
 
 const NEXT_STEPS: Partial<Record<ReleaseRow["status"], string>> = {
   uploading: "The upload didn't finish. Publish it again to start over.",
@@ -58,18 +60,23 @@ function summary(release: ReleaseRow, artifacts: Pick<ArtifactRow, "platform">[]
 
 releaseRoutes.get("/:id/releases", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"))
+  const newest = db
+    .select({ id: schema.release.id })
+    .from(schema.release)
+    .where(eq(schema.release.appId, app.id))
+    .orderBy(desc(schema.release.createdAt))
+    .limit(LISTED_RELEASES)
   const [releases, artifacts] = await Promise.all([
     db
       .select()
       .from(schema.release)
       .where(eq(schema.release.appId, app.id))
       .orderBy(desc(schema.release.createdAt))
-      .limit(50),
+      .limit(LISTED_RELEASES),
     db
       .select({ releaseId: schema.artifact.releaseId, platform: schema.artifact.platform })
       .from(schema.artifact)
-      .innerJoin(schema.release, eq(schema.release.id, schema.artifact.releaseId))
-      .where(eq(schema.release.appId, app.id)),
+      .where(inArray(schema.artifact.releaseId, newest)),
   ])
   return c.json(
     releases.map((release) =>

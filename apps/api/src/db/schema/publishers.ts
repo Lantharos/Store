@@ -67,5 +67,6 @@ export const invite = sqliteTable(
     index("invite_publisher").on(table.publisherId),
     index("invite_email").on(table.email),
     index("invite_github").on(table.githubLogin),
+    index("invite_invited_by").on(table.invitedBy),
   ],
 )

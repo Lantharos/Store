@@ -3,7 +3,7 @@ import { importSigningKey, paths, type SabineFeed, verifySabineFeed } from "@sch
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { publisherWithApp } from "./fixtures.ts"
 
 async function sabineRelease(appId: string, version: string, percent: number, approvedAt: Date) {
@@ -54,7 +54,7 @@ describe("Sabine update feeds", () => {
     await db.update(schema.app).set({ status: "published" })
     await sabineRelease(appId, "1.0.0", 100, new Date("2026-10-01T00:00:00Z"))
     await sabineRelease(appId, "1.1.0", 25, new Date("2026-11-01T00:00:00Z"))
-    await rebuildApp(appId)
+    await rebuildApps([appId])
 
     const feed = await env.BUCKET.get(paths.sabine(appId, "stable")).then((object) =>
       object!.json<SabineFeed>(),

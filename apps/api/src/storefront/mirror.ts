@@ -10,12 +10,12 @@ import {
   sha256Hex,
 } from "@schelf/protocol"
 import { and, eq, inArray, isNull } from "drizzle-orm"
-import { db, schema } from "../db/client.ts"
+import { among, db, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { mirrorCatalogEntry } from "../signing/documents.ts"
 import { resign } from "../signing/queue.ts"
-import { fileUrl, within } from "../signing/records.ts"
-import { clearOriginStatement, indexStatements } from "./search-index.ts"
+import { fileUrl } from "../signing/records.ts"
+import { addStatements, clearOriginStatements, type SearchDocument } from "./search-index.ts"
 
 const STATEMENTS_PER_BATCH = 400
 const MIRROR_ID = /^[A-Za-z0-9._+-]{1,255}$/
@@ -23,6 +23,25 @@ const ICON_FILE = /^([0-9a-f]{16})\.png$/
 
 function mirrorKey(entry: Pick<MirrorEntry, "origin" | "id">) {
   return `${entry.origin}:${entry.id}`
+}
+
+type MirrorRow = typeof schema.mirrorApp.$inferSelect
+
+export function mirrorDocument(
+  row: Pick<MirrorRow, "origin" | "id" | "name" | "summary" | "categories" | "publisher">,
+): SearchDocument {
+  return {
+    key: mirrorKey(row),
+    name: row.name,
+    summary: row.summary,
+    keywords: row.categories,
+    publisher: row.publisher,
+  }
+}
+
+/** The index tells keys apart without case, so of entries whose ids differ only in case the last one stays. */
+function oncePerKey(documents: SearchDocument[]) {
+  return [...new Map(documents.map((document) => [document.key.toLowerCase(), document])).values()]
 }
 
 export async function mirrorHits(keys: string[]) {
@@ -33,7 +52,7 @@ export async function mirrorHits(keys: string[]) {
   const rows = await db
     .select()
     .from(schema.mirrorApp)
-    .where(and(within(schema.mirrorApp.id, ids), inArray(schema.mirrorApp.origin, ["flathub", "fedora"])))
+    .where(and(among(schema.mirrorApp.id, ids), inArray(schema.mirrorApp.origin, MIRROR_ORIGINS)))
   for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row), mirrorCatalogEntry(row))
   return hits
 }
@@ -42,7 +61,13 @@ export async function mirrorEntry(id: string, origin: string | undefined) {
   const rows = await db
     .select()
     .from(schema.mirrorApp)
-    .where(and(eq(schema.mirrorApp.id, id), isNull(schema.mirrorApp.hiddenReason)))
+    .where(
+      and(
+        inArray(schema.mirrorApp.origin, MIRROR_ORIGINS),
+        eq(schema.mirrorApp.id, id),
+        isNull(schema.mirrorApp.hiddenReason),
+      ),
+    )
   const preferred = origin ? [origin] : MIRROR_ORIGINS
   const row = preferred.map((name) => rows.find((candidate) => candidate.origin === name)).find(Boolean)
   return row ? mirrorCatalogEntry(row) : null
@@ -55,7 +80,7 @@ async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
   )
   const statements = [
     env.DB.prepare("DELETE FROM mirror_app WHERE origin = ?").bind(origin),
-    clearOriginStatement(origin),
+    ...clearOriginStatements(origin),
     ...entries.map((entry) =>
       insert.bind(
         entry.id,
@@ -72,14 +97,10 @@ async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
         entry.rank,
       ),
     ),
-    ...indexStatements(
-      entries.map((entry) => ({
-        key: mirrorKey(entry),
-        name: entry.name,
-        summary: entry.summary,
-        keywords: entry.categories,
-        publisher: entry.publisher.name,
-      })),
+    ...addStatements(
+      oncePerKey(
+        entries.map((entry) => mirrorDocument({ ...entry, origin, publisher: entry.publisher.name })),
+      ),
     ),
   ]
   for (let start = 0; start < statements.length; start += STATEMENTS_PER_BATCH)

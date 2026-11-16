@@ -7,6 +7,7 @@ import { isProjectPath, serveProject } from "../hosting/serve.ts"
 import { invitedFileOpen, shutOut } from "../invited/access.ts"
 import { isInvitedKey } from "../invited/links.ts"
 import { INDEX_CACHE } from "../signing/write.ts"
+import { serveShared, sharedAtEdge } from "./shared.ts"
 
 const IMMUTABLE = "public, max-age=31536000, immutable"
 const MEDIA_POLICY = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
@@ -67,11 +68,12 @@ async function missing(key: string) {
   return new Response("Not found", { status: 404 })
 }
 
+const decodedKey = (url: string) => decodeURIComponent(new URL(url).pathname.slice(1))
+
 export async function serveDownload(request: Request) {
   if (request.method !== "GET" && request.method !== "HEAD")
     return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } })
-  const url = new URL(request.url)
-  const key = decodeURIComponent(url.pathname.slice(1))
+  const key = decodedKey(request.url)
   if (key === "embed.js") return embedScript()
   const segments = key.split("/")
   if (isProjectPath(segments)) return serveProject(request, segments)
@@ -84,7 +86,13 @@ export async function serveDownload(request: Request) {
     return new Response("Not found", { status: 404 })
   const access = isInvitedKey(key) ? await invitedFileOpen(request, key) : "open"
   if (access !== "open") return shutOut(access)
+  if (sharedAtEdge(request, key))
+    return serveShared(request, key, (wanted) => serveObject(new Request(wanted), decodedKey(wanted)))
+  return serveObject(request, key)
+}
 
+async function serveObject(request: Request, key: string) {
+  const url = new URL(request.url)
   const object =
     request.method === "HEAD"
       ? await env.BUCKET.head(key)

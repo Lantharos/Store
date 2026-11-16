@@ -7,9 +7,8 @@ import {
 } from "@schelf/protocol"
 import { and, desc, eq, inArray } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
+import { edgeValue } from "../lib/edge-cache.ts"
 import { blockedReleaseIds, fileUrl } from "../signing/records.ts"
-
-const CACHE_SECONDS = 60
 
 async function loadReleases(appId: string, channel: string): Promise<HostedRelease[]> {
   const [releases, blocked] = await Promise.all([
@@ -66,16 +65,10 @@ async function loadReleases(appId: string, channel: string): Promise<HostedRelea
   }))
 }
 
-export async function hostedReleases(appId: string, channel: string) {
-  const key = new Request(`https://hosting.schelf.internal/releases/${encodeURIComponent(appId)}/${channel}`)
-  const cached = await caches.default.match(key)
-  if (cached) return cached.json<HostedRelease[]>()
-  const releases = await loadReleases(appId, channel)
-  await caches.default.put(
-    key,
-    Response.json(releases, { headers: { "cache-control": `max-age=${CACHE_SECONDS}` } }),
+export function hostedReleases(appId: string, channel: string) {
+  return edgeValue(`https://hosting.schelf.internal/releases/${encodeURIComponent(appId)}/${channel}`, () =>
+    loadReleases(appId, channel),
   )
-  return releases
 }
 
 export async function linkReleases(appId: string, route: string[]) {

@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { rebuildApp } from "../src/signing/rebuild.ts"
+import { rebuildApps } from "../src/signing/rebuild.ts"
 import { revoke } from "../src/verification/decisions.ts"
 import { bytesOf, json, person, publisherWithApp } from "./fixtures.ts"
 
@@ -97,7 +97,7 @@ describe("the signed index of a tool", () => {
   test("names the tool's own files per system at publisher/name, stamped with its path", async () => {
     const { appId, publisherSlug } = await toolProject()
     await shipped(appId, "1.0.0")
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     const index = (await signed(paths.tool(publisherSlug, "sabine")))!
     expect(index.path).toBe(paths.tool(publisherSlug, "sabine"))
     expect(index.address).toBe(`${publisherSlug}/sabine`)
@@ -129,7 +129,7 @@ describe("the signed index of a tool", () => {
       await owner.call("POST", `/publishers/${publisherId}/tool-names`, { name }),
     )
     expect(claimed[0]).toMatchObject({ short: "resolves", add: `sch add ${name}` })
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     expect((await signed(paths.shortTool(name)))!.address).toBe(`${publisherSlug}/${name}`)
 
     await db.insert(schema.publisherVerification).values({
@@ -139,7 +139,7 @@ describe("the signed index of a tool", () => {
       proofToken: "proof",
     })
     await revoke(publisherId, "Reviewer", "Gone")
-    await rebuildApp(appId)
+    await rebuildApps([appId])
     expect(await env.BUCKET.get(paths.shortTool(name))).toBeNull()
     expect((await signed(paths.tool(publisherSlug, name)))!.short).toBe(false)
     const page = await json<AppPage>(
@@ -241,7 +241,7 @@ describe("the install script", () => {
       .set({ parts: { cli: { ...SABINE, tool: "schelf" } } })
       .where(eq(schema.app.id, created.appId))
     await shipped(created.appId, "1.0.0", "nightly")
-    await rebuildApp(created.appId)
+    await rebuildApps([created.appId])
     return created
   }
 

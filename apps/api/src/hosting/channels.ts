@@ -7,18 +7,19 @@ import {
   paths,
   SHIPPED_STATUSES,
 } from "@schelf/protocol"
-import { and, desc, eq, inArray, isNotNull, notInArray } from "drizzle-orm"
-import { db, insertRows, schema } from "../db/client.ts"
+import { and, desc, eq, gt, inArray, isNotNull, not, notInArray, sql } from "drizzle-orm"
+import { among, db, insertRows, schema } from "../db/client.ts"
 import { fail } from "../lib/http.ts"
 import { randomId } from "../lib/ids.ts"
 import { recordHistory, tellOps } from "../ops/events.ts"
 import { partPlan } from "../publishing/parts.ts"
 import { routeRelease } from "../releases/review.ts"
-import { resignApp } from "../signing/queue.ts"
+import { resign } from "../signing/queue.ts"
 import type { ReleaseRow } from "../signing/records.ts"
 import { refuseEnded } from "./ended.ts"
 
 const WAITING = ["uploading", "checking", "in-review"] as const
+const R2_DELETE_LIMIT = 1000
 
 export function ensureChannel(appId: string, name: string) {
   return db
@@ -27,50 +28,61 @@ export function ensureChannel(appId: string, name: string) {
     .onConflictDoNothing()
 }
 
-async function removeReleases(appId: string, ids: string[]) {
+async function removeReleases(releases: { id: string; appId: string }[]) {
+  const ids = releases.map((release) => release.id)
   const artifacts = await db
     .select({ key: schema.artifact.key })
     .from(schema.artifact)
-    .where(inArray(schema.artifact.releaseId, ids))
+    .where(among(schema.artifact.releaseId, ids))
   const keys = [...new Set(artifacts.map((artifact) => artifact.key))]
   const shared = keys.length
     ? await db
         .select({ key: schema.artifact.key })
         .from(schema.artifact)
-        .where(and(inArray(schema.artifact.key, keys), notInArray(schema.artifact.releaseId, ids)))
+        .where(and(among(schema.artifact.key, keys), not(among(schema.artifact.releaseId, ids))))
     : []
   const kept = new Set(shared.map((artifact) => artifact.key))
-  const removable = keys.filter((key) => !kept.has(key))
-  if (removable.length) await env.BUCKET.delete(removable.flatMap((key) => [key, paths.blockmap(key)]))
-  await db.delete(schema.release).where(inArray(schema.release.id, ids))
-  recordHistory(
-    "app",
-    appId,
-    `Removed ${ids.length} old release${ids.length === 1 ? "" : "s"} past the channel's limit`,
-  )
-}
-
-export async function pruneChannel(appId: string, name: string, keep: number) {
-  const releases = await db
-    .select({ id: schema.release.id, status: schema.release.status })
-    .from(schema.release)
-    .where(
-      and(
-        eq(schema.release.appId, appId),
-        eq(schema.release.channel, name),
-        notInArray(schema.release.status, [...WAITING, "pulled"]),
-      ),
+  const removable = keys.filter((key) => !kept.has(key)).flatMap((key) => [key, paths.blockmap(key)])
+  for (let start = 0; start < removable.length; start += R2_DELETE_LIMIT)
+    await env.BUCKET.delete(removable.slice(start, start + R2_DELETE_LIMIT))
+  await db.delete(schema.release).where(among(schema.release.id, ids))
+  const removed = Map.groupBy(releases, (release) => release.appId)
+  for (const [appId, { length }] of removed)
+    recordHistory(
+      "app",
+      appId,
+      `Removed ${length} old release${length === 1 ? "" : "s"} past the channel's limit`,
     )
-    .orderBy(desc(schema.release.createdAt))
-  const past = releases.slice(keep).map((release) => release.id)
-  if (!past.length) return
-  await removeReleases(appId, past)
-  await resignApp(appId)
+  return [...removed.keys()]
 }
 
+function pastTheirLimit() {
+  const ranked = db
+    .select({
+      id: schema.release.id,
+      appId: schema.release.appId,
+      keep: schema.channel.keep,
+      place:
+        sql<number>`row_number() over (partition by ${schema.release.appId}, ${schema.release.channel} order by ${schema.release.createdAt} desc)`.as(
+          "place",
+        ),
+    })
+    .from(schema.release)
+    .innerJoin(
+      schema.channel,
+      and(eq(schema.channel.appId, schema.release.appId), eq(schema.channel.name, schema.release.channel)),
+    )
+    .where(and(isNotNull(schema.channel.keep), notInArray(schema.release.status, [...WAITING, "pulled"])))
+    .as("ranked")
+  return db.select({ id: ranked.id, appId: ranked.appId }).from(ranked).where(gt(ranked.place, ranked.keep))
+}
+
+/** Removes the oldest releases of every channel past the number it keeps. */
 export async function pruneChannels() {
-  const limited = await db.select().from(schema.channel).where(isNotNull(schema.channel.keep))
-  for (const channel of limited) await pruneChannel(channel.appId, channel.name, channel.keep!)
+  const past = await pastTheirLimit()
+  if (!past.length) return
+  const apps = await removeReleases(past)
+  await resign(...apps.map((id) => ({ type: "app" as const, id })), { type: "catalog" })
 }
 
 const shipped = (status: string) => (SHIPPED_STATUSES as readonly string[]).includes(status)

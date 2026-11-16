@@ -93,23 +93,35 @@ export async function writeToolIndexes(record: AppRecord) {
     verified: record.publisher.verified,
   }
   const rows = await shortNames(entries.map((entry) => entry.name))
-  for (const entry of entries) {
-    const row = rows.get(entry.name)
-    const short = shortState(entry.name, owner, row) === "resolves"
-    await writeSigned(paths.tool(record.publisher.slug, entry.name), toolDocument(record, entry, short))
-    if (short) await writeSigned(paths.shortTool(entry.name), toolDocument(record, entry, true))
-    else if (row?.publisherId === owner.id) await env.BUCKET.delete(signedPair(paths.shortTool(entry.name)))
-    const kept = new Set<string>()
-    for (const channel of record.inviteOnly) {
-      const key = paths.invitedTool(record.publisher.slug, entry.name, channel)
-      await writeSigned(key, toolDocument(record, entry, short, channel))
-      for (const each of signedPair(key)) kept.add(each)
-    }
-    const stale = (await listKeys(invitedToolPrefix(record.publisher.slug, entry.name))).filter(
-      (key) => !kept.has(key),
-    )
-    if (stale.length) await env.BUCKET.delete(stale)
-  }
+  await Promise.all(
+    entries.map(async (entry) => {
+      const row = rows.get(entry.name)
+      const short = shortState(entry.name, owner, row) === "resolves"
+      const invited = [...record.inviteOnly].map((channel) => ({
+        key: paths.invitedTool(record.publisher.slug, entry.name, channel),
+        document: toolDocument(record, entry, short, channel),
+      }))
+      const kept = new Set(invited.flatMap(({ key }) => signedPair(key)))
+      const [listed] = await Promise.all([
+        listKeys(invitedToolPrefix(record.publisher.slug, entry.name)),
+        writeSigned(
+          {
+            key: paths.tool(record.publisher.slug, entry.name),
+            document: toolDocument(record, entry, short),
+          },
+          ...(short
+            ? [{ key: paths.shortTool(entry.name), document: toolDocument(record, entry, true) }]
+            : []),
+          ...invited,
+        ),
+      ])
+      const stale = [
+        ...listed.filter((key) => !kept.has(key)),
+        ...(!short && row?.publisherId === owner.id ? signedPair(paths.shortTool(entry.name)) : []),
+      ]
+      if (stale.length) await env.BUCKET.delete(stale)
+    }),
+  )
 }
 
 export async function removeToolIndexes(
