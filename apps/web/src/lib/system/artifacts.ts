@@ -57,10 +57,6 @@ export function systemName(system: System) {
   return system.os in SYSTEM_NAMES ? SYSTEM_NAMES[system.os as keyof typeof SYSTEM_NAMES] : null
 }
 
-export function fileName(artifact: Artifact) {
-  return decodeURIComponent(artifact.url.slice(artifact.url.lastIndexOf("/") + 1))
-}
-
 export function groupByPlatform<File extends { platform: Platform; part?: string | null }>(files: File[]) {
   const groups = new Map<string, File[]>()
   for (const file of files) {

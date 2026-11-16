@@ -2,7 +2,13 @@
   import KeyRound from "@lucide/svelte/icons/key-round"
   import LoaderCircle from "@lucide/svelte/icons/loader-circle"
   import CodeField from "#lib/dashboard/account/CodeField.svelte"
-  import { sendCode, signInWithCode, signInWithGitHub, signInWithPasskey } from "#lib/dashboard/api/auth.ts"
+  import {
+    nextPath,
+    sendCode,
+    signInWithCode,
+    signInWithGitHub,
+    signInWithPasskey,
+  } from "#lib/dashboard/api/auth.ts"
   import { session } from "#lib/dashboard/api/session.svelte.ts"
   import Logo from "#lib/Logo.svelte"
   import GitHubMark from "#lib/ui/GitHubMark.svelte"
@@ -14,7 +20,7 @@
   let sent = $state(false)
   let error = $state<string | null>(null)
   let busy = $state<"email" | "code" | "passkey" | "github" | null>(null)
-  const next = $derived(page.url.searchParams.get("next") ?? "/dashboard")
+  const next = $derived(nextPath(page.url))
 
   async function finish() {
     await session.load()

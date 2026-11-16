@@ -2,6 +2,7 @@
   import ChevronLeft from "@lucide/svelte/icons/chevron-left"
   import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import type { Screenshot } from "@schelf/protocol"
+  import { thumbnail, thumbnailSet } from "../apps/thumbnail.ts"
   import Lightbox from "./Lightbox.svelte"
 
   let { screenshots, name }: { screenshots: Screenshot[]; name: string } = $props()
@@ -10,6 +11,13 @@
   let viewing = $state<number | null>(null)
   let atStart = $state(true)
   let atEnd = $state(false)
+  const single = $derived(screenshots.length === 1)
+
+  const STRIP_HEIGHT = 416
+  const sized = (shot: Screenshot) =>
+    single
+      ? { width: 1280, height: 720 }
+      : { width: Math.round((STRIP_HEIGHT * shot.width) / shot.height), height: STRIP_HEIGHT }
 
   function measure() {
     if (!strip) return
@@ -36,7 +44,8 @@
     class="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-6 scrollbar-none sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
   >
     {#each screenshots as shot, index (shot.url)}
-      <li class="shrink-0 snap-start scroll-ml-4 sm:scroll-ml-6 lg:scroll-ml-8 {screenshots.length === 1 ? 'w-full' : ''}">
+      {@const size = sized(shot)}
+      <li class="shrink-0 snap-start scroll-ml-4 sm:scroll-ml-6 lg:scroll-ml-8 {single ? 'w-full' : ''}">
         <button
           type="button"
           class="block cursor-zoom-in overflow-hidden rounded-[14px]"
@@ -44,13 +53,14 @@
           onclick={() => (viewing = index)}
         >
           <img
-            src={shot.url}
+            src={thumbnail(shot.url, size.width, size.height)}
+            srcset={thumbnailSet(shot.url, size.width, size.height)}
             alt={shot.caption ?? `${name}, screenshot ${index + 1}`}
             width={shot.width}
             height={shot.height}
             loading={index < 2 ? "eager" : "lazy"}
             decoding="async"
-            class="shot bg-well object-cover {screenshots.length === 1 ? 'aspect-[16/9] w-full max-h-[34rem]' : 'h-[min(56vw,26rem)] w-auto'}"
+            class="shot bg-well object-cover {single ? 'aspect-[16/9] w-full max-h-[34rem]' : 'h-[min(56vw,26rem)] w-auto'}"
           />
         </button>
         {#if shot.caption && screenshots.length > 1}<p class="mt-2 text-[13px] text-ink-muted">{shot.caption}</p>{/if}

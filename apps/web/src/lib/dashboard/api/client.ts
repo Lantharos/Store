@@ -1,14 +1,5 @@
 import { API_BASE } from "@schelf/protocol"
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message)
-  }
-}
-
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 async function send<T>(method: Method, path: string, body?: BodyInit, type?: string): Promise<T> {
@@ -20,8 +11,7 @@ async function send<T>(method: Method, path: string, body?: BodyInit, type?: str
   })
   if (response.status === 204) return undefined as T
   const json = (await response.json().catch(() => null)) as { error?: string } | null
-  if (!response.ok)
-    throw new ApiError(json?.error ?? "That didn't work. Try again in a moment.", response.status)
+  if (!response.ok) throw new Error(json?.error ?? "That didn't work. Try again in a moment.")
   return json as T
 }
 

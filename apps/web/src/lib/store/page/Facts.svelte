@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { type AppIndex, type Installs, luftVersionLabel, refName } from "@schelf/protocol"
+  import { type Installs, luftVersionLabel, refName } from "@schelf/protocol"
   import { count, date } from "../../format.ts"
   import { systemsOf } from "../../system/artifacts.ts"
+  import type { ShownApp } from "./load.ts"
 
-  let { app, installs }: { app: AppIndex; installs: Installs } = $props()
+  let { app, installs }: { app: ShownApp; installs: Installs } = $props()
 
   const latest = $derived(app.releases.find((release) => release.channel === "stable"))
   const extension = $derived(app.kind === "extension" ? latest : undefined)
