@@ -51,11 +51,12 @@ On Windows and macOS, the operating system then checks the developer's own code 
 
 Apps declare permissions in Luft's shared permission format, the one the AppImage sandbox enforces (being built in the Luft repository now). The store doesn't invent its own: it stores the declaration per release, shows it on the app page, in Schelf before install and in Pult next to what the binary actually does.
 
-| Format                  | How permissions are enforced at launch                                                                                                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AppImage on Luft        | Luft's AppImage sandbox, from the declaration.                                                                                                                                                             |
-| AppImage on other Linux | Schelf runs it in bubblewrap with the same declaration translated to bind mounts, portals and D-Bus filtering.                                                                                             |
-| Sabine app              | Not enforced yet: Sabine apps run with the user's full rights outside Chromium's own sandbox. The listing shows them as "Full access" until Sabine can run under the same sandbox. See the open questions. |
+| Format                          | How permissions are enforced at launch                                                                                                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AppImage on Luft                | Luft's AppImage sandbox, from the declaration.                                                                                                                                |
+| AppImage on other Linux         | Schelf runs it in bubblewrap with the same declaration translated to bind mounts, portals and D-Bus filtering.                                                                |
+| Sabine app on Linux             | Sabine itself, from the `[sandbox]` table in `Sabine.toml`, with Landlock and a system call filter, for apps that need Sabine 0.61 or newer. Older ones run with full access. |
+| Sabine app on Windows and macOS | Not enforced yet: the app runs with the user's full rights outside Chromium's own sandbox. The page still shows what it declares.                                             |
 
 Rules:
 

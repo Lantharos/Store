@@ -138,5 +138,4 @@ Rough monthly costs on Cloudflare's Workers Paid plan, which includes D1, Queues
 
 ## Open questions
 
-1. **Sabine apps have no sandbox yet.** They run with the user's full rights. Listings show them honestly as "Full access" until Sabine can run under Luft's shared permission format.
-2. **Store-held Windows code signing** comes with the company. Until then developers bring their own certificate, and unsigned Windows builds are marked in the listing.
+1. **Store-held Windows code signing** comes with the company. Until then developers bring their own certificate, and unsigned Windows builds are marked in the listing.

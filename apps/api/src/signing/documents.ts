@@ -29,9 +29,18 @@ import {
   type ReleaseRow,
 } from "./records.ts"
 
-function accessFor(record: Pick<AppRecord, "app">, release: CatalogRelease | undefined) {
-  if ((release?.format ?? record.app.format) === "sabine") return "full"
-  return accessOf(release ? release.permissions : null)
+/** The first Sabine that holds an app to its `[sandbox]` declaration on Linux. */
+const SABINE_CONFINES = parseSabineVersion("0.61")
+
+function confinedBySabine(release: CatalogRelease) {
+  const { major, build } = parseSabineVersion(release.requires.sabine ?? "0.0")
+  return major > SABINE_CONFINES.major || (major === SABINE_CONFINES.major && build >= SABINE_CONFINES.build)
+}
+
+function accessFor(release: CatalogRelease | undefined) {
+  if (!release) return accessOf(null)
+  if (release.format === "sabine" && !confinedBySabine(release)) return "full"
+  return accessOf(release.permissions)
 }
 
 function partFiles(record: AppRecord, artifacts: IndexedArtifact[], part: string | null) {
@@ -78,7 +87,7 @@ export function catalogEntry(record: CatalogRecord): CatalogEntry {
     categories: record.meta?.categories ?? [],
     publisher: record.publisher,
     platforms,
-    access: accessFor(record, record.stable[0]?.release),
+    access: accessFor(record.stable[0]?.release),
     updated: record.updated.toISOString(),
     installs_30d: record.installs30d,
   }
@@ -97,7 +106,7 @@ function indexedRelease(
     rollout: { percent: release.rolloutPercent, paused: release.rolloutPaused },
     permissions: release.permissions,
     extension: release.extensionAccess,
-    access: accessFor(record, release),
+    access: accessFor(release),
     requires: release.luftMinimum ? { ...release.requires, luft: release.luftMinimum } : release.requires,
     ...(record.app.kind === "extension" && {
       runs_in_shell: runsInShell(release, artifacts, record.publisher.verified),

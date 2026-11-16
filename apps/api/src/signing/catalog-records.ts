@@ -14,7 +14,7 @@ import {
 
 export type CatalogRelease = Pick<
   ReleaseRow,
-  "id" | "version" | "channel" | "format" | "permissions" | "rolloutPercent" | "luftMinimum"
+  "id" | "version" | "channel" | "format" | "permissions" | "requires" | "rolloutPercent" | "luftMinimum"
 >
 export type CatalogArtifact = Pick<ArtifactRow, "part" | "platform" | "format" | "size">
 
@@ -54,6 +54,7 @@ function stableReleases(ids: string[]) {
       channel: schema.release.channel,
       format: schema.release.format,
       permissions: schema.release.permissions,
+      requires: schema.release.requires,
       rolloutPercent: schema.release.rolloutPercent,
       luftMinimum: schema.release.luftMinimum,
       bridge: schema.release.bridge,

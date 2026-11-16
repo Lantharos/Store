@@ -43,7 +43,7 @@ reason = "A terminal runs whatever you type."
 
 The store page shows “Full access to your computer” with your reason, review looks harder, and on Luft people confirm it with an administrator's password. Leaving out the declaration entirely means the same thing, without a reason, so it's worth writing one.
 
-Sabine apps run with full access on every system for now, because Sabine can't sandbox them yet. Declare what you need anyway: it's shown on your page, and it will be enforced as soon as Sabine can.
+On Linux, Sabine holds your app to its `[sandbox]` table itself when it needs Sabine 0.61 or newer, so Schelf shows only what you declare. On Windows and macOS Sabine doesn't enforce it yet, and the app runs with full access there.
 
 ## Changing permissions in an update
 

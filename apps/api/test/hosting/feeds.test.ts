@@ -1,12 +1,26 @@
 import { env } from "cloudflare:workers"
-import { importSigningKey, paths, type SabineFeed, verifySabineFeed } from "@schelf/protocol"
+import {
+  type AppIndex,
+  importSigningKey,
+  type Permissions,
+  paths,
+  SANDBOXED_DEFAULT,
+  type SabineFeed,
+  verifySabineFeed,
+} from "@schelf/protocol"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../../src/db/client.ts"
 import { randomId } from "../../src/lib/ids.ts"
 import { rebuildApps } from "../../src/signing/rebuild.ts"
 import { publisherWithApp } from "../fixtures.ts"
 
-async function sabineRelease(appId: string, version: string, percent: number, approvedAt: Date) {
+async function sabineRelease(
+  appId: string,
+  version: string,
+  percent: number,
+  approvedAt: Date,
+  built: { sabine: string; permissions: Permissions | null } = { sabine: "0.68", permissions: null },
+) {
   const id = randomId()
   await db.insert(schema.release).values({
     id,
@@ -16,7 +30,8 @@ async function sabineRelease(appId: string, version: string, percent: number, ap
     format: "sabine",
     updater: "sabine",
     manifest: "",
-    requires: { sabine: "0.68" },
+    requires: { sabine: built.sabine },
+    permissions: built.permissions,
     status: percent === 100 ? "live" : "rolling-out",
     rolloutPercent: percent,
     approvedAt,
@@ -66,5 +81,30 @@ describe("Sabine update feeds", () => {
     const key = await importSigningKey(env.STORE_SIGNING_KEY)
     expect(feed.key).toBe(key.id)
     expect(await verifySabineFeed(key.publicKey, feed)).toBe(true)
+  })
+})
+
+describe("Sabine apps' access", () => {
+  test("is limited once the Sabine they need holds them to their sandbox", async () => {
+    const { appId } = await publisherWithApp("sabine")
+    await db.update(schema.app).set({ status: "published" })
+    const sandboxed = { ...SANDBOXED_DEFAULT, network: false, pipewire: true }
+    await sabineRelease(appId, "1.0.0", 100, new Date("2026-10-01T00:00:00Z"), {
+      sabine: "0.60",
+      permissions: sandboxed,
+    })
+    await sabineRelease(appId, "1.1.0", 100, new Date("2026-11-01T00:00:00Z"), {
+      sabine: "0.95",
+      permissions: null,
+    })
+    await sabineRelease(appId, "1.2.0", 100, new Date("2026-11-02T00:00:00Z"), {
+      sabine: "0.95",
+      permissions: sandboxed,
+    })
+    await rebuildApps([appId])
+
+    const index = await env.BUCKET.get(paths.app(appId)).then((object) => object!.json<AppIndex>())
+    const access = Object.fromEntries(index.releases.map((release) => [release.version, release.access]))
+    expect(access).toEqual({ "1.0.0": "full", "1.1.0": "full", "1.2.0": "limited" })
   })
 })
