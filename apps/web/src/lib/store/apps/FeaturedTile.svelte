@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { CatalogEntry } from "@schelf/protocol"
+  import type { CatalogEntry, Screenshot } from "@schelf/protocol"
   import { appHref } from "../links.ts"
   import AppIcon from "./AppIcon.svelte"
+  import { thumbnail, thumbnailSet } from "./thumbnail.ts"
   import { tileStyle } from "./tile.ts"
 
   let {
@@ -15,10 +16,16 @@
     app: CatalogEntry
     brand: string | null
     blurb: string | null
-    screenshot: string | null
+    screenshot: Screenshot | null
     large?: boolean
     order?: number
   } = $props()
+
+  const shot = $derived.by(() => {
+    if (!screenshot) return null
+    const width = large ? 720 : 480
+    return { url: screenshot.url, width, height: Math.round((width * screenshot.height) / screenshot.width) }
+  })
 </script>
 
 <a
@@ -41,9 +48,12 @@
       <span class="button shrink-0 bg-(--tile-button) text-(--tile-button-ink) {large ? '' : 'button-sm'}">Get</span>
     {/if}
   </div>
-  {#if screenshot}
+  {#if shot}
     <img
-      src={screenshot}
+      src={thumbnail(shot.url, shot.width, shot.height)}
+      srcset={thumbnailSet(shot.url, shot.width, shot.height)}
+      width={shot.width}
+      height={shot.height}
       alt=""
       loading="eager"
       fetchpriority={large ? "high" : "auto"}

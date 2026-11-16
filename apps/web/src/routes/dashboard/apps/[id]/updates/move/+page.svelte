@@ -7,7 +7,7 @@
   import { appSettings } from "#lib/dashboard/apps/context.ts"
   import { bridgeAdvice, FRAMEWORKS, frameworkName } from "#lib/dashboard/updates/framework.ts"
   import Choice from "#lib/ui/fields/Choice.svelte"
-  import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
   import { goto } from "$app/navigation"
 
   const settings = $derived(appSettings()())
@@ -23,18 +23,13 @@
   const choices = $derived(FRAMEWORKS.filter((framework) => framework.updater !== app.updater))
   let target = $state<Updater | null>(null)
   let step = $state(0)
-  let busy = $state(false)
+  const moving = new Task()
 
-  async function start() {
-    busy = true
-    try {
+  const start = () =>
+    moving.run(async () => {
       settings.set(await api.post<AppSettings>(endpoints.switchUpdater(app.id), { to: target }))
       await goto(`/dashboard/apps/${app.id}/updates`)
-    } catch (error) {
-      toasts.error(error)
-      busy = false
-    }
-  }
+    })
 </script>
 
 <svelte:head><title>Change how it updates · {app.name} · Schelf for developers</title></svelte:head>
@@ -49,11 +44,12 @@
         <p class="mt-2 text-[15px] leading-relaxed text-ink-soft">
           {app.updater ? `It updates with ${frameworkName(app.updater)} now.` : "It has no updater now; people download each version themselves."}
         </p>
-        <div role="radiogroup" aria-label="Updater" class="mt-8 space-y-3">
-          {#each choices as framework (framework.updater)}
-            <Choice title={framework.title} text={framework.text} chosen={target === framework.updater} onclick={() => (target = framework.updater)} />
-          {/each}
-        </div>
+        <Choice
+          label="Updater"
+          bind:value={target}
+          options={choices.map((framework) => ({ value: framework.updater, title: framework.title, text: framework.text }))}
+          class="mt-8 space-y-3"
+        />
         <div class="mt-10 flex gap-2">
           <a href="/dashboard/apps/{app.id}/updates" class="button button-quiet">Cancel</a>
           <button type="button" class="button button-primary" disabled={!target || !releases.data} onclick={() => (step = 1)}>Continue</button>
@@ -84,7 +80,7 @@
         {/if}
         <div class="mt-10 flex gap-2">
           <button type="button" class="button button-quiet" onclick={() => (step = 0)}>Back</button>
-          <button type="button" class="button button-primary" disabled={busy} onclick={start}>{shippedWithCurrent ? "Start the move" : `Use ${to}`}</button>
+          <button type="button" class="button button-primary" disabled={moving.busy} onclick={start}>{shippedWithCurrent ? "Start the move" : `Use ${to}`}</button>
         </div>
       {/if}
     </div>

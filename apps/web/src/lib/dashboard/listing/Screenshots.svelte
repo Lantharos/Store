@@ -5,6 +5,8 @@
   import Trash2 from "@lucide/svelte/icons/trash-2"
   import { type DashboardScreenshot, MAX_SCREENSHOT_BYTES, MEDIA_TYPES } from "@schelf/protocol"
   import { flip } from "svelte/animate"
+  import FilePicker from "../../ui/fields/FilePicker.svelte"
+  import { attempt } from "../../ui/overlay/task.svelte.ts"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
@@ -23,7 +25,6 @@
   let pending = $state<Pending[]>([])
   let dragging = $state<string | null>(null)
   let over = $state(false)
-  let picker = $state<HTMLInputElement>()
   let list = $state<HTMLElement>()
   let before: string[] = []
   const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -112,22 +113,19 @@
     }
     const entry = { id: crypto.randomUUID(), name: file.name }
     pending.push(entry)
-    try {
+    await attempt(async () => {
       const { width, height } = await dimensions(file)
       const shot = await api.upload<DashboardScreenshot>(
         `${endpoints.screenshots(appId)}?width=${width}&height=${height}`,
         file,
       )
       screenshots = [...screenshots, shot]
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      pending = pending.filter((item) => item.id !== entry.id)
-    }
+    })
+    pending = pending.filter((item) => item.id !== entry.id)
   }
 
-  function add(files: FileList | null | undefined) {
-    for (const file of files ?? []) void upload(file)
+  function add(files: Iterable<File>) {
+    for (const file of files) void upload(file)
   }
 
   async function remove(shot: DashboardScreenshot) {
@@ -154,7 +152,7 @@
   ondrop={(event) => {
     event.preventDefault()
     over = false
-    if (!file) add(event.dataTransfer?.files)
+    if (!file && event.dataTransfer) add(event.dataTransfer.files)
   }}
   class="rounded-2xl transition-shadow {over ? 'shadow-[0_0_0_2px_var(--accent)]' : ''}"
 >
@@ -193,20 +191,20 @@
     {/each}
     {#if !file}
     <li>
-      <button
-        type="button"
-        onclick={() => picker?.click()}
+      <FilePicker
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        onpick={add}
         class="grid aspect-[16/10] w-full place-items-center rounded-xl border border-dashed border-[color-mix(in_oklab,var(--ink)_20%,transparent)] text-[13px] text-ink-muted transition-colors hover:border-accent hover:text-ink"
       >
         <span class="flex flex-col items-center gap-1.5"><ImagePlus class="size-5" />Add screenshots</span>
-      </button>
+      </FilePicker>
     </li>
     {/if}
   </ul>
   {#if file}
     <p class="mt-2 font-mono text-[12px] text-ink-muted">{file} · screenshots</p>
   {:else}
-    <input bind:this={picker} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onchange={(event) => add(event.currentTarget.files)} />
     <p class="mt-2 text-[13px] text-ink-muted">Drag to reorder, or drop images here. PNG, JPEG or WebP, up to 8 MB. Two or more look best.</p>
   {/if}
 </div>

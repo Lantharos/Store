@@ -3,7 +3,7 @@
   import { count } from "#lib/format.ts"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
   import ExtensionArt from "#lib/store/apps/ExtensionArt.svelte"
-  import { RELEASE_STATUS, TONE_DOT } from "../releases/status.ts"
+  import { RELEASE_STATUS, TONE_DOT } from "../../releases/status.ts"
 
   let { apps }: { apps: DashboardApp[] } = $props()
 </script>

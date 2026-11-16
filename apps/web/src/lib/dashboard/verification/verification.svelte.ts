@@ -1,4 +1,5 @@
 import type { SaveVerification, Verification, VerificationState } from "@schelf/protocol"
+import { attempt } from "../../ui/overlay/task.svelte.ts"
 import { toasts } from "../../ui/overlay/toasts.svelte.ts"
 import { api } from "../api/client.ts"
 import { endpoints } from "../api/endpoints.ts"
@@ -16,47 +17,41 @@ export class VerificationFlow {
     return this.state.data?.current ?? null
   }
 
-  async run(label: string, request: () => Promise<VerificationState>, done?: string) {
+  async run(label: string, request: () => Promise<unknown>) {
     this.busy = label
-    try {
+    const succeeded = await attempt(async () => {
+      await request()
+      return true
+    })
+    this.busy = null
+    return succeeded ?? false
+  }
+
+  change(label: string, request: () => Promise<VerificationState>, done?: string) {
+    return this.run(label, async () => {
       this.state.set(await request())
       if (done) toasts.show(done)
-      return true
-    } catch (error) {
-      toasts.error(error)
-      return false
-    } finally {
-      this.busy = null
-    }
+    })
   }
 
   start() {
-    return this.run("start", () => api.post(endpoints.verification(this.publisherId)))
+    return this.change("start", () => api.post(endpoints.verification(this.publisherId)))
   }
 
   save(changes: SaveVerification) {
-    return this.run("save", () => api.patch(endpoints.verification(this.publisherId), changes))
+    return this.change("save", () => api.patch(endpoints.verification(this.publisherId), changes))
   }
 
   check() {
-    return this.run("check", () => api.post(endpoints.verificationCheck(this.publisherId)))
+    return this.change("check", () => api.post(endpoints.verificationCheck(this.publisherId)))
   }
 
-  async sendCode() {
-    this.busy = "code"
-    try {
-      await api.post(endpoints.contactCode(this.publisherId))
-      return true
-    } catch (error) {
-      toasts.error(error)
-      return false
-    } finally {
-      this.busy = null
-    }
+  sendCode() {
+    return this.run("code", () => api.post(endpoints.contactCode(this.publisherId)))
   }
 
   confirm(code: string) {
-    return this.run(
+    return this.change(
       "confirm",
       () => api.post(endpoints.contactConfirm(this.publisherId), { code }),
       "Email confirmed",
@@ -64,7 +59,7 @@ export class VerificationFlow {
   }
 
   proveGithub() {
-    return this.run(
+    return this.change(
       "github",
       () => api.post(endpoints.githubOrg(this.publisherId)),
       "GitHub organisation proven",
@@ -72,17 +67,17 @@ export class VerificationFlow {
   }
 
   attach(file: File) {
-    return this.run("attach", () =>
+    return this.change("attach", () =>
       api.upload(`${endpoints.documents(this.publisherId)}?name=${encodeURIComponent(file.name)}`, file),
     )
   }
 
   detach(id: string) {
-    return this.run("detach", () => api.delete(endpoints.document(this.publisherId, id)))
+    return this.change("detach", () => api.delete(endpoints.document(this.publisherId, id)))
   }
 
   submit() {
-    return this.run(
+    return this.change(
       "submit",
       () => api.post(endpoints.submitVerification(this.publisherId)),
       "Sent for review",
@@ -90,6 +85,10 @@ export class VerificationFlow {
   }
 
   reply(text: string) {
-    return this.run("reply", () => api.post(endpoints.replyVerification(this.publisherId), { text }), "Sent")
+    return this.change(
+      "reply",
+      () => api.post(endpoints.replyVerification(this.publisherId), { text }),
+      "Sent",
+    )
   }
 }

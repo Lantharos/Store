@@ -3,10 +3,10 @@
   import ChevronDown from "@lucide/svelte/icons/chevron-down"
   import { AUTOMATIC_REVIEWER, type CheckResult, type ReleaseDetail } from "@schelf/protocol"
   import type { Snippet } from "svelte"
-  import { ago, list, plural } from "../../format.ts"
-  import { PLATFORM_NAMES } from "../../system/artifacts.ts"
+  import { ago, list, plural } from "../../../format.ts"
+  import { PLATFORM_NAMES } from "../../../system/artifacts.ts"
+  import Rollout from "../rollout/Rollout.svelte"
   import CheckRow from "./CheckRow.svelte"
-  import Rollout from "./Rollout.svelte"
   import Step, { type StepState } from "./Step.svelte"
 
   let {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import BadgeCheck from "@lucide/svelte/icons/badge-check"
   import Flag from "@lucide/svelte/icons/flag"
-  import type { AppIndex, Installs, ProjectFile, ProjectSummary, ProjectTool, System } from "@schelf/protocol"
+  import type { Installs, ProjectFile, ProjectSummary, ProjectTool, System } from "@schelf/protocol"
   import { date } from "../../format.ts"
   import { pickArtifact } from "../../system/artifacts.ts"
   import AppIcon from "../apps/AppIcon.svelte"
@@ -11,13 +11,14 @@
   import type { ExtensionGrant } from "./access/extension.ts"
   import Permissions from "./access/Permissions.svelte"
   import Privacy from "./access/Privacy.svelte"
-  import Download from "./Download.svelte"
+  import Download from "./download/Download.svelte"
+  import InvitedChannels from "./download/InvitedChannels.svelte"
+  import OtherSystems from "./download/OtherSystems.svelte"
+  import Tools from "./download/Tools.svelte"
   import Facts from "./Facts.svelte"
-  import InvitedChannels from "./InvitedChannels.svelte"
-  import OtherSystems from "./OtherSystems.svelte"
+  import type { ShownApp } from "./load.ts"
+  import Screenshots from "./media/Screenshots.svelte"
   import Releases from "./Releases.svelte"
-  import Screenshots from "./Screenshots.svelte"
-  import Tools from "./Tools.svelte"
 
   let {
     app,
@@ -32,7 +33,7 @@
     inviteOnly,
     tools,
   }: {
-    app: AppIndex
+    app: ShownApp
     project: ProjectSummary
     hasApp: boolean
     parts: ProjectFile[]

@@ -2,9 +2,15 @@
   import Download from "@lucide/svelte/icons/download"
   import type { Artifact, System } from "@schelf/protocol"
   import { onMount } from "svelte"
-  import { bytes } from "../../format.ts"
-  import { downloadHref, KIND_NAMES, pickArtifact, schelfLink, systemName } from "../../system/artifacts.ts"
-  import { refine } from "../../system/refine.ts"
+  import { bytes } from "../../../format.ts"
+  import {
+    downloadHref,
+    KIND_NAMES,
+    pickArtifact,
+    schelfLink,
+    systemName,
+  } from "../../../system/artifacts.ts"
+  import { refine } from "../../../system/refine.ts"
 
   let {
     id,

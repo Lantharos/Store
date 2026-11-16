@@ -1,4 +1,5 @@
 import { appPage, featured } from "#lib/api/store.ts"
+import { firstParagraph } from "#lib/content/markdown.ts"
 import { siteSchema } from "#lib/seo/schema.ts"
 import { STOREFRONT_CACHE } from "#lib/server/cache.ts"
 
@@ -15,8 +16,8 @@ export async function load({ locals, setHeaders }) {
     return {
       app,
       brand: detail.brand_color,
-      blurb: detail.listing.en?.description.split("\n\n")[0] ?? null,
-      screenshot: detail.screenshots[0]?.url ?? null,
+      blurb: firstParagraph(detail.listing.en!.description) || null,
+      screenshot: detail.screenshots[0] ?? null,
     }
   })
   const shown = new Set(hero.map(({ app }) => app.id))

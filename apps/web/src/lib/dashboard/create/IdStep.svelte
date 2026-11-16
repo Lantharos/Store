@@ -1,47 +1,32 @@
 <script lang="ts">
   import CircleCheck from "@lucide/svelte/icons/circle-check"
-  import { appId, type Namespace, namespaceCovers } from "@schelf/protocol"
+  import { appId, type Namespace } from "@schelf/protocol"
   import Field from "../../ui/fields/Field.svelte"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import type { Resource } from "../api/resource.svelte.ts"
   import { session } from "../api/session.svelte.ts"
   import Proof from "../namespaces/Proof.svelte"
+  import { coveringNamespace } from "./draft.svelte.ts"
 
   let {
     id = $bindable(),
     namespaces,
-    ready = $bindable(false),
     optional = false,
-  }: { id: string; namespaces: Resource<Namespace[]>; ready?: boolean; optional?: boolean } = $props()
+  }: { id: string; namespaces: Resource<Namespace[]>; optional?: boolean } = $props()
 
-  let claiming = $state(false)
-  let claimError = $state<string | null>(null)
+  const claiming = new Task({ inline: true })
 
   const valid = $derived(appId.safeParse(id))
-  const covering = $derived(
-    valid.success
-      ? (namespaces.data ?? []).find((namespace) => namespaceCovers(namespace.prefix, id))
-      : undefined,
-  )
+  const covering = $derived(coveringNamespace(id, namespaces.data ?? []))
   const prefix = $derived(id.split(".").slice(0, -1).join(".").toLowerCase())
 
-  $effect(() => {
-    ready = (optional && !id) || (valid.success && covering?.verified === true)
-  })
-
-  async function claim() {
-    claiming = true
-    claimError = null
-    try {
+  const claim = () =>
+    claiming.run(async () => {
       const created = await api.post<Namespace>(endpoints.namespaces(session.publisher!.id), { prefix })
       namespaces.set([...(namespaces.data ?? []), created])
-    } catch (error) {
-      claimError = (error as Error).message
-    } finally {
-      claiming = false
-    }
-  }
+    })
 
   function verified(next: Namespace) {
     namespaces.set((namespaces.data ?? []).map((item) => (item.prefix === next.prefix ? next : item)))
@@ -67,8 +52,8 @@
           You haven't proven <span class="font-mono text-[14px]">{prefix}</span> yet.
           {#if prefix.startsWith("io.github.")}Sign in with that GitHub account, or claim it if it's an organisation you own.{:else}Claim it and add a DNS record or a file to your site.{/if}
         </p>
-        <button type="button" class="button button-sm button-primary mt-4" onclick={claim} disabled={claiming}>Claim {prefix}</button>
-        {#if claimError}<p class="mt-2 text-[15px] text-danger">{claimError}</p>{/if}
+        <button type="button" class="button button-sm button-primary mt-4" onclick={claim} disabled={claiming.busy}>Claim {prefix}</button>
+        {#if claiming.error}<p class="mt-2 text-[15px] text-danger">{claiming.error}</p>{/if}
       </div>
     {/if}
   {/if}

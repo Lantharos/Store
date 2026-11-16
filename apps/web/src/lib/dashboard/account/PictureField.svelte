@@ -1,7 +1,9 @@
 <script lang="ts">
   import LoaderCircle from "@lucide/svelte/icons/loader-circle"
   import type { AvatarSource } from "@schelf/protocol"
+  import FilePicker from "../../ui/fields/FilePicker.svelte"
   import Segmented from "../../ui/fields/Segmented.svelte"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
@@ -11,34 +13,21 @@
 
   const account = $derived(session.account!)
   const avatars = $derived(account.avatars)
-  let picker = $state<HTMLInputElement>()
   let chosen = $state<File | null>(null)
   let cropping = $state(false)
-  let busy = $state(false)
-  let using = $state<AvatarSource>("github")
+  const changing = new Task()
+  let using = $derived<AvatarSource>(avatars.using)
 
-  $effect.pre(() => {
-    using = avatars.using
-  })
-
-  async function change(request: () => Promise<unknown>, done: string) {
-    busy = true
-    try {
+  const change = (request: () => Promise<unknown>, done: string) =>
+    changing.run(async () => {
       await request()
       await session.refreshAccount()
       toasts.show(done)
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
-  }
+    })
 
-  function pick(file: File | undefined) {
-    if (!file) return
-    chosen = file
+  function pick(files: File[]) {
+    chosen = files[0]!
     cropping = true
-    if (picker) picker.value = ""
   }
 
   const upload = (picture: File) =>
@@ -54,7 +43,7 @@
 <div class="flex items-center gap-5">
   <div class="relative">
     <Avatar src={account.user.image} name={account.user.name} class="size-20 text-2xl" />
-    {#if busy}<span class="absolute inset-0 grid place-items-center rounded-full bg-raised/70"><LoaderCircle class="size-5 animate-spin" /></span>{/if}
+    {#if changing.busy}<span class="absolute inset-0 grid place-items-center rounded-full bg-raised/70"><LoaderCircle class="size-5 animate-spin" /></span>{/if}
   </div>
   <div class="min-w-0 flex-1">
     <p class="truncate text-lg font-semibold">{account.user.name}</p>
@@ -72,15 +61,14 @@
           onchange={choose}
         />
       {/if}
-      <button type="button" class="button button-sm button-quiet" disabled={busy} onclick={() => picker?.click()}>
+      <FilePicker class="button button-sm button-quiet" accept="image/png,image/jpeg,image/webp" disabled={changing.busy} onpick={pick}>
         {avatars.upload ? "Replace picture" : "Upload a picture"}
-      </button>
+      </FilePicker>
       {#if avatars.upload && !avatars.github}
-        <button type="button" class="button button-sm text-ink-muted hover:text-ink" disabled={busy} onclick={remove}>Remove</button>
+        <button type="button" class="button button-sm text-ink-muted hover:text-ink" disabled={changing.busy} onclick={remove}>Remove</button>
       {/if}
     </div>
   </div>
-  <input bind:this={picker} type="file" accept="image/png,image/jpeg,image/webp" hidden onchange={(event) => pick(event.currentTarget.files?.[0])} />
 </div>
 
 <SquareCropper bind:open={cropping} file={chosen} onsave={upload} subject="picture" round />

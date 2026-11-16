@@ -7,34 +7,25 @@
   import { approve, cancelApproval, loadApproval } from "#lib/dashboard/approvals/approve.ts"
   import { ago } from "#lib/format.ts"
   import Logo from "#lib/Logo.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
 
   let { data } = $props()
   let approval = $state<Approval>()
-  let error = $state<string | null>(null)
-  let busy = $state(false)
+  const task = new Task({ inline: true })
   const hasPasskey = $derived((session.account?.passkeys ?? 0) > 0)
   const origin = $derived(approval ? [approval.host, approval.place].filter(Boolean).join(", ") : "")
 
-  onMount(async () => {
-    try {
+  onMount(() =>
+    task.run(async () => {
       approval = await loadApproval(data.id)
-    } catch (failure) {
-      error = (failure as Error).message
-    }
-  })
+    }),
+  )
 
-  async function decide(yes: boolean) {
-    busy = true
-    error = null
-    try {
+  const decide = (yes: boolean) =>
+    task.run(async () => {
       approval = yes ? await approve(approval!, hasPasskey) : await cancelApproval(approval!.id)
       if (yes) await session.load()
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
-  }
+    })
 
   const TITLES = {
     done: "Done",
@@ -50,7 +41,7 @@
   <div class="enter w-full max-w-[28rem]">
     {#if !approval}
       <Logo class="mx-auto size-10" />
-      {#if error}<p class="mt-6 text-center text-[15px] text-danger" role="alert">{error}</p>{/if}
+      {#if task.error}<p class="mt-6 text-center text-[15px] text-danger" role="alert">{task.error}</p>{/if}
     {:else}
       {#if approval.status === "done"}
         <CircleCheck class="mx-auto size-10 text-accent" />
@@ -91,7 +82,7 @@
       {#if approval.status === "pending" && approval.steps.some((step) => step.type === "publisher.create")}
         <a href="/legal/developer-agreement" target="_blank" class="mt-3 inline-block px-1 text-[13px] text-ink-muted underline-offset-2 hover:underline">The developer agreement</a>
       {/if}
-      {#if error}<p class="mt-3 text-[15px] text-danger" role="alert">{error}</p>{/if}
+      {#if task.error}<p class="mt-3 text-[15px] text-danger" role="alert">{task.error}</p>{/if}
       {#if approval.status === "pending"}
         {#if approval.passkey}
           <p class="mt-4 text-[13px] leading-relaxed text-ink-muted">
@@ -99,8 +90,8 @@
           </p>
         {/if}
         <div class="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" class="button button-quiet" disabled={busy} onclick={() => decide(false)}>Cancel</button>
-          <button type="button" class="button button-primary" disabled={busy} onclick={() => decide(true)}>
+          <button type="button" class="button button-quiet" disabled={task.busy} onclick={() => decide(false)}>Cancel</button>
+          <button type="button" class="button button-primary" disabled={task.busy} onclick={() => decide(true)}>
             {approval.passkey ? (hasPasskey ? "Approve with passkey" : "Add a passkey and approve") : "Approve"}
           </button>
         </div>

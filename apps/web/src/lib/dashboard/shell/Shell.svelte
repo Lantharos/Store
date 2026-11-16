@@ -1,7 +1,7 @@
 <script lang="ts">
   import Menu from "@lucide/svelte/icons/menu"
   import type { Snippet } from "svelte"
-  import { page } from "$app/state"
+  import { afterNavigate } from "$app/navigation"
   import Logo from "../../Logo.svelte"
   import Palette from "./Palette.svelte"
   import SidebarSwitcher from "./SidebarSwitcher.svelte"
@@ -10,8 +10,7 @@
   let drawer = $state(false)
   let palette = $state(false)
 
-  $effect(() => {
-    void page.url.pathname
+  afterNavigate(() => {
     drawer = false
   })
 

@@ -12,14 +12,13 @@
   import SourceStep from "#lib/dashboard/create/SourceStep.svelte"
   import VisibilityStep from "#lib/dashboard/create/VisibilityStep.svelte"
   import FirstRelease from "#lib/dashboard/overview/FirstRelease.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
 
   const publisher = $derived(session.publisher!)
   const draft = $derived(new Draft(publisher.id))
   const namespaces = $derived(resource<Namespace[]>(endpoints.namespaces(publisher.id)))
   const fields = $derived(draft.fields)
-  let idReady = $state(false)
-  let busy = $state(false)
-  let error = $state<string | null>(null)
+  const save = new Task({ inline: true })
   let created = $state<AppSettings | null>(null)
 
   $effect(() => {
@@ -56,7 +55,7 @@
     {
       kind: false,
       name: fields.name.trim() !== "" && (draft.kind?.store !== undefined || draft.slug !== ""),
-      id: idReady,
+      id: draft.idReady(namespaces.data ?? []),
       visibility: true,
       source: true,
       publishing: fields.publishing === "hand" || fields.repository.trim() !== "",
@@ -67,23 +66,18 @@
   async function next(event: SubmitEvent) {
     event.preventDefault()
     if (!ready) return
-    error = null
+    save.error = null
     if (!last) {
       draft.go(fields.step + 1)
       draft.fillDefaults(session.account?.github ?? undefined)
       return
     }
-    busy = true
-    try {
+    await save.run(async () => {
       created = await draft.create(publisher.id)
       draft.forget()
       draft.go(fields.step + 1)
       await session.refreshApps()
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 </script>
 
@@ -103,7 +97,7 @@
         {:else if draft.current === "name"}
           <NameStep {draft} publisher={publisher.slug} />
         {:else if draft.current === "id"}
-          <IdStep bind:id={fields.id} {namespaces} bind:ready={idReady} optional={!draft.kind?.store} />
+          <IdStep bind:id={fields.id} {namespaces} optional={!draft.kind?.store} />
         {:else if draft.current === "visibility"}
           <VisibilityStep bind:visibility={fields.visibility} />
         {:else if draft.current === "source"}
@@ -117,7 +111,7 @@
     </div>
   {/key}
 
-  {#if error}<p class="mt-6 text-[15px] text-danger" role="alert">{error}</p>{/if}
+  {#if save.error}<p class="mt-6 text-[15px] text-danger" role="alert">{save.error}</p>{/if}
 
   <div class="mt-10 flex flex-wrap items-center gap-2">
     {#if created}
@@ -125,7 +119,7 @@
       <a href="/dashboard/apps/{created.app.id}/listing" class="button button-quiet">Fill in the listing</a>
     {:else if draft.current !== "kind"}
       <button type="button" class="button button-quiet" onclick={() => draft.go(fields.step - 1)}>Back</button>
-      <button class="button button-primary" disabled={!ready || busy}>{last ? `Create ${fields.name.trim()}` : "Continue"}</button>
+      <button class="button button-primary" disabled={!ready || save.busy}>{last ? `Create ${fields.name.trim()}` : "Continue"}</button>
     {:else if draft.started}
       <button type="button" class="ml-auto text-[15px] text-ink-muted hover:text-ink" onclick={() => draft.reset()}>Start over</button>
     {/if}

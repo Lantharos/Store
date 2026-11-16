@@ -6,7 +6,7 @@
   import { SvelteSet } from "svelte/reactivity"
   import { date, plural } from "../../format.ts"
   import Group from "../../ui/group/Group.svelte"
-  import Step, { type StepState } from "../releases/Step.svelte"
+  import Step, { type StepState } from "../releases/timeline/Step.svelte"
 
   let { verification }: { verification: Verification } = $props()
   const expanded = new SvelteSet<number>()

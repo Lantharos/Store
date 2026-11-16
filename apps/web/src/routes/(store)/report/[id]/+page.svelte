@@ -3,6 +3,7 @@
   import { untrack } from "svelte"
   import Meta from "#lib/seo/Meta.svelte"
   import AppIcon from "#lib/store/apps/AppIcon.svelte"
+  import Choice from "#lib/ui/fields/Choice.svelte"
   import Field from "#lib/ui/fields/Field.svelte"
   import { enhance } from "$app/forms"
 
@@ -23,7 +24,7 @@
     },
   ] as const
 
-  let kind = $state<string>(untrack(() => form?.report?.kind ?? ""))
+  let kind = $state(untrack(() => form?.report?.kind ?? null))
   let busy = $state(false)
   const appPath = $derived(`/${data.app.kind === "extension" ? "extensions" : "apps"}/${data.app.id}`)
 </script>
@@ -65,23 +66,8 @@
     >
       <fieldset>
         <legend class="text-[15px] font-medium">What kind of problem is it?</legend>
-        <input type="hidden" name="kind" value={kind} />
-        <div role="radiogroup" aria-label="Kind of problem" class="mt-2 grid gap-2 sm:grid-cols-2">
-          {#each KINDS as option (option.value)}
-            <button
-              type="button"
-              role="radio"
-              aria-checked={kind === option.value}
-              onclick={() => (kind = option.value)}
-              class="flex flex-col justify-start rounded-2xl p-4 text-left transition-[background-color,box-shadow] {kind === option.value
-                ? 'bg-raised shadow-[0_0_0_2px_var(--accent)]'
-                : 'bg-well hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]'}"
-            >
-              <span class="block font-medium">{option.title}</span>
-              <span class="mt-0.5 block text-[13px] leading-relaxed text-ink-muted">{option.text}</span>
-            </button>
-          {/each}
-        </div>
+        <input type="hidden" name="kind" value={kind ?? ""} />
+        <Choice label="Kind of problem" bind:value={kind} options={KINDS} compact class="mt-2 grid gap-2 sm:grid-cols-2" />
       </fieldset>
 
       <Field label="In a few words">

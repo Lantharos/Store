@@ -4,6 +4,7 @@
   import ColorField from "../../ui/fields/ColorField.svelte"
   import Field from "../../ui/fields/Field.svelte"
   import Select from "../../ui/fields/Select.svelte"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { toasts } from "../../ui/overlay/toasts.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
@@ -36,7 +37,7 @@
   let listing = $state(untrack(() => $state.snapshot(settings.listing)))
   let meta = $state<ListingMeta>(untrack(() => $state.snapshot(settings.meta)))
   let screenshots = $state(untrack(() => $state.snapshot(settings.screenshots)))
-  let saving = $state(false)
+  const saving = new Task()
 
   const empty: ListingText = { name: "", summary: "", description: "", keywords: [] }
   const text = $derived(listing[locale] ?? empty)
@@ -68,9 +69,8 @@
       (code) => JSON.stringify(listing[code]) !== JSON.stringify(settings.listing[code]),
     )
 
-  async function save() {
-    saving = true
-    try {
+  const save = () =>
+    saving.run(async () => {
       const { icon: _icon, ...metaChanges } = meta
       const [saved] = await Promise.all([
         ...changedLocales().map((code) =>
@@ -80,12 +80,7 @@
       ])
       onsaved({ ...saved!, listing: $state.snapshot(listing), meta: $state.snapshot(meta), screenshots })
       toasts.show("Listing saved. It's live on your page within a few minutes.")
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      saving = false
-    }
-  }
+    })
 
   function keydown(event: KeyboardEvent) {
     if (event.key === "s" && (event.metaKey || event.ctrlKey) && dirty) {
@@ -172,7 +167,7 @@
   <div class="savebar fixed inset-x-3 bottom-3 z-30 mx-auto flex max-w-xl items-center gap-3 rounded-2xl bg-ink py-2.5 pr-2.5 pl-5 text-canvas shadow-float lg:left-[calc(16rem+1rem)]">
     <span class="flex-1 text-[15px]">Unsaved changes</span>
     <button type="button" class="button button-sm text-canvas/80 hover:text-canvas" onclick={discard}>Discard</button>
-    <button type="button" class="button button-sm bg-canvas text-ink" disabled={saving} onclick={save}>{saving ? "Saving…" : "Save"}</button>
+    <button type="button" class="button button-sm bg-canvas text-ink" disabled={saving.busy} onclick={save}>{saving.busy ? "Saving…" : "Save"}</button>
   </div>
 {/if}
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { API_BASE, type InvitedDownloads, type ProjectSummary } from "@schelf/protocol"
   import { onMount } from "svelte"
-  import { bytes } from "../../format.ts"
-  import { groupByPlatform, KIND_NAMES } from "../../system/artifacts.ts"
+  import { bytes } from "../../../format.ts"
+  import { groupByPlatform, KIND_NAMES } from "../../../system/artifacts.ts"
 
   let { project }: { project: ProjectSummary } = $props()
   let channels = $state<InvitedDownloads[]>([])

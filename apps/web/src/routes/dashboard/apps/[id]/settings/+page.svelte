@@ -5,9 +5,9 @@
   import Privacy from "#lib/dashboard/files/Privacy.svelte"
   import Address from "#lib/dashboard/project/Address.svelte"
   import DeleteProject from "#lib/dashboard/project/DeleteProject.svelte"
-  import Publishers from "#lib/dashboard/project/Publishers.svelte"
+  import Publishers from "#lib/dashboard/project/publishing/Publishers.svelte"
+  import Tokens from "#lib/dashboard/project/publishing/Tokens.svelte"
   import Systems from "#lib/dashboard/project/Systems.svelte"
-  import Tokens from "#lib/dashboard/project/Tokens.svelte"
   import Visibility from "#lib/dashboard/project/Visibility.svelte"
 
   const settings = $derived(appSettings()())

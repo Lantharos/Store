@@ -9,6 +9,7 @@ import {
   UPDATER_SIGNATURE,
 } from "@schelf/protocol"
 import { createSHA256 } from "hash-wasm"
+import { messageOf } from "../../ui/overlay/toasts.svelte.ts"
 import { api } from "../api/client.ts"
 import { endpoints } from "../api/endpoints.ts"
 
@@ -82,7 +83,7 @@ export class Upload {
       try {
         this.files.push({ file, ...inferFile(file.name), signature: signatures.get(file.name) })
       } catch (error) {
-        problems.push((error as Error).message)
+        problems.push(messageOf(error))
       }
     }
     for (const picked of this.files) picked.signature ??= signatures.get(picked.file.name)
@@ -148,7 +149,7 @@ export class Upload {
       this.stage = "done"
       return started.release
     } catch (error) {
-      this.error = (error as Error).message
+      this.error = messageOf(error)
       this.stage = "failed"
       return null
     }

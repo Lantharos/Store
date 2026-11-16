@@ -50,8 +50,8 @@
     </section>
   {:else}
     <section class="mt-16 max-w-xl">
-      <h2 class="text-2xl font-semibold tracking-[-0.02em]">The first apps are on their way</h2>
-      <p class="mt-2 leading-relaxed text-ink-soft">Developers are publishing their first releases. Check back soon, or <a href="/docs" class="link">publish yours</a>.</p>
+      <h2 class="text-2xl font-semibold tracking-[-0.02em]">No apps yet</h2>
+      <p class="mt-2 text-ink-soft"><a href="/docs" class="link">Publish yours</a></p>
     </section>
   {/each}
 

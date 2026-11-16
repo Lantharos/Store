@@ -11,9 +11,9 @@
   {@const listing = data.app.listing.en!}
   <Meta
     title="{listing.name}: {listing.summary} · Schelf"
-    description={listing.description.split("\n\n")[0]?.slice(0, 200) || listing.summary}
+    description={data.blurb || listing.summary}
     path={data.path}
-    image="/apps/{data.app.id}/og.png"
+    image="/apps/{data.app.id}/og.png?v={Date.parse(data.app.generated)}"
     imageAlt={listing.name}
     schema={data.project.indexed ? data.schema : undefined}
     indexed={data.project.indexed}

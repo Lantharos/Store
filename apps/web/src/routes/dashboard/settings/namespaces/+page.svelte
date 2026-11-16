@@ -11,12 +11,12 @@
   import PageHeader from "#lib/dashboard/shell/PageHeader.svelte"
   import { date } from "#lib/format.ts"
   import Group from "#lib/ui/group/Group.svelte"
+  import { Task } from "#lib/ui/overlay/task.svelte.ts"
   import { toasts } from "#lib/ui/overlay/toasts.svelte.ts"
 
   const namespaces = $derived(resource<Namespace[]>(endpoints.namespaces(session.publisher!.id)))
   let prefix = $state("")
-  let error = $state<string | null>(null)
-  let busy = $state(false)
+  const save = new Task({ inline: true })
   let open = $state<string | null>(null)
 
   const PROOFS = {
@@ -30,21 +30,15 @@
     event.preventDefault()
     const parsed = claimNamespace.safeParse({ prefix })
     if (!parsed.success) {
-      error = parsed.error.issues[0]!.message
+      save.error = parsed.error.issues[0]!.message
       return
     }
-    busy = true
-    error = null
-    try {
+    await save.run(async () => {
       const created = await api.post<Namespace>(endpoints.namespaces(session.publisher!.id), parsed.data)
       namespaces.set([...(namespaces.data ?? []), created])
       open = created.prefix
       prefix = ""
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 
   function verified(next: Namespace) {
@@ -60,9 +54,9 @@
     <Group title="Claim a namespace" description="Your domain, reversed: example.com becomes com.example.">
       <form class="flex flex-col gap-2 sm:flex-row" onsubmit={claim}>
         <input bind:value={prefix} class="field font-mono text-[15px]" placeholder="com.example" aria-label="Namespace" autocomplete="off" spellcheck="false" />
-        <button class="button button-primary shrink-0" disabled={busy || !prefix.trim()}>Claim</button>
+        <button class="button button-primary shrink-0" disabled={save.busy || !prefix.trim()}>Claim</button>
       </form>
-      {#if error}<p class="-mt-3 text-[15px] text-danger" role="alert">{error}</p>{/if}
+      {#if save.error}<p class="-mt-3 text-[15px] text-danger" role="alert">{save.error}</p>{/if}
     </Group>
   {/if}
 

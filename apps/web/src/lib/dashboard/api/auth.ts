@@ -28,6 +28,16 @@ export async function signInWithPasskey() {
   return message(result?.error ?? null, "That passkey didn't work.")
 }
 
+interface PageAddress {
+  origin: string
+  searchParams: Pick<URLSearchParams, "get">
+}
+
+export function nextPath({ origin, searchParams }: PageAddress) {
+  const next = new URL(searchParams.get("next") ?? "/dashboard", origin)
+  return next.origin === origin ? next.pathname + next.search + next.hash : "/dashboard"
+}
+
 export function signInWithGitHub(next: string) {
   return auth.signIn.social({ provider: "github", callbackURL: next })
 }

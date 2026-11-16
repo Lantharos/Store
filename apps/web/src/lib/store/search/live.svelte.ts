@@ -32,6 +32,7 @@ export class LiveSearch {
     if (platform) params.set("platform", platform)
     try {
       const response = await fetch(`${API_BASE}/search?${params}`, { signal: controller.signal })
+      if (!response.ok) return
       const body: SearchResponse = await response.json()
       this.results = body.results
     } catch (error) {

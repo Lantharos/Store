@@ -6,7 +6,7 @@
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
   import Confirm from "../../ui/overlay/Confirm.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
+  import { attempt } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
@@ -52,13 +52,10 @@
       .filter(Boolean)
       .join(" ")
 
-  async function change(channel: string, changes: { keep?: number | null; gradual?: boolean }) {
-    try {
+  const change = (channel: string, changes: { keep?: number | null; gradual?: boolean }) =>
+    attempt(async () => {
       settings = await api.patch<AppSettings>(endpoints.channel(settings.app.id, channel), changes)
-    } catch (error) {
-      toasts.show((error as Error).message, "danger")
-    }
-  }
+    })
 </script>
 
 <Group

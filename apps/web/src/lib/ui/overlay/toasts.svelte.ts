@@ -12,6 +12,8 @@ interface Toast {
 
 let next = 0
 
+export const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
 class Toasts {
   list = $state<Toast[]>([])
 
@@ -22,7 +24,7 @@ class Toasts {
   }
 
   error(error: unknown) {
-    this.show(error instanceof Error ? error.message : String(error), "danger")
+    this.show(messageOf(error), "danger")
   }
 
   dismiss(id: number) {

@@ -7,8 +7,6 @@
   let user = $state<{ name: string; image: string | null } | null>(null)
 
   onMount(async () => {
-    const session = await fetch("/api/auth/get-session").then((response) => response.json())
-    if (!session) return
     const account = await fetch(`${API_BASE}/dev/account`)
     if (account.ok) user = (await account.json()).user
   })

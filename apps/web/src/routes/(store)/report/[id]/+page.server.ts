@@ -14,7 +14,7 @@ const text = (form: FormData, name: string) => {
 }
 
 export const actions = {
-  default: async ({ params, request }) => {
+  default: async ({ params, request, getClientAddress }) => {
     const form = await request.formData()
     const kind = text(form, "kind") as ReportRequest["kind"] | undefined
     const report = {
@@ -33,7 +33,7 @@ export const actions = {
     if (kind === "dmca" && (!report.name || !report.email)) {
       return fail(400, { report, error: "A copyright notice needs your name and email." })
     }
-    const response = await post("/reports", report)
+    const response = await post("/reports", report, getClientAddress())
     if (!response.ok) {
       const body = (await response.json()) as { error?: string }
       return fail(response.status, {

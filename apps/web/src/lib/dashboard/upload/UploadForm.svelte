@@ -5,6 +5,7 @@
   import { bytes } from "../../format.ts"
   import { KIND_NAMES, PLATFORM_NAMES } from "../../system/artifacts.ts"
   import Field from "../../ui/fields/Field.svelte"
+  import FilePicker from "../../ui/fields/FilePicker.svelte"
   import Select from "../../ui/fields/Select.svelte"
   import Switch from "../../ui/fields/Switch.svelte"
   import { Upload } from "./upload.svelte.ts"
@@ -17,7 +18,6 @@
   let channel = $state("")
   let notes = $state("")
   let bridge = $state(false)
-  let picker = $state<HTMLInputElement>()
   let over = $state(false)
 
   const format = $derived(bridge && move ? move.from_format : settings.app.format)
@@ -67,20 +67,19 @@
 </script>
 
 <form class="space-y-6" onsubmit={send}>
-  <button
-    type="button"
+  <FilePicker
+    multiple
+    onpick={(files) => upload.add(files)}
     class="flex w-full flex-col items-center justify-center gap-2 rounded-group p-10 text-center transition-colors {over ? 'bg-[color-mix(in_oklab,var(--accent)_12%,var(--well))]' : 'bg-well hover:bg-[color-mix(in_oklab,var(--well)_85%,var(--ink))]'}"
     ondragover={(event) => (event.preventDefault(), (over = true))}
     ondragleave={() => (over = false)}
     ondrop={drop}
-    onclick={() => picker?.click()}
     disabled={busy}
   >
     <FileUp class="size-6 text-ink-muted" />
     <span class="font-medium">Drop the release's files here, or choose them</span>
     <span class="text-[13px] text-ink-muted">Installers, archives, programs and APKs. Add a .sig file next to a file to give it its updater signature.</span>
-  </button>
-  <input bind:this={picker} type="file" multiple hidden onchange={(event) => event.currentTarget.files && upload.add(event.currentTarget.files)} />
+  </FilePicker>
 
   {#each upload.problems as problem (problem)}<p class="text-[15px] text-danger">{problem}</p>{/each}
 

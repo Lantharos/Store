@@ -1,14 +1,15 @@
 <script lang="ts">
   import GitBranch from "@lucide/svelte/icons/git-branch"
   import { refName, SCHELF_WORKFLOW, type TrustedPublisher } from "@schelf/protocol"
-  import { date } from "../../format.ts"
-  import Field from "../../ui/fields/Field.svelte"
-  import Confirm from "../../ui/overlay/Confirm.svelte"
-  import Dialog from "../../ui/overlay/Dialog.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
-  import { api } from "../api/client.ts"
-  import { endpoints } from "../api/endpoints.ts"
-  import { session } from "../api/session.svelte.ts"
+  import { date } from "../../../format.ts"
+  import Field from "../../../ui/fields/Field.svelte"
+  import Confirm from "../../../ui/overlay/Confirm.svelte"
+  import Dialog from "../../../ui/overlay/Dialog.svelte"
+  import { Task } from "../../../ui/overlay/task.svelte.ts"
+  import { toasts } from "../../../ui/overlay/toasts.svelte.ts"
+  import { api } from "../../api/client.ts"
+  import { endpoints } from "../../api/endpoints.ts"
+  import { session } from "../../api/session.svelte.ts"
 
   let { appId, publishers = $bindable() }: { appId: string; publishers: TrustedPublisher[] } = $props()
 
@@ -17,14 +18,11 @@
   let removeOpen = $state(false)
   const blank = () => ({ repository: "", workflow: SCHELF_WORKFLOW, environment: "", ref: "" })
   let form = $state(blank())
-  let error = $state<string | null>(null)
-  let busy = $state(false)
+  const save = new Task({ inline: true })
 
   async function add(event: SubmitEvent) {
     event.preventDefault()
-    busy = true
-    error = null
-    try {
+    await save.run(async () => {
       const created = await api.post<TrustedPublisher>(endpoints.trustedPublishers(appId), {
         repository: form.repository.trim().replace(/^https:\/\/github\.com\//, ""),
         workflow: form.workflow.trim(),
@@ -34,11 +32,7 @@
       publishers = [...publishers, created]
       adding = false
       toasts.show("Trusted publisher added")
-    } catch (failure) {
-      error = (failure as Error).message
-    } finally {
-      busy = false
-    }
+    })
   }
 
   async function remove() {
@@ -55,7 +49,7 @@
       <h2 class="font-semibold">Trusted publishers</h2>
       <p class="mt-0.5 max-w-xl text-[13px] leading-relaxed text-ink-muted">Workflows allowed to publish releases of this app. Nothing else can. <a href="/docs/trusted-publishing" class="link">How it works</a></p>
     </div>
-    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = blank()), (error = null), (adding = true))}>Add a publisher</button>{/if}
+    {#if session.can("apps")}<button type="button" class="button button-sm button-quiet" onclick={() => ((form = blank()), (save.error = null), (adding = true))}>Add a publisher</button>{/if}
   </div>
   <ul class="mt-4 divide-y divide-hairline overflow-hidden rounded-group bg-raised">
     {#each publishers as publisher (publisher.id)}
@@ -89,10 +83,10 @@
     <Field label="Ref" hint="Optional. Only runs on this branch or tag can publish; a * matches anything.">
       <input class="field font-mono text-[14px]" bind:value={form.ref} placeholder="refs/heads/main" autocomplete="off" />
     </Field>
-    {#if error}<p class="text-[15px] text-danger" role="alert">{error}</p>{/if}
+    {#if save.error}<p class="text-[15px] text-danger" role="alert">{save.error}</p>{/if}
     <div class="flex justify-end gap-2 pt-2">
       <button type="button" class="button button-quiet" onclick={() => (adding = false)}>Cancel</button>
-      <button class="button button-primary" disabled={busy}>Add</button>
+      <button class="button button-primary" disabled={save.busy}>Add</button>
     </div>
   </form>
 </Dialog>

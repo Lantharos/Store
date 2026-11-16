@@ -1,8 +1,11 @@
 import {
   type AppSettings,
+  appId,
   createApp,
   createProject,
   type Distribution,
+  type Namespace,
+  namespaceCovers,
   SCHELF_WORKFLOW,
   type Visibility,
 } from "@schelf/protocol"
@@ -54,6 +57,11 @@ export const slugOf = (text: string) =>
 
 const compact = (text: string) => text.replace(/[^A-Za-z0-9]+/g, "")
 
+export const coveringNamespace = (id: string, namespaces: Namespace[]) =>
+  appId.safeParse(id).success
+    ? namespaces.find((namespace) => namespaceCovers(namespace.prefix, id))
+    : undefined
+
 export class Draft {
   fields = $state<Fields>({ ...BLANK })
   readonly #key: string
@@ -97,6 +105,11 @@ export class Draft {
 
   go(step: number) {
     this.fields.step = step
+  }
+
+  idReady(namespaces: Namespace[]) {
+    const id = this.fields.id
+    return (!this.kind?.store && !id) || coveringNamespace(id, namespaces)?.verified === true
   }
 
   fillDefaults(github: string | undefined) {

@@ -3,7 +3,7 @@
   import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import X from "@lucide/svelte/icons/x"
   import type { Screenshot } from "@schelf/protocol"
-  import { portal } from "../../ui/overlay/floating.ts"
+  import { portal } from "../../../ui/overlay/floating.ts"
 
   let {
     screenshots,
@@ -13,6 +13,7 @@
 
   let close = $state<HTMLButtonElement>()
   const shot = $derived(index === null ? null : screenshots[index])
+  const open = $derived(index !== null)
 
   function step(direction: number) {
     if (index === null) return
@@ -20,7 +21,7 @@
   }
 
   $effect(() => {
-    if (index === null) return
+    if (!open) return
     const previous = document.activeElement as HTMLElement | null
     close?.focus()
     const keydown = (event: KeyboardEvent) => {

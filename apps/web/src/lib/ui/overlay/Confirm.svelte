@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte"
   import Dialog from "./Dialog.svelte"
-  import { toasts } from "./toasts.svelte.ts"
+  import { Task } from "./task.svelte.ts"
 
   let {
     open = $bindable(false),
@@ -21,19 +21,13 @@
     children?: Snippet
   } = $props()
 
-  let busy = $state(false)
+  const confirming = new Task()
 
-  async function run() {
-    busy = true
-    try {
+  const run = () =>
+    confirming.run(async () => {
       await onconfirm()
       open = false
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
-  }
+    })
 </script>
 
 <Dialog bind:open>
@@ -42,7 +36,7 @@
     {#if children}<div class="mt-2 text-[15px] leading-relaxed text-ink-soft">{@render children()}</div>{/if}
     <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button type="button" class="button button-quiet" onclick={() => (open = false)}>Cancel</button>
-      <button type="button" class="button {danger ? 'button-danger' : 'button-primary'}" disabled={busy || !ready} onclick={run}>
+      <button type="button" class="button {danger ? 'button-danger' : 'button-primary'}" disabled={confirming.busy || !ready} onclick={run}>
         {confirm}
       </button>
     </div>

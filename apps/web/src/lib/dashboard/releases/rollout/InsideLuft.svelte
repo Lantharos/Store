@@ -1,9 +1,9 @@
 <script lang="ts">
   import { luftVersionLabel, type ReleaseDetail, type ShellStatus } from "@schelf/protocol"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
-  import { api } from "../api/client.ts"
-  import { endpoints } from "../api/endpoints.ts"
-  import { session } from "../api/session.svelte.ts"
+  import { Task } from "../../../ui/overlay/task.svelte.ts"
+  import { api } from "../../api/client.ts"
+  import { endpoints } from "../../api/endpoints.ts"
+  import { session } from "../../api/session.svelte.ts"
 
   let {
     appId,
@@ -17,18 +17,12 @@
     onchange: (release: ReleaseDetail) => void
   } = $props()
 
-  let busy = $state(false)
+  const asking = new Task()
 
-  async function ask() {
-    busy = true
-    try {
+  const ask = () =>
+    asking.run(async () => {
       onchange(await api.post<ReleaseDetail>(endpoints.insideLuft(appId, release.id)))
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      busy = false
-    }
-  }
+    })
 </script>
 
 <section class="rounded-group bg-raised p-5 sm:p-6">
@@ -52,7 +46,7 @@
     {:else}
       <p>Extensions run on their own unless Luft reviews them to run inside its desktop, drawing in the same scene as everything else.</p>
       {#if shell.requestable && session.can("releases")}
-        <button type="button" class="button button-quiet" disabled={busy} onclick={ask}>Ask to run inside Luft</button>
+        <button type="button" class="button button-quiet" disabled={asking.busy} onclick={ask}>Ask to run inside Luft</button>
       {:else if !shell.requestable}
         <p class="text-ink-muted">You can ask once the release passes its checks.</p>
       {/if}

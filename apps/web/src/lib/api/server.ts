@@ -26,10 +26,10 @@ export function file<T>(key: string): Promise<T> {
   return read<T>(`${DOWNLOAD_ORIGIN}/${key}`, "Nothing here")
 }
 
-export async function post(path: string, body: unknown) {
+export async function post(path: string, body: unknown, clientAddress: string) {
   return env.API.fetch(`${STORE_ORIGIN}${API_BASE}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "cf-connecting-ip": clientAddress },
     body: JSON.stringify(body),
   })
 }

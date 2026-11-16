@@ -6,6 +6,7 @@
   import CopyButton from "../../code/CopyButton.svelte"
   import { ago } from "../../format.ts"
   import Segmented from "../../ui/fields/Segmented.svelte"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
@@ -15,34 +16,30 @@
 
   const POLL = 20_000
   let method = $state<"dns" | "well-known">("dns")
-  let checking = $state(false)
+  const checking = new Task({ inline: true })
   let current = $state(untrack(() => namespace))
-  let failed = $state<string | null>(null)
   const domain = $derived(current.prefix.split(".").reverse().join("."))
 
   async function check() {
-    checking = true
-    failed = null
-    try {
-      current = await api.post<Namespace>(endpoints.verifyNamespace(session.publisher!.id, current.prefix), {
-        method,
-      })
-      if (current.verified) onverified(current)
-      else
-        failed =
-          method === "dns"
-            ? `We couldn't find the TXT record on ${domain} yet.`
-            : `We couldn't read the file on ${domain} yet.`
-    } catch (error) {
-      failed = (error as Error).message
-    } finally {
-      checking = false
-    }
+    const checked = await checking.run(() =>
+      api.post<Namespace>(endpoints.verifyNamespace(session.publisher!.id, current.prefix), { method }),
+    )
+    if (!checked) return
+    current = checked
+    if (current.verified) onverified(current)
+    else
+      checking.error =
+        method === "dns"
+          ? `We couldn't find the TXT record on ${domain} yet.`
+          : `We couldn't read the file on ${domain} yet.`
   }
 
   $effect(() => {
     if (current.verified) return
-    const timer = setInterval(() => document.visibilityState === "visible" && !checking && void check(), POLL)
+    const timer = setInterval(
+      () => document.visibilityState === "visible" && !checking.busy && void check(),
+      POLL,
+    )
     return () => clearInterval(timer)
   })
 </script>
@@ -70,11 +67,11 @@
       </div>
     {/if}
     <div class="flex flex-wrap items-center gap-3">
-      <button type="button" class="button button-sm button-primary" onclick={check} disabled={checking}>
-        {#if checking}<LoaderCircle class="size-3.5 animate-spin" />Checking{:else}Check again{/if}
+      <button type="button" class="button button-sm button-primary" onclick={check} disabled={checking.busy}>
+        {#if checking.busy}<LoaderCircle class="size-3.5 animate-spin" />Checking{:else}Check again{/if}
       </button>
       <p class="text-[13px] text-ink-muted" role="status">
-        {failed ?? (current.checked_at ? `Last checked ${ago(current.checked_at)}. We keep checking while this page is open.` : "We keep checking while this page is open.")}
+        {checking.error ?? (current.checked_at ? `Last checked ${ago(current.checked_at)}. We keep checking while this page is open.` : "We keep checking while this page is open.")}
       </p>
     </div>
   </div>

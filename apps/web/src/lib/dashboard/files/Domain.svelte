@@ -4,7 +4,7 @@
   import { ago } from "../../format.ts"
   import Group from "../../ui/group/Group.svelte"
   import Row from "../../ui/group/Row.svelte"
-  import { toasts } from "../../ui/overlay/toasts.svelte.ts"
+  import { Task } from "../../ui/overlay/task.svelte.ts"
   import { api } from "../api/client.ts"
   import { endpoints } from "../api/endpoints.ts"
   import { session } from "../api/session.svelte.ts"
@@ -13,7 +13,7 @@
   let { settings = $bindable() }: { settings: AppSettings } = $props()
   const domain = $derived(settings.app.domain)
   const file = $derived(schelfFile(settings) ?? "schelf.toml")
-  let checking = $state(false)
+  const checking = new Task()
 
   const STATUS = {
     proving: "Waiting for its DNS records",
@@ -22,16 +22,10 @@
     paused: "Paused",
   }
 
-  async function check() {
-    checking = true
-    try {
+  const check = () =>
+    checking.run(async () => {
       settings = await api.post<AppSettings>(endpoints.checkDomain(settings.app.id))
-    } catch (error) {
-      toasts.error(error)
-    } finally {
-      checking = false
-    }
-  }
+    })
 </script>
 
 {#if domain}
@@ -48,7 +42,7 @@
       {/each}
       {#if session.can("apps")}
         <Row title="Checked {domain.checked_at ? ago(domain.checked_at) : 'never'}" description="Schelf looks again every hour.">
-          <button type="button" class="button button-sm button-quiet" disabled={checking} onclick={check}>Check now</button>
+          <button type="button" class="button button-sm button-quiet" disabled={checking.busy} onclick={check}>Check now</button>
         </Row>
       {/if}
     {/if}

@@ -1,4 +1,5 @@
 import { redirect } from "@sveltejs/kit"
+import { nextPath } from "#lib/dashboard/api/auth.ts"
 import { session } from "#lib/dashboard/api/session.svelte.ts"
 
 export const ssr = false
@@ -11,7 +12,7 @@ export async function load({ url }) {
   const open = OPEN.includes(url.pathname)
   if (!session.signedIn && !open)
     redirect(307, `/dashboard/sign-in?next=${encodeURIComponent(url.pathname + url.search)}`)
-  if (session.signedIn && open) redirect(307, url.searchParams.get("next") ?? "/dashboard")
+  if (session.signedIn && open) redirect(307, nextPath(url))
   if (!session.signedIn) return
   const chosen = url.searchParams.get("publisher")
   if (chosen) await session.use(chosen)
