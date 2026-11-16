@@ -1,4 +1,4 @@
-import type { Pult } from "@lantharos/pult"
+import { b, type Pult } from "@lantharos/pult"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { mail as mailInbox } from "../ops/define/mail.ts"
@@ -27,7 +27,10 @@ export async function deliverMail(pult: Pult, row: MailRow, given?: Stored) {
       from: mail.from,
       subject: mail.subject,
       text: mail.text,
-      attachments: attachmentsOf(mail, raw),
+      attachments: [
+        ...(row.tags.length ? [b.fields({ tags: row.tags.join(", ") })] : []),
+        ...attachmentsOf(mail, raw),
+      ],
     }))
   if (received) return deliveredTo(row, received.item)
   const sent = await pult.send(mailInbox, {

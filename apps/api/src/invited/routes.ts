@@ -19,6 +19,7 @@ import { queueNotice } from "../mail/notices/send.ts"
 import { channelInvite } from "../mail/notices/templates/channel.ts"
 import { recordHistory } from "../ops/events.ts"
 import { appAccess } from "../publishers/access.ts"
+import { limitInvites } from "../publishers/mail.ts"
 import type { AppRow } from "../signing/records.ts"
 
 const TOKEN_BYTES = 32
@@ -95,6 +96,7 @@ channelAccessRoutes.post("/:id/channels/:channel/invites", async (c) => {
   const channel = c.req.param("channel")
   const app = await inviteOnly(c.var.viewer, c.req.param("id"), channel)
   const { email } = await readBody(c, inviteToChannel)
+  await limitInvites(c.var.viewer)
   const [added] = await db
     .insert(schema.channelInvite)
     .values({ id: randomId(), appId: app.id, channel, email, invitedBy: c.var.viewer.id })

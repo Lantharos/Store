@@ -1,10 +1,12 @@
 import {
+  channelName,
   endChannelRequest,
   isProjectId,
   manualUpload,
   promoteRelease,
   RESERVED_SLUGS,
   schelfTomlFor,
+  setProjectDomain,
   startSwitch as startSwitchRequest,
   updateChannel,
   updateHosting,
@@ -14,6 +16,7 @@ import { Hono } from "hono"
 import type { SignedInVars } from "../../auth/session.ts"
 import { refuseIfListingInFiles, refuseIfSetInFiles } from "../../config/managed.ts"
 import { db, schema } from "../../db/client.ts"
+import { settleDomain } from "../../domains/state.ts"
 import { ensureChannel, promote } from "../../hosting/channels.ts"
 import { endChannel, reopenChannel } from "../../hosting/ended.ts"
 import { requestListing } from "../../hosting/listing.ts"
@@ -59,6 +62,13 @@ hostingRoutes.patch("/:id/hosting", async (c) => {
   return c.json(await appSettings(updated))
 })
 
+hostingRoutes.put("/:id/domain", async (c) => {
+  const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
+  const { domain } = await readBody(c, setProjectDomain)
+  await settleDomain({ appId: app.id }, domain, c.var.viewer.name)
+  return c.body(null, 204)
+})
+
 hostingRoutes.post("/:id/listing-request", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "apps")
   await requestListing(app, c.var.viewer.name)
@@ -84,7 +94,7 @@ hostingRoutes.patch("/:id/channels/:channel", async (c) => {
   const { app } = await appAccess(c.var.viewer, c.req.param("id"), "releases")
   refuseIfSetInFiles(app)
   const changes = await readBody(c, updateChannel)
-  const name = c.req.param("channel")
+  const name = channelName.parse(c.req.param("channel"))
   await ensureChannel(app.id, name)
   await db
     .update(schema.channel)

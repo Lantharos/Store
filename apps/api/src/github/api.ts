@@ -44,3 +44,12 @@ export interface Repository {
 export function repository(fullName: string, token?: string | null) {
   return maybeGithub<Repository>(`/repos/${fullName}`, { token })
 }
+
+export async function loginOf(accountId: string) {
+  return (await maybeGithub<{ login: string }>(`/user/${accountId}`))?.login.toLowerCase() ?? null
+}
+
+export async function visibleRepository(fullName: string, personal: string | undefined) {
+  const found = await repository(fullName, personal)
+  return personal || !found?.private ? found : null
+}

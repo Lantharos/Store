@@ -4,6 +4,7 @@ import {
   EXTENSION_MANIFEST,
   type Format,
   fromBase64,
+  MAX_RELEASE_SIZE,
   manifestName,
   PART_SIZE,
   type PublishFile,
@@ -26,7 +27,7 @@ import { and, eq, sql } from "drizzle-orm"
 import { db, insertRows, schema } from "../db/client.ts"
 import { ensureChannel } from "../hosting/channels.ts"
 import { refuseEnded } from "../hosting/ended.ts"
-import { limitManualUploads } from "../hosting/limits.ts"
+import { limitDailyReleases, limitManualUploads } from "../hosting/limits.ts"
 import { releaseLine } from "../hosting/switches.ts"
 import { inviteOnlyChannels } from "../invited/channels.ts"
 import { fail, failConfig } from "../lib/http.ts"
@@ -38,6 +39,8 @@ import { identifyPublisher, type Publisher } from "./publisher.ts"
 import { issueUploadToken } from "./upload-token.ts"
 
 const RETRYABLE = new Set(["uploading", "failed"])
+const GIB = 1024 * 1024 * 1024
+const BLOCKMAP = { contentType: "application/octet-stream", contentDisposition: "attachment" }
 
 function readManifest(text: string): SchelfToml {
   const read = parseConfig(SCHELF_TOML, schelfToml, text)
@@ -145,11 +148,14 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
   const { app, publisher, version } = input
   const names = new Set(input.files.map((file) => file.name))
   if (names.size !== input.files.length) fail(422, "Two files have the same name")
+  if (input.files.reduce((total, file) => total + file.size, 0) > MAX_RELEASE_SIZE)
+    fail(422, `The files of a release add up to ${MAX_RELEASE_SIZE / GIB} GiB at most`)
   const files = sortIntoParts(app, input.files)
   const line = await releaseLine(app, input.format, input.bridge)
   const channel = input.channel ?? channelFromVersion(version)
   await refuseEnded(app.id, channel)
   if (publisher.origin === "manual") await limitManualUploads(app.publisherId)
+  await limitDailyReleases(app.id)
   await clearAbandoned(app, version)
   await ensureChannel(app.id, channel)
   const invited = (await inviteOnlyChannels(app.id)).has(channel)
@@ -161,7 +167,8 @@ export async function createRelease(input: NewRelease): Promise<PublishResponse>
       const key = keyOf(app.id, version, file.platform, file.name)
       const parts = partsFor(file.size)
       const uploadId = parts > 1 ? (await env.BUCKET.createMultipartUpload(key)).uploadId : null
-      if (file.blockmap) await env.BUCKET.put(paths.blockmap(key), fromBase64(file.blockmap))
+      if (file.blockmap)
+        await env.BUCKET.put(paths.blockmap(key), fromBase64(file.blockmap), { httpMetadata: BLOCKMAP })
       return {
         id: randomId(),
         releaseId,

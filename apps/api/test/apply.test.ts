@@ -25,7 +25,7 @@ function fakePng(width: number, height: number, seed: number) {
 }
 
 const schelf = (appId: string, extra = "") =>
-  `id = "${appId}"\nformat = "appimage"\nlisting = "store"\n${extra}`
+  `id = "${appId}"\nformat = "appimage"\nlisting = "store"\nrepository = "mira/notes"\n${extra}`
 
 async function apply(token: string, body: object) {
   return call(token, "/apply", {
@@ -70,6 +70,19 @@ describe("applying the files", () => {
       keywords: [],
     })
     expect(edit.status).toBe(409)
+  })
+
+  test("an upload token can't change who may download a channel; a person can", async () => {
+    const { appId, token, userId } = await publisherWithApp()
+    const body = {
+      schelf_toml: schelf(appId, "[channels.beta]\ninvite_only = true\n"),
+      listing_toml: 'name = "Notes"\nsummary = "Notes"\n',
+    }
+    const refused = await apply(token, body)
+    expect(refused.status).toBe(403)
+    expect(((await refused.json()) as ApiError).error).toContain("channels.beta.invite_only")
+    const command = await person("Mira", userId, "cli")
+    expect(((await (await apply(command.token, body)).json()) as ApplyResponse).applied).toBe(true)
   })
 
   test("a mistake in a file is refused with the file, the key and what's allowed", async () => {

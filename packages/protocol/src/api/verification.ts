@@ -10,7 +10,6 @@ export const VERIFICATION_STATUSES = [
   "revoked",
 ] as const
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number]
-export const DOCUMENT_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
 export const MAX_DOCUMENTS = 5
 export const MAX_DOMAINS = 5

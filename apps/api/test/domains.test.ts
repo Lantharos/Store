@@ -1,11 +1,11 @@
 import { exports } from "cloudflare:workers"
-import { type ApplyResponse, type ProjectDownloads, paths } from "@schelf/protocol"
+import { type ApplyResponse, type Approval, type ProjectDownloads, paths } from "@schelf/protocol"
 import { eq } from "drizzle-orm"
 import { describe, expect, test, vi } from "vitest"
 import { db, schema } from "../src/db/client.ts"
 import { domainState } from "../src/domains/state.ts"
 import { randomId } from "../src/lib/ids.ts"
-import { person, publisherWithApp } from "./fixtures.ts"
+import { json, person, publisherWithApp } from "./fixtures.ts"
 
 const API = "https://schelf.store/api/v1"
 
@@ -28,6 +28,16 @@ async function apply(token: string, appId: string, domain: string) {
   )
   dns.mockRestore()
   return response
+}
+
+async function connect(userId: string, appId: string, domain: string) {
+  const command = await person("Mira", userId, "cli")
+  const { request } = await json<ApplyResponse>(await apply(command.token, appId, domain))
+  const browser = await person("Mira", userId)
+  const dns = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}))
+  const approved = await json<Approval>(await browser.call("POST", `/requests/${request!.id}/approve`))
+  dns.mockRestore()
+  return approved
 }
 
 async function shipped(appId: string) {
@@ -59,7 +69,7 @@ async function shipped(appId: string) {
 
 describe("a custom domain", () => {
   test("waits for its DNS proof, then serves the project's links", async () => {
-    const { appId, token } = await publisherWithApp("files")
+    const { appId, token, userId } = await publisherWithApp("files")
     await db
       .update(schema.app)
       .set({ status: "published", visibility: "unlisted" })
@@ -67,8 +77,8 @@ describe("a custom domain", () => {
     await shipped(appId)
     await verified(appId)
     const domain = `downloads-${randomId(4).toLowerCase()}.example.com`
-    const result = (await (await apply(token, appId, domain)).json()) as ApplyResponse
-    expect(result.changes.map((change) => change.key)).toContain("domain")
+    expect((await apply(token, appId, domain)).status).toBe(403)
+    expect((await connect(userId, appId, domain)).status).toBe("done")
 
     const row = (await db.query.customDomain.findFirst({ where: eq(schema.customDomain.appId, appId) }))!
     const state = domainState(row, true)
@@ -92,8 +102,9 @@ describe("a custom domain", () => {
     await verified(first.appId)
     await verified(second.appId)
     const domain = `shared-${randomId(4).toLowerCase()}.example.com`
-    await apply(first.token, first.appId, domain)
-    expect((await apply(second.token, second.appId, domain)).status).toBe(409)
+    await connect(first.userId, first.appId, domain)
+    const command = await person("Mira", second.userId, "cli")
+    expect((await apply(command.token, second.appId, domain)).status).toBe(409)
     expect((await exports.default.fetch(`https://${domain}/latest/windows`)).status).toBe(404)
   })
 })
@@ -131,7 +142,7 @@ describe("a publisher's domain", () => {
   })
 
   test("gives way to the project's own domain, and can't take one that's in use", async () => {
-    const { appId, publisherId, token, userId } = await publisherWithApp("files")
+    const { appId, publisherId, userId } = await publisherWithApp("files")
     await db
       .update(schema.app)
       .set({ status: "published", visibility: "unlisted" })
@@ -140,7 +151,7 @@ describe("a publisher's domain", () => {
     await verified(appId)
     const own = `get-${randomId(4).toLowerCase()}.example.com`
     await connected(publisherId, `dl-${randomId(4).toLowerCase()}.example.com`)
-    await apply(token, appId, own)
+    await connect(userId, appId, own)
     await db
       .update(schema.customDomain)
       .set({ activeAt: new Date() })
@@ -159,13 +170,14 @@ describe("a publisher's domain", () => {
   })
 
   test("comes with verification, and stops serving while the publisher isn't verified", async () => {
-    const { appId, publisherId, token, userId } = await publisherWithApp("files")
+    const { appId, publisherId, userId } = await publisherWithApp("files")
     await db
       .update(schema.app)
       .set({ status: "published", visibility: "unlisted" })
       .where(eq(schema.app.id, appId))
     await shipped(appId)
-    const refused = await apply(token, appId, `get-${randomId(4).toLowerCase()}.example.com`)
+    const command = await person("Mira", userId, "cli")
+    const refused = await apply(command.token, appId, `get-${randomId(4).toLowerCase()}.example.com`)
     expect(refused.status).toBe(403)
     expect(((await refused.json()) as { error: string }).error).toContain("verified publisher")
     const owner = await person("Mira", userId)

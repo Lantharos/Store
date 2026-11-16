@@ -10,7 +10,6 @@ export const storeKey = z.object({
   not_before: z.iso.datetime(),
   expires: z.iso.datetime(),
 })
-export type StoreKey = z.infer<typeof storeKey>
 
 export const storeKeyList = z.object({
   keys: z.array(storeKey),
@@ -27,7 +26,6 @@ export type StoreKeys = z.infer<typeof storeKeys>
 
 export const BLOCK_ACTIONS = ["block", "warn"] as const
 export const blockAction = z.enum(BLOCK_ACTIONS)
-export type BlockAction = z.infer<typeof blockAction>
 
 export const blockedEntry = z.object({
   app: z.string(),
@@ -36,7 +34,6 @@ export const blockedEntry = z.object({
   reason: z.string(),
   note: z.string().optional(),
 })
-export type BlockedEntry = z.infer<typeof blockedEntry>
 
 export const revocations = stamp.extend({
   issued: z.iso.datetime(),

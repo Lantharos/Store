@@ -11,6 +11,7 @@ import {
 import { eq } from "drizzle-orm"
 import { describe, expect, test } from "vitest"
 import { db, schema } from "../src/db/client.ts"
+import { pull } from "../src/releases/moderation.ts"
 import { approve } from "../src/releases/review.ts"
 import { allowInShell, allowPublisherInShell, refuseShell } from "../src/releases/shell.ts"
 import { rebuildApp } from "../src/signing/rebuild.ts"
@@ -235,6 +236,18 @@ describe("running inside Luft", () => {
     await refuseShell(inherited, "Owner", "Reads the clipboard in the background")
     expect((await index(appId)).releases.some((release) => release.runs_in_shell)).toBe(false)
     const next = await shipped(token, appId, "1.2.0", minimum("1.0", true))
+    expect(await shellReview(next)).toBe("waiting")
+  })
+
+  test("pulling a release withdraws the extension's approval, and the next release asks again", async () => {
+    const { appId, publisherId, token } = await extension()
+    await verify(publisherId, new Date())
+    const first = await shipped(token, appId, "1.0.0", minimum("1.0", true))
+    await allowInShell(first, "Owner")
+
+    await pull({ app: appId, release: first }, "Reads the clipboard in the background", "Taken down")
+    expect(await shellReview(first)).toBe("refused")
+    const next = await shipped(token, appId, "1.1.0", minimum("1.0", true))
     expect(await shellReview(next)).toBe("waiting")
   })
 })

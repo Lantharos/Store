@@ -100,7 +100,7 @@ export async function serveDownload(request: Request) {
   headers.set("x-content-type-options", "nosniff")
   if (key.startsWith("media/")) headers.set("content-security-policy", MEDIA_POLICY)
   const download = downloadOf(key)
-  if (download) {
+  if (download || key.endsWith(".blockmap")) {
     headers.set("content-disposition", `attachment; filename="${key.slice(key.lastIndexOf("/") + 1)}"`)
     if (!headers.has("content-type")) headers.set("content-type", "application/octet-stream")
   }

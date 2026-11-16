@@ -49,7 +49,6 @@ export const auth = betterAuth({
       },
     },
   },
-  account: { accountLinking: { enabled: true, trustedProviders: ["github"] } },
   user: {
     deleteUser: {
       enabled: true,

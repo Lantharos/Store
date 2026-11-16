@@ -1,8 +1,8 @@
 import { z } from "zod"
 import type { ConfigFiles } from "../config/apply.ts"
-import { MAX_CATEGORIES } from "../config/listing-toml.ts"
+import { MAX_CATEGORIES, webLink } from "../config/listing-toml.ts"
 import { repositoryName } from "../config/schelf-toml.ts"
-import type { CustomDomainState } from "../domains.ts"
+import { type CustomDomainState, customDomain } from "../domains.ts"
 import { listingText, type Screenshot } from "../files/app.ts"
 import type { PartPlan, ProjectGroup } from "../parts.ts"
 import type { Permissions } from "../permissions.ts"
@@ -22,7 +22,7 @@ import {
 import { SCHELF_WORKFLOW } from "../setup.ts"
 import { toolName } from "../tools.ts"
 import type { ProjectTool } from "./public.ts"
-import { MAX_RELEASE_FILES } from "./publishing.ts"
+import { MAX_ARTIFACT_SIZE, MAX_RELEASE_FILES } from "./publishing.ts"
 
 export const CLI_CLIENT_ID = "schelf-cli"
 /** The Schelf app's device sign-in; its sessions last APP_SESSION_DAYS from when they're last used. */
@@ -95,14 +95,12 @@ export const createApp = newProjectBase.extend({
   format: format.exclude(["files"]),
   visibility: visibility.default("listed"),
 })
-export type CreateApp = z.input<typeof createApp>
 
 export const createProject = newProjectBase.extend({
   id: appId.optional(),
   slug: projectSlug.min(1),
   updater: updater.exclude(["sabine"]).optional(),
 })
-export type CreateProject = z.input<typeof createProject>
 
 export const updateHosting = z.object({
   slug: projectSlug.min(1).optional(),
@@ -110,6 +108,8 @@ export const updateHosting = z.object({
   latest_follows_rollout: z.boolean().optional(),
 })
 export type UpdateHosting = z.infer<typeof updateHosting>
+
+export const setProjectDomain = z.object({ domain: customDomain.nullable() })
 
 export const listingRequest = z.object({ note: z.string().trim().max(1000).default("") })
 
@@ -209,7 +209,7 @@ export const manualUpload = z.object({
           ),
         platform,
         kind: artifactKind,
-        size: z.number().int().positive(),
+        size: z.number().int().positive().max(MAX_ARTIFACT_SIZE),
         sha256: z.string().regex(/^[0-9a-f]{64}$/),
         signature: z.string().max(4096).optional(),
       }),
@@ -237,9 +237,9 @@ export interface ListingMeta {
 
 export const updateMeta = z.object({
   categories: z.array(z.string().max(40)).max(MAX_CATEGORIES).optional(),
-  homepage: z.url().nullable().optional(),
-  support: z.url().nullable().optional(),
-  privacy_url: z.url().nullable().optional(),
+  homepage: webLink.nullable().optional(),
+  support: webLink.nullable().optional(),
+  privacy_url: webLink.nullable().optional(),
   content_rating: z.string().max(40).nullable().optional(),
   brand_color: z
     .string()
@@ -249,10 +249,8 @@ export const updateMeta = z.object({
   licence: z.string().max(100).nullable().optional(),
   distribution: distribution.optional(),
 })
-export type UpdateMeta = z.input<typeof updateMeta>
 
 export const updateListing = listingText
-export type UpdateListing = z.input<typeof updateListing>
 
 export interface DashboardScreenshot extends Screenshot {
   id: string
@@ -382,7 +380,6 @@ export interface ReleaseDetail extends ReleaseSummary {
   next: string | null
 }
 
-export const ROLLOUT_ACTIONS = ["pause", "resume", "set", "all", "rollback"] as const
 export const rolloutRequest = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pause") }),
   z.object({ action: z.literal("resume") }),

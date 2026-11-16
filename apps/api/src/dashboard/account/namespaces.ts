@@ -1,5 +1,5 @@
 import { claimNamespace, type Namespace, verifyNamespace } from "@schelf/protocol"
-import { and, eq, isNotNull, lt, ne, sql } from "drizzle-orm"
+import { and, eq, isNotNull, isNull, lt, ne, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { db, schema } from "../../db/client.ts"
 import { fail, readBody } from "../../lib/http.ts"
@@ -44,13 +44,16 @@ namespaceRoutes.post("/", async (c) => {
     checkedAt: null,
     createdAt: new Date(),
   }
-  await db
+  const [claimed] = await db
     .insert(schema.namespace)
     .values(row)
     .onConflictDoUpdate({
       target: schema.namespace.prefix,
       set: { publisherId: row.publisherId, proofValue: row.proofValue },
+      setWhere: isNull(schema.namespace.proof),
     })
+    .returning({ prefix: schema.namespace.prefix })
+  if (!claimed) fail(409, `${prefix} was just proved by another publisher`)
   recordHistory("publisher", c.var.publisher.id, `Claimed ${prefix}`, c.var.viewer.name)
   return c.json(namespaceView(row), 201)
 })
@@ -75,10 +78,18 @@ namespaceRoutes.post("/:prefix/verify", async (c) => {
     )
   const now = new Date()
   const verified = { ...row, proof: method, verifiedAt: now, checkedAt: now }
-  await db
+  const [proved] = await db
     .update(schema.namespace)
     .set({ proof: method, verifiedAt: now, checkedAt: now })
-    .where(eq(schema.namespace.prefix, row.prefix))
+    .where(
+      and(
+        eq(schema.namespace.prefix, row.prefix),
+        eq(schema.namespace.publisherId, row.publisherId),
+        eq(schema.namespace.proofValue, row.proofValue),
+      ),
+    )
+    .returning({ prefix: schema.namespace.prefix })
+  if (!proved) fail(409, `${row.prefix} was claimed by another publisher while it was being checked`)
   recordHistory(
     "publisher",
     c.var.publisher.id,

@@ -78,7 +78,6 @@ export const createPublisher = z.object({
   name: publisherName,
   agreement: z.literal(AGREEMENT_VERSION),
 })
-export type CreatePublisher = z.infer<typeof createPublisher>
 
 export const updatePublisher = z.object({
   name: publisherName.optional(),
@@ -90,7 +89,6 @@ export const updatePublisher = z.object({
     .optional(),
   agreement: z.literal(AGREEMENT_VERSION).optional(),
 })
-export type UpdatePublisher = z.input<typeof updatePublisher>
 
 export interface Member {
   user_id: string
@@ -126,6 +124,5 @@ export const inviteMember = z.union([
   z.object({ email: z.email().trim().toLowerCase(), role }),
   z.object({ github: githubLogin, role }),
 ])
-export type InviteMember = z.input<typeof inviteMember>
 
 export const changeRole = z.object({ role })

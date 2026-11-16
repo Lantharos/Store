@@ -34,7 +34,7 @@ const words = {
     .describe("Other words people might search for"),
 }
 
-const link = z.url({ protocol: /^https?$/ })
+export const webLink = z.url({ protocol: /^https?$/ })
 
 export const screenshotEntry = z.union([
   mediaPath,
@@ -53,9 +53,9 @@ export const listingToml = z.strictObject({
     .max(MAX_CATEGORIES)
     .optional()
     .describe("Up to four; the first is the primary category"),
-  homepage: link.optional(),
-  support: link.optional().describe("Where people get help or report problems"),
-  privacy_url: link.optional().describe("The privacy policy"),
+  homepage: webLink.optional(),
+  support: webLink.optional().describe("Where people get help or report problems"),
+  privacy_url: webLink.optional().describe("The privacy policy"),
   content_rating: z.string().trim().max(40).optional().describe("An OARS rating, like oars-1.1"),
   brand_color: z
     .string()

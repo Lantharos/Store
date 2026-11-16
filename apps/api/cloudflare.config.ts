@@ -104,6 +104,13 @@ export default defineConfig({
           period: 60,
         },
       }),
+      INVITE_LIMIT: bindings.rateLimit({
+        namespace: "2005",
+        simple: {
+          limit: 10,
+          period: 60,
+        },
+      }),
     },
   },
 })

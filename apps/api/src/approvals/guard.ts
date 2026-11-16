@@ -28,6 +28,7 @@ const NEEDS_APPROVAL = [
   rule("DELETE", "/apps/:id"),
   rule("POST", "/apps/:id/restore"),
   rule("PATCH", "/apps/:id/hosting", (body) => "slug" in body),
+  rule("PUT", "/apps/:id/domain"),
   rule("POST", "/apps/:id/listing-request"),
   rule("POST DELETE", "/apps/:id/trusted-publishers(/:id)?"),
   rule("POST", "/apps/:id/tokens"),

@@ -36,7 +36,8 @@ async function project() {
     .update(schema.app)
     .set({ status: "published", visibility: "unlisted" })
     .where(eq(schema.app.id, created.appId))
-  const applied = await call(created.token, "/apply", {
+  const command = await person("Mira", created.userId, "cli")
+  const applied = await call(command.token, "/apply", {
     method: "POST",
     body: JSON.stringify({ schelf_toml: schelf(created.appId) }),
   })
@@ -149,7 +150,8 @@ describe("an invite-only channel", () => {
   })
 
   test("can only start before anyone could download from the channel", async () => {
-    const { appId, token } = await publisherWithApp("files")
+    const { appId, userId } = await publisherWithApp("files")
+    const { token } = await person("Mira", userId, "cli")
     await call(token, "/apply", { method: "POST", body: JSON.stringify({ schelf_toml: schelf(appId, "") }) })
     await shipOnBeta(appId)
     const refused = await call(token, "/apply", {
@@ -157,6 +159,17 @@ describe("an invite-only channel", () => {
       body: JSON.stringify({ schelf_toml: schelf(appId) }),
     })
     expect(refused.status).toBe(422)
+  })
+
+  test("is never where an open channel's people end up, whichever is set first", async () => {
+    const { appId, userId } = await publisherWithApp("files")
+    const { token } = await person("Mira", userId, "cli")
+    const apply = (extra: string) =>
+      call(token, "/apply", { method: "POST", body: JSON.stringify({ schelf_toml: schelf(appId, extra) }) })
+    const ending = '\n[channels.nightly]\nended_into = "beta"\n'
+    expect((await apply(`${BETA}${ending}`)).status).toBe(422)
+    expect((await apply(ending)).status).toBe(200)
+    expect((await apply(`${BETA}${ending}`)).status).toBe(422)
   })
 
   test("asks a person in the browser before the schelf command invites anyone", async () => {

@@ -9,6 +9,7 @@ export const OIDC_AUDIENCE = "schelf.store"
 export const MULTIPART_THRESHOLD = 95_000_000
 export const PART_SIZE = 90 * 1024 * 1024
 export const MAX_ARTIFACT_SIZE = 4 * 1024 * 1024 * 1024
+export const MAX_RELEASE_SIZE = 16 * 1024 * 1024 * 1024
 export const MAX_BLOCKMAP_BASE64 = 8 * 1024 * 1024
 export const TOKEN_PREFIX = "schelf_"
 export const UPLOAD_TOKEN_HOURS = 1
@@ -26,7 +27,7 @@ export const publishFile = z.object({
     .regex(/^[A-Za-z0-9][A-Za-z0-9._+-]*$/, "File names are letters, digits, dots, dashes and underscores"),
   platform,
   kind: artifactKind,
-  size: z.number().int().positive(),
+  size: z.number().int().positive().max(MAX_ARTIFACT_SIZE),
   sha256: z.string().regex(/^[0-9a-f]{64}$/, "A SHA-256 is 64 lowercase hex digits"),
   executable: z.string().max(500).optional(),
   signature: z.string().max(4096).optional(),

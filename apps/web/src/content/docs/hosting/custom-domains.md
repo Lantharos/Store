@@ -8,7 +8,7 @@ Custom domains come with [verification](/docs/verification): only a verified pub
 
 ## For one project
 
-Put one line in [schelf.toml](/docs/schelf-toml) and run `schelf apply`:
+Put one line in [schelf.toml](/docs/schelf-toml) and run `schelf apply` signed in; it asks you in the browser first:
 
 ```toml
 domain = "downloads.example.com"
@@ -30,7 +30,7 @@ The TXT record proves the domain is yours. Schelf checks every hour, or straight
 | `downloads.example.com/@beta/latest.json` | `…/@beta/latest.json`                          |
 | `downloads.example.com/latest.yml`        | `…/latest.yml`, so updaters can use it too     |
 
-Remove the line and run `schelf apply` to stop serving links from it.
+Remove the line and run `schelf apply` to stop serving links from it, again approved in the browser. An upload token or a workflow can't connect or remove a domain.
 
 ## For all your projects
 

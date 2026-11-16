@@ -149,6 +149,13 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
     describe: async ({ app: id, slug }) =>
       `Move ${await appName(id)} to the address ${slug}; old links stop working`,
   },
+  "project.domain": {
+    call: ({ app: id, domain }) => ({ method: "PUT", path: `${app(id)}/domain`, body: { domain } }),
+    describe: async ({ app: id, domain }) =>
+      domain
+        ? `Serve the download links of ${await appName(id)} on ${domain}, once its DNS records are in`
+        : `Stop serving ${await appName(id)}'s download links on its own domain`,
+  },
   "project.delete": {
     call: ({ app: id }) => ({ method: "DELETE", path: app(id) }),
     describe: async ({ app: id }) =>
@@ -186,7 +193,7 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
   "channel.invite": {
     call: ({ app: id, channel, email }) => ({
       method: "POST",
-      path: `${app(id)}/channels/${channel}/invites`,
+      path: `${app(id)}/channels/${encodeURIComponent(channel)}/invites`,
       body: { email },
     }),
     describe: async ({ app: id, channel, email }) =>
@@ -195,7 +202,7 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
   "channel.token": {
     call: ({ app: id, channel, name }) => ({
       method: "POST",
-      path: `${app(id)}/channels/${channel}/tokens`,
+      path: `${app(id)}/channels/${encodeURIComponent(channel)}/tokens`,
       body: { name },
     }),
     describe: async ({ app: id, channel, name }) =>
@@ -213,27 +220,30 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
   "member.role": {
     call: ({ publisher: id, user, role }) => ({
       method: "PATCH",
-      path: `${publisher(id)}/members/${user}`,
+      path: `${publisher(id)}/members/${encodeURIComponent(user)}`,
       body: { role },
     }),
     describe: async ({ publisher: id, user, role: given }) =>
       `Make ${await personName(user)} ${role(given)} of ${await publisherName(id)}`,
   },
   "member.remove": {
-    call: ({ publisher: id, user }) => ({ method: "DELETE", path: `${publisher(id)}/members/${user}` }),
+    call: ({ publisher: id, user }) => ({
+      method: "DELETE",
+      path: `${publisher(id)}/members/${encodeURIComponent(user)}`,
+    }),
     describe: async ({ publisher: id, user }) =>
       `Remove ${await personName(user)} from ${await publisherName(id)}`,
   },
   "member.transfer": {
     call: ({ publisher: id, user }) => ({
       method: "POST",
-      path: `${publisher(id)}/members/${user}/transfer`,
+      path: `${publisher(id)}/members/${encodeURIComponent(user)}/transfer`,
     }),
     describe: async ({ publisher: id, user }) =>
       `Hand ownership of ${await publisherName(id)} to ${await personName(user)}; you become an admin`,
   },
   "invite.accept": {
-    call: ({ invite }) => ({ method: "POST", path: `/invites/${invite}/accept` }),
+    call: ({ invite }) => ({ method: "POST", path: `/invites/${encodeURIComponent(invite)}/accept` }),
     describe: async ({ invite }) => {
       const row = await db
         .select({ name: schema.publisher.name, role: schema.invite.role })
@@ -246,14 +256,17 @@ const DEFINITIONS: { [Type in ApprovalType]: Definition<Type> } = {
   "release.rollback": {
     call: ({ app: id, release }) => ({
       method: "POST",
-      path: `${app(id)}/releases/${release}/rollout`,
+      path: `${app(id)}/releases/${encodeURIComponent(release)}/rollout`,
       body: { action: "rollback" },
     }),
     describe: async ({ app: id, release }) =>
       `Stop ${await releaseName(id, release)} for everyone and offer the release before it again`,
   },
   "release.inside-luft": {
-    call: ({ app: id, release }) => ({ method: "POST", path: `${app(id)}/releases/${release}/inside-luft` }),
+    call: ({ app: id, release }) => ({
+      method: "POST",
+      path: `${app(id)}/releases/${encodeURIComponent(release)}/inside-luft`,
+    }),
     describe: async ({ app: id, release }) =>
       `Ask a reviewer to let ${await releaseName(id, release)} run inside Luft`,
   },

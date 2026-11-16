@@ -1,5 +1,6 @@
 import {
   type ApplyResponse,
+  type ApprovalAction,
   type applyRequest,
   type ConfigChange,
   type ConfigFiles,
@@ -24,7 +25,7 @@ import { recordHistory } from "../ops/events.ts"
 import { appOfManifest } from "../publishing/start.ts"
 import { resignApp } from "../signing/queue.ts"
 import type { AppRow } from "../signing/records.ts"
-import { allowCaller, type Caller, callerOf } from "./caller.ts"
+import { allowCaller, type Caller, callerOf, refusePeopleOnly } from "./caller.ts"
 import { type DesiredListing, desiredListing, listingChanges, listingWrites } from "./listing.ts"
 import { storedMedia } from "./media.ts"
 import { desiredProject, projectChanges, updaterOf, writeProject } from "./project.ts"
@@ -61,8 +62,8 @@ async function askToBeListed(
   app: AppRow,
   listing: DesiredListing,
   caller: Caller,
-  host: string | undefined,
   result: ApplyResponse,
+  asks: ApprovalAction[],
 ) {
   if (!listing.listed) {
     if (app.visibility === "listed")
@@ -79,11 +80,7 @@ async function askToBeListed(
     await requestListing(app, caller.by)
     result.review.push("Asked to be listed; a reviewer looks at the project and its latest release")
   } else if (caller.kind === "person") {
-    const row = await openApproval(caller.viewer, [{ type: "listing.request", app: app.id, note: "" }], {
-      host,
-      place: null,
-    })
-    result.request = { id: row.id, url: approvalUrl(row.id), expires_at: row.expiresAt.toISOString() }
+    asks.push({ type: "listing.request", app: app.id, note: "" })
   } else {
     result.notes.push(`${listing.file} listed: ask with schelf apply while signed in, or in the dashboard`)
   }
@@ -107,10 +104,9 @@ export async function applyFiles(request: Request, body: Body): Promise<ApplyRes
     : undefined
   if (issues.length) failConfig(issues)
   const project = await desiredProject(manifest, app, caller, body.schelf_toml_path)
-  const changes: ConfigChange[] = [
-    ...(await projectChanges(app, project)),
-    ...(desired ? await listingChanges(app, desired) : []),
-  ]
+  const fromProject = await projectChanges(app, project)
+  refusePeopleOnly(caller, fromProject, project.fields.repositoryId)
+  const changes: ConfigChange[] = [...fromProject, ...(desired ? await listingChanges(app, desired) : [])]
   if (desired && app.pageIndexed !== desired.indexed)
     changes.push({ file: desired.file, key: "indexed", change: String(desired.indexed) })
   const response = { app: app.id, changes, missing_media: [...missing], review: [], notes: [], request: null }
@@ -145,7 +141,14 @@ export async function applyFiles(request: Request, body: Body): Promise<ApplyRes
       `Applied ${changes.length} change${changes.length === 1 ? "" : "s"} from its files`,
       caller.by,
     )
+  const asks: ApprovalAction[] = fromProject.some((change) => change.key === "domain")
+    ? [{ type: "project.domain", app: app.id, domain: project.domain }]
+    : []
   const result: ApplyResponse = { ...response, applied: true }
-  if (desired) await askToBeListed(current, desired, caller, body.host, result)
+  if (desired) await askToBeListed(current, desired, caller, result, asks)
+  if (asks.length && caller.kind === "person") {
+    const row = await openApproval(caller.viewer, asks, { host: body.host, place: null })
+    result.request = { id: row.id, url: approvalUrl(row.id), expires_at: row.expiresAt.toISOString() }
+  }
   return result
 }
