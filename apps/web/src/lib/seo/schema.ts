@@ -1,5 +1,6 @@
 import { type AppIndex, type PublisherPage, STORE_ORIGIN } from "@schelf/protocol"
 import { primaryCategory } from "../store/categories.ts"
+import { repositoryUrl } from "../store/links.ts"
 
 const organization = {
   "@type": "Organization",
@@ -82,7 +83,7 @@ export function appSchema(app: AppIndex, path: string, installs: number) {
       interactionType: "https://schema.org/DownloadAction",
       userInteractionCount: installs,
     },
-    ...(app.repository && { codeRepository: app.repository }),
+    ...(app.repository && { codeRepository: repositoryUrl(app.repository) }),
   }
 }
 

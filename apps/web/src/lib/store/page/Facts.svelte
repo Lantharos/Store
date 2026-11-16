@@ -2,6 +2,7 @@
   import { type Installs, luftVersionLabel, refName } from "@schelf/protocol"
   import { count, date } from "../../format.ts"
   import { systemsOf } from "../../system/artifacts.ts"
+  import { repositoryUrl } from "../links.ts"
   import type { ShownApp } from "./load.ts"
 
   let { app, installs }: { app: ShownApp; installs: Installs } = $props()
@@ -9,7 +10,6 @@
   const latest = $derived(app.releases.find((release) => release.channel === "stable"))
   const extension = $derived(app.kind === "extension" ? latest : undefined)
   const systems = $derived(systemsOf(latest?.artifacts.map((artifact) => artifact.platform) ?? []))
-  const repository = $derived(app.repository?.replace(/^https?:\/\//, ""))
   const built = $derived(
     latest?.provenance.origin === "github-actions"
       ? {
@@ -49,7 +49,7 @@
   {/if}
   {#if app.repository}
     <dt class="text-ink-muted">Source</dt>
-    <dd class="min-w-0"><a href={app.repository} class="link block truncate" rel="nofollow">{repository}</a></dd>
+    <dd class="min-w-0"><a href={repositoryUrl(app.repository)} class="link block truncate" rel="nofollow">{app.repository}</a></dd>
   {/if}
   {#if installs.total}
     <dt class="text-ink-muted">Installs</dt>
