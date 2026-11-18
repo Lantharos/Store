@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import type { Config } from "@sveltejs/kit/vite"
 
-const appHtml = readFileSync(new URL("../src/app.html", import.meta.url), "utf8")
+const appHtml = readFileSync(new URL("../app.html", import.meta.url), "utf8")
 const inlineScripts = [...appHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
   ([, body]) => `sha256-${createHash("sha256").update(body!).digest("base64")}` as const,
 )

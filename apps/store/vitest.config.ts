@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest(async () => ({
       config: true,
+      main: "./src/api.ts",
       miniflare: {
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, "migrations")),

@@ -40,7 +40,7 @@ Search uses an SQLite FTS5 table (`search_text`, trigram tokens, so misspellings
 
 ## R2
 
-One bucket, `schelf-store`, served on `dl.schelf.store` through the api Worker so downloads can be counted. Egress is free either way.
+One bucket, `schelf-store`, served on `dl.schelf.store` through the Worker so downloads can be counted. Egress is free either way.
 
 ```
 apps/<id>/<version>/<platform>/<file>        the artifact, immutable

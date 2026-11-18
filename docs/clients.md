@@ -62,7 +62,7 @@ in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<
 
 ## The website
 
-`schelf.store` is one SvelteKit app on Workers, server-rendered so every app page is fast and indexable, with the dashboard as client-rendered routes under `/dashboard`. API calls go to the api Worker through a service binding.
+`schelf.store` is a SvelteKit app, server-rendered so every app page is fast and indexable, with the dashboard as client-rendered routes under `/dashboard`. It runs in the same Worker as the API, so pages read from the API in process.
 
 | Address                            | What                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

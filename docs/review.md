@@ -12,7 +12,7 @@ publish action → store Worker       checks (GitHub Actions, this repo)  Pult
 bun run review <release>  ──→  fetch build, VM, screenshots  ──→  report on the item
 ```
 
-The store is a Pult app like any other, wired the way Pult runs its own back office: definitions live in `apps/api/src/ops`, the Worker sends items with the `@lantharos/pult` package and answers Pult's requests on `/api/ops` as webhooks. Pult never touches the store's database; every decision runs as an action inside the store.
+The store is a Pult app like any other, wired the way Pult runs its own back office: definitions live in `apps/store/src/ops`, the Worker sends items with the `@lantharos/pult` package and answers Pult's requests on `/api/ops` as webhooks. Pult never touches the store's database; every decision runs as an action inside the store.
 
 ## What the store defines in Pult
 
@@ -180,7 +180,7 @@ Windows builds are reviewed the same way once there's a Windows VM image with Sa
 
 ## Email
 
-Mail to schelf.store reaches the api Worker through Cloudflare Email Routing: each address below has its own rule to the Worker, plus-addressing is on, and the catch-all rule sends everything else there too. These addresses take mail; anything else, and the `no-reply@` address the store's own email comes from, is refused with a note saying where to write instead.
+Mail to schelf.store reaches the Worker through Cloudflare Email Routing: each address below has its own rule to the Worker, plus-addressing is on, and the catch-all rule sends everything else there too. These addresses take mail; anything else, and the `no-reply@` address the store's own email comes from, is refused with a note saying where to write instead.
 
 | Address                 | For                                                               |
 | ----------------------- | ----------------------------------------------------------------- |

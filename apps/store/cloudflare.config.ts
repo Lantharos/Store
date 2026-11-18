@@ -1,13 +1,16 @@
 import { bindings, defineConfig, triggers } from "cf/config"
-import * as entrypoint from "./src/index.ts" with { type: "cf-worker" }
+import * as worker from "./src/index.ts" with { type: "cf-worker" }
 
 export default defineConfig({
   accountId: "2e3bfcbc9512a7ab1ea3a9cb9a474b30",
   worker: {
-    name: "schelf-api",
-    compatibilityDate: "2026-10-01",
+    name: "schelf",
+    compatibilityDate: "2026-11-01",
     compatibilityFlags: ["nodejs_compat"],
-    entrypoint,
+    entrypoint: worker,
+    assets: {
+      runWorkerFirst: ["/*", "!/_app/immutable/*"],
+    },
     workersDev: false,
     previewUrls: false,
     limits: {
@@ -19,11 +22,7 @@ export default defineConfig({
     domains: ["dl.schelf.store"],
     triggers: [
       triggers.fetch({
-        pattern: "schelf.store/api/*",
-        zone: "schelf.store",
-      }),
-      triggers.fetch({
-        pattern: "schelf.store/install*",
+        pattern: "schelf.store/*",
         zone: "schelf.store",
       }),
       triggers.fetch({
@@ -59,6 +58,7 @@ export default defineConfig({
         name: "schelf-store",
         id: "a461f2c7-c13f-40bb-a9f7-23b32fb81181",
       }),
+      ASSETS: bindings.assets(),
       BUCKET: bindings.r2({
         name: "schelf-store",
       }),

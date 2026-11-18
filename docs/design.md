@@ -83,22 +83,22 @@ developer repo
   release published ──▶ their workflow builds ──▶ Lantharos/Store/publish action
                                                     │ OIDC token, files, schelf.toml
                                                     ▼
-   schelf.store Worker (api) ── verifies token, attestation, hashes ──▶ R2
+   schelf Worker ── verifies token, attestation, hashes ──▶ R2
         │  queue: checks workflow (this repo, GitHub runners) ── facts ──▶ D1
         ├──▶ Pult inbox ── person approves ──▶ Worker signs index, feeds ──▶ R2
         ▼
    dl.schelf.store ◀── Schelf app (Luft, Linux), Sabine's updater (Windows, macOS), download pages
-   schelf.store    ◀── storefront and dashboard (web Worker, server-rendered)
+   schelf.store    ◀── storefront and dashboard (same Worker, server-rendered)
 ```
 
-The api Worker is the only thing holding the store's signing key. Clients only read signed static files and download artifacts, so they work through outages and tell the store nothing about what's installed.
+The Worker is the only thing holding the store's signing key. Clients only read signed static files and download artifacts, so they work through outages and tell the store nothing about what's installed.
 
 ## Repository
 
 ```
 apps/
-  api/        the api Worker (Hono): API, auth, publishing, downloads, signing, queues, cron, Pult ops
-  web/        SvelteKit on Workers: storefront, app pages, dashboard, developer docs
+  store/      the schelf Worker: the API in Hono (auth, publishing, downloads, signing, queues, cron, Pult ops)
+              in src/, and the SvelteKit site (storefront, app pages, dashboard, developer docs) in web/
 packages/
   protocol/   shared types and schemas: schelf.toml, index files, feeds, revocations, permissions, the API
   cli/        the `schelf` command (published to npm as `schelf`)
@@ -109,7 +109,7 @@ review/       the review command (bun run review)
 docs/
 ```
 
-Hosts: `schelf.store` for the site, dashboard and API (`/api/*` routes to the api Worker), `dl.schelf.store` for files.
+Hosts: `schelf.store` for the site, dashboard and API under `/api/*`, `dl.schelf.store` for files, all served by the one Worker.
 
 ## Phases
 

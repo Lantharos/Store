@@ -1,7 +1,7 @@
 import type { Plugin } from "vite"
 import { bodyOf, renderPage } from "./markdown.ts"
 
-const CONTENT = /\/src\/content\/.+\.md$/
+const CONTENT = /\/web\/content\/.+\.md$/
 
 export function markdownPages(): Plugin {
   return {

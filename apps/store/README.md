@@ -1,6 +1,6 @@
-# api
+# store
 
-The schelf.store api Worker: publishing, checks, review, signing, downloads on `dl.schelf.store`, search, the dashboard API and the Pult back office. It serves `schelf.store/api/*` and `dl.schelf.store`; the site Worker reaches it through a service binding.
+The `schelf` Worker: the API in `src/` (publishing, checks, review, signing, downloads on `dl.schelf.store`, search, the dashboard API and the Pult back office) and the SvelteKit site in `web/` (storefront, app pages, docs, dashboard). It serves `schelf.store`, `dl.schelf.store` and projects' own domains. Pages read from the API in process.
 
 ## Run it
 
@@ -11,6 +11,8 @@ bun run dev
 bun run test
 ```
 
+`bun run dev` builds the site once, then runs the Worker on port 8787 and the site with hot reload on port 5174, which is the one to open.
+
 `STORE_SIGNING_KEY` is a base64 Ed25519 seed and `SEALING_KEY` 32 random bytes in base64. Locally, also set `ROOT_PUBLIC_KEY` to a root of your own and sign store keys with it (`scripts/store-keys.ts init`), since the store only signs with keys its root vouches for.
 
 ## Deploy
@@ -19,7 +21,7 @@ bun run test
 bun run deploy
 ```
 
-It builds the Pult definitions, applies D1 migrations and deploys. The Worker sends its definitions to Pult itself the first time it runs a new version, using its `PULT_KEY` secret. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`, which finds every app and extension in Luft with a `schelf.toml` and takes its text, categories, links, colour and screenshots from its `store/listing.toml`; the store signs them on its next hourly run.
+It builds the Pult definitions and the site, applies D1 migrations and deploys. The Worker sends its definitions to Pult itself the first time it runs a new version, using its `PULT_KEY` secret. Lantharos's own listings come from `OWNER_EMAIL=… bun scripts/seed-lantharos.ts --remote`, which finds every app and extension in Luft with a `schelf.toml` and takes its text, categories, links, colour and screenshots from its `store/listing.toml`; the store signs them on its next hourly run.
 
 ## Pult
 
@@ -29,7 +31,7 @@ Mail to the store's addresses arrives through Cloudflare Email Routing, with a r
 
 ## Secrets
 
-Set with `cf workers secrets update <name> --worker schelf-api`.
+Set with `cf workers secrets update <name> --worker schelf`.
 
 | Secret                                     | What it is                                                                                                                                   |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |

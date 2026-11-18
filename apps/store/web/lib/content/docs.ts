@@ -1,8 +1,8 @@
 import type { Page } from "./page.ts"
 
-const sources = import.meta.glob<Page>("/src/content/docs/**/*.md", { import: "default", eager: true })
+const sources = import.meta.glob<Page>("/web/content/docs/**/*.md", { import: "default", eager: true })
 
-const bodies = import.meta.glob<string>("/src/content/docs/**/*.md", { import: "markdown", eager: true })
+const bodies = import.meta.glob<string>("/web/content/docs/**/*.md", { import: "markdown", eager: true })
 
 const pages = new Map(Object.values(sources).map((page) => [page.slug, page]))
 

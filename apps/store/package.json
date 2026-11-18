@@ -1,0 +1,55 @@
+{
+  "name": "@schelf/store",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#lib/*": "./web/lib/*",
+    "#site": "./.svelte-kit/cloudflare/_worker.js"
+  },
+  "scripts": {
+    "dev": "vite build && bun run --parallel dev:api dev:web",
+    "dev:api": "cf-wrangler dev --local-upstream schelf.store",
+    "dev:web": "vite dev",
+    "build": "pult build && vite build && cf-wrangler build",
+    "preview": "vite build && bun run dev:api",
+    "deploy": "bun run build && cf d1 migrations apply a461f2c7-c13f-40bb-a9f7-23b32fb81181 && cf deploy --prebuilt",
+    "types": "cf workers types",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "cf d1 migrations apply a461f2c7-c13f-40bb-a9f7-23b32fb81181 --local",
+    "check": "cf workers types && tsc -p src && tsc -p test && svelte-kit sync && svelte-check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@better-auth/passkey": "1.7.25",
+    "@cf-wasm/og": "0.5.0",
+    "@cf-wasm/resvg": "0.4.0",
+    "@lantharos/pult": "0.15.0",
+    "@schelf/protocol": "workspace:*",
+    "better-auth": "1.7.25",
+    "drizzle-orm": "0.45.4",
+    "hash-wasm": "4.13.0",
+    "hono": "4.13.18",
+    "jose": "6.2.17",
+    "postal-mime": "4.2.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.8.2",
+    "@lucide/svelte": "1.73.0",
+    "@sveltejs/adapter-cloudflare": "8.0.2",
+    "@sveltejs/kit": "3.2.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tailwindcss/vite": "4.3.5",
+    "cf": "1.0.0-beta.32",
+    "drizzle-kit": "0.31.11",
+    "markdown-it": "15.0.3",
+    "shiki": "4.6.0",
+    "svelte": "5.57.3",
+    "svelte-check": "4.7.8",
+    "tailwindcss": "4.3.5",
+    "typescript": "6.0.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.0",
+    "wrangler": "4.162.0"
+  }
+}
