@@ -29,6 +29,18 @@ export default defineConfig({
         pattern: "*/*",
         zone: "schelf.store",
       }),
+      triggers.email({
+        addresses: [
+          "hello@schelf.store",
+          "support@schelf.store",
+          "privacy@schelf.store",
+          "security@schelf.store",
+          "abuse@schelf.store",
+          "dmca@schelf.store",
+          "legal@schelf.store",
+          "*@schelf.store",
+        ],
+      }),
       triggers.scheduled({
         schedule: "0 * * * *",
       }),
