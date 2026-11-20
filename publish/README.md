@@ -26,6 +26,7 @@ steps:
 | `notes`          | the release's description            | Release notes                                                                                                         |
 | `channel`        | stable, or the one the version names | The channel to release on, like `beta` or `nightly`                                                                   |
 | `bridge`         | `false`                              | The last build in the old framework, when moving to a new one                                                         |
+| `schelf`         | the one schelf.store signs           | A schelf program to run instead, for a repository that builds schelf itself                                           |
 | `api`            | `https://schelf.store`               | The store to publish to                                                                                               |
 
 Without a `version`, the action uses the release's tag when the run is for one, and otherwise the version in `Sabine.toml`, `extension.toml`, `tauri.conf.json` or `package.json` next to `schelf.toml`. On the `nightly` channel it turns that into a version of its own, the next minor version with the time and commit, like `0.2.0-nightly.202611030415.g1a2b3c4`, so every nightly is newer than the last. The store refuses a version it already has.

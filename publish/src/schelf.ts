@@ -34,7 +34,8 @@ interface Refusal {
   issues?: ConfigIssue[]
 }
 
-export async function program() {
+export async function program(given: string) {
+  if (given) return given
   const target = thisComputer()
   if (!target) throw new Error("Publish on Schelf runs on Linux runners, such as ubuntu-latest")
   const cache = process.env.RUNNER_TOOL_CACHE ?? process.env.RUNNER_TEMP ?? "."

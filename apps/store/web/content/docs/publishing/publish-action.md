@@ -24,6 +24,7 @@ The publish action runs at the end of the workflow that builds your app. It asks
 | `channel`        | `stable`, or the one the version names | The [channel](/docs/channels) to release on, like `beta` or `nightly`.                                                                                      |
 | `bridge`         | `false`                                | Publishes the last build in the old framework when [moving to a new one](/docs/moving-to-a-new-framework).                                                  |
 | `github-token`   | `${{ github.token }}`                  | Records the attestations and reads the release.                                                                                                             |
+| `schelf`         | The one schelf.store signs             | A schelf program to run instead, for a repository that builds schelf itself.                                                                                |
 
 Use either `files` or `release-assets`.
 

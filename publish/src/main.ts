@@ -50,7 +50,7 @@ function options() {
 async function run() {
   const githubToken = core.getInput("github-token")
   const files = await patterns(githubToken)
-  const path = await core.group("Getting schelf", program)
+  const path = await core.group("Getting schelf", () => program(core.getInput("schelf")))
   const asked = [...options(), ...(core.getInput("version") ? ["--version", core.getInput("version")] : [])]
   const { answer: plan } = await schelf<Plan>(path, ["publish", "--dry-run", ...asked, "--", ...files])
 

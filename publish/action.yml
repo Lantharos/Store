@@ -27,6 +27,9 @@ inputs:
   bridge:
     description: Publish this as the bridge, the last build in the old framework when moving to a new one
     default: "false"
+  schelf:
+    description: A schelf program to run instead of the one schelf.store signs, for a repository that builds schelf itself
+    required: false
   api:
     description: The store to publish to
     default: https://schelf.store
