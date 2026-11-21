@@ -26,7 +26,7 @@ When a beta is ready, open it in the dashboard and choose **Promote** with the c
 
 ## Keeping old releases
 
-Nightly keeps its last 10 releases; older ones are removed, files and all. Set how many each channel keeps with `keep` under `[channels.<name>]` in [schelf.toml](/docs/schelf-toml), or on the project's **Updates** tab if it has no `schelf.toml` applied. Stable keeps everything.
+Nightly keeps its last 10 releases; older ones are removed, files and all. Stable keeps every release unless you set a limit. Set how many each channel keeps with `keep` under `[channels.<name>]` in [schelf.toml](/docs/schelf-toml), or on the project's **Updates** tab if it has no `schelf.toml` applied.
 
 ## Ending a channel
 

@@ -1,13 +1,13 @@
 import { env } from "cloudflare:workers"
 import {
   compareVersions,
+  INVITED_PREFIX,
   missingPlatforms,
   NIGHTLY,
   NIGHTLY_KEEP,
-  paths,
   SHIPPED_STATUSES,
 } from "@schelf/protocol"
-import { and, desc, eq, gt, inArray, isNotNull, not, notInArray, sql } from "drizzle-orm"
+import { and, desc, eq, gt, inArray, isNotNull, notInArray, sql } from "drizzle-orm"
 import { among, db, insertRows, schema } from "../../db/client.ts"
 import { fail } from "../../lib/http.ts"
 import { randomId } from "../../lib/ids.ts"
@@ -16,10 +16,10 @@ import { partPlan } from "../../publishing/parts.ts"
 import { routeRelease } from "../../releases/review.ts"
 import { resign } from "../../signing/queue.ts"
 import type { ReleaseRow } from "../../signing/records.ts"
+import { removeFiles } from "../deletion.ts"
 import { refuseEnded } from "./ended.ts"
 
 const WAITING = ["uploading", "checking", "in-review"] as const
-const R2_DELETE_LIMIT = 1000
 
 export function ensureChannel(appId: string, name: string) {
   return db
@@ -28,24 +28,50 @@ export function ensureChannel(appId: string, name: string) {
     .onConflictDoNothing()
 }
 
-async function removeReleases(releases: { id: string; appId: string }[]) {
-  const ids = releases.map((release) => release.id)
-  const artifacts = await db
-    .select({ key: schema.artifact.key })
-    .from(schema.artifact)
-    .where(among(schema.artifact.releaseId, ids))
-  const keys = [...new Set(artifacts.map((artifact) => artifact.key))]
-  const shared = keys.length
-    ? await db
-        .select({ key: schema.artifact.key })
-        .from(schema.artifact)
-        .where(and(among(schema.artifact.key, keys), not(among(schema.artifact.releaseId, ids))))
-    : []
-  const kept = new Set(shared.map((artifact) => artifact.key))
-  const removable = keys.filter((key) => !kept.has(key)).flatMap((key) => [key, paths.blockmap(key)])
-  for (let start = 0; start < removable.length; start += R2_DELETE_LIMIT)
-    await env.BUCKET.delete(removable.slice(start, start + R2_DELETE_LIMIT))
-  await db.delete(schema.release).where(among(schema.release.id, ids))
+type Removed = { id: string; appId: string; version: string }
+
+/** The files of each removed version no release uses anymore, its checks and the deltas that lead to it
+ * included. A promoted release shares its version's files, so they stay while either one does. */
+async function versionFiles(releases: Removed[]) {
+  const apps = [...new Set(releases.map((release) => release.appId))]
+  const remaining = await db
+    .select({ appId: schema.release.appId, version: schema.release.version })
+    .from(schema.release)
+    .where(among(schema.release.appId, apps))
+  const used = new Set(remaining.map((release) => `${release.appId}/${release.version}`))
+  const gone = [...new Set(releases.map((release) => `${release.appId}/${release.version}`))].filter(
+    (version) => !used.has(version),
+  )
+  const folders = gone.flatMap((version) => [`apps/${version}/`, `${INVITED_PREFIX}apps/${version}/`])
+  const deltas: string[] = []
+  for (const appId of apps) {
+    const leadingToGone = gone
+      .filter((version) => version.startsWith(`${appId}/`))
+      .map((version) => `-${version.slice(appId.length + 1)}/`)
+    if (!leadingToGone.length) continue
+    let cursor: string | undefined
+    do {
+      const page = await env.BUCKET.list({ prefix: `apps/${appId}/deltas/`, cursor })
+      deltas.push(
+        ...page.objects
+          .map((object) => object.key)
+          .filter((key) => leadingToGone.some((ending) => key.includes(ending))),
+      )
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+  }
+  return { folders, deltas }
+}
+
+async function removeReleases(releases: Removed[]) {
+  await db.delete(schema.release).where(
+    among(
+      schema.release.id,
+      releases.map((release) => release.id),
+    ),
+  )
+  const { folders, deltas } = await versionFiles(releases)
+  await removeFiles(folders, deltas)
   const removed = Map.groupBy(releases, (release) => release.appId)
   for (const [appId, { length }] of removed)
     recordHistory(
@@ -61,6 +87,7 @@ function pastTheirLimit() {
     .select({
       id: schema.release.id,
       appId: schema.release.appId,
+      version: schema.release.version,
       keep: schema.channel.keep,
       place:
         sql<number>`row_number() over (partition by ${schema.release.appId}, ${schema.release.channel} order by ${schema.release.createdAt} desc)`.as(
@@ -74,7 +101,10 @@ function pastTheirLimit() {
     )
     .where(and(isNotNull(schema.channel.keep), notInArray(schema.release.status, [...WAITING, "pulled"])))
     .as("ranked")
-  return db.select({ id: ranked.id, appId: ranked.appId }).from(ranked).where(gt(ranked.place, ranked.keep))
+  return db
+    .select({ id: ranked.id, appId: ranked.appId, version: ranked.version })
+    .from(ranked)
+    .where(gt(ranked.place, ranked.keep))
 }
 
 /** Removes the oldest releases of every channel past the number it keeps. */

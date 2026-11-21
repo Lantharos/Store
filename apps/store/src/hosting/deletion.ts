@@ -23,7 +23,7 @@ const ownFiles = (id: string) => [
   `${INVITED_PREFIX}index/v1/apps/${id}/`,
 ]
 
-async function removeFiles(prefixes: string[], extra: string[] = []) {
+export async function removeFiles(prefixes: string[], extra: string[] = []) {
   const keys = [...extra]
   for (const prefix of prefixes) {
     let cursor: string | undefined

@@ -386,6 +386,31 @@ describe("the rest of a project's life", () => {
     expect(left.map((release) => release.version).sort()).toEqual(["2.0.0-beta.2", "2.0.0-beta.3"])
   })
 
+  test("pruning removes a version's checks and the deltas to it, and keeps what's still released", async () => {
+    const { appId } = await project()
+    await ship(appId, "1.0.1", "stable")
+    await ship(appId, "1.0.2", "stable")
+    const removed = paths.check(appId, "1.0.1", "facts")
+    const kept = paths.check(appId, "1.0.2", "facts")
+    const toRemoved = paths.delta(appId, "1.0.0", "1.0.1", "linux-x86_64")
+    const toKept = paths.delta(appId, "1.0.1", "1.0.2", "linux-x86_64")
+    for (const key of [removed, kept, toRemoved, toKept]) await env.BUCKET.put(key, "{}")
+
+    await db
+      .update(schema.channel)
+      .set({ keep: 1 })
+      .where(and(eq(schema.channel.appId, appId), eq(schema.channel.name, "stable")))
+    await pruneChannels()
+
+    const present = async (key: string) => (await env.BUCKET.head(key)) !== null
+    expect(await Promise.all([removed, toRemoved, kept, toKept].map(present))).toEqual([
+      false,
+      false,
+      true,
+      true,
+    ])
+  })
+
   test("deleting a project with an ended channel leaves no feeds and an empty index", async () => {
     const { appId, end, owner } = await project("sabine")
     await ship(appId, "1.0.0", "stable", "sabine")

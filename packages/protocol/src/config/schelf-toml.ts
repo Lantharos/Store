@@ -185,11 +185,11 @@ export const schelfToml = z
           "A project of only named parts has no store page; add platforms for the app or remove listing",
       })
     for (const [name, settings] of Object.entries(manifest.channels)) {
-      if (name === STABLE && (settings.ended_into || settings.keep))
+      if (name === STABLE && settings.ended_into)
         context.addIssue({
           code: "custom",
-          path: ["channels", name],
-          message: "stable keeps every release and can't be ended",
+          path: ["channels", name, "ended_into"],
+          message: "stable can't be ended",
         })
       if (name === STABLE && settings.invite_only)
         context.addIssue({
