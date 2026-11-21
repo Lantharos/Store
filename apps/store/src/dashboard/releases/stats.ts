@@ -1,4 +1,4 @@
-import { type Platform, type Stats, statsQuery } from "@schelf/protocol"
+import { type DownloadSource, type Platform, type Stats, statsQuery } from "@schelf/protocol"
 import { and, eq, gte, sql } from "drizzle-orm"
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core"
 import { Hono } from "hono"
@@ -27,16 +27,22 @@ statsRoutes.get("/:id/stats", async (c) => {
       .where(since)
       .groupBy(column)
       .orderBy(column)
-  const [byDay, byVersion, byPlatform] = await Promise.all([
+  const [byDay, byVersion, byPlatform, bySource] = await Promise.all([
     grouped(schema.countDaily.day),
     grouped(schema.countDaily.version),
     grouped(schema.countDaily.platform),
+    grouped(schema.countDaily.source),
   ])
   return c.json({
     days: byDay.map((row) => ({ day: row.key, installs: row.installs, updates: row.updates })),
     versions: byVersion.map((row) => ({ version: row.key, installs: row.installs, updates: row.updates })),
     platforms: byPlatform.map((row) => ({
       platform: row.key as Platform,
+      installs: row.installs,
+      updates: row.updates,
+    })),
+    sources: bySource.map((row) => ({
+      source: row.key as DownloadSource,
       installs: row.installs,
       updates: row.updates,
     })),

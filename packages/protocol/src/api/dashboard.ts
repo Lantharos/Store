@@ -397,10 +397,18 @@ export const rolloutRequest = z.discriminatedUnion("action", [
 ])
 export type RolloutRequest = z.infer<typeof rolloutRequest>
 
+/** Who downloaded a file, as the `via` of its address says: Schelf's app, the `schelf` command, an app updating
+ * itself through Sabine, or anything else, such as a browser. */
+export const DOWNLOAD_SOURCES = ["app", "cli", "sabine", "other"] as const
+export type DownloadSource = (typeof DOWNLOAD_SOURCES)[number]
+export const downloadSource = (via: string | null): DownloadSource =>
+  DOWNLOAD_SOURCES.find((source) => source === via) ?? "other"
+
 export const statsQuery = z.object({ days: z.coerce.number().int().min(1).max(365).default(30) })
 export interface Stats {
   days: { day: string; installs: number; updates: number }[]
   versions: { version: string; installs: number; updates: number }[]
   platforms: { platform: Platform; installs: number; updates: number }[]
+  sources: { source: DownloadSource; installs: number; updates: number }[]
   total: { installs: number; updates: number }
 }

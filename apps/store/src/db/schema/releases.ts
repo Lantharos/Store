@@ -1,6 +1,7 @@
 import {
   type CheckName,
   type CheckStatus,
+  type DownloadSource,
   type ExtensionAccess,
   FORMATS,
   ORIGINS,
@@ -144,12 +145,13 @@ export const countDaily = sqliteTable(
     appId: text("app_id").notNull(),
     version: text("version").notNull(),
     platform: text("platform").notNull(),
+    source: text("source").$type<DownloadSource>().notNull().default("other"),
     day: text("day").notNull(),
     installs: integer("installs").notNull(),
     updates: integer("updates").notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.appId, table.version, table.platform, table.day] }),
+    primaryKey({ columns: [table.appId, table.version, table.platform, table.source, table.day] }),
     index("count_daily_day").on(table.day),
     index("count_daily_app_day").on(table.appId, table.day),
   ],

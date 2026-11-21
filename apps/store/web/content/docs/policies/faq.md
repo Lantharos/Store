@@ -26,7 +26,7 @@ Usually within a day for a first release, and faster for updates. Updates that w
 
 ## What do you know about the people who install my app?
 
-How many installs and updates each version gets per day and per system. Nothing else: no addresses, devices or accounts, because Schelf doesn't keep any.
+How many installs and updates each version gets per day and per system, and whether they came through Schelf, its `schelf` command, an app updating itself or anything else, such as a browser. Nothing else: no addresses, devices or accounts, because Schelf doesn't keep any.
 
 ## Can I keep my app on Flathub too?
 

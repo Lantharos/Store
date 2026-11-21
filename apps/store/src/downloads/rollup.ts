@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers"
+import { downloadSource } from "@schelf/protocol"
 import { sql } from "drizzle-orm"
 import { among, db, schema } from "../db/client.ts"
 import { DAY_MS, dayOf } from "../lib/time.ts"
@@ -12,6 +13,7 @@ interface Row {
   version: string
   platform: string
   kind: "install" | "update"
+  source: string
   count: number
 }
 
@@ -31,19 +33,21 @@ async function query(sql: string) {
 export async function countDay(day: string) {
   const next = dayOf(new Date(new Date(`${day}T00:00:00Z`).getTime() + DAY_MS))
   const rows = await query(
-    `SELECT blob1 AS app, blob2 AS version, blob3 AS platform, blob4 AS kind, SUM(_sample_interval) AS count
+    `SELECT blob1 AS app, blob2 AS version, blob3 AS platform, blob4 AS kind, blob5 AS source, SUM(_sample_interval) AS count
      FROM ${DATASET}
      WHERE timestamp >= toDateTime('${day} 00:00:00') AND timestamp < toDateTime('${next} 00:00:00')
-     GROUP BY app, version, platform, kind
+     GROUP BY app, version, platform, kind, source
      FORMAT JSON`,
   )
   const totals = new Map<string, typeof schema.countDaily.$inferInsert>()
   for (const row of rows) {
-    const key = `${row.app}\n${row.version}\n${row.platform}`
+    const source = downloadSource(row.source)
+    const key = `${row.app}\n${row.version}\n${row.platform}\n${source}`
     const entry = totals.get(key) ?? {
       appId: row.app,
       version: row.version,
       platform: row.platform,
+      source,
       day,
       installs: 0,
       updates: 0,
@@ -61,6 +65,7 @@ export async function countDay(day: string) {
           schema.countDaily.appId,
           schema.countDaily.version,
           schema.countDaily.platform,
+          schema.countDaily.source,
           schema.countDaily.day,
         ],
         set: { installs: entry.installs, updates: entry.updates },

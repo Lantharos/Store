@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers"
-import { INVITED_PREFIX, PRIVATE_PREFIX } from "@schelf/protocol"
+import { downloadSource, INVITED_PREFIX, PRIVATE_PREFIX } from "@schelf/protocol"
 import { and, eq } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { embedScript } from "../hosting/serving/embed.ts"
@@ -34,13 +34,18 @@ function startsAtZero(range: string | null) {
   return range === null || /^bytes=0-/.test(range.trim())
 }
 
+/** Luft's image build fetches the apps it preinstalls, which nobody installed. */
+const UNCOUNTED = "image"
+
 function count(download: Download, url: URL) {
+  if (url.searchParams.get("via") === UNCOUNTED) return
   env.DOWNLOADS.writeDataPoint({
     blobs: [
       download.app,
       download.version,
       download.platform,
       url.searchParams.get("reason") === "update" ? "update" : "install",
+      downloadSource(url.searchParams.get("via")),
     ],
     doubles: [1],
     indexes: [download.app],
