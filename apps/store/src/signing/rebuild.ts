@@ -3,7 +3,6 @@ import {
   type Catalog,
   INVITED_PREFIX,
   type MirrorCatalog,
-  type MirrorOrigin,
   paths,
   type Revocations,
   signSabineFeed,
@@ -107,18 +106,18 @@ export async function rebuildCatalog() {
   await writeSigned({ key: paths.catalog, document: catalog })
 }
 
-export async function rebuildMirror(origin: MirrorOrigin) {
+export async function rebuildMirror() {
   const rows = await db
     .select()
     .from(schema.mirrorApp)
-    .where(and(eq(schema.mirrorApp.origin, origin), isNull(schema.mirrorApp.hiddenReason)))
+    .where(isNull(schema.mirrorApp.hiddenReason))
     .orderBy(desc(schema.mirrorApp.rank), schema.mirrorApp.id)
   await writeSigned({
-    key: paths.mirror(origin),
+    key: paths.mirror,
     document: {
       version: 1,
       generated: new Date().toISOString(),
-      origin,
+      origin: "flathub",
       apps: rows.map(mirrorCatalogEntry),
     } satisfies Unstamped<MirrorCatalog>,
   })

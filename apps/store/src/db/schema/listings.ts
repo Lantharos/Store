@@ -50,7 +50,7 @@ export const mirrorApp = sqliteTable(
   "mirror_app",
   {
     id: text("id").notNull(),
-    origin: text("origin", { enum: ["flathub", "fedora"] }).notNull(),
+    origin: text("origin", { enum: ["flathub"] }).notNull(),
     ref: text("ref").notNull(),
     name: text("name").notNull(),
     summary: text("summary").notNull(),

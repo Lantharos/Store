@@ -176,7 +176,7 @@ storefrontRoutes.get("/projects/:publisher/:project", (c) =>
 
 storefrontRoutes.get("/mirror/:id", (c) =>
   edgeResponse(c.req.url, async () => {
-    const entry = await mirrorEntry(c.req.param("id"), c.req.query("origin"))
+    const entry = await mirrorEntry(c.req.param("id"))
     if (!entry) fail(404, "There's no app with that id")
     return publicJson(entry satisfies MirrorEntry)
   }),

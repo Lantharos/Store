@@ -2,7 +2,7 @@
 
 ## The Schelf app on Luft
 
-Schelf is where people get apps on Luft. Its catalog is schelf.store: the store's own apps first, then Flathub and Fedora apps from the store's mirror, so there's something worth installing from day one and the list gets better as developers publish directly. The store's root key is compiled in, so there's no trust dialog for it.
+Schelf is where people get apps on Luft. Its catalog is schelf.store: the store's own apps first, then Flathub apps from the store's mirror, so there's something worth installing from day one and the list gets better as developers publish directly. Schelf lists Fedora's desktop apps itself, from the AppStream data in Luft's image. The store's root key is compiled in, so there's no trust dialog for it.
 
 One catalog, three ways to install:
 
@@ -12,11 +12,11 @@ One catalog, three ways to install:
 | Flathub | Flatpak for the user                                                                                                                                                                                                                                               | Flatpak, through Schelf's update check               |
 | Fedora  | A system package merged over Luft's image                                                                                                                                                                                                                          | Luft's system updates                                |
 
-An app that's in more than one place shows once: the store's listing wins over Flathub, and Flathub over Fedora. The Fedora mirror only carries desktop apps that aren't on Flathub. Opening files the Schelf app handles today (`.flatpakref`, `.rpm`, `.AppImage`, `.deb`) and the command line (`schelf install`, Toolbox tools, added RPM repositories) keep working the same way; they just aren't part of browsing.
+An app that's in more than one place shows once: the store's listing wins over Flathub, and Flathub over Fedora. Opening files the Schelf app handles today (`.flatpakref`, `.rpm`, `.AppImage`, `.deb`) and the command line (`schelf install`, Toolbox tools, added RPM repositories) keep working the same way; they just aren't part of browsing.
 
 ### The mirror
 
-A scheduled workflow in this repository (`mirror/`) runs every six hours on GitHub's free runners. It reads Flathub's API and Fedora's AppStream data, applies the quality rules below, ranks what's left, and posts the result to `POST /api/v1/mirror` with its OIDC token. The Worker signs the mirror catalogs and updates search, and signs them again every night from what it holds, so they stay valid if a run is missed.
+A scheduled workflow in this repository (`mirror/`) runs every six hours on GitHub's free runners. It reads Flathub's API and AppStream data, applies the quality rules below, ranks what's left, and posts the result to `POST /api/v1/mirror` with its OIDC token. The Worker signs the mirror catalog and updates search, and signs it again every night from what it holds, so it stays valid if a run is missed.
 
 A Flathub app is **left out** when any of these is true:
 
@@ -28,7 +28,7 @@ A Flathub app is **left out** when any of these is true:
 | A runtime, extension, BaseApp or theme                                                               | Not an app.                 |
 | Fewer than 50 installs in the last month, unless verified                                            | Mostly tests and forks.     |
 
-It's **ranked lower** when it's unverified, uses a deprecated runtime, or has had no release in 12 months. Fedora apps follow the same rules where the data exists, plus: no desktop entry, or a package that only exists as a library.
+It's **ranked lower** when it's unverified, uses a deprecated runtime, or has had no release in 12 months.
 
 ### Installing an app from the store
 
@@ -45,7 +45,7 @@ A person signs in to Schelf in the app with the device sign-in, as the client `s
 
 ## The Schelf app on other Linux systems
 
-The same app, shipped as a Sabine bundle (deb, rpm and AppImage) in phase 3. Store apps and Flathub; Fedora packages and Luft-only pages are hidden. AppImages run in bubblewrap with the same permission declaration.
+The same app, shipped as a Sabine bundle (deb, rpm and AppImage) in phase 3. Store apps and Flathub; Fedora's apps and Luft-only pages are hidden. AppImages run in bubblewrap with the same permission declaration.
 
 ## Sabine apps on Windows and macOS
 
@@ -69,7 +69,7 @@ in `Sabine.toml`, and Sabine's service follows `https://dl.schelf.store/sabine/<
 | `/`                                | Featured apps, categories, new and updated.                                                                                                                                                                                                                                                                                                                                                                |
 | `/<publisher>/<project>`           | An unlisted project's page: the same as an app page, with the files, checksums and provenance, marked open or closed source, and `noindex` unless the publisher turns that on. Listed projects redirect to `/apps/<id>`.                                                                                                                                                                                   |
 | `/apps/<id>`                       | One page per app: name, summary, screenshots, description, permissions in plain words, a download button for the visitor's system, other systems, size, licence and source, version history with notes, install counts, the publisher with its verified mark. On Luft the button opens Schelf. An extension's page also says the Luft it needs and whether Luft has reviewed it to run inside the desktop. |
-| `/categories/<name>`, `/search?q=` | Browsing. Flathub and Fedora apps appear for visitors on Linux, marked with where they come from and with "Open in Schelf"; their pages aren't indexed.                                                                                                                                                                                                                                                    |
+| `/categories/<name>`, `/search?q=` | Browsing. Flathub apps appear for visitors on Linux, marked with where they come from and with "Open in Schelf"; their pages aren't indexed.                                                                                                                                                                                                                                                               |
 | `/extensions`, `/extensions/<id>`  | Luft extensions. They never appear in the other lists.                                                                                                                                                                                                                                                                                                                                                     |
 | `/publishers/<slug>`               | A publisher's page: logo, name, a short description, website, the verified mark, and its apps and extensions, with `Organization` (or `Person`) structured data.                                                                                                                                                                                                                                           |
 | `/dashboard/…`                     | The dashboard. Signed-out visitors land on its sign-in. The header's **Dashboard** link goes here; the docs are linked from its sidebar and the footer.                                                                                                                                                                                                                                                    |

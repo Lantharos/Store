@@ -7,7 +7,7 @@ export const INVITED_PREFIX = "invited/"
 export const paths = {
   catalog: "index/v1/catalog.json",
   app: (id: string) => `index/v1/apps/${id}.json`,
-  mirror: (origin: "flathub" | "fedora") => `index/v1/mirror/${origin}.json`,
+  mirror: "index/v1/mirror/flathub.json",
   sabine: (id: string, channel: string) => `sabine/${id}/${channel}.json`,
   sabinePart: (id: string, part: string, channel: string) => `sabine/${id}/parts/${part}/${channel}.json`,
   root: "trust/v1/root.pub",

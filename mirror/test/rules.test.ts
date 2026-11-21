@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test"
-import { parseMetainfo } from "@schelf/appstream"
-import { flathubIndex, onFlathub } from "../src/fedora.ts"
 import { deprecatedRuntimes } from "../src/flathub.ts"
 import { type Candidate, exclusion, rank } from "../src/rules.ts"
 
@@ -23,8 +21,6 @@ const app: Candidate = {
   endOfLife: false,
   renamedTo: null,
   deprecatedRuntime: false,
-  desktopEntry: true,
-  libraryOnly: false,
 }
 
 describe("quality rules", () => {
@@ -39,7 +35,6 @@ describe("quality rules", () => {
       "renamed to org.example.NewTool",
     )
     expect(exclusion({ ...app, screenshots: 0 }, now)).toBe("no screenshots, summary or icon")
-    expect(exclusion({ ...app, libraryOnly: true }, now)).toBe("a library")
   })
 
   test("abandoned means no release in two years and no build in one", () => {
@@ -78,24 +73,4 @@ test("only the two newest branches of a runtime are current", () => {
     "org.freedesktop.Platform/24.08",
     "org.gnome.Platform/49",
   ])
-})
-
-test("Fedora apps already on Flathub are found by id, or by name and homepage", () => {
-  const flathub = flathubIndex([
-    { id: "org.mozilla.firefox", name: "Firefox", homepage: "mozilla.org" },
-    { id: "org.gnome.Calculator", name: "Calculator", homepage: "apps.gnome.org" },
-  ])
-  const component = (id: string, name: string, homepage: string) =>
-    parseMetainfo(
-      `<component type="desktop"><id>${id}</id><name>${name}</name><url type="homepage">${homepage}</url></component>`,
-    )
-  expect(onFlathub(component("org.gnome.Calculator.desktop", "Calculator", "https://x.org"), flathub)).toBe(
-    true,
-  )
-  expect(onFlathub(component("firefox.desktop", "Firefox", "https://www.mozilla.org/firefox"), flathub)).toBe(
-    true,
-  )
-  expect(
-    onFlathub(component("galculator.desktop", "Calculator", "https://galculator.mnim.org"), flathub),
-  ).toBe(false)
 })

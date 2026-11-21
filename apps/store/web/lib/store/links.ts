@@ -5,8 +5,6 @@ export const appHref = (app: { id: string; kind: string }) =>
 
 export const repositoryUrl = (fullName: string) => `https://github.com/${fullName}`
 
-export const ORIGIN_NAMES = { flathub: "Flathub", fedora: "Fedora" } as const
-
 export function originOf(hit: SearchHit) {
-  return hit.origin === "schelf" ? null : ORIGIN_NAMES[hit.origin]
+  return hit.origin === "schelf" ? null : "Flathub"
 }

@@ -81,7 +81,7 @@ export async function flathubCandidates() {
   )
   return hits.map((hit) => {
     const component = components.get(hit.app_id)
-    const candidate: Candidate = {
+    return {
       id: hit.app_id,
       type: hit.type,
       name: hit.name,
@@ -99,10 +99,7 @@ export async function flathubCandidates() {
       endOfLife: hit.app_id in endOfLife,
       renamedTo: renamedTo.get(hit.app_id) ?? null,
       deprecatedRuntime: deprecated.has(runtimeKey(hit.runtime)),
-      desktopEntry: true,
-      libraryOnly: false,
-    }
-    return { candidate, component }
+    } satisfies Candidate
   })
 }
 

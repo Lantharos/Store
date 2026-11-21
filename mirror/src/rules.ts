@@ -16,11 +16,9 @@ export interface Candidate {
   endOfLife: boolean
   renamedTo: string | null
   deprecatedRuntime: boolean
-  desktopEntry: boolean
-  libraryOnly: boolean
 }
 
-const APP_TYPES = new Set(["desktop-application", "desktop", "console-application"])
+const APP_TYPES = new Set(["desktop-application", "console-application"])
 const MONTH = 30 * 24 * 3600 * 1000
 const MIN_INSTALLS = 50
 
@@ -34,8 +32,6 @@ export function exclusion(candidate: Candidate, now: Date): string | null {
   if (!APP_TYPES.has(candidate.type)) return "not an app"
   if (candidate.endOfLife) return "end of life"
   if (candidate.renamedTo) return `renamed to ${candidate.renamedTo}`
-  if (!candidate.desktopEntry) return "no desktop entry"
-  if (candidate.libraryOnly) return "a library"
   if (!candidate.summary || !candidate.icon || candidate.screenshots === 0)
     return "no screenshots, summary or icon"
   const knownActivity = candidate.lastRelease !== null || candidate.lastBuild !== null

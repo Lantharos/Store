@@ -28,7 +28,7 @@
     {/if}
     {#if mirrored.length}
       <section class="mt-12" aria-labelledby="mirrored">
-        <h2 id="mirrored" class="text-xl font-semibold">From Flathub and Fedora</h2>
+        <h2 id="mirrored" class="text-xl font-semibold">From Flathub</h2>
         <p class="mt-1 max-w-xl text-[15px] text-ink-muted">Linux apps published elsewhere. Schelf on Luft installs and updates them for you.</p>
         <div class="mt-3"><AppGrid apps={mirrored} /></div>
       </section>

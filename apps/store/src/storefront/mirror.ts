@@ -1,37 +1,23 @@
 import { env } from "cloudflare:workers"
-import {
-  MAX_ICON_BYTES,
-  MIRROR_ORIGINS,
-  type MirrorEntry,
-  type MirrorOrigin,
-  type MirrorRequest,
-  type MirrorResponse,
-  paths,
-  sha256Hex,
-} from "@schelf/protocol"
-import { and, eq, inArray, isNull } from "drizzle-orm"
+import type { MirrorEntry, MirrorRequest, MirrorResponse } from "@schelf/protocol"
+import { and, eq, isNull } from "drizzle-orm"
 import { among, db, schema } from "../db/client.ts"
-import { fail } from "../lib/http.ts"
 import { mirrorCatalogEntry } from "../signing/documents.ts"
 import { resign } from "../signing/queue.ts"
-import { fileUrl } from "../signing/records.ts"
 import { addStatements, clearOriginStatements, type SearchDocument } from "./search-index.ts"
 
+const ORIGIN = "flathub"
 const STATEMENTS_PER_BATCH = 400
-const MIRROR_ID = /^[A-Za-z0-9._+-]{1,255}$/
-const ICON_FILE = /^([0-9a-f]{16})\.png$/
 
-function mirrorKey(entry: Pick<MirrorEntry, "origin" | "id">) {
-  return `${entry.origin}:${entry.id}`
-}
+const mirrorKey = (id: string) => `${ORIGIN}:${id}`
 
 type MirrorRow = typeof schema.mirrorApp.$inferSelect
 
 export function mirrorDocument(
-  row: Pick<MirrorRow, "origin" | "id" | "name" | "summary" | "categories" | "publisher">,
+  row: Pick<MirrorRow, "id" | "name" | "summary" | "categories" | "publisher">,
 ): SearchDocument {
   return {
-    key: mirrorKey(row),
+    key: mirrorKey(row.id),
     name: row.name,
     summary: row.summary,
     keywords: row.categories,
@@ -45,47 +31,35 @@ function oncePerKey(documents: SearchDocument[]) {
 }
 
 export async function mirrorHits(keys: string[]) {
-  const wanted = keys.filter((key) => !key.startsWith("schelf:"))
+  const ids = keys.filter((key) => key.startsWith(`${ORIGIN}:`)).map((key) => key.slice(ORIGIN.length + 1))
   const hits = new Map<string, MirrorEntry>()
-  if (!wanted.length) return hits
-  const ids = wanted.map((key) => key.slice(key.indexOf(":") + 1))
-  const rows = await db
-    .select()
-    .from(schema.mirrorApp)
-    .where(and(among(schema.mirrorApp.id, ids), inArray(schema.mirrorApp.origin, MIRROR_ORIGINS)))
-  for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row), mirrorCatalogEntry(row))
+  if (!ids.length) return hits
+  const rows = await db.select().from(schema.mirrorApp).where(among(schema.mirrorApp.id, ids))
+  for (const row of rows) if (!row.hiddenReason) hits.set(mirrorKey(row.id), mirrorCatalogEntry(row))
   return hits
 }
 
-export async function mirrorEntry(id: string, origin: string | undefined) {
-  const rows = await db
+export async function mirrorEntry(id: string) {
+  const [row] = await db
     .select()
     .from(schema.mirrorApp)
-    .where(
-      and(
-        inArray(schema.mirrorApp.origin, MIRROR_ORIGINS),
-        eq(schema.mirrorApp.id, id),
-        isNull(schema.mirrorApp.hiddenReason),
-      ),
-    )
-  const preferred = origin ? [origin] : MIRROR_ORIGINS
-  const row = preferred.map((name) => rows.find((candidate) => candidate.origin === name)).find(Boolean)
+    .where(and(eq(schema.mirrorApp.id, id), isNull(schema.mirrorApp.hiddenReason)))
   return row ? mirrorCatalogEntry(row) : null
 }
 
-async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
+export async function replaceMirror(request: MirrorRequest): Promise<MirrorResponse> {
   const insert = env.DB.prepare(
     `INSERT INTO mirror_app (id, origin, ref, name, summary, icon, categories, developer, verified, installs_30d, updated_at, hidden_reason, rank)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
   )
   const statements = [
-    env.DB.prepare("DELETE FROM mirror_app WHERE origin = ?").bind(origin),
-    ...clearOriginStatements(origin),
-    ...entries.map((entry) =>
+    env.DB.prepare("DELETE FROM mirror_app"),
+    ...clearOriginStatements(ORIGIN),
+    ...request.flathub.map((entry) =>
       insert.bind(
         entry.id,
-        origin,
-        entry.origin === "flathub" ? entry.flathub : entry.package,
+        ORIGIN,
+        entry.flathub,
         entry.name,
         entry.summary,
         entry.icon,
@@ -99,33 +73,12 @@ async function replaceOrigin(origin: MirrorOrigin, entries: MirrorEntry[]) {
     ),
     ...addStatements(
       oncePerKey(
-        entries.map((entry) => mirrorDocument({ ...entry, origin, publisher: entry.publisher.name })),
+        request.flathub.map((entry) => mirrorDocument({ ...entry, publisher: entry.publisher.name })),
       ),
     ),
   ]
   for (let start = 0; start < statements.length; start += STATEMENTS_PER_BATCH)
     await env.DB.batch(statements.slice(start, start + STATEMENTS_PER_BATCH))
-  await resign({ type: "mirror", origin })
-}
-
-export async function replaceMirror(request: MirrorRequest): Promise<MirrorResponse> {
-  const flathub = request.flathub.filter((entry) => entry.origin === "flathub")
-  const fedora = request.fedora.filter((entry) => entry.origin === "fedora")
-  await replaceOrigin("flathub", flathub)
-  await replaceOrigin("fedora", fedora)
-  return { flathub: flathub.length, fedora: fedora.length }
-}
-
-export async function receiveMirrorIcon(id: string, file: string, request: Request) {
-  const hash = ICON_FILE.exec(file)?.[1]
-  if (!MIRROR_ID.test(id) || !hash)
-    fail(422, "Mirror icons go to <app id>/<first 16 hex digits of their SHA-256>.png")
-  const bytes = new Uint8Array(await request.arrayBuffer())
-  if (bytes.length === 0 || bytes.length > MAX_ICON_BYTES) fail(413, "Icons are at most 1 MB")
-  if (!(await sha256Hex(bytes)).startsWith(hash)) fail(422, "The icon doesn't match the hash in its name")
-  const key = paths.media(id, hash, "png")
-  await env.BUCKET.put(key, bytes, {
-    httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" },
-  })
-  return { url: fileUrl(key) }
+  await resign({ type: "mirror" })
+  return { flathub: request.flathub.length }
 }

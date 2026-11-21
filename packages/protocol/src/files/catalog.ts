@@ -40,13 +40,11 @@ export const catalog = stamp.extend({
 })
 export type Catalog = z.infer<typeof catalog>
 
-export const MIRROR_ORIGINS = ["flathub", "fedora"] as const
-export const mirrorOrigin = z.enum(MIRROR_ORIGINS)
-export type MirrorOrigin = z.infer<typeof mirrorOrigin>
-
 export const mirrorIcon = z.url({ protocol: /^https$/ })
 
-const mirrorBase = z.object({
+export const mirrorEntry = z.object({
+  origin: z.literal("flathub"),
+  flathub: z.string(),
   id: z.string(),
   kind: z.literal("app"),
   name: z.string(),
@@ -58,17 +56,12 @@ const mirrorBase = z.object({
   installs_30d: z.number().int().nonnegative(),
   rank: z.number(),
 })
-
-export const mirrorEntry = z.discriminatedUnion("origin", [
-  mirrorBase.extend({ origin: z.literal("flathub"), flathub: z.string() }),
-  mirrorBase.extend({ origin: z.literal("fedora"), package: z.string() }),
-])
 export type MirrorEntry = z.infer<typeof mirrorEntry>
 
 export const mirrorCatalog = stamp.extend({
   version: z.literal(1),
   generated: z.iso.datetime(),
-  origin: mirrorOrigin,
+  origin: z.literal("flathub"),
   apps: z.array(mirrorEntry),
 })
 export type MirrorCatalog = z.infer<typeof mirrorCatalog>

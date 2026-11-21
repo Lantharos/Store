@@ -16,8 +16,6 @@ jobs:
   mirror:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    env:
-      FEDORA_RELEASE: "45"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,5 +24,5 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
-      - name: Build and publish the Flathub and Fedora catalogs
+      - name: Build and publish the Flathub catalog
         run: bun mirror/src/main.ts

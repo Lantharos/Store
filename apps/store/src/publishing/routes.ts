@@ -9,7 +9,7 @@ import { Hono } from "hono"
 import { bearer, fail, readBody } from "../lib/http.ts"
 import { acceptChecks, CHECKS_WORKFLOW, MIRROR_WORKFLOW, requireStoreWorkflow } from "../releases/checks.ts"
 import { receiveDelta } from "../releases/deltas.ts"
-import { receiveMirrorIcon, replaceMirror } from "../storefront/mirror.ts"
+import { replaceMirror } from "../storefront/mirror.ts"
 import { completeRelease } from "./complete.ts"
 import { workflowClaims } from "./publisher.ts"
 import { promoteForPublisher, publishedReleases } from "./releases.ts"
@@ -62,11 +62,6 @@ publishingRoutes.put("/checks/:release/deltas/:platform", async (c) => {
   return c.json(
     await receiveDelta(c.req.param("release"), c.req.param("platform"), c.req.query("from"), c.req.raw),
   )
-})
-
-publishingRoutes.put("/mirror/media/:id/:file", async (c) => {
-  await storeWorkflow(c.req.raw, MIRROR_WORKFLOW)
-  return c.json(await receiveMirrorIcon(c.req.param("id"), c.req.param("file"), c.req.raw))
 })
 
 publishingRoutes.post("/mirror", async (c) => {

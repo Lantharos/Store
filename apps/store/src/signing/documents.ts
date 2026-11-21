@@ -237,7 +237,9 @@ export const sabineParts = (record: AppRecord) =>
   )
 
 export function mirrorCatalogEntry(row: typeof schema.mirrorApp.$inferSelect): MirrorEntry {
-  const base = {
+  return {
+    origin: "flathub",
+    flathub: row.ref,
     id: row.id,
     kind: "app" as const,
     name: row.name,
@@ -249,7 +251,4 @@ export function mirrorCatalogEntry(row: typeof schema.mirrorApp.$inferSelect): M
     installs_30d: row.installs30d,
     rank: row.rank,
   }
-  return row.origin === "flathub"
-    ? { ...base, origin: "flathub", flathub: row.ref }
-    : { ...base, origin: "fedora", package: row.ref }
 }

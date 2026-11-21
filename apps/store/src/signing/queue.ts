@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers"
-import { MIRROR_ORIGINS, type MirrorOrigin } from "@schelf/protocol"
 import { and, eq, inArray, sql } from "drizzle-orm"
 import { db, schema } from "../db/client.ts"
 import { rebuildApps, rebuildCatalog, rebuildMirror, rebuildRevocations } from "./rebuild.ts"
@@ -13,7 +12,7 @@ const CATALOG_OVERDUE_MS = 10 * 60_000
 export type SigningJob =
   | { type: "app"; id: string }
   | { type: "catalog" }
-  | { type: "mirror"; origin: MirrorOrigin }
+  | { type: "mirror" }
   | { type: "revocations" }
 
 /** Asks for the catalog once for everything that changes in the next half minute, or again if that ask got lost. */
@@ -49,7 +48,7 @@ export async function resignEverything() {
   await resign(
     ...apps.map((app) => ({ type: "app" as const, id: app.id })),
     { type: "catalog" },
-    ...MIRROR_ORIGINS.map((origin) => ({ type: "mirror" as const, origin })),
+    { type: "mirror" },
     { type: "revocations" },
   )
   return apps.length
@@ -91,18 +90,18 @@ async function catalogWanted(messages: readonly Message<SigningJob>[]) {
 
 export async function signQueued(batch: MessageBatch<SigningJob>) {
   const apps = new Set<string>()
-  const mirrors = new Set<MirrorOrigin>()
+  let mirror = false
   let revocations = false
   for (const { body } of batch.messages) {
     if (body.type === "app") apps.add(body.id)
-    else if (body.type === "mirror") mirrors.add(body.origin)
+    else if (body.type === "mirror") mirror = true
     else if (body.type === "revocations") revocations = true
   }
   if (apps.size) await rebuildApps([...apps])
   const catalog = await catalogWanted(batch.messages.filter((message) => message.body.type === "catalog"))
   await Promise.all([
     catalog && rebuildCatalog(),
-    ...[...mirrors].map(rebuildMirror),
+    mirror && rebuildMirror(),
     revocations && rebuildRevocations(),
   ])
 }

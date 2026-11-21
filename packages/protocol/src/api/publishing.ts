@@ -152,10 +152,8 @@ export interface DeltaReport {
 
 export const mirrorRequest = z.object({
   flathub: z.array(mirrorEntry),
-  fedora: z.array(mirrorEntry),
 })
 export type MirrorRequest = z.infer<typeof mirrorRequest>
 export interface MirrorResponse {
   flathub: number
-  fedora: number
 }
